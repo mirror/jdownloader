@@ -16,7 +16,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 35444 $", interfaceVersion = 3, names = { "retro.sx" }, urls = { "https?://(?:www\\.)?retro\\.sx/music/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "retro.sx" }, urls = { "https?://(?:www\\.)?retro\\.sx/music/\\d+" })
 public class RetroSx extends PluginForDecrypt {
 
     public RetroSx(PluginWrapper wrapper) {

@@ -44,7 +44,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
  *         Name: urli-nk.com Address: 37.48.120.85<br/>
  *
  */
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(?:www\\.)?(?:urlink\\.biz|ur-link\\.biz|url-ink\\.biz|url-ink\\.com|urli-nk\\.com)/[A-Za-z0-9]{4,6}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(?:www\\.)?(?:urlink\\.biz|ur-link\\.biz|url-ink\\.biz|url-ink\\.com|urli-nk\\.com)/[A-Za-z0-9]{4,6}" })
 public class UrLnkBz extends PluginForDecrypt {
 
     public UrLnkBz(PluginWrapper wrapper) {

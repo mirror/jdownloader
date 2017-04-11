@@ -57,7 +57,7 @@ public @interface HostPlugin {
     int interfaceVersion();
 
     /**
-     * The Revision is autoset by SVN. always is revision="$Revision$" and to not forget to ste the svn keyword svn:keywords to Revision
+     * The Revision is autoset by SVN. always is revision="$Revision$" and to not forget to set the svn keyword svn:keywords to Revision
      *
      * @return
      */

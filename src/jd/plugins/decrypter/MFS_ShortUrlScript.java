@@ -36,7 +36,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 3, names = { "mfs_shorturlscript", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfs_shorturlscript", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }) 
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
     /**

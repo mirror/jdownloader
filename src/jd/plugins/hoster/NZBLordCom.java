@@ -30,7 +30,7 @@ import org.jdownloader.plugins.components.usenet.UsenetFile;
 import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 34711 $", interfaceVersion = 2, names = { "nzblord.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nzblord.com" }, urls = { "" })
 public class NZBLordCom extends PluginForHost {
 
     public NZBLordCom(final PluginWrapper wrapper) {

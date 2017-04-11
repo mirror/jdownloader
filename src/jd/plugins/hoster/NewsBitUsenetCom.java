@@ -18,7 +18,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "bitusenet.com" }, urls = { "" }) public class NewsBitUsenetCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitusenet.com" }, urls = { "" }) public class NewsBitUsenetCom extends UseNet {
     public NewsBitUsenetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.bitusenet.com");

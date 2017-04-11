@@ -37,7 +37,7 @@ import jd.plugins.FilePackage;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 3, names = { "3ddl.tv" }, urls = { "https?://(www\\.)?3ddl\\.tv/download/\\S+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3ddl.tv" }, urls = { "https?://(www\\.)?3ddl\\.tv/download/\\S+/" })
 public class ThreeDlTv extends antiDDoSForDecrypt {
 
     public ThreeDlTv(PluginWrapper wrapper) {

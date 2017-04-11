@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.SizeFormatter;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "oshoworld.com" }, urls = { "https?://(?:www\\.)?oshoworld\\.com/[^/]+/.*?\\.asp\\?album_id=(\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oshoworld.com" }, urls = { "https?://(?:www\\.)?oshoworld\\.com/[^/]+/.*?\\.asp\\?album_id=(\\d+)" }) 
 public class OshoWorldCom extends PluginForDecrypt {
 
     public OshoWorldCom(PluginWrapper wrapper) {

@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "pastehere.xyz" }, urls = { "https?://(?:www\\.)?pastehere\\.xyz/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pastehere.xyz" }, urls = { "https?://(?:www\\.)?pastehere\\.xyz/\\d+/?" })
 public class PasteHereXyz extends PluginForDecrypt {
 
     public PasteHereXyz(PluginWrapper wrapper) {

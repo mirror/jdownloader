@@ -23,7 +23,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 35357 $", interfaceVersion = 3, names = { "datadownloader.net" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datadownloader.net" }, urls = { "" })
 public class DataDownloaderNet extends PluginForHost {
     public DataDownloaderNet(PluginWrapper wrapper) {
         super(wrapper);

@@ -16,7 +16,7 @@ import org.jdownloader.plugins.components.config.WallPapersCraftComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 3, names = { "wallpaperscraft.com" }, urls = { "https?://(?:www\\.)?wallpaperscraft\\.com/download/[^/]+_\\d+/\\d+x\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wallpaperscraft.com" }, urls = { "https?://(?:www\\.)?wallpaperscraft\\.com/download/[^/]+_\\d+/\\d+x\\d+" })
 public class WallPapersCraftCom extends PluginForDecrypt {
 
     public WallPapersCraftCom(PluginWrapper wrapper) {

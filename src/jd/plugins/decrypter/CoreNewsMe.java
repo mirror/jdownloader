@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10000 $", interfaceVersion = 2, names = { "corenews.me" }, urls = { "http?://corenews\\.me/[a-zA-Z0-9\\\\-]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "corenews.me" }, urls = { "http?://corenews\\.me/[a-zA-Z0-9\\\\-]+/" }) 
 public class CoreNewsMe extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

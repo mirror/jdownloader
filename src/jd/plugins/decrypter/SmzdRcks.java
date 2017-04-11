@@ -52,7 +52,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/(folder/[A-Za-z0-9\\-_]+|redirect/[A-Za-z0-9\\-_]+\\?_link=[A-Za-z0-9\\-_]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/(folder/[A-Za-z0-9\\-_]+|redirect/[A-Za-z0-9\\-_]+\\?_link=[A-Za-z0-9\\-_]+)" }) 
 public class SmzdRcks extends antiDDoSForDecrypt {
 
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS   = new WeakHashMap<Account, Map<String, Object>>();

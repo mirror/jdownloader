@@ -15,7 +15,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "liveme.com" }, urls = { "http://(www\\.)?liveme\\.com/media/play/\\?videoid=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveme.com" }, urls = { "http://(www\\.)?liveme\\.com/media/play/\\?videoid=\\d+" })
 public class LiveMeCom extends PluginForDecrypt {
 
     public LiveMeCom(PluginWrapper wrapper) {

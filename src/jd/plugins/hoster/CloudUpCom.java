@@ -35,7 +35,7 @@ import jd.plugins.components.PluginJSonUtils;
  *
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/i[a-zA-Z0-9_\\-]{10}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/i[a-zA-Z0-9_\\-]{10}" })
 public class CloudUpCom extends PluginForHost {
 
     private String  csrfToken      = null;

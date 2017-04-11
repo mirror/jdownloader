@@ -16,7 +16,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 /**
  * @author noone2407
  */
-@HostPlugin(revision = "$Revision:$", interfaceVersion = 2, names = { "nhaccuatui.com" }, urls = { "http://(www\\.)?nhaccuatui\\.com/bai-hat/\\S+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhaccuatui.com" }, urls = { "http://(www\\.)?nhaccuatui\\.com/bai-hat/\\S+" })
 public class NhacCuaTuiCom extends PluginForHost {
 
     private String dllink = null;

@@ -19,7 +19,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "newshosting.com" }, urls = { "" }) public class NewsHostingCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newshosting.com" }, urls = { "" }) public class NewsHostingCom extends UseNet {
     public NewsHostingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://controlpanel.newshosting.com/signup/signup.php");

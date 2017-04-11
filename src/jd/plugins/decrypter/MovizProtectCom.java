@@ -30,7 +30,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "moviz-protect.com" }, urls = { "https?://(www\\.)?moviz\\-protect\\.com/go\\.php\\?t=[a-zA-Z0-9_/\\+\\=\\-%]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviz-protect.com" }, urls = { "https?://(www\\.)?moviz\\-protect\\.com/go\\.php\\?t=[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class MovizProtectCom extends antiDDoSForDecrypt {
 
     public MovizProtectCom(PluginWrapper wrapper) {

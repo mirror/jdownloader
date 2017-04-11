@@ -21,7 +21,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "iload-usenet.com" }, urls = { "" }) public class ILoadUsenet extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iload-usenet.com" }, urls = { "" }) public class ILoadUsenet extends UseNet {
     public ILoadUsenet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.iload-usenet.com/prices");

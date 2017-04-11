@@ -18,7 +18,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "speeduse.net" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "speeduse.net" }, urls = { "" })
 public class SpeedUseNet extends UseNet {
 
     public SpeedUseNet(PluginWrapper wrapper) {

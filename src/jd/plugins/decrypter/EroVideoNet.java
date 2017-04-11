@@ -30,7 +30,7 @@ import jd.plugins.Plugin;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 34342 $", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:www\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" }) public class EroVideoNet extends PornEmbedParser {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:www\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" }) public class EroVideoNet extends PornEmbedParser {
 
     private static AtomicReference<String> DELIMITER = new AtomicReference<String>(null);
 

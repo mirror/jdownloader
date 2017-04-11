@@ -30,7 +30,7 @@ import jd.plugins.components.PluginJSonUtils;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "itsjustlinks.com" }, urls = { "http://(www\\.)?itsjustlinks\\.com/link/get/(?i-)[a-f0-9]{13}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "itsjustlinks.com" }, urls = { "http://(www\\.)?itsjustlinks\\.com/link/get/(?i-)[a-f0-9]{13}" }) 
 public class ItJstLnkCm extends antiDDoSForDecrypt {
 
     public ItJstLnkCm(PluginWrapper wrapper) {

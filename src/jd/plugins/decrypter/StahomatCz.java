@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 25510 $", interfaceVersion = 2, names = { "stahomat.cz" }, urls = { "http://(www\\.)?stahomat\\.(cz|sk)/detail/[^<>\"]*" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stahomat.cz" }, urls = { "http://(www\\.)?stahomat\\.(cz|sk)/detail/[^<>\"]*" }) 
 public class StahomatCz extends PluginForDecrypt {
 
     public StahomatCz(PluginWrapper wrapper) {

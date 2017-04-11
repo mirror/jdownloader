@@ -27,7 +27,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "download.seedextreme.com" }, urls = { "" }) public class DownloadSeedExtremeCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.seedextreme.com" }, urls = { "" }) public class DownloadSeedExtremeCom extends PluginForHost {
 
     public DownloadSeedExtremeCom(PluginWrapper wrapper) {
         super(wrapper);

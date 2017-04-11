@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "https?://.*\\.rajce\\.idnes\\.cz/([^/]+/?#.*|[^/]+/?$|[^/]*\\?.+|/?$)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "https?://.*\\.rajce\\.idnes\\.cz/([^/]+/?#.*|[^/]+/?$|[^/]*\\?.+|/?$)" })
 public class DnsCz extends PluginForDecrypt {
     public DnsCz(PluginWrapper wrapper) {
         super(wrapper);

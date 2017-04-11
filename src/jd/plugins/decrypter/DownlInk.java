@@ -51,7 +51,7 @@ import org.jdownloader.scripting.envjs.XHRResponse;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30210 $", interfaceVersion = 3, names = { "downl.ink" }, urls = { "https?://(?:www\\.)?downl\\.ink/(?-i)[a-f0-9]{6}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downl.ink" }, urls = { "https?://(?:www\\.)?downl\\.ink/(?-i)[a-f0-9]{6}" }) 
 @SuppressWarnings("deprecation")
 public class DownlInk extends antiDDoSForDecrypt {
 

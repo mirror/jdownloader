@@ -22,7 +22,7 @@ import jd.plugins.components.NZBSAXHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "nzbclub.com" }, urls = { "https?://[\\w\\.]*nzbclub.com/nzb_view/\\d+" }) public class NzbClubCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzbclub.com" }, urls = { "https?://[\\w\\.]*nzbclub.com/nzb_view/\\d+" }) public class NzbClubCom extends PluginForDecrypt {
 
     @Override
     public Boolean siteTesterDisabled() {

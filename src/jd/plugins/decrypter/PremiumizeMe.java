@@ -26,7 +26,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
-@DecrypterPlugin(revision = "$Revision: 28474 $", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(www\\.)?premiumize\\.me/browsetorrent\\?hash=[a-f0-9]+" }) public class PremiumizeMe extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(www\\.)?premiumize\\.me/browsetorrent\\?hash=[a-f0-9]+" }) public class PremiumizeMe extends PluginForDecrypt {
 
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);

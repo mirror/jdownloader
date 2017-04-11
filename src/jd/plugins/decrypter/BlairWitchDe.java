@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 23101 $", interfaceVersion = 2, names = { "blairwitch.de" }, urls = { "http://(?:www\\.)?blairwitch\\.de/news/[a-z-]+-\\d+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blairwitch.de" }, urls = { "http://(?:www\\.)?blairwitch\\.de/news/[a-z-]+-\\d+/" }) 
 public class BlairWitchDe extends PluginForDecrypt {
     public BlairWitchDe(PluginWrapper wrapper) {
         super(wrapper);

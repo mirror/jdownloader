@@ -22,7 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "news.astraweb.com" }, urls = { "" }) public class NewsAstraWebCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "news.astraweb.com" }, urls = { "" }) public class NewsAstraWebCom extends UseNet {
     public NewsAstraWebCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.news.astraweb.com/signup.html");

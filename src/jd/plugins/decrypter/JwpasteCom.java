@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 31560 $", interfaceVersion = 2, names = { "jwpaste.com" }, urls = { "https?://(?:www\\.)?jwpaste\\.com/v/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jwpaste.com" }, urls = { "https?://(?:www\\.)?jwpaste\\.com/v/\\d+" }) 
 public class JwpasteCom extends PluginForDecrypt {
 
     public JwpasteCom(PluginWrapper wrapper) {

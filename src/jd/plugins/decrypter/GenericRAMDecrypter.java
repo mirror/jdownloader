@@ -10,7 +10,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "ram" }, urls = { "https?://.+/.*\\.ram($|\\?[^\\s<>\"']*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ram" }, urls = { "https?://.+/.*\\.ram($|\\?[^\\s<>\"']*)" })
 public class GenericRAMDecrypter extends PluginForDecrypt {
     @Override
     public Boolean siteTesterDisabled() {

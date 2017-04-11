@@ -35,7 +35,7 @@ import jd.plugins.FilePackage;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 3, names = { "dompl3.info" }, urls = { "http://dompl3\\.info/index\\.php\\?v=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dompl3.info" }, urls = { "http://dompl3\\.info/index\\.php\\?v=\\d+" }) 
 public class Do3Inf extends antiDDoSForDecrypt {
 
     public Do3Inf(PluginWrapper wrapper) {

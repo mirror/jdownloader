@@ -10,7 +10,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "reactor.cc" }, urls = { "https?://([^/]*?)?reactor\\.cc/post/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reactor.cc" }, urls = { "https?://([^/]*?)?reactor\\.cc/post/\\d+" })
 public class ReactorCC extends PluginForDecrypt {
 
     public ReactorCC(PluginWrapper wrapper) {

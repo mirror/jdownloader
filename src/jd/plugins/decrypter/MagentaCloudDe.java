@@ -20,7 +20,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.parser.UrlQuery;
 
-@DecrypterPlugin(revision = "$Revision: 33293 $", interfaceVersion = 3, names = { "magentacloud.de" }, urls = { "https?://(www\\.)?magentacloud\\.de/(share|lnk)/[a-z0-9\\-]+" }) public class MagentaCloudDe extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magentacloud.de" }, urls = { "https?://(www\\.)?magentacloud\\.de/(share|lnk)/[a-z0-9\\-]+" }) public class MagentaCloudDe extends PluginForDecrypt {
 
     public MagentaCloudDe(final PluginWrapper wrapper) {
         super(wrapper);

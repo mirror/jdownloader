@@ -35,7 +35,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
 
     @Override

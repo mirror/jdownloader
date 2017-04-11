@@ -56,7 +56,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 36359 $", interfaceVersion = 3, names = { "drfile.net" }, urls = { "https?://(?:www\\.)?drfile\\.net/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drfile.net" }, urls = { "https?://(?:www\\.)?drfile\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class DrfileNet extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */

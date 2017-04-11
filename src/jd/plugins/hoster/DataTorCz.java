@@ -44,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "datator.cz" }, urls = { "http://(?:www\\.)?datator\\.cz/soubor-ke-stazeni-.*?(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datator.cz" }, urls = { "http://(?:www\\.)?datator\\.cz/soubor-ke-stazeni-.*?(\\d+)\\.html" })
 public class DataTorCz extends PluginForHost {
 
     // devnotes

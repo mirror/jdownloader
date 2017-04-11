@@ -19,7 +19,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenetbucket.com" }, urls = { "" }) public class UsenetBucketCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenetbucket.com" }, urls = { "" }) public class UsenetBucketCom extends UseNet {
     public UsenetBucketCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.usenetbucket.com/de/order/");

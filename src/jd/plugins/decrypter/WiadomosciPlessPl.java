@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 24299 $", interfaceVersion = 2, names = { "wiadomosci.pless.pl" }, urls = { "http://(www\\.)?wiadomosci\\.pless\\.pl/galeria/\\d+/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wiadomosci.pless.pl" }, urls = { "http://(www\\.)?wiadomosci\\.pless\\.pl/galeria/\\d+/\\d+" }) 
 public class WiadomosciPlessPl extends PluginForDecrypt {
 
     public WiadomosciPlessPl(PluginWrapper wrapper) {

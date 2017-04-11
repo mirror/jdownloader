@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?(?:audiocastle\\.(?:net|co|me|is)|audiocastle2\\.biz)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?(?:audiocastle\\.(?:net|co|me|is)|audiocastle2\\.biz)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" })
 public class AudCtlNt extends antiDDoSForDecrypt {
 
     public AudCtlNt(PluginWrapper wrapper) {

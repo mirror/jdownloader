@@ -20,7 +20,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "thundernews.com" }, urls = { "" }) public class ThunderNewsCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thundernews.com" }, urls = { "" }) public class ThunderNewsCom extends UseNet {
     public ThunderNewsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.thundernews.com/signup.php");

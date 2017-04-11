@@ -34,7 +34,7 @@ import org.jdownloader.controlling.PasswordUtils;
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "pastebyte.com" }, urls = { "https?://(?:www\\.)?pastebyte\\.com/pastes/(?-i)[A-Z0-9]{8}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebyte.com" }, urls = { "https?://(?:www\\.)?pastebyte\\.com/pastes/(?-i)[A-Z0-9]{8}" }) 
 public class PasteByteCom extends PluginForDecrypt {
 
     public PasteByteCom(PluginWrapper wrapper) {

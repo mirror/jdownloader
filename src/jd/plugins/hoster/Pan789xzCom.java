@@ -34,7 +34,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 34675 $", interfaceVersion = 3, names = { "pan.789xz.com" }, urls = { "https?://(?:www\\.)?pan\\.789xz\\.com/(?:file|down)\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.789xz.com" }, urls = { "https?://(?:www\\.)?pan\\.789xz\\.com/(?:file|down)\\-\\d+\\.html" })
 public class Pan789xzCom extends PluginForHost {
 
     public Pan789xzCom(PluginWrapper wrapper) {

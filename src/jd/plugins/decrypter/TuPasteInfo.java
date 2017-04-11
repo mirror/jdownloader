@@ -42,7 +42,7 @@ import org.jdownloader.controlling.PasswordUtils;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "tupaste.info" }, urls = { "https?://(?:www\\.)?tupaste\\.info/(\\d+)/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tupaste.info" }, urls = { "https?://(?:www\\.)?tupaste\\.info/(\\d+)/" }) 
 public class TuPasteInfo extends PluginForDecrypt {
 
     public TuPasteInfo(PluginWrapper wrapper) {

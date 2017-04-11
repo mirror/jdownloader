@@ -25,7 +25,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
-@DecrypterPlugin(revision = "$Revision: 33293 $", interfaceVersion = 3, names = { "cloud.1und1.de" }, urls = { "https?://cloud\\.1und1\\.de/ngcloud/external\\?.*?guestToken=[a-zA-Z0-9\\-]{22}(&loginName=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloud.1und1.de" }, urls = { "https?://cloud\\.1und1\\.de/ngcloud/external\\?.*?guestToken=[a-zA-Z0-9\\-]{22}(&loginName=\\d+)?" })
 public class Cloud1und1De extends PluginForDecrypt {
 
     public Cloud1und1De(final PluginWrapper wrapper) {

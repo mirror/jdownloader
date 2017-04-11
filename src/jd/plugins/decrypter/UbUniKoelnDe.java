@@ -14,7 +14,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "ub.uni-koeln.de" }, urls = { "https?://(www.)?ub\\.uni-koeln\\.de/cdm/[a-zA-Z0-9]+/collection/[a-zA-Z0-9\\-_]+/id/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ub.uni-koeln.de" }, urls = { "https?://(www.)?ub\\.uni-koeln\\.de/cdm/[a-zA-Z0-9]+/collection/[a-zA-Z0-9\\-_]+/id/\\d+" })
 public class UbUniKoelnDe extends PluginForDecrypt {
 
     public UbUniKoelnDe(PluginWrapper wrapper) {

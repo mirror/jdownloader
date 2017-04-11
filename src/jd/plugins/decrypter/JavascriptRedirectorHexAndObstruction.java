@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "jerkplanet.org" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jerkplanet.org" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+" })
 public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
 
     public JavascriptRedirectorHexAndObstruction(PluginWrapper wrapper) {

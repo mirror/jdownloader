@@ -13,7 +13,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 21898 $", interfaceVersion = 2, names = { "torx.pw", "premium.torx.pw" }, urls = { "https?://(www\\.)?torx\\.pw/\\?download=[a-zA-Z0-9]+", "https?://premium\\.torx\\.pw/\\?(file=[a-zA-Z0-9\\=]+&x=[a-zA-Z0-9\\=]+&username=.*?&password=.+|username=.*?&password=.+&download=[a-zA-Z0-9\\=]+)" }) public class TorXPW extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "torx.pw", "premium.torx.pw" }, urls = { "https?://(www\\.)?torx\\.pw/\\?download=[a-zA-Z0-9]+", "https?://premium\\.torx\\.pw/\\?(file=[a-zA-Z0-9\\=]+&x=[a-zA-Z0-9\\=]+&username=.*?&password=.+|username=.*?&password=.+&download=[a-zA-Z0-9\\=]+)" }) public class TorXPW extends antiDDoSForDecrypt {
 
     public TorXPW(PluginWrapper wrapper) {
         super(wrapper);

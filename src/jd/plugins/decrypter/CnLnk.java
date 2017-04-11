@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32927 $", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?coinlink\\.co/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?coinlink\\.co/[A-Za-z0-9]+" })
 public class CnLnk extends antiDDoSForDecrypt {
 
     public CnLnk(PluginWrapper wrapper) {

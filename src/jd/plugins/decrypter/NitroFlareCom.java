@@ -35,7 +35,7 @@ import jd.plugins.components.PluginJSonUtils;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/folder/(\\d+)/([A-Za-z0-9=]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/folder/(\\d+)/([A-Za-z0-9=]+)" })
 public class NitroFlareCom extends antiDDoSForDecrypt {
 
     public NitroFlareCom(PluginWrapper wrapper) {

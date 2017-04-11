@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 22355 $", interfaceVersion = 2, names = { "prialepaste.com", "anonymizer.link" }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})", "https?://[\\w\\.]*anonymizer\\.link/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prialepaste.com", "anonymizer.link" }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})", "https?://[\\w\\.]*anonymizer\\.link/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" }) 
 public class PrlPstCm extends PluginForDecrypt {
 
     public PrlPstCm(PluginWrapper wrapper) {

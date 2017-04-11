@@ -44,7 +44,7 @@ import org.appwork.utils.StringUtils;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 28806 $", interfaceVersion = 3, names = { "jdlog" }, urls = { "jdlog://(\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jdlog" }, urls = { "jdlog://(\\d+)" }) 
 public class JdLog extends PluginForHost {
 
     private String  dllink     = null;

@@ -56,7 +56,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision: 34811 $", interfaceVersion = 3, names = { "ausfile.com" }, urls = { "https?://(?:www\\.)?ausfile\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ausfile.com" }, urls = { "https?://(?:www\\.)?ausfile\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class AusfileCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
