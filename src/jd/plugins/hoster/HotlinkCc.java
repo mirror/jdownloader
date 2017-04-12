@@ -112,7 +112,6 @@ public class HotlinkCc extends PluginForHost {
 
     /* Supported linktypes */
     private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
     /* Texts displayed to the user in some errorcases */
     private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
@@ -921,10 +920,6 @@ public class HotlinkCc extends PluginForHost {
         if (correctBr) {
             correctBR();
         }
-    }
-
-    private void postPage(final String page, final String postdata) throws Exception {
-        postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
