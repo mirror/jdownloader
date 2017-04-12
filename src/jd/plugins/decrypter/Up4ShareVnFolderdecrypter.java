@@ -20,7 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -39,8 +41,8 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.setConnectTimeout(2 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -51,24 +53,55 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
         }
         final String fpName = br.getRegex("<b>Thư mục:\\s*(.*?)\\s*</b>").getMatch(0);
         final String[] filter = br.getRegex("<tr>\\s*<td>.*?</td></tr>").getColumn(-1);
+
+        final CrawledLink source = getCurrentLink().getSourceLink();
+        final String subfolder;
+        if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
+            final DownloadLink downloadLink = source.getDownloadLink();
+            subfolder = downloadLink.getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+        } else {
+            subfolder = null;
+        }
         if (filter != null && filter.length > 0) {
             for (final String f : filter) {
+                String folder_path = null;
                 final String url = new Regex(f, "('|\")((?:https?://(?:up\\.)?4share\\.vn)?/(?:d/[a-f0-9]{16}|f/[a-f0-9]{16}/.*?))\\1").getMatch(1);
                 if (url == null) {
                     continue;
                 }
-                String name = new Regex(f, ">\\s*([^<]+)\\s*</a>").getMatch(0);
-                if (name == null) {
-                    name = url.substring(url.lastIndexOf("/") + 1);
+                String item_name = new Regex(f, ">\\s*([^<]+)\\s*</a>").getMatch(0);
+                if (item_name != null) {
+                    item_name = Encoding.htmlDecode(item_name).trim();
                 }
                 final String size = new Regex(f, ">\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*<").getMatch(0);
                 final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
-                if (name != null) {
-                    dl.setName(name.trim());
+                if (url.contains("f/")) {
+                    final String temp_filename;
+                    if (item_name != null) {
+                        temp_filename = item_name;
+                    } else {
+                        temp_filename = url.substring(url.lastIndexOf("/") + 1);
+                    }
+                    dl.setName(temp_filename);
+                    if (size != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(size));
+                    }
                     dl.setAvailableStatus(AvailableStatus.TRUE);
+
+                    if (subfolder != null) {
+                        folder_path = subfolder;
+                    }
+                } else {
+                    if (item_name != null) {
+                        if (subfolder != null) {
+                            folder_path = subfolder + "/" + item_name;
+                        } else {
+                            folder_path = "/" + item_name;
+                        }
+                    }
                 }
-                if (size != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(size));
+                if (folder_path != null) {
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
                 }
                 decryptedLinks.add(dl);
             }

@@ -60,7 +60,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final RtbfBeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface.class);
         final String parameter = param.toString();
-        final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
+        final String id_url = new Regex(parameter, "(\\d+)$").getMatch(0);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String decryptedhost = "http://" + this.getHost() + "decrypted/";
         String date_formatted = null;
@@ -72,6 +72,15 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        String video_id = this.br.getRegex("/embed/media\\?id=(\\d+)").getMatch(0);
+        if (video_id == null) {
+            /*
+             * Fallback - that is a bad fallback as this must not be the ID we're looking for but it could sometimes work fine as a
+             * fallback!
+             */
+            video_id = id_url;
+        }
+
         String title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
         if (title == null) {
             /* Fallback 1 - title with date --> Grab title without date */
@@ -83,7 +92,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (uploadDate != null) {
             date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         }
-        br.getPage("embed/media?id=" + fid + "&autoplay=1");
+        br.getPage("/auvio/embed/media?id=" + video_id + "&autoplay=1");
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -109,7 +118,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         }
         if (title == null || title.equalsIgnoreCase("")) {
             /* Fallback */
-            title = fid;
+            title = video_id;
         }
         title = Encoding.htmlDecode(title).trim();
         title = "rtbf_" + title;
@@ -185,7 +194,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(height));
                 dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String filename = String.format(format_filename, title, protocol, height);
-                final String linkid = String.format(linkid_format, fid, protocol, height_for_quality_selection);
+                final String linkid = String.format(linkid_format, video_id, protocol, height_for_quality_selection);
 
                 setDownloadlinkProperties(dl, parameter, date_formatted, filename, linkid, finallink);
                 all_found_downloadlinks.put("http_mp4_" + height_for_quality_selection, dl);
@@ -203,7 +212,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             for (final HlsContainer hlscontainer : allHlsContainers) {
                 final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
                 final String finallink = hlscontainer.getDownloadurl();
-                final String linkid = String.format(linkid_format, fid, protocol, height_for_quality_selection);
+                final String linkid = String.format(linkid_format, video_id, protocol, height_for_quality_selection);
                 final String filename = String.format(format_filename, title, protocol, Integer.toString(hlscontainer.getHeight()));
                 dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 if (hlscontainer.getBandwidth() > highestHlsBandwidth) {

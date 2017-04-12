@@ -26,12 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +54,12 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -102,6 +102,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
 
     private static final String VKPHOTO_CORRECT_FINAL_LINKS                     = "VKPHOTO_CORRECT_FINAL_LINKS";
+    public static final String  VKWALL_USE_API                                  = "VKWALL_USE_API";
     public static final String  VKADVANCED_USER_AGENT                           = "VKADVANCED_USER_AGENT";
 
     /* html patterns */
@@ -299,7 +300,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -1239,6 +1240,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKDOCS_USEIDASPACKAGENAME                       = false;
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                     = false;
+    public static final boolean  default_VKWALL_USE_API                                  = true;
     public static final String   default_user_agent                                      = UserAgents.stringUserAgent(BrowserName.Firefox);
     public static final long     defaultSLEEP_PAGINATION_GENERAL                         = 1000;
     public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO           = 1000;
@@ -1296,6 +1298,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationCommunityVideos", "Define sleep time for community videos pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
