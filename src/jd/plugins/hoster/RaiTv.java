@@ -59,6 +59,10 @@ public class RaiTv extends PluginForHost {
         return br;
     }
 
+    /*
+     * Example for json for single video:
+     * http://www.raiplay.it/video/2017/04/Il-tempo-e-la-Storia---Athanasius-Kircher-090ef888-7dea-4f8b-b5fb-a985dae7a07f.html?json
+     */
     /** THX: https://github.com/nightflyer73/plugin.video.raitv/tree/master/resources/lib */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override

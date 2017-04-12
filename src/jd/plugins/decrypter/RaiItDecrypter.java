@@ -36,24 +36,25 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
 public class RaiItDecrypter extends PluginForDecrypt {
 
     public RaiItDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_DAY         = ".+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
-    private static final String     TYPE_CONTENTITEM = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
+    private static final String     TYPE_DAY               = ".+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
+    private static final String     TYPE_RAIPLAY_PROGRAMMI = ".+raiplay\\.it/programmi/.+";
+    private static final String     TYPE_RAIPLAY_IT        = "https?://.+raiplay\\.it/.+";
+    private static final String     TYPE_CONTENTITEM       = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
 
-    private static final String     TYPE_RAIPLAY_IT  = "https?://.+raiplay\\.it/.+";
-
-    private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
-    private String                  parameter        = null;
+    private ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
+    private String                  parameter              = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setFollowRedirects(true);
@@ -62,6 +63,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
 
         if (parameter.matches(TYPE_DAY)) {
             decryptWholeDay();
+        } else if (parameter.matches(TYPE_RAIPLAY_PROGRAMMI)) {
+            decryptProgrammi();
         } else {
             decryptSingleVideo();
         }
@@ -169,10 +172,31 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     } else {
                         url_for_user = "http://www.rai.it" + webLink;
                     }
-                    final DownloadLink dl = this.createDownloadlink(url_for_user);
-                    decryptedLinks.add(dl);
+                    decryptedLinks.add(this.createDownloadlink(url_for_user));
                 }
             }
+        }
+    }
+
+    private void decryptProgrammi() throws Exception {
+        final String programm_type = new Regex(this.parameter, "/programmi/([^/]+)/").getMatch(0);
+        this.br.getPage(String.format("http://www.raiplay.it/raiplay/programmi/%s/?json", programm_type));
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String url_api_overview = (String) JavaScriptEngineFactory.walkJson(entries, "Blocks/{0}/Sets/{0}/url");
+        if (StringUtils.isEmpty(url_api_overview)) {
+            throw new DecrypterException("Plugin broken");
+        }
+        br.getPage(url_api_overview);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("items");
+        for (final Object videoo : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) videoo;
+            String url = (String) entries.get("pathID");
+            if (StringUtils.isEmpty(url)) {
+                continue;
+            }
+            url = "http://www." + this.br.getHost() + url.replace("?json", "");
+            decryptedLinks.add(this.createDownloadlink(url));
         }
     }
 
