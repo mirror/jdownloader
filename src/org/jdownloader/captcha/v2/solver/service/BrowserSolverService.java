@@ -199,7 +199,7 @@ public class BrowserSolverService extends AbstractSolverService {
         // ret.put(DialogBasicCaptchaSolver.ID, 0);
         // ret.put(CaptchaAPISolver.ID, 0);
         ret.put(JacSolverService.ID, 30000);
-        ret.put(NineKwSolverService.ID, 120000);
+        ret.put(NineKwSolverService.ID, 300000);
         ret.put(CaptchaMyJDSolverService.ID, 60000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
