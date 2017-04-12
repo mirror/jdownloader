@@ -77,6 +77,11 @@ public class SunexenusCom extends antiDDoSForHost {
             long wait = Long.parseLong(r.getMatch(0)) * 60 + Long.parseLong(r.getMatch(1));
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (wait + 5) * 1000l);
         }
+        r = br.getRegex("You have to wait (\\d+) seconds till");
+        if (r.getMatch(0) != null) {
+            long wait = Long.parseLong(r.getMatch(1));
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (wait + 5) * 1000l);
+        }
         final String waittime = br.getRegex("<span class=\"seconds\">(\\d+)<").getMatch(0);
         final long t = System.currentTimeMillis();
         final Form start = br.getFormbyProperty("name", "F1");
