@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ally.sh" }, urls = { "https?://(?:www\\.)?(?:al\\.ly|ally\\.sh)/[A-Za-z0-9]+" })
 public class AllySh extends PluginForDecrypt {
@@ -58,17 +58,21 @@ public class AllySh extends PluginForDecrypt {
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         br.submitForm(continueform);
-        final String finallink = br.getRedirectLocation();
+        String finallink = br.getRedirectLocation();
         if (finallink == null) {
+            finallink = br.getRegex("attr\\(\"href\",\"(https?://.*?)\"").getMatch(0);
+        }
+        if (finallink != null) {
+            final String url_within_url = new Regex(finallink, "(https?://.*?)https?").getMatch(0);
+            if (url_within_url != null) {
+                logger.info("Found url within url --> Using this as final url");
+                decryptedLinks.add(createDownloadlink(url_within_url));
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
+        } else {
             return null;
         }
-        final String url_within_url = new Regex(finallink, "(https?://.*?)https?").getMatch(0);
-        if (url_within_url != null) {
-            logger.info("Found url within url --> Using this as final url");
-            decryptedLinks.add(createDownloadlink(url_within_url));
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
     }
 
 }

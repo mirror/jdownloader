@@ -809,10 +809,13 @@ public class Keep2ShareCc extends K2SApi {
                     if (!isValidDownloadConnection(dl.getConnection())) {
                         dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                         br.followConnection();
-                        if (br.containsHTML("Download of file will start in")) {
-                            dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
-                        } else {
-                            dllink = null;
+                        dllink = getDllinkPremium();
+                        if (dllink == null) {
+                            if (br.containsHTML("Download of file will start in")) {
+                                dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
+                            } else {
+                                dllink = null;
+                            }
                         }
                         if (dllink == null) {
                             logger.warning("The final dllink seems not to be a file!");
