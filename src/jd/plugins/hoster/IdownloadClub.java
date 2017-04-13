@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -31,19 +33,18 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idownload.club" }, urls = { "http://(?:www\\.)?idownload\\.club/members/ext/get_file\\.php\\?file=.+" })
-public class IdownloadClub extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idownload.club" }, urls = { "https?://(?:www\\.)?idownload\\.club/members/ext/get_file\\.php\\?file=.+" })
+public class IdownloadClub extends antiDDoSForHost {
 
     public IdownloadClub(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://idownload.club/");
+        this.enablePremium("https://www.idownload.club/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://idownload.club/terms-of-service.html";
+        return "https://www.idownload.club/terms-of-service.html";
     }
 
     /* Connection stuff */
@@ -81,7 +82,7 @@ public class IdownloadClub extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(dllink);
+            con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
             if (!con.getContentType().contains("html")) {
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setDownloadSize(con.getLongContentLength());
@@ -128,8 +129,8 @@ public class IdownloadClub extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://" + getHost());
-                br.postPage("/members//index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
+                getPage("https://" + getHost());
+                postPage("/members//index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
                 final String txtPassword_hashed = this.br.getRegex("txtPassword=\"\\+encodeURIComponent\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
                 if (this.br.getCookie(this.getHost(), "PHPSESSID") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -138,7 +139,7 @@ public class IdownloadClub extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage("/members/ext/index.php?page=VIDEO");
+                getPage("/members/ext/index.php?page=VIDEO");
                 if (!this.br.containsHTML("\\?logout=logout")) {
                     /* Double-check */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -173,13 +174,13 @@ public class IdownloadClub extends PluginForHost {
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Free Account");
         } else {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setValidUntil(expireIn);
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
