@@ -594,14 +594,18 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         if (response == null || response.length() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String infos[] = Regex.getLines(response);
-        HashMap<String, String> ret = new HashMap<String, String>();
-        for (String info : infos) {
-            String data[] = info.split(separator);
+        final String infos[] = Regex.getLines(response);
+        final HashMap<String, String> ret = new HashMap<String, String>();
+        for (final String info : infos) {
+            final String data[] = new Regex(info, "(.*?)" + Pattern.quote(separator) + "(.*)").getRow(0);
             if (data.length == 1) {
                 ret.put(data[0].trim(), null);
             } else if (data.length == 2) {
-                ret.put(data[0].trim(), data[1].trim());
+                if (StringUtils.isEmpty(data[1])) {
+                    ret.put(data[0].trim(), null);
+                } else {
+                    ret.put(data[0].trim(), data[1].trim());
+                }
             } else {
                 logger.warning("GetInfos failed, browser content:\n");
                 logger.warning(br.toString());
