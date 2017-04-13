@@ -484,7 +484,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
         addReplacer(new PackagizerReplacer() {
 
-            private final Pattern pat = Pattern.compile("<orgfilenamewithoutext/?>");
+            private final Pattern pat = Pattern.compile("<jd:orgfilenamewithoutext/?>");
 
             public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 final String name = new Regex(link.getName(), "(.+)\\.[0-9a-zA-Z]+$").getMatch(0);

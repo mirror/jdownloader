@@ -653,7 +653,7 @@ public class AbstractFFmpegBinary {
     }
 
     public boolean requiresAdtstoAsc(final String format) {
-        return ("mp4".equalsIgnoreCase(format) || "m4v".equalsIgnoreCase(format) || "m4a".equalsIgnoreCase(format) || "mov".equalsIgnoreCase(format) || "flv".equalsIgnoreCase(format));
+        return ("ipod".equalsIgnoreCase(format) || "mp4".equalsIgnoreCase(format) || "m4v".equalsIgnoreCase(format) || "m4a".equalsIgnoreCase(format) || "mov".equalsIgnoreCase(format) || "flv".equalsIgnoreCase(format));
     }
 
     public String getDefaultFormatByFileName(final String fileName) {
