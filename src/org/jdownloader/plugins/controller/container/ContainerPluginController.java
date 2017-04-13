@@ -150,6 +150,6 @@ public class ContainerPluginController {
             }
         }
         sb.append(")$");
-        return Pattern.compile(sb.toString());
+        return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE);
     }
 }
