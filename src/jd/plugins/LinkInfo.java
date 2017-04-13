@@ -82,7 +82,7 @@ public class LinkInfo {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            final String ID = fileNameExtension + "_" + num;
+            final String ID = fileNameExtension + "_" + num + "_" + mimeHint;
             synchronized (CACHE) {
                 LinkInfo ret = null;
                 WeakReference<LinkInfo> linkInfo = CACHE.get(ID);
