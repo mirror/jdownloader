@@ -28,10 +28,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -41,6 +37,10 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property {
 
@@ -337,7 +337,10 @@ public class AccountInfo extends Property {
                 for (final String host : multiHostSupportList) {
                     final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
                     mapping.put(host, cleanup);
-                    if (cleanup.matches("http|https|file|up|upload|video|torrent|ftp")) {
+                    if ("".equals(cleanup)) {
+                        // blank entry will match every plugin! -raztoki20170315
+                        continue;
+                    } else if (cleanup.matches("http|https|file|up|upload|video|torrent|ftp")) {
                         // we need to ignore/blacklist common phrases, else too many false positives
                         continue;
                     } else if ("usenet".equals(cleanup)) {
