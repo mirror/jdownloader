@@ -298,7 +298,7 @@ public class PluginJSonUtils {
         if (new Regex(source, "^\\s*\\[\\s*\\{.+$").matches()) {
             result = new Regex(source, "\\s*(?:\\[|,)\\s*(\\{.*?\\})\\s*").getColumn(0);
         } else {
-            result = new Regex(source, "\\s*(?:\\[|,)\\s*\"([^\"]+)\"\\s*").getColumn(0);
+            result = new Regex(source, "\\s*(?:\\[|,)\\s*\"([^\"]*)\"\\s*").getColumn(0);
         }
         if (result != null) {
             // some rudimentary detection if we have break'd at the wrong place.
@@ -311,7 +311,7 @@ public class PluginJSonUtils {
 
     /**
      * Wrapper<br/>
-     * Tries to gather nested \"key\":{.*?} from default Browser
+     * Tries to gather nested \"key\":{.*?} from specified Browser
      *
      * @author raztoki
      * @param key
