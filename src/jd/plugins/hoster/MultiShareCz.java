@@ -18,7 +18,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,11 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" })
 public class MultiShareCz extends antiDDoSForHost {
 
     public MultiShareCz(PluginWrapper wrapper) {
@@ -109,13 +110,8 @@ public class MultiShareCz extends antiDDoSForHost {
         if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
             try {
                 getPage("https://www.multishare.cz/api/?sub=supported-hosters");
-                final String hostsText = br.getRegex("\\{\"server\":\\[(.*?)\\]").getMatch(0);
-                String[] hosts = hostsText.split(",");
-                ArrayList<String> supportedHosts = new ArrayList<String>();
-                for (String host : hosts) {
-                    host = host.replace("\"", "");
-                    supportedHosts.add(host);
-                }
+                final String[] hosts = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "server"));
+                final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */
