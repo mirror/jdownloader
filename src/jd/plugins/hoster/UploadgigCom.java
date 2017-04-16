@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -113,6 +113,10 @@ public class UploadgigCom extends antiDDoSForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            // premium only content
+            if (br.containsHTML(">This file can be downloaded by Premium Member only\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             String csrf_tester = br.getCookie(this.getHost(), "firewall");
             if (csrf_tester == null) {
                 csrf_tester = br.getRegex("name=\"csrf_tester\"\\s*?value=\"([^<>\"]+)\"").getMatch(0);
@@ -129,7 +133,7 @@ public class UploadgigCom extends antiDDoSForHost {
             postPage("/file/free_dl", postData);
             errorhandlingFree();
             if (this.br.getHttpConnection().getResponseCode() == 403) {
-                /* Usually only happpens with wrong POST values */
+                /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
             String urlj = br.getRegex("\"(url[^\"]*)\"").getMatch(0);
@@ -251,17 +255,12 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         this.br.getPage("/user/my_account");
         final Regex trafficregex = this.br.getRegex("<dt>Daily traffic usage</dt>\\s*<dd>(\\d+)/(\\d+) MB");
         final String traffic_used_str = trafficregex.getMatch(0);
         final String traffic_max_str = trafficregex.getMatch(1);
-        String expire = br.getRegex("Package expire date:</dt>[\t\n\r ]*?<dd>(\\d{4}/\\d{2}/\\d{2})").getMatch(0);
+        String expire = br.getRegex("Package expire date:</dt>\\s*<dd>(\\d{4}/\\d{2}/\\d{2})").getMatch(0);
         if (expire == null) {
             expire = br.getRegex(">(\\d{4}/\\d{2}/\\d{2})<").getMatch(0);
         }
@@ -270,12 +269,13 @@ public class UploadgigCom extends antiDDoSForHost {
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
         }
         if (traffic_used_str != null && traffic_max_str != null) {
             final long traffic_used = SizeFormatter.getSize(traffic_used_str + "MB");
