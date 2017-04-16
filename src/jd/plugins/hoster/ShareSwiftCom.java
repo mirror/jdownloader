@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://(www\\.)?6i96j4r5ffdjho45u2ddkuiqsdftjpj8\\.com/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://(www\\.)?6i96j4r5ffdjho45u2ddkuiqsdftjpj8\\.com/[a-z0-9]{12}" })
 public class ShareSwiftCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -97,6 +97,7 @@ public class ShareSwiftCom extends PluginForHost {
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
+        link.setContentUrl(link.getDownloadURL());
     }
 
     @Override
