@@ -21,12 +21,13 @@ import java.util.HashMap;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.SexixNetConfig;
+import org.jdownloader.plugins.components.config.PietsmietDeConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,17 +35,24 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexix.net" }, urls = { "https?://(?:www\\.)?sexix\\.net/video\\d+[a-z0-9\\-_]+/" })
-public class SexixNet extends antiDDoSForDecrypt {
+/**
+ *
+ * @author raztoki
+ * @author TheCrap
+ *
+ */
+@DecrypterPlugin(revision = "$Revision: 36548 $", interfaceVersion = 3, names = { "pietsmiet.de" }, urls = { "https?://(?:www\\.)?pietsmiet\\.de/gallery/(?:playlists|categories)(?:/\\d+[a-z0-9\\-_]+){2}" })
+public class PietSmietDe extends antiDDoSForDecrypt {
 
-    public SexixNet(PluginWrapper wrapper) {
+    public PietSmietDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return SexixNetConfig.class;
+        return PietsmietDeConfig.class;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -52,11 +60,11 @@ public class SexixNet extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/video")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final SexixNetConfig pluginConfig = PluginJsonConfig.get(SexixNetConfig.class);
+        final PietsmietDeConfig pluginConfig = PluginJsonConfig.get(PietsmietDeConfig.class);
         final boolean grabBEST = pluginConfig.isGrabBestVideoVersionEnabled();
         final boolean grab1080p = pluginConfig.isGrab1080pVideoEnabled();
         final boolean grab720p = pluginConfig.isGrab720pVideoEnabled();
@@ -64,37 +72,28 @@ public class SexixNet extends antiDDoSForDecrypt {
         final boolean grab360p = pluginConfig.isGrab360pVideoEnabled();
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
 
-        String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
-        String embedurl = br.getRegex("(/v\\.php\\?u=[^<>\"\\']+)").getMatch(0);
-        if (embedurl == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-        }
-        getPage(embedurl);
-        embedurl = br.getRegex("(/[^/]+/playlist\\.php\\?u=[^<>\"\\']+)").getMatch(0);
-        if (embedurl == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-        }
-        getPage(embedurl);
-        /* Content is usually hosted on googlevideo (Google drive) */
-        final String[] xmls = br.getRegex("<jwplayer:source file=[^>]+>").getColumn(-1);
-        if (xmls == null || xmls.length == 0) {
+        String fpName = br.getRegex("<title>(.*?)\\s*-\\s*PietSmiet\\s*-\\s*Videos, News und Spiele</title>").getMatch(0);
+        final String player = br.getRegex("jwplayer\\(\"media-jwplayer-\\d+\"\\)\\.setup\\(\\{(.*?)\\}\\);").getMatch(0);
+        if (player == null || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
-        for (final String xml : xmls) {
-            final String directurl = new Regex(xml, "file=\"(http[^\"<>]+)").getMatch(0);
-            final String quality = new Regex(xml, "\"(\\d+p)\"").getMatch(0);
+        fpName = Encoding.htmlOnlyDecode(fpName).trim();
+        final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(player, "sources"));
+        for (final String source : sources) {
+            // for file they 'file'
+            final String directurl = PluginJSonUtils.getJson(source, "file");
+            // for label they do not use quotation mark it, then we have to use regex =[
+            final String quality = new Regex(source, "label:\\s*'(.*?)'").getMatch(0);
             if (directurl == null || quality == null) {
                 continue;
             }
-            final DownloadLink dl = createDownloadlink(directurl);
+            final DownloadLink dl = createDownloadlink(Request.getLocation(directurl, br.getRequest()));
             dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-            final String videoID = new Regex(parameter, "/(video\\d+)").getMatch(0);
-            if (videoID != null) {
-                dl.setName(videoID + "_" + quality + ".mp4");
-            }
+            dl.setFinalFileName(fpName + "_" + quality + ".mp4");
             qualities.put(quality, dl);
         }
+
         if ((decryptedLinks.isEmpty() || !grabBEST) && grab1080p && qualities.containsKey("1080p")) {
             decryptedLinks.add(qualities.get("1080p"));
         }
@@ -110,7 +109,7 @@ public class SexixNet extends antiDDoSForDecrypt {
 
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName));
             fp.addLinks(decryptedLinks);
         }
 
