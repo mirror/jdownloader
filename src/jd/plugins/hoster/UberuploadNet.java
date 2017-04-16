@@ -22,6 +22,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,11 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uberupload.net" }, urls = { "https?://(?:www\\.)?uberupload\\.net/[A-Za-z0-9]+" })
 public class UberuploadNet extends PluginForHost {
@@ -94,7 +94,7 @@ public class UberuploadNet extends PluginForHost {
     private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = ".*?e=You\\+must\\+wait\\+.*?";
     /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
     /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String            url_ERROR_PREMIUMONLY                        = "(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+)";
+    private static final String            url_ERROR_PREMIUMONLY                        = "(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+|.+\\?e=You\\+must\\+be\\+a\\+paid\\+user\\+to\\+download\\+this)";
     /* Texts for the known errors */
     private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
     private static final String            errortext_ERROR_SERVER                       = "Server error";
@@ -500,7 +500,7 @@ public class UberuploadNet extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
