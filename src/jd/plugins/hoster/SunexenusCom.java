@@ -42,7 +42,7 @@ public class SunexenusCom extends antiDDoSForHost {
 
     public SunexenusCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(null);
+        // this.enablePremium(null);
     }
 
     @Override
