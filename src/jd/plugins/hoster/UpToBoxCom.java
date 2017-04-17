@@ -28,20 +28,24 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,11 +55,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" })
 public class UpToBoxCom extends antiDDoSForHost {
@@ -77,20 +76,19 @@ public class UpToBoxCom extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final int     FREE_MAXDOWNLOADS            = 5;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 5;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 5;
 
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
 
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
@@ -231,10 +229,10 @@ public class UpToBoxCom extends antiDDoSForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         ipBlock();
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        doFree(downloadLink, null, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -383,13 +381,17 @@ public class UpToBoxCom extends antiDDoSForHost {
             downloadLink.setProperty("pass", passCode);
         }
         try {
-            // add a download slot
-            controlFree(+1);
+            if (account == null) {
+                // add a download slot
+                controlFree(+1);
+            }
             // start the dl
             dl.startDownload();
         } finally {
-            // remove download slot
-            controlFree(-1);
+            if (account == null) {
+                // remove download slot
+                controlFree(-1);
+            }
         }
     }
 
@@ -674,13 +676,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
             ai.setUsedSpace(space[0][0] + " " + space[0][1]);
@@ -699,16 +695,11 @@ public class UpToBoxCom extends antiDDoSForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("nopremium")) {
+        if (AccountType.FREE == account.getType()) {
             ai.setStatus("Free Account");
-            try {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            // free accounts can still have captcha.
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
         } else {
             // alternative xfileshare expire time, usually shown on 'extend
             // premium account' page
@@ -728,15 +719,10 @@ public class UpToBoxCom extends antiDDoSForHost {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, format, Locale.ENGLISH) + (extraDay ? (24 * 60 * 60 * 1000l) : 0));
-                try {
-                    maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                }
             }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, format, Locale.ENGLISH) + (extraDay ? (24 * 60 * 60 * 1000l) : 0));
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
         return ai;
@@ -769,23 +755,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 getPage("https://login.uptobox.com/");
                 ipBlock();
-                // Form loginform = br.getForm(0);
-                // Form loginform = br.getFormbyProperty("name", "FL");
-                // if (loginform == null) {
-                // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!",
-                // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!",
-                // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // } else {
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!",
-                // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // }
-                // }
-                // loginform.put("login", Encoding.urlEncode(account.getUser()));
-                // loginform.put("password", Encoding.urlEncode(account.getPass()));
-                // loginform.setAction("http://login.uptobox.com/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "*/*");
                 br.setCookie("login.uptobox.com", "lang", "english");
@@ -801,19 +770,13 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, "class=\"premium_time\"").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                    account.setType(AccountType.PREMIUM);
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(COOKIE_HOST));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -830,12 +793,13 @@ public class UpToBoxCom extends antiDDoSForHost {
         String passCode = null;
         requestFileInformation(link);
         ipBlock();
+        br = new Browser();
         login(account, false);
         br.setFollowRedirects(false);
         String dllink = null;
-        if (account.getBooleanProperty("nopremium")) {
+        if (AccountType.FREE == account.getType()) {
             getPage(link.getDownloadURL());
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+            doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -884,12 +848,6 @@ public class UpToBoxCom extends antiDDoSForHost {
             link.setProperty("premlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
