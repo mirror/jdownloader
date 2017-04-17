@@ -337,7 +337,7 @@ public class AccountInfo extends Property {
                 for (final String host : multiHostSupportList) {
                     final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
                     mapping.put(host, cleanup);
-                    if ("".equals(cleanup)) {
+                    if (StringUtils.isEmpty(cleanup)) {
                         // blank entry will match every plugin! -raztoki20170315
                         continue;
                     } else if (cleanup.matches("http|https|file|up|upload|video|torrent|ftp")) {
