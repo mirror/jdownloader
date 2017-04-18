@@ -598,18 +598,20 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         final HashMap<String, String> ret = new HashMap<String, String>();
         for (final String info : infos) {
             final String data[] = new Regex(info, "(.*?)" + Pattern.quote(separator) + "(.*)").getRow(0);
-            if (data.length == 1) {
-                ret.put(data[0].trim(), null);
-            } else if (data.length == 2) {
-                if (StringUtils.isEmpty(data[1])) {
+            if (data != null) {
+                if (data.length == 1) {
                     ret.put(data[0].trim(), null);
+                } else if (data.length == 2) {
+                    if (StringUtils.isEmpty(data[1])) {
+                        ret.put(data[0].trim(), null);
+                    } else {
+                        ret.put(data[0].trim(), data[1].trim());
+                    }
                 } else {
-                    ret.put(data[0].trim(), data[1].trim());
+                    logger.warning("GetInfos failed, browser content:\n");
+                    logger.warning(br.toString());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                logger.warning("GetInfos failed, browser content:\n");
-                logger.warning(br.toString());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return ret;
@@ -1059,6 +1061,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         page = apiGetPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     } finally {
                         br.setFollowRedirects(follow);
+                    }
+                    if (StringUtils.contains(page, "** INVALID USER DATA **")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     infos = getInfos(page, "=");
                     ACCOUNTINFOS.put(account, infos);
