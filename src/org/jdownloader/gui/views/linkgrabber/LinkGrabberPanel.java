@@ -114,7 +114,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     @Override
                     protected void runInEDT() {
                         try {
-                            switch (CFG_GUI.CFG.getNewLinksAction()) {
+                            switch (CFG_GUI.CFG.getNewLinksActionV2()) {
                             case SWITCH:
                                 JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
                                 break;
@@ -139,7 +139,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public boolean isThisListenerEnabled() {
-                return CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
+                return CFG_GUI.CFG.getNewLinksActionV2() != NewLinksInLinkgrabberAction.NOTHING;
             }
 
             @Override

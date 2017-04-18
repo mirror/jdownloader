@@ -694,9 +694,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("SWITCH")
-    NewLinksInLinkgrabberAction getNewLinksAction();
+    NewLinksInLinkgrabberAction getNewLinksActionV2();
 
-    void setNewLinksAction(NewLinksInLinkgrabberAction action);
+    void setNewLinksActionV2(NewLinksInLinkgrabberAction action);
 
     @AboutConfig
     @DescriptionForConfigEntry("JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. \r\nIf disabled, you will get focus problems")

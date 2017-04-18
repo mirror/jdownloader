@@ -30,8 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Hash;
+import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
@@ -87,10 +89,20 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 link.setProperty("Referer", referer);
                 link.setProperty("cookies", cookiesString);
                 String fileName = null;
-                if (urlName == null) {
-                    fileName = "Unknown";
+                final ExtensionsFilterInterface fileType;
+                if (container.getId() != null) {
+                    fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(container.getId()));
                 } else {
-                    fileName = urlName.replaceAll("\\.f4m", "");
+                    fileType = null;
+                }
+                if (fileType != null) {
+                    fileName = container.getId();
+                } else {
+                    if (!isValidURLName(urlName)) {
+                        fileName = "Unknown";
+                    } else {
+                        fileName = urlName.replaceAll("\\.f4m", "");
+                    }
                 }
                 if (container.getHeight() != -1 && container.getWidth() != -1) {
                     fileName += "_" + container.getWidth() + "x" + container.getHeight();
@@ -98,21 +110,29 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 if (container.getBitrate() != -1) {
                     fileName += "_br" + container.getBitrate();
                 }
-                link.setFinalFileName(fileName + ".mp4");
+                if (fileType == null) {
+                    link.setFinalFileName(fileName + ".mp4");
+                } else {
+                    link.setFinalFileName(fileName);
+                }
                 link.setAvailable(true);
                 if (container.getEstimatedFileSize() > 0) {
                     link.setDownloadSize(container.getEstimatedFileSize());
                 }
-                link.setLinkID("f4m://" + br.getHost() + "/" + Hash.getMD5(fileName));
+                link.setLinkID("f4m://" + br.getHost() + "/" + container.getInternalID());
                 container.write(link, null);
                 ret.add(link);
             }
-            if (ret.size() > 1) {
+            if (ret.size() > 1 && isValidURLName(urlName)) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(urlName);
                 fp.addLinks(ret);
             }
         }
         return ret;
+    }
+
+    private final boolean isValidURLName(final String urlName) {
+        return urlName != null && !"manifest.f4m".equalsIgnoreCase(urlName);
     }
 }

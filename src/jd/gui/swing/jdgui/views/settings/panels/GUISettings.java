@@ -622,7 +622,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
     @Override
     public void save() {
         CFG_GUI.CFG.setNewDialogFrameState(focus.getSelectedItem());
-        CFG_GUI.CFG.setNewLinksAction(linkgrabberfocus.getSelectedItem());
+        CFG_GUI.CFG.setNewLinksActionV2(linkgrabberfocus.getSelectedItem());
         // focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
     }
 
@@ -631,7 +631,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         setting = true;
         try {
             focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
-            NewLinksInLinkgrabberAction newvalue = CFG_GUI.CFG.getNewLinksAction();
+            NewLinksInLinkgrabberAction newvalue = CFG_GUI.CFG.getNewLinksActionV2();
             linkgrabberfocus.setSelectedItem(newvalue);
 
         } finally {
