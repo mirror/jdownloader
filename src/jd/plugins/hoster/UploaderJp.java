@@ -16,6 +16,10 @@
 
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -24,9 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "http://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" })
 public class UploaderJp extends antiDDoSForHost {
@@ -72,12 +73,33 @@ public class UploaderJp extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String token = br.getRegex("name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (token == null) {
+        Form form = br.getFormbyProperty("name", "agree");
+        if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        postPage(br.getURL(), "token=" + token);
-        final String md5 = br.getRegex("MD5 \\| ([a-z0-9]+)").getMatch(0);
+        if (form.hasInputFieldByName("password")) {
+            String passCode = downloadLink.getDownloadPassword();
+            if (passCode == null) {
+                passCode = getUserInput(null, downloadLink);
+            }
+            if (StringUtils.isEmpty(passCode)) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
+            }
+            form.put("password", Encoding.urlEncode(passCode));
+            submitForm(form);
+            // check to see if its correct password
+            if ((form = br.getFormbyProperty("name", "agree")) != null && form.hasInputFieldByName("password")) {
+                if (downloadLink.getDownloadPassword() != null) {
+                    downloadLink.setDownloadPassword(null);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
+            }
+            downloadLink.setDownloadPassword(passCode);
+        } else {
+            // standard download
+            submitForm(form);
+        }
+        final String md5 = br.getRegex("MD5\\s*\\|?\\s*([a-f0-9]{32})").getMatch(0);
         if (md5 != null) {
             downloadLink.setMD5Hash(md5);
         }
