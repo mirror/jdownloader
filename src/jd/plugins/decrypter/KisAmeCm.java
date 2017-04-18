@@ -16,7 +16,7 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -27,6 +27,16 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
+import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -44,17 +54,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -140,7 +139,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         for (int mirror_number = 0; mirror_number <= mirrors.length - 1; mirror_number++) {
             if (mirror_number > 0) {
                 final String mirror_param = mirrors[mirror_number];
-                this.getPage(url_base + mirror_param);
+                getPage(url_base + mirror_param);
             }
             // we have two things we need to base64decode
             final String[][] quals;
@@ -235,13 +234,13 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     }
 
     @SuppressWarnings("unchecked")
-    public static String[][] getQualsCartoon(final Browser br, final String param) throws Exception {
+    public String[][] getQualsCartoon(final Browser br, final String param) throws Exception {
         String fid = new Regex(param, "id=(.*)").getMatch(0);
         final Browser ajax = br.cloneBrowser();
-        ajax.postPage("https://kisscartoon.io/ajax/anime/load_episodes", new UrlQuery().append("episode_id", fid, true));
+        postPage(ajax, "https://kisscartoon.io/ajax/anime/load_episodes", "episode_id=" + Encoding.urlEncode(fid));
         String queryUrl = PluginJSonUtils.getJson(ajax, "value");
         ajax.getHeaders().put("Content-Type", "application/json");
-        ajax.getPage(queryUrl + "&_=" + System.currentTimeMillis());
+        getPage(ajax, queryUrl + "&_=" + System.currentTimeMillis());
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         List<Object> playlist = (List<Object>) entries.get("playlist");
         List<Object> sources = (List<Object>) ((LinkedHashMap<String, Object>) playlist.get(0)).get("sources");
@@ -253,7 +252,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 // this is redirect bullshit
                 final Browser test = new Browser();
                 test.setFollowRedirects(false);
-                test.getPage(fileUrl);
+                getPage(test, fileUrl);
                 fileUrl = test.getRedirectLocation();
             }
             quals[i][1] = fileUrl;
@@ -279,9 +278,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return skey;
     }
 
-    private String getSecretKeyAsian() throws IOException {
+    private String getSecretKeyAsian() throws Exception {
         final Browser ajax = br.cloneBrowser();
-        ajax.postPage("/External/RSK", new UrlQuery().append("krsk", "665", true));
+        postPage(ajax, "/External/RSK", "krsk=665");
         String postData = ajax.toString();
 
         String skey = postData;
@@ -326,7 +325,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 // this is redirect bullshit
                 final Browser test = br.cloneBrowser();
                 test.setFollowRedirects(false);
-                test.getPage(decode);
+                getPage(test, decode);
                 // timeout:
                 // Location: /Message/UnknownError?aspxerrorpath=/Play
                 // <html><head><title>Object moved</title></head><body>
@@ -355,7 +354,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return br.containsHTML("Page Not Found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404;
     }
 
-    private void handleHumanCheck(final Browser br) throws IOException, PluginException, InterruptedException, DecrypterException {
+    private void handleHumanCheck(final Browser br) throws Exception {
         int retries = 5;
         while (retries-- > 0) {
             if (isAbort()) {
@@ -367,9 +366,30 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 if (ruh == null) {
                     throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                ruh.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                br.submitForm(ruh);
+                if (ruh.containsHTML("g-recaptcha")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    ruh.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    submitForm(br, ruh);
+                } else if (ruh.containsHTML("solvemedia\\.com/papi/")) {
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode("solvemedia", cf, param);
+                    if ("".equals(code)) {
+                        // refresh (f5) button returns "", but so does a empty response by the user (send button)
+                        continue;
+                    }
+                    final String chid = sm.getChallenge(code);
+                    ruh.put("adcopy_response", Encoding.urlEncode(code));
+                    ruh.put("adcopy_challenge", Encoding.urlEncode(chid));
+                    submitForm(br, ruh);
+                    if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        continue;
+                    }
+                    break;
+                } else {
+                    // unsupported captcha type?
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
             } else {
                 break;
             }
