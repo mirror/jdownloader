@@ -124,7 +124,11 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
                 if (isChangeBlacklisted()) {
                     return CHANGE_FLAG.BLACKLISTED;
                 } else {
-                    return CHANGE_FLAG.DETECTED;
+                    if (skipChangeFlag.get()) {
+                        return CHANGE_FLAG.SKIP;
+                    } else {
+                        return CHANGE_FLAG.DETECTED;
+                    }
                 }
             }
         }
