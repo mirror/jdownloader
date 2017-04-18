@@ -114,8 +114,8 @@ public class VideoGoogle extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
-            if (con.getResponseCode() == 404) {
+            con = br2.openHeadConnection(dllink);
+            if (!con.getContentType().contains("video")) {
                 logger.info("Directurl seems to have expired - trying to refresh it");
                 dllink = refreshDirectlink(downloadLink);
                 if (dllink == null) {
@@ -126,7 +126,7 @@ public class VideoGoogle extends PluginForHost {
                 logger.info("Successfully refreshed directurl");
                 con = br2.openGetConnection(dllink);
             }
-            if (!con.getContentType().contains("html")) {
+            if (con.getContentType().contains("video")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 String fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
                 if (fileName == null) {
