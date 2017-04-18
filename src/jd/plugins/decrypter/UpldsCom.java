@@ -18,26 +18,39 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d{6}" }) 
-public class UpldsCom extends PluginForDecrypt {
+/**
+ * DEV NOTE: uid are 1 digit, tested with uplds.com/1 /2 /20 /100 etc<br/>
+ * <br/>
+ *
+ * NOTE: DO NOT DELETE, this is a template.
+ *
+ * @author psp
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d+" })
+public class UpldsCom extends antiDDoSForDecrypt {
 
     public UpldsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("Link Not Found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -45,13 +58,13 @@ public class UpldsCom extends PluginForDecrypt {
         final Form decryptform = br.getFormbyProperty("name", "F1");
         if (decryptform == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
-        br.submitForm(decryptform);
-        final String finallink = br.getRegex("<span.*?>\\s<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        submitForm(decryptform);
+        final String finallink = br.getRegex("<span.*?>\\s*<a href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
@@ -60,6 +73,11 @@ public class UpldsCom extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XLinker;
     }
 
 }
