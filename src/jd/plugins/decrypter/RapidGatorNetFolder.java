@@ -16,11 +16,13 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,15 +31,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rg\\.to)/folder/\\d+/[^/]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rg\\.to)/folder/\\d+/[^/]+\\.html" })
 @SuppressWarnings("deprecation")
 public class RapidGatorNetFolder extends PluginForDecrypt {
 
     private String parameter = null;
     private String uid       = null;
-    private String lastPage  = null;
 
     public RapidGatorNetFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +64,20 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
             fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
         }
         parsePage(decryptedLinks);
-        parseNextPage(decryptedLinks);
+        String lastPage = null;
+        while (true) {
+            String nextPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Next").getMatch(0);
+            if (lastPage == null) {
+                lastPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Last").getMatch(0);
+            }
+            if (nextPage != null && (lastPage != null && !br.getURL().contains(lastPage))) {
+                br.getPage(nextPage);
+                parsePage(decryptedLinks);
+            } else {
+                break;
+            }
+        }
+
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -84,7 +96,7 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         }
         if (links != null && links.length != 0) {
             for (String[] dl : links) {
-                DownloadLink link = createDownloadlink("http://rapidgator.net" + dl[0]);
+                DownloadLink link = createDownloadlink(Request.getLocation(dl[0], br.getRequest()));
                 link.setName(dl[2].replaceFirst("\\.html$", ""));
                 link.setDownloadSize(SizeFormatter.getSize(dl[3]));
                 link.setAvailable(true);
@@ -93,27 +105,12 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         }
 
         if (subfolders != null && subfolders.length != 0) {
-            for (String folder : subfolders) {
-                folder = "http://rapidgator.net" + folder;
-                final DownloadLink link = createDownloadlink(folder);
+            for (final String folder : subfolders) {
+                final DownloadLink link = createDownloadlink(Request.getLocation(folder, br.getRequest()));
                 ret.add(link);
             }
         }
 
-    }
-
-    private boolean parseNextPage(ArrayList<DownloadLink> ret) throws IOException {
-        String nextPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Next").getMatch(0);
-        if (lastPage == null) {
-            lastPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Last").getMatch(0);
-        }
-        if (nextPage != null && (lastPage != null && !br.getURL().contains(lastPage))) {
-            br.getPage(nextPage);
-            parsePage(ret);
-            parseNextPage(ret);
-            return true;
-        }
-        return false;
     }
 
     /* NO OVERRIDE!! */

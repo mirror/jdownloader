@@ -39,7 +39,7 @@ public class SflnkgNt extends abstractSafeLinking {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "linkvault.pro", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "jessica.suyalynx.com", "linkler.us", "links.sceper.ws", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinking.mobi", "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "yls.re", "sflk.in" };
+        return new String[] { "linkvault.pro", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "jessica.suyalynx.com", "linkler.us", "links.sceper.ws", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinking.mobi", "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "yls.re", "sflk.in" };
         // add new domains at the beginning of the array, not the END
     }
 

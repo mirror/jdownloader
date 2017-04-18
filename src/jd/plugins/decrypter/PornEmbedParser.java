@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -12,8 +14,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
@@ -224,18 +224,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("empflix\\.com/embedding_player/player[^<>\"/]*?\\.swf\".*?value=\"config=embedding_feed\\.php\\?viewkey=([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/embedding_player/embedding_feed.php?viewkey=" + externID));
-            return decryptedLinks;
-        }
-        // yobt.com 1
-        externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
-            return decryptedLinks;
-        }
-        // yobt.com 2
-        externID = br.getRegex("\"(https?://(?:www\\.)?yobt\\.com/content/\\d+/[A-Za-z0-9\\-_]+\\.html)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
