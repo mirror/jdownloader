@@ -233,6 +233,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 final DesktopSupportLinux desktop = new DesktopSupportLinux();
                                 try {
                                     if ((desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) && !desktop.isWayland()) {
+                                        getSettings().setGnomeTrayIconTransparentEnabled(false);
+                                        getSettings()._getStorageHandler().write();// disable+write to avoid crash on next try
                                         // Wayland/java crashes onjava.awt.Robot.createScreenCapture
                                         LogController.CL(TrayExtension.class).info("Apply LinuxTrayIcon workaround");
                                         final Robot robo = new java.awt.Robot();
@@ -251,6 +253,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     }
                                 } catch (final Throwable e) {
                                     LogController.CL().log(e);
+                                } finally {
+                                    getSettings().setGnomeTrayIconTransparentEnabled(true);
                                 }
                             }
                             /*
@@ -317,11 +321,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             *
+                             * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             *
+                             * 
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             *
+                             * 
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
