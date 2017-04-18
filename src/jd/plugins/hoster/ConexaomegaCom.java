@@ -144,7 +144,7 @@ public class ConexaomegaCom extends PluginForHost {
         // now let's get a list of all supported hosts:
         br.getPage("http://www.conexaomega.com/");
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "VideoBB", "videobb.com" }, { "FileFactory", "filefactory.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "Crocko", "crocko.com" }, { "RapdiGator", "rapidgator.net" } };
+        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "VideoBB", "videobb.com" }, { "FileFactory", "filefactory.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "RapdiGator", "rapidgator.net" } };
         for (final String[] hostSet : hostsList) {
             if (br.containsHTML(hostSet[0] + ": Disponível")) {
                 supportedHosts.add(hostSet[1]);

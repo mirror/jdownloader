@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -81,9 +80,6 @@ public class UploaderJp extends antiDDoSForHost {
             String passCode = downloadLink.getDownloadPassword();
             if (passCode == null) {
                 passCode = getUserInput(null, downloadLink);
-            }
-            if (StringUtils.isEmpty(passCode)) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
             }
             form.put("password", Encoding.urlEncode(passCode));
             submitForm(form);

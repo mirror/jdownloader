@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,14 +31,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "libgen.me", "libgen.info", "libgen.net", "libgen.io", "golibgen.io" };
+        // libgen.info no dns
+        return new String[] { "libgen.me", "libgen.net", "libgen.io", "golibgen.io" };
     }
 
     public LibGenInfo(PluginWrapper wrapper) {
@@ -53,7 +54,7 @@ public class LibGenInfo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://libgen.info/";
+        return "http://libgen.me/";
     }
 
     private static final String  type_picture        = ".+/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";

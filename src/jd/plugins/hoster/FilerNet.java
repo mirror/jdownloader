@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
 public class FilerNet extends PluginForHost {
@@ -274,30 +274,6 @@ public class FilerNet extends PluginForHost {
         } else {
             return 15;
         }
-    }
-
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
-    /**
-     * Returns the first form that has a 'key' that equals 'value'.
-     *
-     * @param key
-     *            name
-     * @param value
-     *            expected value
-     * @param ibr
-     *            import browser
-     */
-    @SuppressWarnings("unused")
-    private Form getFormByInput(final Browser ibr, final String key, final String value) {
-        Form[] workaround = ibr.getForms();
-        if (workaround != null) {
-            for (Form f : workaround) {
-                if (f.containsHTML(key + "=(\"|')" + value + "\\1")) {
-                    return f;
-                }
-            }
-        }
-        return null;
     }
 
     private Browser prepBrowser(final Browser prepBr) {

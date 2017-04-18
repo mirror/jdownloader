@@ -129,8 +129,8 @@ public class IdownloadClub extends antiDDoSForHost {
                     return;
                 }
                 br.setFollowRedirects(true);
-                getPage("https://" + getHost());
-                postPage("/members//index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
+                getPage("https://www." + getHost());
+                postPage("/members/index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
                 final String txtPassword_hashed = this.br.getRegex("txtPassword=\"\\+encodeURIComponent\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
                 if (this.br.getCookie(this.getHost(), "PHPSESSID") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

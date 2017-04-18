@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" })
@@ -44,17 +44,18 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     private static final String INVALIDLINKS     = "https?://(www\\.)?depfile\\.com/(myspace|uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate|report|data|dmca|favicon|ajax|API|robots)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("i-filez", "depfile");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("i-filez", "depfile");
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         final String folder_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         // Set English language
         br.setCookie(this.getHost(), "sdlanguageid", "2");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link invalid: " + parameter);
-            return decryptedLinks;
-        }
+
         handleErrors();
         // mass adding links from folders can cause exceptions and high server loads. when possible best practice to set all info, a full
         // linkcheck happens prior to download which can correct any false positives by doing the following..
@@ -94,9 +95,9 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     }
 
     private void handleErrors() throws Exception {
-        PluginForHost DeviantArtPlugin = JDUtilities.getPluginForHost("depfile.com");
+        final PluginForHost plugin = JDUtilities.getPluginForHost("depfile.com");
         try {
-            ((jd.plugins.hoster.DepfileCom) DeviantArtPlugin).handleErrors();
+            ((jd.plugins.hoster.DepfileCom) plugin).handleErrors();
         } catch (final Exception e) {
             if (e instanceof PluginException) {
                 throw (PluginException) e;

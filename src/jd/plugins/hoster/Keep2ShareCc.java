@@ -22,6 +22,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,11 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  *
@@ -227,10 +227,6 @@ public class Keep2ShareCc extends K2SApi {
 
     /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
     public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
-        /* for multihosters which call this method directly. */
-        if (useAPI()) {
-            return super.requestFileInformation(link);
-        }
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);

@@ -208,19 +208,14 @@ public class PixivNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         /* 2017-02-06: So far there are only free accounts available for this host. */
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
