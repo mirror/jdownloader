@@ -97,6 +97,7 @@ public class HDSContainer {
 
     public final static String PROPERTY_FRAGMENTURL = "fragmentUrl";
     public final static String PROPERTY_STREAMID    = "streamId";
+    public final static String PROPERTY_ID          = "id";
     public final static String PROPERTY_WIDTH       = "width";
     public final static String PROPERTY_HEIGHT      = "height";
     public final static String PROPERTY_BITRATE     = "bitrate";
@@ -120,6 +121,7 @@ public class HDSContainer {
             destination.setProperty(prefix + PROPERTY_HEIGHT, getHeight());
             destination.setProperty(prefix + PROPERTY_BITRATE, getBitrate());
             destination.setProperty(prefix + PROPERTY_DURATION, getDuration());
+            destination.setProperty(prefix + PROPERTY_DURATION, getId());
         }
     }
 
@@ -144,6 +146,7 @@ public class HDSContainer {
                 ret.height = source.getIntegerProperty(prefix + PROPERTY_HEIGHT, -1);
                 ret.width = source.getIntegerProperty(prefix + PROPERTY_WIDTH, -1);
                 ret.duration = source.getLongProperty(prefix + PROPERTY_DURATION, -1);
+                ret.id = source.getStringProperty(prefix + PROPERTY_ID, null);
                 return ret;
             }
         }
@@ -156,6 +159,7 @@ public class HDSContainer {
         final XPath xPath = XPathFactory.newInstance().newXPath();
         final NodeList root = (NodeList) xPath.evaluate("/manifest", d, XPathConstants.NODESET);
         final Node durationNode = getNodeByName(root.item(0).getChildNodes(), "duration");
+        final Node id = getNodeByName(root.item(0).getChildNodes(), "id");
         final long duration;
         if (durationNode != null) {
             duration = parseDuration(durationNode.getTextContent());
@@ -184,6 +188,9 @@ public class HDSContainer {
                         container.bitrate = Integer.parseInt(bitrate);
                     }
                     container.streamId = getAttByNamedItem(media, "streamId");
+                    if (id != null) {
+                        container.id = id.getTextContent();
+                    }
                     container.duration = duration;
                     ret.add(container);
                 }
@@ -201,6 +208,15 @@ public class HDSContainer {
     private String fragmentURL = null;
     private String streamId    = null;
     private long   duration    = -1;
+    private String id          = null;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getEstimatedFileSize() {
         if (duration > 0 && bitrate > 0) {
@@ -239,7 +255,7 @@ public class HDSContainer {
 
     @Override
     public String toString() {
-        return "FragmentURL:" + getFragmentURL() + "|StreamID:" + getStreamId() + "|Resolution:" + getWidth() + "x" + getHeight() + "|Est.FileSize:" + SizeFormatter.formatBytes(getEstimatedFileSize());
+        return "FragmentURL:" + getFragmentURL() + "|ID:" + getId() + "|StreamID:" + getStreamId() + "|Resolution:" + getWidth() + "x" + getHeight() + "|Est.FileSize:" + SizeFormatter.formatBytes(getEstimatedFileSize());
     }
 
     public String getResolution() {

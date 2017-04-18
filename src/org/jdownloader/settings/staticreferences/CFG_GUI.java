@@ -221,7 +221,7 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_TOTAL_BYTES_VISIBLE             = SH.getKeyHandler("OverviewPanelDownloadTotalBytesVisible", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                        = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
+    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                        = SH.getKeyHandler("NewLinksActionV2", EnumKeyHandler.class);
 
     /**
      * If disabled, the captcha has no border painted, and the dialog looks like in jd09
