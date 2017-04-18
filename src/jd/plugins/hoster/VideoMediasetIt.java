@@ -95,6 +95,9 @@ public class VideoMediasetIt extends PluginForHost {
         String filename;
         if (use_player_json) {
             this.br.getPage("http://plr.video.mediaset.it/html/metainfo.sjson?id=" + streamID);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\\{\\}")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = PluginJSonUtils.getJsonValue(this.br, "title");
             date = PluginJSonUtils.getJsonValue(this.br, "production-date");
         } else {
