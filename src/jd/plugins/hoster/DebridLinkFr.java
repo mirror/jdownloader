@@ -342,10 +342,11 @@ public class DebridLinkFr extends PluginForHost {
                 // The request need token argument
                 // should never happen, unless API changes!
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if ("serverNotAllowed".equals(error)) {
-                tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
-            } else if (downloadLink != null) {
-                // handling for download routines!
+            }
+            // end of generic
+
+            // handling for download routines!
+            if (downloadLink != null) {
                 if ("notDebrid".equals(error)) {
                     // Maybe the filehoster is down or the link is not online
                     tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
@@ -376,7 +377,9 @@ public class DebridLinkFr extends PluginForHost {
                      * handled below in canHandle.
                      */
                     tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
-                } else if ("maxLinkHost".equals(error)) {
+                } else if ("serverNotAllowed".equals(error)) {
+                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                } else if ("maxLinkHost".equals(error) || "maxlink".equals(error)) {
                     // max link limit reached, see linkLimit
                     tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
                 }
