@@ -415,17 +415,17 @@ public class Account extends Property {
             errorString = null;
         }
         if (this.error != error || !StringUtils.equals(this.errorString, errorString)) {
-            final long timeout;
             if (AccountError.TEMP_DISABLED.equals(error)) {
+                final long timeout;
                 if (setTimeout <= 0) {
                     timeout = System.currentTimeMillis() + CFG_GENERAL.CFG.getAccountTemporarilyDisabledDefaultTimeout();
                 } else {
                     timeout = System.currentTimeMillis() + setTimeout;
                 }
+                setTmpDisabledTimeout(timeout);
             } else {
-                timeout = -1;
+                setTmpDisabledTimeout(-1);
             }
-            setTmpDisabledTimeout(timeout);
             this.error = error;
             this.errorString = errorString;
             notifyUpdate(AccountProperty.Property.ERROR, error);
