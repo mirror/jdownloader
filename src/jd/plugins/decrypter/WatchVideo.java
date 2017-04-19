@@ -44,6 +44,10 @@ public class WatchVideo extends PluginForDecrypt {
         }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (parameter.contains("watchnaruto")) {
+            if (!br.containsHTML("<iframe src")) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             final String iframe = br.getRegex("<iframe src=\"([^<>\"]*?)\"").getMatch(0);
             if (iframe == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
