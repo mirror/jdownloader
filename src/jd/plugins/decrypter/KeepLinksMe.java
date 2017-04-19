@@ -59,12 +59,18 @@ public class KeepLinksMe extends abstractSafeLinking {
         if (getHost().contains("keeplinks.me")) {
             return true;
         }
+        if ("kprotector.com".equals(getHost())) {
+            return true;
+        }
         return false;
     }
 
     @Override
     protected boolean enforcesHTTPS() {
         if (getHost().contains("keeplinks.me")) {
+            return true;
+        }
+        if ("kprotector.com".equals(getHost())) {
             return true;
         }
         return false;

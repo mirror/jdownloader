@@ -11,6 +11,11 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,11 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -607,14 +607,22 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 case 9:
                 case 10:
                 case 11: {
-                    // unsupported types
-                    // short wait to prevent hammering
-                    sleep(2500, param);
-                    // maybe also good to clear cookies?
-                    getPage(br.getURL());
-                    protectedForm = formProtected();
-                    prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
-                    continue;
+                    // kprotector.com, click to proceed step, prior to captcha.
+                    if (protectedForm.getInputFieldByType("button") != null && "Click+To+Proceed".equals(protectedForm.getInputFieldByType("button").getValue())) {
+                        submitForm(protectedForm);
+                        protectedForm = formProtected();
+                        prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
+                        continue;
+                    } else {
+                        // unsupported types
+                        // short wait to prevent hammering
+                        sleep(2500, param);
+                        // maybe also good to clear cookies?
+                        getPage(br.getURL());
+                        protectedForm = formProtected();
+                        prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
+                        continue;
+                    }
                 }
                 case 12: {
                     final String result = getCaptchaCode("/simplecaptcha/captcha.php", param);
