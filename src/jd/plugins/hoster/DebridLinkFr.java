@@ -32,6 +32,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -347,8 +348,7 @@ public class DebridLinkFr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Dedicated Server/VPN/Proxy detected, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("floodDetected".equals(error)) {
                 // API Flood detected, retry after 1 hour
-                account.setTmpDisabledTimeout(1 * 60 * 60 * 1001l);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Flood", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("API Flood, will retry in 1 hour!", 1 * 60 * 60 * 1001l);
             }
             // end of generic
 
@@ -389,8 +389,7 @@ public class DebridLinkFr extends PluginForHost {
                     tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
                 } else if ("maxlink".equals(error)) {
                     // this is for any hoster, so can't effectively use account. temp disalbe?
-                    account.setTmpDisabledTimeout(1 * 60 * 60 * 1001l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Download limit reached", 1 * 60 * 60 * 1001l);
                 }
 
             }
