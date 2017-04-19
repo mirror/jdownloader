@@ -275,7 +275,7 @@ public class UploadgigCom extends antiDDoSForHost {
         if (expire == null) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
@@ -341,11 +341,6 @@ public class UploadgigCom extends antiDDoSForHost {
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     @Override
