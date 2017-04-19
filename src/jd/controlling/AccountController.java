@@ -86,12 +86,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -273,12 +273,12 @@ public class AccountController implements AccountControllerListener, AccountProp
             if (!forceupdate) {
                 if (account.lastUpdateTime() != 0) {
                     if (ai != null && ai.isExpired()) {
-                        account.setError(AccountError.EXPIRED, null);
+                        account.setError(AccountError.EXPIRED, -1, null);
                         /* account is expired, no need to update */
                         return ai;
                     }
                     if (!account.isValid()) {
-                        account.setError(AccountError.INVALID, null);
+                        account.setError(AccountError.INVALID, -1, null);
                         /* account is invalid, no need to update */
                         return ai;
                     }
@@ -296,12 +296,12 @@ public class AccountController implements AccountControllerListener, AccountProp
                 plugin = account.getPlugin().getLazyP().newInstance(cl);
                 if (plugin == null) {
                     LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
-                    account.setError(AccountError.PLUGIN_ERROR, null);
+                    account.setError(AccountError.PLUGIN_ERROR, -1, null);
                     return null;
                 }
             } catch (final Throwable e) {
                 LogController.CL().log(e);
-                account.setError(AccountError.PLUGIN_ERROR, e.getMessage());
+                account.setError(AccountError.PLUGIN_ERROR, -1, e.getMessage());
                 return null;
             }
             final String whoAmI = account.getUser() + "->" + account.getHoster();
@@ -325,7 +325,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 plugin.setBrowser(br);
                 plugin.init();
                 /* not every plugin sets this info correct */
-                account.setError(null, null);
+                account.setError(null, -1, null);
                 /* get previous account info and resets info for new update */
                 ai = account.getAccountInfo();
                 if (ai != null) {
@@ -347,7 +347,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 if (account.isValid() == false) {
                     /* account is invalid */
                     logger.info("Account:" + whoAmI + "|Invalid!");
-                    account.setError(AccountError.INVALID, null);
+                    account.setError(AccountError.INVALID, -1, null);
                     return ai;
                 } else {
                     account.setLastValidTimestamp(System.currentTimeMillis());
@@ -356,7 +356,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                     /* expired account */
                     logger.clear();
                     logger.info("Account:" + whoAmI + "|Expired!");
-                    account.setError(AccountError.EXPIRED, null);
+                    account.setError(AccountError.EXPIRED, -1, null);
                     return ai;
                 }
                 if (tempDisabledCounterBefore > 0 && account.getTmpDisabledTimeout() == tempDisabledCounterBefore) {
@@ -723,7 +723,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                     this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
                 } else if (existingAccount != null && (!existingAccount.isEnabled() || existingAccount.getError() != null)) {
                     // reuse properties and accountInfos from new account
-                    existingAccount.setError(null, null);
+                    existingAccount.setError(null, -1, null);
                     existingAccount.setAccountInfo(account.getAccountInfo());
                     existingAccount.setProperties(account.getProperties());
                     existingAccount.setEnabled(true);

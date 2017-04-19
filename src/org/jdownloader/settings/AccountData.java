@@ -297,12 +297,12 @@ public class AccountData implements Storable {
         ret.setUser(user);
         if (StringUtils.isNotEmpty(errorType)) {
             try {
-                ret.setError(AccountError.valueOf(errorType), errorString);
+                ret.setError(AccountError.valueOf(errorType), getTmpDisabledTimeout(), errorString);
             } catch (Throwable e) {
             }
         }
         if (!valid && ret.getError() == null) {
-            ret.setError(AccountError.INVALID, null);
+            ret.setError(AccountError.INVALID, getTmpDisabledTimeout(), null);
         }
         ret.setTmpDisabledTimeout(getTmpDisabledTimeout());
         return ret;

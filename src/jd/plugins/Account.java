@@ -271,10 +271,10 @@ public class Account extends Property {
     public void setValid(final boolean b) {
         if (b) {
             if (getError() == AccountError.INVALID) {
-                setError(null, null);
+                setError(null, -1, null);
             }
         } else {
-            setError(AccountError.INVALID, null);
+            setError(AccountError.INVALID, -1, null);
         }
     }
 
@@ -429,16 +429,6 @@ public class Account extends Property {
             this.error = error;
             this.errorString = errorString;
             notifyUpdate(AccountProperty.Property.ERROR, error);
-        }
-    }
-
-    @Deprecated
-    public void setError(final AccountError error, String errorString) {
-        final Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, -1);
-        if (timeout != null) {
-            setError(error, timeout.longValue(), errorString);
-        } else {
-            setError(error, -1, errorString);
         }
     }
 
@@ -607,10 +597,10 @@ public class Account extends Property {
     @Deprecated
     public void setTempDisabled(final boolean tempDisabled) {
         if (tempDisabled) {
-            setError(AccountError.TEMP_DISABLED, null);
+            setError(AccountError.TEMP_DISABLED, -1, null);
         } else {
             if (AccountError.TEMP_DISABLED.equals(getError())) {
-                setError(null, null);
+                setError(null, -1, null);
             }
         }
     }
