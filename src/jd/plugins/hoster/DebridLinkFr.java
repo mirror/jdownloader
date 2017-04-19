@@ -342,6 +342,13 @@ public class DebridLinkFr extends PluginForHost {
                 // The request need token argument
                 // should never happen, unless API changes!
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ("disableServerHost".equals(error) || "serverNotAllowed".equals(error)) {
+                // ip ban (dedicated server)
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Dedicated Server/VPN/Proxy detected, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("floodDetected".equals(error)) {
+                // API Flood detected, retry after 1 hour
+                account.setTmpDisabledTimeout(1 * 60 * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Flood", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             // end of generic
 
@@ -349,7 +356,7 @@ public class DebridLinkFr extends PluginForHost {
             if (downloadLink != null) {
                 if ("notDebrid".equals(error)) {
                     // Maybe the filehoster is down or the link is not online
-                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
                 } else if ("fileNotFound".equals(error)) {
                     // The filehoster return a 'file not found' error.
                     // let another download method kick in? **
@@ -362,11 +369,11 @@ public class DebridLinkFr extends PluginForHost {
                 } else if ("hostNotValid".equals(error)) {
                     // The filehoster is not supported
                     // shouldn't happen as we check supported array and remove hosts that are disabled/down etc.
-                    tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1001l);
                 } else if ("disabledHost".equals(error)) {
                     // The filehoster are disabled
                     // remove from array!
-                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
                 } else if ("noGetFilename".equals(error)) {
                     // Unable to retrieve the file name
                     // what todo here? revert to another plugin **
@@ -376,13 +383,16 @@ public class DebridLinkFr extends PluginForHost {
                      * Filehost is disabled for current FREE account --> Disable it "forever" --> Should usually not happen as already
                      * handled below in canHandle.
                      */
-                    tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
-                } else if ("serverNotAllowed".equals(error)) {
-                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
-                } else if ("maxLinkHost".equals(error) || "maxlink".equals(error)) {
+                    tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1001l);
+                } else if ("maxLinkHost".equals(error)) {
                     // max link limit reached, see linkLimit
-                    tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
+                } else if ("maxlink".equals(error)) {
+                    // this is for any hoster, so can't effectively use account. temp disalbe?
+                    account.setTmpDisabledTimeout(1 * 60 * 60 * 1001l);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
+
             }
         }
     }
