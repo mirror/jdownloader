@@ -91,6 +91,8 @@ public class UploaderJp extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
             }
             downloadLink.setDownloadPassword(passCode);
+            // standard download
+            submitForm(form);
         } else {
             // standard download
             submitForm(form);
