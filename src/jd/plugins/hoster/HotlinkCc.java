@@ -426,7 +426,7 @@ public class HotlinkCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, -1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
