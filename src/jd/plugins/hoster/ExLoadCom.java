@@ -568,7 +568,7 @@ public class ExLoadCom extends antiDDoSForHost {
             }
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
+        if (cbr.containsHTML("(class=\"err\"[^>]*>You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
