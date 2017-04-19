@@ -132,7 +132,7 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             postPage("/file/free_dl", postData);
             errorhandlingFree();
-            if (this.br.getHttpConnection().getResponseCode() == 403) {
+            if (br.getHttpConnection().getResponseCode() == 403) {
                 /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
@@ -157,7 +157,7 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             br.followConnection();
             /* E.g. "The download link has expired, please buy premium account or start download file from the beginning." */
-            if (this.br.containsHTML("The download link has expired")) {
+            if (br.containsHTML("The download link has expired")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The download link has expired'", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -200,9 +200,9 @@ public class UploadgigCom extends antiDDoSForHost {
     }
 
     private void errorhandlingFree() throws PluginException {
-        if (this.br.toString().equalsIgnoreCase("m")) {
+        if (br.toString().equalsIgnoreCase("m")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1001l);
-        } else if (this.br.containsHTML("fl")) {
+        } else if (br.containsHTML("fl")) {
             /* Premiumonly */
             /* Errormessage in browser: "This file is available with Premium only Because the file's owner disabled free downloads." */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -213,16 +213,17 @@ public class UploadgigCom extends antiDDoSForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
-                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.getPage("http://" + account.getHoster() + "/login/form");
-                final Form loginform = this.br.getForm(0);
+                getPage("http://" + account.getHoster() + "/login/form");
+                final Form loginform = br.getForm(0);
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -235,20 +236,27 @@ public class UploadgigCom extends antiDDoSForHost {
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("rememberme", "1");
-                this.br.submitForm(loginform);
-                if (br.getCookie(this.getHost(), "fs_secure") == null || br.getCookie(this.getHost(), "fs_secure").equalsIgnoreCase("deleted")) {
+                submitForm(loginform);
+                if (isAccountCookiesMissing()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
+    }
+
+    private boolean isAccountCookiesMissing() {
+        final boolean missing = br.getCookie(this.getHost(), "fs_secure") == null || br.getCookie(this.getHost(), "fs_secure").equalsIgnoreCase("deleted");
+        return missing;
     }
 
     @SuppressWarnings("deprecation")
@@ -256,7 +264,7 @@ public class UploadgigCom extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        this.br.getPage("/user/my_account");
+        getPage("/user/my_account");
         final Regex trafficregex = this.br.getRegex("<dt>Daily traffic usage</dt>\\s*<dd>(\\d+)/(\\d+) MB");
         final String traffic_used_str = trafficregex.getMatch(0);
         final String traffic_max_str = trafficregex.getMatch(1);
@@ -291,9 +299,23 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        getPage(link.getDownloadURL());
+        synchronized (LOCK) {
+            login(account, false);
+            br.setFollowRedirects(false);
+            getPage(link.getDownloadURL());
+            // ok we need a check that cookie session hasn't been deleted!!!
+            if (isAccountCookiesMissing()) {
+                // to ensure cookies are gone!
+                account.clearCookies("");
+                login(account, true);
+                // you can't not have the cookies here, login method will throw exception.
+                getPage(link.getDownloadURL());
+                // if cookies are now gone.. wtf, site issue???
+                if (isAccountCookiesMissing()) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
