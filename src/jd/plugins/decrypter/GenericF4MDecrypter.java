@@ -80,6 +80,7 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
+        br.followRedirect();
         final List<HDSContainer> containers = HDSContainer.getHDSQualities(br);
         if (containers != null) {
             final String urlName = getFileNameFromURL(br._getURL());

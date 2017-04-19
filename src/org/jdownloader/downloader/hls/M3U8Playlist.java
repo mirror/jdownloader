@@ -184,8 +184,9 @@ public class M3U8Playlist {
         M3U8Segment.X_KEY_METHOD xKeyMethod = M3U8Segment.X_KEY_METHOD.NONE;
         String xKeyIV = null;
         String xKeyURI = null;
-
-        for (final String line : Regex.getLines(br.getPage(m3u8))) {
+        br.getPage(m3u8);
+        br.followRedirect();
+        for (final String line : Regex.getLines(br.toString())) {
             if (StringUtils.isEmpty(line)) {
                 continue;
             }
