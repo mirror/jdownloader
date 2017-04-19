@@ -367,6 +367,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         }
+        if (passCode != null) {
+            downloadLink.setDownloadPassword(passCode);
+        }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -377,9 +380,6 @@ public class UpToBoxCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
         try {
             if (account == null) {
                 // add a download slot
@@ -517,6 +517,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                if (theLink.getDownloadPassword() != null) {
+                    theLink.setDownloadPassword(null);
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {
@@ -644,13 +647,13 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
-        passCode = thelink.getStringProperty("pass", null);
+        passCode = thelink.getDownloadPassword();
         if (passCode == null) {
             passCode = Plugin.getUserInput("Password?", thelink);
         }
-        pwform.put("password", passCode);
+        pwform.put("password", Encoding.urlEncode(passCode));
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        return Encoding.urlEncode(passCode);
+        return passCode;
     }
 
     private String checkDirectLink(DownloadLink downloadLink, String property) {
@@ -833,6 +836,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (passCode != null) {
+                link.setDownloadPassword(passCode);
+            }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -841,9 +847,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                 correctBR();
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
             }
             link.setProperty("premlink", dllink);
             dl.startDownload();
