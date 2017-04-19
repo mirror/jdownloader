@@ -267,7 +267,12 @@ public abstract class PluginForHost extends Plugin {
                     } else {
                         errorMsg = pluginException.getLocalizedMessage();
                     }
-                    account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+                    if (pluginException instanceof AccountUnavailableException) {
+                        final AccountUnavailableException timeout = (AccountUnavailableException) pluginException;
+                        account.setError(AccountError.TEMP_DISABLED, timeout.getTimeout(), errorMsg);
+                    } else {
+                        account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+                    }
                 } else {
                     final String errorMsg;
                     if (StringUtils.isEmpty(pluginException.getLocalizedMessage())) {
