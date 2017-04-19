@@ -21,10 +21,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -36,6 +32,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|\\?[^\\s<>\"']*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -132,10 +132,11 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             results.add(link);
         } else {
             final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = brc.openRequestConnection(new HeadRequest(url));
-                if (con.isOK() && StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl")) {
+                if (con.isOK() && (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || StringUtils.endsWithCaseInsensitive(url.getPath(), ".m3u8"))) {
                     link.setPluginPatternMatcher("m3u8" + url.toString().substring(4));
                     results.add(link);
                 }

@@ -193,6 +193,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             if (StringUtils.containsIgnoreCase(qualityValue, "hds_")) {
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(directlink);
+                brc.followRedirect();
                 final List<HDSContainer> containers = HDSContainer.getHDSQualities(brc);
                 if (containers != null) {
                     for (final HDSContainer container : containers) {

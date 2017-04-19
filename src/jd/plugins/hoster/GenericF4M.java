@@ -93,6 +93,7 @@ public class GenericF4M extends PluginForHost {
             br.getPage(referer);
         }
         br.getPage(downloadLink.getPluginPatternMatcher());
+        br.followRedirect();
         final HDSContainer container = HDSContainer.read(downloadLink);
         if (container == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

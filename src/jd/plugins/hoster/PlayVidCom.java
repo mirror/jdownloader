@@ -155,6 +155,7 @@ public class PlayVidCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 br.getPage(f4m);
+                br.followRedirect();
                 final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
                 if (all == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
