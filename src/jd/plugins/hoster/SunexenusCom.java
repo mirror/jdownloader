@@ -82,6 +82,9 @@ public class SunexenusCom extends antiDDoSForHost {
             long wait = Long.parseLong(r.getMatch(1));
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (wait + 5) * 1000l);
         }
+        if (br.containsHTML("You have reached the download-limit:")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
         final String waittime = br.getRegex("<span class=\"seconds\">(\\d+)<").getMatch(0);
         final long t = System.currentTimeMillis();
         final Form start = br.getFormbyProperty("name", "F1");
