@@ -563,12 +563,12 @@ public class ClipboardMonitoring {
     public synchronized void setCurrentContent(String string) {
         if (clipboard != null) {
             try {
+                skipChangeDetection.set(true);
                 clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
                         skipChangeDetection.set(false);
                     }
                 });
-                skipChangeDetection.set(true);
             } catch (final Throwable e) {
                 skipChangeDetection.set(false);
             }
@@ -578,12 +578,12 @@ public class ClipboardMonitoring {
     public synchronized void setCurrentContent(Transferable object) {
         if (clipboard != null) {
             try {
+                skipChangeDetection.set(true);
                 clipboard.setContents(object, new ClipboardOwner() {
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
                         skipChangeDetection.set(false);
                     }
                 });
-                skipChangeDetection.set(true);
             } catch (final Throwable e) {
                 skipChangeDetection.set(false);
             }
