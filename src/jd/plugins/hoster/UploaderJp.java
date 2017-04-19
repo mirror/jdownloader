@@ -16,9 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -27,6 +24,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "http://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" })
 public class UploaderJp extends antiDDoSForHost {
@@ -50,7 +50,7 @@ public class UploaderJp extends antiDDoSForHost {
         if (form != null) {
             submitForm(form);
         }
-        if (br.containsHTML("404 File Not found")) {
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 File Not found<|Page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">オリジナル</span><span class=\"right\">([^<>\"]*?)</span>").getMatch(0);
