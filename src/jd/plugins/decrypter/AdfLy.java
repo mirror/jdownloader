@@ -147,7 +147,7 @@ public class AdfLy extends antiDDoSForDecrypt {
             // 201307xx
             String ysmm = br.getRegex("var ysmm = '([^\';]+)'").getMatch(0);
             if (ysmm == null) {
-                // 20170319
+                // 20170419
                 ysmm = br.getRegex("ysmm=\"(.*?)\"").getMatch(0);
             }
             if (ysmm != null) {

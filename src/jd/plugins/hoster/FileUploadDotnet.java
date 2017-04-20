@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -27,17 +30,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "https?://(www\\.|en\\.)?file\\-upload\\.net/((member/){0,1}download\\-\\d+/(.*?)\\.html|view\\-\\d+/(.*?)\\.html|member/view_\\d+_(.*?)\\.html|member/data3\\.php\\?user=(.*?)\\&name=(.*))" })
-public class FileUploadDotnet extends PluginForHost {
+public class FileUploadDotnet extends antiDDoSForHost {
 
     private final Pattern PAT_Download = Pattern.compile("https?://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
     private final Pattern PAT_VIEW     = Pattern.compile("https?://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
     private final Pattern PAT_Member   = Pattern.compile("https?://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
-    private String        UA           = RandomUserAgent.generate();
 
     public FileUploadDotnet(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,14 +59,14 @@ public class FileUploadDotnet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getHeaders().put("User-Agent", UA);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setFollowRedirects(true);
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
                 /* LinkCheck für DownloadFiles */
                 String downloadurl = downloadLink.getDownloadURL();
 
-                br.getPage(downloadurl);
+                getPage(downloadurl);
                 if (!br.containsHTML(">Datei existiert nicht")) {
                     // Get complete name
                     String filename = br.getRegex("<title>File\\-Upload\\.net \\- ([^<>\"]*?)</title>").getMatch(0);
@@ -87,7 +87,7 @@ public class FileUploadDotnet extends PluginForHost {
             } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
                 /* LinkCheck für DownloadFiles */
                 String downloadurl = downloadLink.getDownloadURL();
-                br.getPage(downloadurl);
+                getPage(downloadurl);
                 if (!br.getURL().contains("view")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -110,14 +110,21 @@ public class FileUploadDotnet extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getHeaders().put("User-Agent", UA);
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
-            String dllink = br.getRegex("(https?://(www\\.)file\\-upload\\.net/download(?:\\d+)?\\.php\\?valid=[\\d\\.]+&id=\\d+&name=[^\"\\']+)").getMatch(0);
+            // 20170420 raztoki, ajax
+            final String dlbutton = br.getRegex("('|\")(/downloadbutton\\.php\\?name=.*?)\\1").getMatch(1);
+            if (dlbutton == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            getPage(ajax, dlbutton);
+            String dllink = ajax.getRegex("(\"|')(https?://(\\w+\\.)file\\-upload\\.net/download(?:\\d+)?\\.php\\?.*?)\\1").getMatch(1);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = Encoding.htmlDecode(dllink);
-            br.setFollowRedirects(true);
+            dllink = Encoding.htmlOnlyDecode(dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
