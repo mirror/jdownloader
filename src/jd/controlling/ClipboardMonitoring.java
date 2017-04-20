@@ -178,12 +178,17 @@ public class ClipboardMonitoring {
             FALSE
         }
 
-        protected volatile int        waitTimeout;
-        protected final AtomicBoolean skipChangeFlag;
+        protected volatile int                       waitTimeout;
+        private final AtomicReference<AtomicBoolean> skipChangeFlag;
 
-        protected ClipboardChangeDetector(final AtomicBoolean skipChangeFlag) {
+        protected ClipboardChangeDetector(final AtomicReference<AtomicBoolean> skipChangeFlag) {
             this.skipChangeFlag = skipChangeFlag;
             waitTimeout = getMinWaitTimeout();
+        }
+
+        protected boolean isSkipFlagSet() {
+            final AtomicBoolean flag = skipChangeFlag.get();
+            return flag != null && flag.get();
         }
 
         protected CHANGE_FLAG waitForClipboardChanges() {
@@ -218,7 +223,7 @@ public class ClipboardMonitoring {
 
         protected CHANGE_FLAG hasChanges() {
             final CHANGE_FLAG ret;
-            if (skipChangeFlag.get()) {
+            if (isSkipFlagSet()) {
                 waitTimeout = getMinWaitTimeout();
                 ret = CHANGE_FLAG.SKIP;
             } else {
@@ -287,7 +292,7 @@ public class ClipboardMonitoring {
     private final Clipboard                                                                  clipboard;
     private static final AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE> CLIPBOARD_SKIP_MODE = new AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE>(GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP);
     private final WindowsClipboardHack                                                       windowsClipboardHack;
-    private final AtomicBoolean                                                              skipChangeDetection = new AtomicBoolean(false);
+    private final AtomicReference<AtomicBoolean>                                             skipChangeDetection = new AtomicReference<AtomicBoolean>(null);
     private final static AtomicBoolean                                                       HTML_FLAVOR_ALLOWED = new AtomicBoolean(true);
     private final ClipboardChangeDetector                                                    clipboardChangeDetector;
     private final LogSource                                                                  logger;
@@ -563,14 +568,18 @@ public class ClipboardMonitoring {
     public synchronized void setCurrentContent(String string) {
         if (clipboard != null) {
             try {
-                skipChangeDetection.set(true);
+                final AtomicBoolean skipFlag = new AtomicBoolean(true);
+                skipChangeDetection.set(skipFlag);
                 clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
-                        skipChangeDetection.set(false);
+                        skipFlag.set(false);
                     }
                 });
             } catch (final Throwable e) {
-                skipChangeDetection.set(false);
+                final AtomicBoolean old = skipChangeDetection.getAndSet(null);
+                if (old != null) {
+                    old.set(false);
+                }
             }
         }
     }
@@ -578,14 +587,18 @@ public class ClipboardMonitoring {
     public synchronized void setCurrentContent(Transferable object) {
         if (clipboard != null) {
             try {
-                skipChangeDetection.set(true);
+                final AtomicBoolean skipFlag = new AtomicBoolean(true);
+                skipChangeDetection.set(skipFlag);
                 clipboard.setContents(object, new ClipboardOwner() {
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
-                        skipChangeDetection.set(false);
+                        skipFlag.set(false);
                     }
                 });
             } catch (final Throwable e) {
-                skipChangeDetection.set(false);
+                final AtomicBoolean old = skipChangeDetection.getAndSet(null);
+                if (old != null) {
+                    old.set(false);
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package jd.controlling;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.logging2.LogSource;
@@ -44,7 +45,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     private final Pattern[] blackListPatterns;
     private final boolean   isProcessBlacklisted;
 
-    protected WindowsClipboardChangeDetector(final AtomicBoolean skipChangeFlag, final LogSource logger) {
+    protected WindowsClipboardChangeDetector(final AtomicReference<AtomicBoolean> skipChangeFlag, final LogSource logger) {
         super(skipChangeFlag);
         user32 = (User32) com.sun.jna.Native.loadLibrary("user32", User32.class);
         psapi = (psapi) Native.loadLibrary("psapi", psapi.class);
@@ -124,7 +125,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
                 if (isChangeBlacklisted()) {
                     return CHANGE_FLAG.BLACKLISTED;
                 } else {
-                    if (skipChangeFlag.get()) {
+                    if (isSkipFlagSet()) {
                         return CHANGE_FLAG.SKIP;
                     } else {
                         return CHANGE_FLAG.DETECTED;
