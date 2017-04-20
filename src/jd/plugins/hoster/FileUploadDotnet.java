@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -57,8 +58,7 @@ public class FileUploadDotnet extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        br = new Browser();
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setFollowRedirects(true);
         try {
@@ -120,12 +120,11 @@ public class FileUploadDotnet extends antiDDoSForHost {
             ajax.getHeaders().put("Accept", "*/*");
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPage(ajax, dlbutton);
-            String dllink = ajax.getRegex("(\"|')(https?://(\\w+\\.)file\\-upload\\.net/download(?:\\d+)?\\.php\\?.*?)\\1").getMatch(1);
-            if (dllink == null) {
+            final Form download = ajax.getFormbyActionRegex("https?://(\\w+\\.)file\\-upload\\.net/download(?:\\d+)?\\.php\\?.*?");
+            if (download == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = Encoding.htmlOnlyDecode(dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
@@ -133,7 +132,10 @@ public class FileUploadDotnet extends antiDDoSForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
+        if (dl.getConnection().getResponseCode() == 404) {
+            // typically referrer is incorrect!
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
