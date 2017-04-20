@@ -17,16 +17,24 @@
 package jd.plugins.hoster;
 
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 
 public class ImgmazeCom {
 
     public static Form fixImghost_next_form(final Browser br, final Form imghost_next_form) {
-        /* 2017-02-22 */
-        String special_key = br.getRegex("</Form>\\'\\)\\.attr\\(\\'cl.*?name=\"([a-f0-9]+)\"").getMatch(0);
+        final Regex blablub = br.getRegex("\\..([a-f0-9]+)\\{display:initial;\\}\\..([a-f0-9]+)\\{display:initial;\\}\\..([a-f0-9]+)\\{display:initial;\\}");
+        final Regex blablub_2 = br.getRegex("\\{visibility:hidden;\\}\\..([a-f0-9]+)\\{visibility:initial;\\}\\..([a-f0-9]+)\\{visibility:initial;\\}\\..([a-f0-9]+)\\{visibility:initial;\\}");
+
+        /* 2017-04-20: imgrock.net */
+        String special_key = blablub_2.getMatch(2);
+        if (special_key == null) {
+            /* 2017-02-22 */
+            special_key = br.getRegex("</Form>\\'\\)\\.attr\\(\\'cl.*?name=\"([a-f0-9]+)\"").getMatch(0);
+        }
         if (special_key == null) {
             /* 2017-02-10 */
-            special_key = br.getRegex("\\..([a-f0-9]+)\\{display:initial;\\}\\..([a-f0-9]+)\\{display:initial;\\}\\..([a-f0-9]+)\\{display:initial;\\}").getMatch(0);
+            special_key = blablub.getMatch(0);
         }
         if (special_key == null) {
             /* New 2017-02-09 */
