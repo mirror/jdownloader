@@ -37,11 +37,17 @@ public class HlsContainer {
                 final String streamInfo = stream[0];
                 // name = quality
                 // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
+                final String programID = new Regex(streamInfo, "PROGRAM-ID=(\\d+)").getMatch(0);
                 final String bandwidth = new Regex(streamInfo, "BANDWIDTH=(\\d+)").getMatch(0);
                 final String resolution = new Regex(streamInfo, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
                 final String codecs = new Regex(streamInfo, "CODECS=\"([^<>\"]+)\"").getMatch(0);
                 final String url = br.getURL(stream[1]).toString();
                 final HlsContainer hls = new HlsContainer();
+                if (programID != null) {
+                    hls.programID = Integer.parseInt(programID);
+                } else {
+                    hls.programID = -1;
+                }
                 if (bandwidth != null) {
                     hls.bandwidth = Integer.parseInt(bandwidth);
                 } else {
@@ -70,6 +76,15 @@ public class HlsContainer {
     private int    width     = -1;
     private int    height    = -1;
     private int    bandwidth = -1;
+    private int    programID = -1;
+
+    public int getProgramID() {
+        return programID;
+    }
+
+    public void setProgramID(int programID) {
+        this.programID = programID;
+    }
 
     private boolean isAudioMp3() {
         return StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34");
@@ -79,7 +94,7 @@ public class HlsContainer {
         return StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2");
     }
 
-    private boolean isAudio() {
+    public boolean isAudio() {
         return isAudioMp3() || isAudioAac();
     }
 
@@ -151,15 +166,13 @@ public class HlsContainer {
     }
 
     public String getFileExtension() {
-        final String ext;
         if (isAudioMp3()) {
-            ext = ".mp3";
+            return ".mp3";
         } else if (isAudioAac()) {
-            ext = ".aac";
+            return ".aac";
         } else {
-            ext = ".mp4";
+            return ".mp4";
         }
-        return ext;
     }
 
 }
