@@ -21,8 +21,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * @author noone2407
@@ -56,6 +56,9 @@ public class Mp3ZingVn extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.getPage(url);
+        if (br.containsHTML("title-404")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<s class=\"fn-name\">(.*?)<\\/s>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -63,6 +66,9 @@ public class Mp3ZingVn extends PluginForHost {
         downloadLink.setFinalFileName(filename.replaceFirst("\\.{3}$", "").replace(":", "-") + ".mp3");
         final String datacode = br.getRegex("<a\\s+(?:[^>]*?\\s+)?data-code=\"(.*?)\"").getMatch(0);
         final String json_source = br.getPage("http://mp3.zing.vn/xhr/song/get-download?panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
+        if (br.containsHTML("title-404")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
         if ("Không thể download bài hát này vì yêu cầu từ nhà sở hữu bản quyền.".equals(entries.get("msg"))) {
             // from google translate
