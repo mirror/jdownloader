@@ -51,12 +51,12 @@ public class Mp3ZingVn extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.getPage(url);
-        if (br.containsHTML("title-404")) {
+        if (isOffline()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<s class=\"fn-name\">(.*?)<\\/s>").getMatch(0);
@@ -66,7 +66,7 @@ public class Mp3ZingVn extends PluginForHost {
         downloadLink.setFinalFileName(filename.replaceFirst("\\.{3}$", "").replace(":", "-") + ".mp3");
         final String datacode = br.getRegex("<a\\s+(?:[^>]*?\\s+)?data-code=\"(.*?)\"").getMatch(0);
         final String json_source = br.getPage("http://mp3.zing.vn/xhr/song/get-download?panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
-        if (br.containsHTML("title-404")) {
+        if (isOffline()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
@@ -96,6 +96,10 @@ public class Mp3ZingVn extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean isOffline() {
+        return br.containsHTML("title-404") || this.br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override

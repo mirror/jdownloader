@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidnow.to" }, urls = { "https?://(?:www\\.)?vidnow\\.to/file/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidnow.to" }, urls = { "https?://(?:www\\.)?vidnow\\.to/file/[A-Za-z0-9\\-_]+" })
 public class VidnowTo extends PluginForDecrypt {
 
     public VidnowTo(PluginWrapper wrapper) {
@@ -54,6 +55,28 @@ public class VidnowTo extends PluginForDecrypt {
                 continue;
             }
             decryptedLinks.add(createDownloadlink(singleLink));
+        }
+
+        /*
+         * Try to find direct-download (2017-04-20: Seems to be officially only available for users from England) [GEO-block is possibly to
+         * skip]
+         */
+        try {
+            final Regex js_arguments = this.br.getRegex("downloadLink\\((\\d+),\\'([^<>\"\\']+)\\'");
+            final String link_id = js_arguments.getMatch(0);
+            final String title = js_arguments.getMatch(1);
+            if (link_id != null && title != null) {
+                this.br.postPage("http://vidnow.to/file/vidnow/", "downloadLink=1&link_id=" + link_id + "&title=" + title);
+                /* Usually we'll get googlevideo urls here. */
+                final String[] directurls = this.br.getRegex("<a href=\"(https?://[^<>\"\\']+)").getColumn(0);
+                for (final String singleLink : directurls) {
+                    if (singleLink.contains(this.getHost())) {
+                        continue;
+                    }
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
+            }
+        } catch (final Throwable e) {
         }
 
         if (fpName != null) {
