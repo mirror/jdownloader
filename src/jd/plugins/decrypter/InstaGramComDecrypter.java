@@ -20,6 +20,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,9 +38,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
 
@@ -50,7 +50,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private String                        username_url           = null;
     private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
     private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
-    private boolean                       isPrivate              = false;
+    private Boolean                       isPrivate              = false;
     private FilePackage                   fp                     = null;
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
@@ -61,7 +61,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         // https and www. is required!
         String parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
         if (parameter.contains("?private_url=true")) {
-            isPrivate = true;
+            isPrivate = Boolean.TRUE;
             /* Remove this from url as it is only required for decrypter */
             parameter = parameter.replace("?private_url=true", "");
         }
@@ -104,7 +104,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
             for (final Object galleryo : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) galleryo;
-                entries = (LinkedHashMap<String, Object>) entries.get("media");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "graphql/shortcode_media");
                 username_url = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
                 this.isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "owner/is_private")).booleanValue();
 
@@ -226,7 +226,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private void decryptAlbum(LinkedHashMap<String, Object> entries) {
         final long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
-        final String linkid_main = (String) entries.get("code");
+        // is this id?
+        // final String linkid_main = (String) entries.get("code");
+        final String linkid_main = (String) entries.get("id");
         final String description = (String) entries.get("caption");
 
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
@@ -304,7 +306,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         dl.setContentUrl(content_url);
         dl.setLinkID(linkid);
-        dl._setFilePackage(fp);
+        if (fp != null && !"Various".equals(fp.getName())) {
+            fp.add(dl);
+        }
         dl.setAvailable(true);
         dl.setName(filename);
         if (date > 0) {
