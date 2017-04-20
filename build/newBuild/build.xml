@@ -113,9 +113,12 @@
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
-				<!-- -->
-
 				<exclude name="miglayout.jar" />
+				<exclude name="**/*.info" />
+			</fileset>
+		</copy>
+		<copy todir="${dist}/libs">
+			<fileset dir="${dep.browser}/libs" includes="**/*.jar">
 				<exclude name="**/*.info" />
 			</fileset>
 		</copy>
@@ -129,6 +132,7 @@
 			<fileset dir="${res}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.awu}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.jdc}/libs/" includes="**/*.info" />
+			<fileset dir="${dep.browser}/libs/" includes="**/*.info" />
 		</copy>
 
 		<copy todir="${dist}/tools">
@@ -155,8 +159,7 @@
 			<fileset dir="${dep.awu}/src" includes="**/*.lng" />
 			<fileset dir="${dep.updateclient}/src" includes="**/*.lng" />
 			<fileset dir="${dep.browser}/src" includes="**/*.lng" />
-			<fileset dir="src" includes="**/*.lng" />
-			<fileset dir="${dep.browser}/src" includes="**/*.lng" />
+			<fileset dir="src" includes="**/*.lng" />			
 		</copy>
 		<copy todir="${dist}">
 
@@ -365,9 +368,9 @@
 
 		</manifest>
 		<jar duplicate="fail" file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
-			<zipfileset  src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
-			<zipfileset  src="${dep.awu}/libs/proxyVole.jar" excludes="META-INF/*" />
-			<zipfileset  src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
+			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
+			<zipfileset src="${dep.awu}/libs/proxyVole.jar" excludes="META-INF/*" />
+			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
 				<include name="version.nfo" />
 				<include name="classpath" />
@@ -455,7 +458,7 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and Friends" />
 		</manifest>
-		
+
 		<buildAddon package="EventScripter" include="eventscripter" />
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
