@@ -28,6 +28,10 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -37,10 +41,6 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property {
 
@@ -457,13 +457,14 @@ public class AccountInfo extends Property {
             while (it.hasNext()) {
                 final String host = it.next();
                 final String hostParts[] = host.split("\\.");
+                final String matcher = ".*(\\\\.|/|\\?:?|\\(|\\|)" + hostParts[0] + "(\\|[^/]*?)?\\\\.(" + hostParts[1] + "|[^\\/)]*" + hostParts[1] + "|[^\\)/]*[a-zA-Z\\.]+\\)[\\?\\.]*" + hostParts[1] + ").*";
                 if (hostParts.length == 2) {
                     for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
                         if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
                             continue;
                         }
                         final String pattern = lazyHostPlugin.getPatternSource();
-                        if (pattern.matches(".*(\\\\.|/|\\?:?|\\(|\\|)" + hostParts[0] + "(\\|.*?)?\\\\.(" + hostParts[1] + "|[^\\)]*" + hostParts[1] + ").*")) {
+                        if (pattern.matches(matcher)) {
                             assignedMultiHostSupport.add(lazyHostPlugin.getHost());
                             mapping.put(host, lazyHostPlugin.getHost());
                             it.remove();
