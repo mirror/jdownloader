@@ -201,11 +201,11 @@ public class PobierzTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, null, free_RESUME, free_MAXCHUNKS, "free_directlink");
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink link, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink link, final Account aa, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         boolean skipWaittime = false;
         String continue_link = null;
         boolean captcha = false;
@@ -256,13 +256,14 @@ public class PobierzTo extends PluginForHost {
                     logger.info("Found continue_link, continuing...");
                 }
                 final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                /* 2017-20-04: Added workaround for Premium account + reCaptchaV2 */
                 if (isDownloadlink(continue_link)) {
                     /*
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
-                } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
+                } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'") && (aa != null && aa.getType() != AccountType.PREMIUM)) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
@@ -656,35 +657,40 @@ public class PobierzTo extends PluginForHost {
             if (!available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());
             }
-            doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
+            doFree(link, account, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
-            String dllink = link.getDownloadURL();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
-            checkResponseCodeErrors(dl.getConnection());
-            if (!dl.getConnection().isContentDisposition()) {
-                logger.warning("The final dllink seems not to be a file, checking for errors...");
-                br.followConnection();
-                handleErrors();
-                logger.info("Found no errors, let's see if we can find the dllink now...");
-                handlePassword(link);
-                dllink = this.getDllink();
-                if (dllink == null) {
-                    dllink = getContinueLink();
-                }
-                if (dllink == null) {
-                    handleErrors();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
-                checkResponseCodeErrors(dl.getConnection());
+            /* 2017-04-20: New: Same handling as free here. */
+            if (!available_CHECK_OVER_INFO_PAGE) {
+                br.getPage(link.getDownloadURL());
             }
-            if (!dl.getConnection().isContentDisposition()) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                handleErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            doFree(link, account, account_FREE_RESUME, account_PREMIUM_MAXCHUNKS, "premium_acc_directlink");
+            // String dllink = link.getDownloadURL();
+            // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            // checkResponseCodeErrors(dl.getConnection());
+            // if (!dl.getConnection().isContentDisposition()) {
+            // logger.warning("The final dllink seems not to be a file, checking for errors...");
+            // br.followConnection();
+            // handleErrors();
+            // logger.info("Found no errors, let's see if we can find the dllink now...");
+            // handlePassword(link);
+            // dllink = this.getDllink();
+            // if (dllink == null) {
+            // dllink = getContinueLink();
+            // }
+            // if (dllink == null) {
+            // handleErrors();
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            // checkResponseCodeErrors(dl.getConnection());
+            // }
+            // if (!dl.getConnection().isContentDisposition()) {
+            // logger.warning("The final dllink seems not to be a file!");
+            // br.followConnection();
+            // handleErrors();
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // dl.startDownload();
         }
     }
 
