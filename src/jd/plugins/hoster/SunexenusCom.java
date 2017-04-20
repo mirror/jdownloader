@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,7 +28,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sunexenus.com" }, urls = { "https?://sunexenus\\.com/[a-zA-Z0-9]+/.*" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sunexenus.com" }, urls = { "https?://sunexenus\\.com/[a-zA-Z0-9]{12}/[a-zA-Z0-9\\-_]+" })
 public class SunexenusCom extends antiDDoSForHost {
 
     private final String         baseURL = "https://sunexenus.com";
@@ -49,7 +49,7 @@ public class SunexenusCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.setFollowRedirects(false);
         getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("No such file with this filename") || br.containsHTML("<h2>File Not Found</h2>") || br.containsHTML("The file was removed by administrator")) {
+        if (br.containsHTML("No such file with this filename|>File Not Found<|The file was removed by administrator")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Regex r = br.getRegex("<span id=\"download_file_name\">([^<>\"]+)</span> \\(([^)]+)\\)");
