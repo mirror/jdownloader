@@ -58,6 +58,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br = new Browser();
         prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
         fp = FilePackage.getInstance();
+        fp.setProperty("ALLOW_MERGE", true);
         // https and www. is required!
         String parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
         if (parameter.contains("?private_url=true")) {
@@ -107,7 +108,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "graphql/shortcode_media");
                 username_url = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
                 this.isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "owner/is_private")).booleanValue();
-
+                if (username_url != null) {
+                    fp.setName(username_url);
+                }
                 decryptAlbum(entries);
             }
         } else {
@@ -120,7 +123,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
             final boolean isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
 
-            fp.setName(username_url);
+            if (username_url != null) {
+                fp.setName(username_url);
+            }
 
             final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
             final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
@@ -226,9 +231,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private void decryptAlbum(LinkedHashMap<String, Object> entries) {
         final long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
-        // is this id?
-        // final String linkid_main = (String) entries.get("code");
-        final String linkid_main = (String) entries.get("id");
+        // is this id? // final String linkid_main = (String) entries.get("id");
+        final String linkid_main = (String) entries.get("code");
         final String description = (String) entries.get("caption");
 
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
@@ -245,9 +249,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void decryptSingleImage(LinkedHashMap<String, Object> entries, final String linkid_main, final long date, final String description) {
+    private void decryptSingleImage(LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description) {
         String server_filename = null;
         final String shortcode = (String) entries.get("shortcode");
+        if (linkid_main == null && shortcode != null) {
+            // link uid, with /p/ its shortcode
+            linkid_main = shortcode;
+        }
         final boolean isVideo = ((Boolean) entries.get("is_video")).booleanValue();
         String dllink;
         if (isVideo) {
@@ -283,7 +291,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } else {
                 filename = linkid_main;
             }
-            if (!StringUtils.isEmpty(shortcode)) {
+            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
                 filename += "_" + shortcode;
             }
             filename += ext;
