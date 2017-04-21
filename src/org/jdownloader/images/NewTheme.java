@@ -17,7 +17,6 @@ import org.appwork.resources.Theme;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -77,7 +76,6 @@ public class NewTheme extends Theme {
     @Override
     public Icon getIcon(String relativePath, int size) {
         if ("compress".equals(relativePath)) {
-            Log.log(new Exception("bad Icon Name: " + relativePath));
             return super.getIcon(IconKey.ICON_EXTRACT, size);
         }
         return super.getIcon(relativePath, size);
