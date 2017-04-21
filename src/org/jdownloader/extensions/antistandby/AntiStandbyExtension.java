@@ -108,7 +108,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
         case CRAWLING:
             return LinkCollector.getInstance().isCollecting();
         case DOWNLOADING:
-            return DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE);
+            return DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.STOPPING_STATE);
         case DOWNLOADINGDORCRAWLING:
             return requiresAntiStandby(Mode.CRAWLING) || requiresAntiStandby(Mode.DOWNLOADING);
         default:
