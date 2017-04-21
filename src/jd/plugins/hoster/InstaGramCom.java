@@ -46,8 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
 
@@ -151,15 +149,6 @@ public class InstaGramCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
-            final String username = br.getRegex("\"owner\".*?\"username\": ?\"([^<>\"]*?)\"").getMatch(0);
-            final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_-]+)$").getMatch(0);
-            String filename = null;
-            if (StringUtils.isNotEmpty(username)) {
-                filename = username + " - " + linkid;
-            } else {
-                filename = linkid;
-            }
-            filename = filename.trim();
             if (ext == null) {
                 ext = getFileNameExtensionFromString(dllink, ".jpg");
             }
@@ -168,7 +157,15 @@ public class InstaGramCom extends PluginForHost {
                 server_filename = fixServerFilename(server_filename, ext);
                 downloadLink.setFinalFileName(server_filename);
             } else {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+                // decrypter has set the proper name!
+                // if the user toggles PREFER_SERVER_FILENAMES setting many times the name can change.
+                final String name = downloadLink.getStringProperty("decypter_filename", null);
+                if (name != null) {
+                    downloadLink.setFinalFileName(name);
+                } else {
+                    // do not change.
+                    logger.warning("missing storable, filename will not be renamed");
+                }
             }
         }
         URLConnectionAdapter con = null;
