@@ -72,7 +72,8 @@ public class TunePk extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
-        br.getPage("http://embed." + this.getHost() + "/play/" + fid + "?autoplay=no&ssl=no&inline=true");
+        // br.getPage("http://embed." + this.getHost() + "/play/" + fid + "?autoplay=no&ssl=no&inline=true");
+        br.getPage(link.getDownloadURL().replace("http:", "https:"));
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"gotune\"")) {
             /* E.g. Woops,<br>this video has been deactivated <a href="//tune.pk" class="gotune" target="_blank">Goto tune.pk</a> */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
