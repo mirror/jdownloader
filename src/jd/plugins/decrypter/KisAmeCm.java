@@ -271,9 +271,17 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         if (match2) {
             skey += "6n23ncasdln213";
         }
+        String match2b = br.getRegex("\\[\"([^\"]+)\"\\]; skH \\+=").getMatch(0);
+        if (match2b != null) {
+            skey += Encoding.unescape(match2b);
+        }
         boolean match3 = br.getRegex("src=\"/Scripts/file3.js\">").matches();
         if (match3) {
             skey = skey.replace("a", "c");
+        }
+        String match3b = br.getRegex("\\[\"([^\"]+)\", \"\\\\x72\\\\x65\\\\x70\\\\x6C\\\\x61\\\\x63\\\\x65\"\\]; skH =").getMatch(0);
+        if (match3b != null) {
+            skey = skey.replace("a", Encoding.unescape(match3b));
         }
         return skey;
     }
