@@ -318,7 +318,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             fp.add(dl);
         }
         dl.setAvailable(true);
-        dl.setName(filename);
+        dl.setProperty("decypter_filename", filename);
+        dl.setFinalFileName(filename);
         if (date > 0) {
             jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, date);
         }
