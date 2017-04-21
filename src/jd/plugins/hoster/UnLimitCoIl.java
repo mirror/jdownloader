@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -128,6 +130,10 @@ public class UnLimitCoIl extends PluginForHost {
                 offline = true;
             } else {
                 br.followConnection();
+            }
+        } catch (final BrowserException be) {
+            if (be.getCause() != null && be.getCause() instanceof SocketTimeoutException) {
+                offline = true;
             }
         } finally {
             try {
