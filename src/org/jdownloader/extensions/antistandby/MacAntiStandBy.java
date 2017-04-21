@@ -13,27 +13,26 @@ public class MacAntiStandBy extends Thread {
 
     private final AntiStandbyExtension     jdAntiStandby;
     private static final int               sleep       = 5000;
-    private final LogSource                logger;
     private final AtomicReference<Process> lastProcess = new AtomicReference<Process>(null);
 
     public MacAntiStandBy(AntiStandbyExtension antiStandbyExtension) {
         setDaemon(true);
         setName("MacAntiStandby");
         jdAntiStandby = antiStandbyExtension;
-        logger = LogController.CL(AntiStandbyExtension.class);
     }
 
     public void run() {
+        final LogSource logger = LogController.CL(MacAntiStandBy.class);
         try {
             while (jdAntiStandby.isAntiStandbyThread()) {
-                enableAntiStandby(jdAntiStandby.requiresAntiStandby());
+                enableAntiStandby(logger, jdAntiStandby.requiresAntiStandby());
                 sleep(sleep);
             }
         } catch (Throwable e) {
             logger.log(e);
         } finally {
             try {
-                enableAntiStandby(false);
+                enableAntiStandby(logger, false);
             } catch (final Throwable e) {
             } finally {
                 logger.fine("JDAntiStandby: Terminated");
@@ -42,7 +41,7 @@ public class MacAntiStandBy extends Thread {
         }
     }
 
-    private void enableAntiStandby(final boolean enabled) {
+    private void enableAntiStandby(final LogSource logger, final boolean enabled) {
         if (enabled) {
             Process process = lastProcess.get();
             if (process != null) {
@@ -52,7 +51,7 @@ public class MacAntiStandBy extends Thread {
                     return;
                 }
             }
-            process = createProcess();
+            process = createProcess(logger);
             lastProcess.set(process);
             if (process != null) {
                 logger.fine("JDAntiStandby: Start");
@@ -79,7 +78,7 @@ public class MacAntiStandBy extends Thread {
         }
     }
 
-    private Process createProcess() {
+    private Process createProcess(final LogSource logger) {
         try {
             final ProcessBuilder probuilder = ProcessBuilderFactory.create(new String[] { "pmset", "noidle" });
             logger.info("Call pmset nodile");
