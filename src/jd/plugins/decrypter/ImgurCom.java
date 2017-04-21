@@ -293,6 +293,9 @@ public class ImgurCom extends PluginForDecrypt {
         if (jsonarray == null) {
             throw new DecrypterException("Decrypter broken!");
         }
+
+        // final String json_num_images = PluginJSonUtils.getJson(jsonarray, "num_images");
+
         String[] items = jsonarray.split("\\},\\{");
         /* We assume that the API is always working fine */
         if (items == null || items.length == 0) {
@@ -311,8 +314,8 @@ public class ImgurCom extends PluginForDecrypt {
             videoSource = getJson(item, "video_source");
             String ext = getJson(item, "ext");
             if (imgUID == null || filesize_str == null || ext == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
+                logger.info("Seems like user/album has no images at all?!");
+                continue;
             }
             final long filesize = Long.parseLong(filesize_str);
             /* Correct sometimes broken ext TODO: Wait for a response of their support - this might be a serverside issue. */
