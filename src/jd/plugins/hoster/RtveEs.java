@@ -49,6 +49,7 @@ public class RtveEs extends PluginForHost {
     private String              dllink       = null;
     private String              BLOWFISHKEY  = "eWVMJmRhRDM=";
     private String              dl_now_now   = null;
+    private boolean             geo_blocked  = false;
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -98,7 +99,9 @@ public class RtveEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestVideo(downloadLink);
-        if (dl_now_now != null) {
+        if (geo_blocked) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+        } else if (dl_now_now != null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + dl_now_now);
         }
         if (dllink == null) {
@@ -131,6 +134,7 @@ public class RtveEs extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        geo_blocked = false;
         requestVideo(downloadLink);
         setBrowserExclusive();
         if (dl_now_now != null) {
@@ -163,6 +167,9 @@ public class RtveEs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("No hay vídeos o audios para la búsqueda efectuada")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("/alacarta20/i/imgError/video\\.png")) {
+            this.geo_blocked = true;
+            return AvailableStatus.TRUE;
         }
         String filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE_RIO2016)) {

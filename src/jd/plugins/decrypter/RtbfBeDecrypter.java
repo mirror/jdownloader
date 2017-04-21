@@ -87,7 +87,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\- \\d{2}/\\d{2}/\\d{4}").getMatch(0);
         }
         /* 2017-03-01: Removed subtitle for now as we got faulty names before. Title should actually contain everything we need! */
-        final String subtitle = null;
+        final String subtitle = this.br.getRegex("<h2 class=\"rtbf\\-media\\-item__subtitle\">([^<>]+)</h2>").getMatch(0);
         final String uploadDate = PluginJSonUtils.getJsonValue(this.br, "uploadDate");
         if (uploadDate != null) {
             date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);

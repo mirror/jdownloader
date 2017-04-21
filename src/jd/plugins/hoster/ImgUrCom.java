@@ -183,7 +183,6 @@ public class ImgUrCom extends PluginForHost {
                 if (apiResponse == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                filename_formatted = getFormattedFilename(link);
                 final String fileType = apiResponse[0];
                 link.setProperty("filetype", fileType);
                 link.setProperty("decryptedfinalfilename", apiResponse[2]);
@@ -195,6 +194,7 @@ public class ImgUrCom extends PluginForHost {
                 } else {
                     link.removeProperty("decryptedfilesize");
                 }
+                filename_formatted = getFormattedFilename(link);
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
                  * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).

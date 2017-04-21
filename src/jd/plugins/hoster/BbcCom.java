@@ -17,8 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,6 +39,7 @@ public class BbcCom extends PluginForHost {
 
     public BbcCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -146,11 +150,30 @@ public class BbcCom extends PluginForHost {
         if (hls_master != null) {
             hls_master = Encoding.htmlDecode(hls_master);
             br.getPage(hls_master);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+            final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
+            String url_hls = null;
+            final List<HlsContainer> containers = HlsContainer.getHlsQualities(this.br);
+            if (!configuredPreferredVideoHeight.matches("\\d+")) {
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(containers);
+                url_hls = hlsbest.getDownloadurl();
+            } else {
+                final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(configuredPreferredVideoHeight));
+                for (final HlsContainer hlscont : containers) {
+                    final int height = hlscont.getHeight();
+                    final String height_for_quality_selection_temp = getHeightForQualitySelection(height);
+                    if (height_for_quality_selection_temp.equals(height_for_quality_selection)) {
+                        logger.info("Found user selected quality");
+                        url_hls = hlscont.getDownloadurl();
+                        break;
+                    }
+                }
+                if (url_hls == null) {
+                    logger.info("Failed to find user selecred quality --> Fallback to BEST");
+                    final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(containers);
+                    url_hls = hlsbest.getDownloadurl();
+                }
             }
-            final String url_hls = hlsbest.getDownloadurl();
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
@@ -187,6 +210,31 @@ public class BbcCom extends PluginForHost {
         }
     }
 
+    /**
+     * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
+     * work properly!
+     */
+    private String getHeightForQualitySelection(final int height) {
+        final String heightselect;
+        if (height > 0 && height <= 200) {
+            heightselect = "170";
+        } else if (height > 200 && height <= 300) {
+            heightselect = "270";
+        } else if (height > 300 && height <= 400) {
+            heightselect = "360";
+        } else if (height > 400 && height <= 500) {
+            heightselect = "480";
+        } else if (height > 500 && height <= 600) {
+            heightselect = "570";
+        } else if (height > 600 && height <= 800) {
+            heightselect = "720";
+        } else {
+            /* Either unknown quality or audio (0x0) */
+            heightselect = Integer.toString(height);
+        }
+        return heightselect;
+    }
+
     // @SuppressWarnings({ "static-access" })
     // private String formatDate(String input) {
     // final long date;
@@ -209,6 +257,26 @@ public class BbcCom extends PluginForHost {
     // }
     // return formattedDate;
     // }
+
+    private String getConfiguredVideoHeight() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final String selectedResolution = FORMATS[selection];
+        if (selectedResolution.contains("x")) {
+            final String height = selectedResolution.split("x")[1];
+            return height;
+        } else {
+            /* BEST selection */
+            return selectedResolution;
+        }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred videoresolution:").setDefaultValue(0));
+    }
+
+    /* The list of qualities displayed to the user */
+    private final String[] FORMATS               = new String[] { "BEST", "1920x1080", "1280x720", "1024x576", "768x432", "640x360", "480x270", "320x180" };
+    private final String   SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
 
     @Override
     public void reset() {

@@ -17,57 +17,44 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroshare.com" }, urls = { "https?://(?:www\\.)?eroshare\\.com/[a-z0-9]+" })
-public class EroshareCom extends PluginForDecrypt {
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-    public EroshareCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wlnk.ec" }, urls = { "https?://(?:www\\.)?wlnk\\.ec/[A-Za-z0-9]+" })
+public class WlnkEc extends PluginForDecrypt {
+
+    public WlnkEc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("text\\-center error")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
-        /* 2017-04-21 */
-        final String postbody = br.getRegex("(<div class=\"item-list\">.*?)<\\!\\-\\-item\\-list\\-\\->").getMatch(0);
-        if (postbody == null) {
-            return null;
-        }
-        final String[] links = new Regex(postbody, "(//(?:i|v)\\.eroshare\\.com/[^\"]+)").getColumn(0);
+        String fpName = null;
+        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+        this.br.postPage(this.br.getURL(), "submit=unlock&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+        final String[] links = br.getRegex("\"(http[^<>\"\\']+)\" rel=\"external nofollow\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         for (final String singleLink : links) {
-            if (singleLink.contains("_thumb")) {
-                continue;
-            }
-            final String link = Request.getLocation(singleLink, br.getRequest());
-            if (!dupe.add(link)) {
-                continue;
-            }
-            final DownloadLink dl = createDownloadlink("directhttp://" + link);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink(singleLink));
         }
 
         if (fpName != null) {
