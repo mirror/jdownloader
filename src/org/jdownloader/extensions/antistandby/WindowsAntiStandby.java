@@ -29,28 +29,27 @@ public class WindowsAntiStandby extends Thread implements Runnable {
     private static final int           sleep                    = 5000;
     private final AntiStandbyExtension jdAntiStandby;
 
-    private final LogSource            logger;
-
     public WindowsAntiStandby(final AntiStandbyExtension jdAntiStandby) {
         super();
         this.jdAntiStandby = jdAntiStandby;
         this.setDaemon(true);
         setName("WindowsAntiStandby");
-        logger = LogController.CL(AntiStandbyExtension.class);
+
     }
 
     @Override
     public void run() {
+        final LogSource logger = LogController.CL(WindowsAntiStandby.class);
         try {
             while (jdAntiStandby.isAntiStandbyThread()) {
-                enableAntiStandby(jdAntiStandby.requiresAntiStandby());
+                enableAntiStandby(logger, jdAntiStandby.requiresAntiStandby());
                 sleep(sleep);
             }
         } catch (Throwable e) {
             logger.log(e);
         } finally {
             try {
-                enableAntiStandby(false);
+                enableAntiStandby(logger, false);
             } catch (final Throwable e) {
             } finally {
                 logger.fine("JDAntiStandby: Terminated");
@@ -59,7 +58,7 @@ public class WindowsAntiStandby extends Thread implements Runnable {
         }
     }
 
-    private void enableAntiStandby(final boolean enabled) {
+    private void enableAntiStandby(final LogSource logger, final boolean enabled) {
         final boolean displayRequired = jdAntiStandby.getSettings().isDisplayRequired();
         if (lastEnabledState.compareAndSet(!enabled, enabled) || lastDisplayRequiredState.compareAndSet(!displayRequired, displayRequired)) {
             if (enabled) {
