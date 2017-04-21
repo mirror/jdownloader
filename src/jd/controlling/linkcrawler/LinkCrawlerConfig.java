@@ -41,6 +41,15 @@ public interface LinkCrawlerConfig extends ConfigInterface {
 
     void setDeepDecryptLoadLimit(int l);
 
+    @DefaultIntValue(2 * 1024 * 1024)
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("max. file size in bytes during deep decrypt")
+    @SpinnerValidator(min = -1, max = 50 * 1024 * 1024)
+    int getDeepDecryptFileSizeLimit();
+
+    void setDeepDecryptFileSizeLimit(int l);
+
     @DefaultBooleanValue(true)
     @AboutConfig
     @DescriptionForConfigEntry("A Offline Link created to indicate to the users when unknown Exceptions are thrown or plugin returns null results.")

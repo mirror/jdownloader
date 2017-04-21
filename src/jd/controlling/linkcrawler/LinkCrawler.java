@@ -964,7 +964,8 @@ public class LinkCrawler {
                         final String currentURI = source.getURL().replaceFirst("file:///?", "file:///");
                         final File file = new File(new URI(currentURI));
                         if (file.exists() && file.isFile()) {
-                            final int readLimit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
+                            final int limit = CONFIG.getDeepDecryptFileSizeLimit();
+                            final int readLimit = limit == -1 ? -1 : Math.max(1 * 1024 * 1024, limit);
                             final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");
                             final List<CrawledLink> fileContentLinks = find(generation, fileContent, null, false, false);
                             if (fileContentLinks != null) {
