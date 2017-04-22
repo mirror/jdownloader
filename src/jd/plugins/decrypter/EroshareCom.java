@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroshare.com" }, urls = { "https?://(?:www\\.)?eroshare\\.com/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroshare.com" }, urls = { "https?://(?:www\\.)?eroshare\\.com/[a-z0-9]{8}" })
 public class EroshareCom extends PluginForDecrypt {
 
     public EroshareCom(PluginWrapper wrapper) {
