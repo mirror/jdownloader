@@ -75,7 +75,7 @@ public class UlozTo extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         // ulozto.net = the english version of the site
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to").replaceFirst("^http://", "https://"));
     }
 
     @Override
@@ -97,6 +97,7 @@ public class UlozTo extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setAllowedResponseCodes(new int[] { 400, 401, 410, 451 });
         br.setCookie(this.getHost(), "adblock_detected", "false");
+        br.setCookie(this.getHost(), "maturity", "adult");
         return br;
     }
 
@@ -171,7 +172,7 @@ public class UlozTo extends PluginForHost {
             }
             String filename = null;
             passwordProtected = this.isPasswordProtected();
-            if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle\"")) {
+            if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle")) {
                 /* Seems like whatever url the user added, it is not a downloadurl. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
