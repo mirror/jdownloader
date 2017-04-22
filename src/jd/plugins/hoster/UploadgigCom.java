@@ -138,14 +138,19 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             String urlj = br.getRegex("\"(url[^\"]*)\"").getMatch(0);
             dllink = PluginJSonUtils.getJsonValue(br, urlj);
+            if (dllink != null && dllink.startsWith("http")) {
+                // not always within url* look for the pattern.. they been putting strings with messages in.
+                dllink = br.getRegex("https?://[a-zA-Z0-9_-.]*uploadgig\\.com/dl/[a-zA-Z0-9]+/dlfile").getMatch(-1);
+            }
+            if (dllink == null || !dllink.startsWith("http")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(br, "cd");
             if (waittime_str != null) {
                 wait = Integer.parseInt(waittime_str);
             }
-            if (dllink == null || !dllink.startsWith("http")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+
             this.sleep(wait * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
