@@ -17,8 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,14 +34,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesupload.org" }, urls = { "https?://(www\\.)?filesupload\\.org/([a-f0-9]{32}/.+|[A-Za-z0-9]+)" })
-public class FilesUploadOrg extends PluginForHost {
+public class FilesUploadOrg extends antiDDoSForHost {
 
     public FilesUploadOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -78,27 +76,19 @@ public class FilesUploadOrg extends PluginForHost {
     private static final boolean FREE_RESUME                                  = true;
     private static final int     FREE_MAXCHUNKS                               = 1;
     private static final int     FREE_MAXDOWNLOADS                            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME                          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS                       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME                       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS                 = 20;
-
-    private static AtomicInteger maxPrem                                      = new AtomicInteger(1);
 
     private boolean isNewLinkType(final DownloadLink downloadLink) {
         return downloadLink != null ? downloadLink.getDownloadURL().matches(".+filesupload\\.org/[a-f0-9]{32}/.+") : false;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null, filesize = null, md5 = null;
         if (isNewLinkType(link)) {
             setFuid(link);
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -106,7 +96,7 @@ public class FilesUploadOrg extends PluginForHost {
             filesize = br.getRegex("size\\s*:\\s*</b>\\s*<i>\\s*(.*?)</i>").getMatch(0);
             md5 = br.getRegex("md5\\s*:\\s*</b>\\s*<i>\\s*([a-f0-9]{32})</i>").getMatch(0);
         } else if (AVAILABLE_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -117,7 +107,7 @@ public class FilesUploadOrg extends PluginForHost {
             }
             filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             handleErrors();
             if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
@@ -172,7 +162,7 @@ public class FilesUploadOrg extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (AVAILABLE_CHECK_OVER_INFO_PAGE && !isNewLinkType(downloadLink)) {
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(downloadLink.getDownloadURL());
         }
         doFree(downloadLink, "free_directlink", FREE_RESUME, FREE_MAXCHUNKS);
     }
@@ -199,8 +189,8 @@ public class FilesUploadOrg extends PluginForHost {
             for (int i = 1; i <= 3; i++) {
                 if (isNewLinkType(downloadLink)) {
                     continue_link = br.getRegex("<a href=\"(/download-or-watch/" + fuid + "/[^\"]+)").getMatch(0);
-                    br.getPage(continue_link);
-                    continue_link = br.getRegex("<source src=\"(https?://(?:www\\.)?filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
+                    getPage(continue_link);
+                    continue_link = br.getRegex("<source src=\"(https?://[a-zA-Z0-9_-.]*filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
                     continue_link = HTMLEntities.unhtmlentities(continue_link);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     if (dl.getConnection().isContentDisposition()) {
@@ -314,22 +304,6 @@ public class FilesUploadOrg extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
