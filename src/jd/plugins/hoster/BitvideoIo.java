@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|embed/)[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|v/|embed/)[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
