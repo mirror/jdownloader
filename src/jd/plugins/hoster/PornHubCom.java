@@ -180,7 +180,8 @@ public class PornHubCom extends PluginForHost {
             if (aa != null) {
                 this.login(this.br, aa, false);
             }
-            getPage(br, createPornhubVideolink(viewkey, aa));
+            this.br.setFollowRedirects(true);
+            getPage(this.br, createPornhubVideolink(viewkey, aa));
             if (br.containsHTML(html_privatevideo)) {
                 downloadLink.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
                 downloadLink.setName(filename);
