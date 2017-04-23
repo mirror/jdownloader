@@ -91,7 +91,7 @@ public class CnLnk extends antiDDoSForDecrypt {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             submitForm(form);
-            final String finallink = br.getRegex(".+<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s+Link\\s*</a>").getMatch(1);
+            final String finallink = getFinallink();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -99,6 +99,14 @@ public class CnLnk extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    private String getFinallink() {
+        String finallink = br.getRegex(".+<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s+Link\\s*</a>").getMatch(1);
+        if (inValidate(finallink)) {
+            finallink = br.getRegex(".+<a\\s+[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
+        }
+        return finallink;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
