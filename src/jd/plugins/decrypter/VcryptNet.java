@@ -32,7 +32,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/([a-z0-9]{6}|[^/]+/[a-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/(?:[^/]+/([a-z0-9]+)|[a-z0-9]{6})" })
 public class VcryptNet extends antiDDoSForDecrypt {
 
     public VcryptNet(PluginWrapper wrapper) {
@@ -50,18 +50,28 @@ public class VcryptNet extends antiDDoSForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (parameter.matches("https?://[^/]+/[^/]+/[a-z0-9]+")) {
+        if (parameter.matches("https?://[^/]+/[^/]+/[a-zA-Z0-9]+")) {
             Form continueForm = br.getFormByInputFieldKeyValue("submit", "Continue");
             if (continueForm == null) {
                 continueForm = br.getFormBySubmitvalue("Continue");
+                if (continueForm == null) {
+                    final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+                    continueForm = br.getFormbyAction(fuid);
+                }
             }
-            if (continueForm != null) {
+            if (continueForm != null && continueForm.containsHTML("('|\")g-recaptcha\\1")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(continueForm);
+            } else {
+                submitForm(continueForm);
             }
             /* Single redirect url */
-            final String redirect = br.getRedirectLocation();
+            String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                // redirect can be meta redirect within html
+                redirect = br.getRegex("<meta http-equiv='refresh' content=(|'|\")\\d+;\\s*url=(.*)\\1").getMatch(1);
+            }
             if (redirect != null && !redirect.contains(this.getHost() + "/")) {
                 decryptedLinks.add(createDownloadlink(redirect));
             } else if (redirect != null && redirect.contains("/banned")) {
@@ -78,7 +88,7 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 }
             }
         } else {
-            final String[] links = br.getRegex("href=\\'(http[^<>\"]*?)\\' target=_blank>").getColumn(0);
+            final String[] links = br.getRegex("href='(http[^<>\"]*?)' target=_blank>").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
