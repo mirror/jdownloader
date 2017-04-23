@@ -63,7 +63,7 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(continueForm);
-            } else {
+            } else if (continueForm != null) {
                 submitForm(continueForm);
             }
             /* Single redirect url */
