@@ -217,14 +217,34 @@ public class Grab8Com extends antiDDoSForHost {
         login(true, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
+            final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             getPage("https://" + getHost() + "/");
-            postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(url));
             dllink = PluginJSonUtils.getJsonValue(ajax, "linkdown");
             final boolean transload = StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "message"), "Transloading in progress") || PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
             if (transload || StringUtils.isEmpty(dllink)) {
                 if (transload) {
-                    // TODO: transload/api error handling.
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
+                    /* We have to wait until the file is downloaded to to the multihoster so that we can download it. */
+                    logger.info("Processing transload URL");
+                    final String transload_key = PluginJSonUtils.getJsonValue(ajax, "key");
+                    if (StringUtils.isEmpty(transload_key)) {
+                        handleErrorRetries("transload_key_null", 10, 5 * 60 * 1000l);
+                    }
+                    logger.info("Entering transload loop");
+                    short counter = 0;
+                    do {
+                        logger.info(String.format("Loop %d", counter));
+                        this.sleep(3000, link);
+                        postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(url));
+                        dllink = PluginJSonUtils.getJsonValue(ajax, "linkdown");
+                        counter++;
+                    } while (counter <= 99 && StringUtils.isEmpty(dllink));
+                    if (StringUtils.isEmpty(dllink)) {
+                        logger.info("Transload failed");
+                        handleErrorRetries("dllink_null", 10, 5 * 60 * 1000l);
+                    } else {
+                        logger.info("Transload succeeded");
+                    }
                 } else if ("captcha".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "status"))) {
                     // {"status":"captcha","message":"","cid":17021,"src":"http:\/\/p7.grab8.com\/new\/images\/depfile.com_captcha.png?rand=4137","server":"http:\/\/p7.grab8.com\/new\/","link":"https:\/\/depfile.com\/uid","runtime":3.5580089092255}
                     // the multihoster is trying to pass the captcha back to this user.... we don't want a bar of that
@@ -232,44 +252,6 @@ public class Grab8Com extends antiDDoSForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // final String transloadUrl = PluginJSonUtils.getJson(ajax, "tstatus_url");
-                // getPage(transloadUrl);
-                // final Form transloadform = br.getFormbyKey("saveto");
-                // if (transloadform != null) {
-                // logger.info("Found transloadform --> Submitting it");
-                // // submitFormAPISafe(transloadform);
-                // } else {
-                // logger.warning("Could not find transloadform --> Possible failure");
-                // }
-                // /*
-                // * If e.g. the user already transfered the file to the server but this code tries to do it again for whatever reason we
-                // will
-                // * not see the transferID in the html although it exists and hasn't changed. In this case we should still have it saved
-                // from
-                // * the first download attempt.
-                // */
-                // final String newtransferID = br.getRegex("name=\"files\\[\\]\" value=\"(\\d+)\"").getMatch(0);
-                // if (newtransferID != null) {
-                // logger.info("Successfully found updated transferID");
-                // link.setProperty("transferID", newtransferID);
-                // }
-                // /* Normal case: Requested file is downloaded to the multihost and downloadable via the multihost. */
-                // dllink = br.getRegex("File <b><a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
-                // /*
-                // * If we try an already existing link many times we'll get a site asking us if the download is broken thus it looks
-                // * different so we need another RegEx.
-                // */
-                // if (dllink == null) {
-                // dllink = br.getRegex("<b>Download: <a href=\"/\\d+/(files/[^<>\"]*?)\"").getMatch(0);
-                // }
-                // if (dllink == null) {
-                // /* Should never happen */
-                // handleErrorRetries("dllinknull", 10, 2 * 60 * 1000l);
-                // }
-                // // /* Happens sometimes - in the tests it frequently happened with share-online.biz links */
-                // // if (dllink.equals("files/ip")) {
-                // // handleErrorRetries("dllink_invalid_ip", 10, 2 * 60 * 1000l);
-                // // }
             }
         }
         handleDL(account, link, dllink);
