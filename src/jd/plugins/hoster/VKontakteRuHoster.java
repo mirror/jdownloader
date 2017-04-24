@@ -276,12 +276,16 @@ public class VKontakteRuHoster extends PluginForHost {
                     String url = null;
                     final Browser br = this.br.cloneBrowser();
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    /*
+                     * If these two values are present, we know that the content initially came from a 'wall' which requires us to use a
+                     * different method to grab it as without that, permissions to play the track might be missing as it can only be
+                     * accessed inside that particular wall!
+                     */
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
                     boolean failed = false;
                     if (postID != null && fromId != null) {
                         logger.info("Trying to refresh audiolink directlink via wall-handling");
-                        /* We got the info we need to access our single mp3 relatively directly as it initially came from a 'wall'. */
                         final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
                         br.postPage(getBaseURL() + "/audio", post);
                         url = br.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
@@ -300,7 +304,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*

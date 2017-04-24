@@ -42,6 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -114,6 +115,7 @@ public class UdemyCom extends PluginForHost {
         String ext = null;
         String asset_type = downloadLink.getStringProperty("asset_type", "Video");
         final String lecture_id = downloadLink.getStringProperty("lecture_id", null);
+        LinkedHashMap<String, Object> entries = null;
         if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             downloadLink.setName(asset_id);
             downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
@@ -152,7 +154,7 @@ public class UdemyCom extends PluginForHost {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 is_officially_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
                 final String title_cleaned = (String) entries.get("title_cleaned");
                 description = (String) entries.get("description");
@@ -189,20 +191,59 @@ public class UdemyCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     json_view_html = json_view_html.replace("\\", "");
-                    final String[] possibleQualities = { "HD", "SD", "1080", "720", "480", "360", "240" };
-                    for (final String possibleQuality : possibleQualities) {
-                        dllink = new Regex(json_view_html, "<source src=\"(http[^<>\"]+)\"[^>]+data\\-res=\"" + possibleQuality + "\" />").getMatch(0);
-                        if (dllink != null) {
-                            break;
+                    json_view_html = Encoding.htmlDecode(json_view_html);
+
+                    final String jssource = new Regex(json_view_html, "sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+                    if (jssource != null) {
+                        /* 2017-04-24: New: json inside json - */
+                        try {
+                            Object quality_temp_o = null;
+                            long quality_temp = 0;
+                            long quality_best = 0;
+                            String dllink_temp = null;
+                            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                            for (final Object videoo : ressourcelist) {
+                                entries = (LinkedHashMap<String, Object>) videoo;
+                                dllink_temp = (String) entries.get("file");
+                                quality_temp_o = entries.get("label");
+                                if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                                    quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                                } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                                    /* E.g. '360p' or '360' */
+                                    quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p?").getMatch(0));
+                                }
+                                if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
+                                    continue;
+                                } else if (dllink_temp.contains(".m3u8")) {
+                                    /* Skip hls */
+                                    continue;
+                                }
+                                if (quality_temp > quality_best) {
+                                    quality_best = quality_temp;
+                                    dllink = dllink_temp;
+                                }
+                            }
+                        } catch (final Throwable e) {
+                            logger.info("JSON-BEST handling for multiple video source failed");
                         }
                     }
-                    if (dllink == null) {
-                        /* Last chance -see if we can find ANY video-url */
-                        dllink = new Regex(json_view_html, "\"(https?://udemy\\-assets\\-on\\-demand\\.udemy\\.com/[^<>\"]+\\.mp4[^<>\"]+)\"").getMatch(0);
-                    }
-                    if (dllink != null) {
-                        /* Important! */
-                        dllink = Encoding.htmlDecode(dllink);
+
+                    if (StringUtils.isEmpty(dllink)) {
+                        final String[] possibleQualities = { "HD", "SD", "1080", "720", "480", "360", "240", "144" };
+                        for (final String possibleQuality : possibleQualities) {
+                            dllink = new Regex(json_view_html, "<source src=\"(http[^<>\"]+)\"[^>]+data\\-res=\"" + possibleQuality + "\" />").getMatch(0);
+                            if (dllink != null) {
+                                break;
+                            }
+                        }
+                        if (dllink == null) {
+                            /* Last chance -see if we can find ANY video-url */
+                            dllink = new Regex(json_view_html, "\"(https?://udemy\\-assets\\-on\\-demand\\.udemy\\.com/[^<>\"]+\\.mp4[^<>\"]+)\"").getMatch(0);
+                        }
+                        if (dllink != null) {
+                            /* Important! */
+                            dllink = Encoding.htmlDecode(dllink);
+                        }
                     }
                     if (filename == null) {
                         if (title_cleaned != null) {
@@ -239,6 +280,9 @@ public class UdemyCom extends PluginForHost {
         }
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, default_Extension);
+        }
+        if (ext == null) {
+            ext = default_Extension;
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
