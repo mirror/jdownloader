@@ -158,7 +158,7 @@ public class CocoleechCom extends PluginForHost {
             br.setFollowRedirects(true);
             /* request creation of downloadlink */
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
-            this.getAPISafe(API_ENDPOINT + "?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.getAPISafe(API_ENDPOINT + "?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             maxchunksStr = PluginJSonUtils.getJsonValue(this.br, "chunks");
             dllink = PluginJSonUtils.getJsonValue(br, "download");
             if (dllink == null || dllink.equals("")) {
@@ -475,22 +475,6 @@ public class CocoleechCom extends PluginForHost {
                 /* Unknown error */
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknownerror", 50, 5 * 60 * 1000l);
             }
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
         }
     }
 

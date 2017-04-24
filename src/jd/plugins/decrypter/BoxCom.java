@@ -119,6 +119,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                 // logger.warning("Decrypt failed for link: " + cryptedlink);
                 // return null;
             }
+            final String url = br.getURL();
             for (int i = currentPage; i - 1 != pageCount; i++) {
                 final ArrayList<String> filelinkinfo = splitAtRepeat(json_Text);
                 if (filelinkinfo.isEmpty()) {
@@ -172,10 +173,14 @@ public class BoxCom extends antiDDoSForDecrypt {
                     }
                 }
                 if (i != pageCount) {
-                    br.getPage(br.getURL() + "/" + (i + 1) + "/" + parent);
-                    json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
-                    if (json_Text == null) {
+                    if (isAbort()) {
                         break;
+                    } else {
+                        br.getPage(url + "/" + (i + 1) + "/" + parent);
+                        json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
+                        if (json_Text == null) {
+                            break;
+                        }
                     }
                 }
             }
