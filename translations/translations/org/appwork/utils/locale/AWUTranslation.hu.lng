@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Ez az ablak a visszaszámolás után bezáródik.
 active=Engedélyezve
 connecting=Kapcsolódás...
 crossSystem_open_url_failed_msg=Kérjük, nyissa meg az alábbi linket böngészőben:
+debug_menu=Hibakereső - és fejlesztői menü
 download_msg=Fájl letöltése
 download_title=Letöltés
 extdatecolumn_dateandtimeformat=dd.MM.yy HH:mm

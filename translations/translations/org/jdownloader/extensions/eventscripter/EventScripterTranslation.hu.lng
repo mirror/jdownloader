@@ -58,5 +58,7 @@ securityLoading=Az Ön gépére megpróbálnak feltölteni és végrehajtani egy
 securityLoading_title=Biztonsági figyelmeztetés!
 showMessageDialog_title=Figyelmeztetés üzenet %s1@%s2
 sure_delete_entries=Tényleg szeretné törölni %s1 scriptet(eket)?
+synchronous=A szkript szinkron végrehajtása
+synchronous_desc=Engedélyezze a szinkron végrehajtást, ha nem szeretné, hogy ez a parancsfájl fusson, míg az előző példány fut. Ha paramétereket szeretne módosítani referenciaként, kérjük, engedélyezze ezt a lehetőséget.
 syntax_error=JavaSzkript szintaktikai hiba
 title=Eseményszerkesztő
