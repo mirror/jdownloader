@@ -1543,10 +1543,9 @@ public class VKontakteRu extends PluginForDecrypt {
         /* Remove reply (comments) html from post html because we do not yet know whether the user wants to decrypt it or not! */
         final String[] replies = getCommentsFromPost(html);
         for (final String html_reply : replies) {
-            html.replace(html_reply, "");
+            html = html.replace(html_reply, "");
         }
         websiteCrawlContent(html, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts);
-        /* TODO: Fix comments decryption */
         if (this.vkwall_grabcomments) {
             for (final String html_reply : replies) {
                 websiteCrawlContent(html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
@@ -1555,11 +1554,11 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private String[] getCommentsFromPost(final String html) {
-        return new Regex(html, "<div[^<>]*?class=\"reply_content\"[^<>]*?>.*?class=\"reply_link_wrap\"").getColumn(-1);
+        return new Regex(html, "<div[^<>]*?class=\"reply_content\"[^<>]*?>(.*?)class=\"reply_link_wrap\">").getColumn(0);
     }
 
     /**
-     * Crawls desired content from website html code from either a wall post or comment.
+     * Crawls desired content from website html code from either a wall POST or COMMENT.
      *
      * @throws IOException
      */
@@ -1575,8 +1574,8 @@ public class VKontakteRu extends PluginForDecrypt {
             wall_list_id = new Regex(html, "data\\-post\\-id=\"((?:\\-)?\\d+_\\d+)\"").getMatch(0);
         }
         final String[] wall_ids = wall_list_id.split("_");
-        final long postID = Long.parseLong(wall_ids[1]);
-        final long ownerID = Long.parseLong(wall_ids[0]);
+        final String ownerID = wall_ids[0];
+        final String postID = wall_ids[1];
 
         /* URL to show this post. */
         final String wall_single_post_url = String.format("https://vk.com/wall%s", wall_list_id);
@@ -1585,13 +1584,12 @@ public class VKontakteRu extends PluginForDecrypt {
         String ownerIDTemp = null;
         String contentIDTemp = null;
 
-        /* Hmm most times we will have audio urls here ... but it could be ANYTHING(!!) */
-        final String urls[] = HTMLParser.getHttpLinks(html, null);
         final String[] photo_ids = new Regex(html, "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)").getColumn(0);
         final String[] audio_ids = new Regex(html, "data\\-audio=\"\\[([^<>\"]+)\\]\"").getColumn(0);
         final String[] video_ids = new Regex(html, "showVideo\\(\\'((?:\\-)?\\d+_\\d+)\\'").getColumn(0);
+        /* TODO: Make sure this works for POSTs AND COMMENTs! */
+        final String wall_post_text = new Regex(html, "<div class=\"wall_reply_text\">([^<>]+)</div>").getMatch(0);
 
-        final String wall_post_text = new Regex(html, "class=\"wall_post_text\">([^<>]+)<").getMatch(0);
         if (photo_ids != null && grabPhoto) {
             for (final String photoID : photo_ids) {
                 final String[] wall_id_info = photoID.split("_");
@@ -1641,8 +1639,6 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
 
-        /* TODO */
-        final String post_text = new Regex(html, "blanull").getMatch(0);
         if (grabURLsInsideText) {
             crawlUrlsInsidePosts(wall_post_text);
         }
