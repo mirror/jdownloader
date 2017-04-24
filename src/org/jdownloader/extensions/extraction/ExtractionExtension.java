@@ -660,19 +660,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return false;
         }
         if (archive.getArchiveFiles().size() == 0) {
-            logger.info("Archive:" + archive.getName() + "|Empty");
+            logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|Empty");
             return false;
         }
         if (!isAutoExtractEnabled(archive)) {
-            logger.info("Archive:" + archive.getName() + "|AutoExtractionDisabled");
+            logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|AutoExtractionDisabled");
             return false;
         }
         final boolean complete = isComplete(archive);
         if (complete) {
-            logger.info("Archive:" + archive.getName() + "|Complete|Size:" + archive.getArchiveFiles().size());
+            logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|Complete|Size:" + archive.getArchiveFiles().size());
             return true;
         } else {
-            logger.info("Archive:" + archive.getName() + "|Incomplete");
+            logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|Incomplete");
             return false;
         }
     }

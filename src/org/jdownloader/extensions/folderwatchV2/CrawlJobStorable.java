@@ -178,7 +178,6 @@ public class CrawlJobStorable implements Storable {
 
     public static enum JobType {
         NORMAL
-
     }
 
     private JobType type = JobType.NORMAL;

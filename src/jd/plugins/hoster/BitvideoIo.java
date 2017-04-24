@@ -17,7 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|v/|embed/)[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|v/|embed/)[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
@@ -86,7 +86,7 @@ public class BitvideoIo extends PluginForHost {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         String filename = null;
         String json_source = null;
-        if (link.getDownloadURL().contains("rapidvideo.com")) {
+        if (getHost().equals("raptu.com")) {
             /* 2017-03-24: Special handling for this domain - video json is not encrypted! */
             br.getPage(link.getDownloadURL());
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -145,25 +145,27 @@ public class BitvideoIo extends PluginForHost {
         if (json_source != null) {
             String dllink_temp = null;
             final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             int maxvalue = 0;
             int tempvalue = 0;
             String tempquality = null;
             for (final Object videoo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoo;
-                tempquality = (String) entries.get("label");
-                dllink_temp = (String) entries.get("file");
-                // if ("Source( File)?".equalsIgnoreCase(tempquality)) {
-                if (tempquality.contains("Source")) {
-                    /* That IS the highest quality */
-                    dllink = dllink_temp;
-                    break;
-                } else {
-                    /* Look for the highest quality! */
-                    tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)p?").getMatch(0));
-                    if (tempvalue > maxvalue) {
-                        maxvalue = tempvalue;
+                if (videoo instanceof Map) {
+                    entries = (Map<String, Object>) videoo;
+                    tempquality = (String) entries.get("label");
+                    dllink_temp = (String) entries.get("file");
+                    // if ("Source( File)?".equalsIgnoreCase(tempquality)) {
+                    if (tempquality.contains("Source")) {
+                        /* That IS the highest quality */
                         dllink = dllink_temp;
+                        break;
+                    } else {
+                        /* Look for the highest quality! */
+                        tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)p?").getMatch(0));
+                        if (tempvalue > maxvalue) {
+                            maxvalue = tempvalue;
+                            dllink = dllink_temp;
+                        }
                     }
                 }
             }

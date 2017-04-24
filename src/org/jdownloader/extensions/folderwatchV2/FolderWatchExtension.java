@@ -423,16 +423,30 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     private void set(Setter setter, CrawlJobStorable entry, String value) {
         try {
-            if (setter.getType() == BooleanStatus.class && "null".equalsIgnoreCase(value)) {
+            if (setter.getType() == BooleanStatus.class && (value == null || "null".equalsIgnoreCase(value))) {
                 value = "UNSET";
-            }
-            if (Clazz.isEnum(setter.getType())) {
-                value = value.toUpperCase(Locale.ENGLISH);
-                if (!value.startsWith("\"")) {
-                    value = "\"" + value + "\"";
+            } else if (setter.getType() == boolean.class) {
+                if ("true".equalsIgnoreCase(value)) {
+                    value = "true";
+                } else {
+                    value = "false";
                 }
-            }
-            if (Clazz.isString(setter.getType())) {
+            } else if (setter.getType() == Boolean.class) {
+                if ("true".equalsIgnoreCase(value)) {
+                    value = "true";
+                } else if ("false".equalsIgnoreCase(value)) {
+                    value = "false";
+                } else if (value == null || "null".equalsIgnoreCase(value)) {
+                    value = null;
+                }
+            } else if (Clazz.isEnum(setter.getType())) {
+                if (value != null) {
+                    value = value.toUpperCase(Locale.ENGLISH);
+                    if (!value.startsWith("\"")) {
+                        value = "\"" + value + "\"";
+                    }
+                }
+            } else if (Clazz.isString(setter.getType())) {
                 try {
                     final String stringValue;
                     if (!value.startsWith("\"")) {
