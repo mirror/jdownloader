@@ -193,7 +193,6 @@ public class Grab8Com extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
@@ -387,20 +386,23 @@ public class Grab8Com extends antiDDoSForHost {
         return dllink;
     }
 
-    @SuppressWarnings({ "deprecation" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         return login(true, true);
     }
 
-    private Long getExpire() {
+    private Long getExpire(final Browser br) {
         String expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\d{2}-\\d{2}-\\d{4})</p>").getMatch(0);
         Long time = TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH);
         if (time != null && time != -1) {
             return time;
         }
-        expire = br.getRegex("<p><b>Expiry</b>:&nbsp;(\\w+ \\w+, \\d{4})</p>").getMatch(0);
+        expire = br.getRegex("<p><b>Expiry</b>:\\&nbsp;(\\w+ \\w+, \\d{4})</p>").getMatch(0);
+        if (expire == null) {
+            /* 2017-04-24 */
+            expire = br.getRegex("Premium Expiring: <a [^<>]+><b><font[^<>]+>(\\w+ \\w+, \\d{4})</font>").getMatch(0);
+        }
         if (expire != null) {
             expire = expire.replaceAll("(\\d+)(st|nd|rd|th) ", "$1 ");
         }
@@ -495,7 +497,7 @@ public class Grab8Com extends antiDDoSForHost {
                 ai.setTrafficMax(SizeFormatter.getSize(traffic[1]));
                 // is account free account?
                 boolean freeAccount = isAccountFree(br);
-                final Long expire = getExpire();
+                final Long expire = getExpire(br);
                 if (!freeAccount && expire != null && ai.setValidUntil(expire, br) && !ai.isExpired()) {
                     currAcc.setType(AccountType.PREMIUM);
                     ai.setStatus("Premium Account");
