@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reverbnation.com" }, urls = { "https?://(?:www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" })
 public class ReverBnationCom extends antiDDoSForDecrypt {
@@ -98,7 +98,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             }
             artist = br.getRegex("property=\"reverbnation_fb:musician\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (artist == null) {
-                artist = this.br.getRegex("class=\"profile\\-header__info__title qa\\-artist-name[^\"]*?\">([^<>\"]+)<").getMatch(0);
+                artist = this.br.getRegex("class=\"profile\\-header__info__title qa\\-artist-name[^<>]*?\">\\s*([^<>\"]+)\\s*<").getMatch(0);
             }
             artistsID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistsID == null) {
@@ -113,9 +113,12 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             if (artistsID == null) {
                 artistsID = br.getRegex("artist_id=(\\d+)").getMatch(0);
             }
+            if (artistsID == null) {
+                artistsID = br.getRegex("artist_(\\d+)").getMatch(0);
+            }
             if (username == null || songID == null || artistsID == null || title == null || artist == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("username: " + username + ", songID: " + songID + ", artistsID: " + artistsID + ", title: " + title + ", artist: " + artist);
+                throw new DecrypterException("Decrypter broken for link:" + parameter);
             }
             title = Encoding.htmlDecode(title).trim();
             artist = Encoding.htmlDecode(artist).trim();
@@ -166,14 +169,12 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             }
             artistID = PluginJSonUtils.getJsonValue(br, "current_page_object");
             if (artistID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link:" + parameter);
             }
             artistID = new Regex(artistID, "\\d+$").getMatch(-1);
             allInfo = br.getRegex("<div class=\"play_details\">(.*?)</li>").getColumn(0);
             if (allInfo == null || allInfo.length == 0 || artist_name_general == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link:" + parameter);
             }
             if (username == null) {
                 username = artist_name_general;
@@ -192,8 +193,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
                     artist = artist_name_general;
                 }
                 if (songID == null || title == null || artist == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new DecrypterException("Decrypter broken for link:" + parameter);
                 }
                 title = Encoding.htmlDecode(title).trim();
                 artist = Encoding.htmlDecode(artist).trim();
