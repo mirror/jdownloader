@@ -571,7 +571,8 @@ public class PremboxCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 2:
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* 2017-04-24: Do not trust their 'File not found' errormessage! */
+                handleErrorRetries("api_dummy_file_not_found", 10, 2 * 60 * 1000l);
             case 3:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
             case 4:
