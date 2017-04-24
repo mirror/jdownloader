@@ -1,5 +1,8 @@
+gui_config_antistandby_whilecrawl=Link gyűjtése van folyamatban
 gui_config_antistandby_whiledl2=Letöltés folyamatban
+gui_config_antistandby_whiledl2orcrawl=Letöltés vagy Link gyűjtése van folyamatban
 gui_config_antistandby_whilejd2=A JDownloader fut
 jd_plugins_optional_antistandby_jdantistandby=JD Antikészenlét
 jd_plugins_optional_antistandby_jdantistandby_description=Megakadályozza, hogy a számítógép aktív letöltés alatt készenléti, vagy alvó üzemmódba kapcsoljon.
 mode=Meggátolja a készenléti / alvó állapotot, ha
+prevent_screensaver=A képernyővédő elindulásának megakadályozása

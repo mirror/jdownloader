@@ -1,3 +1,13 @@
+EnableInfoBarGuiAction=Információs sáv megjelenítése
+InfoBarGuiToggleAction_deselected=Információs sáv megnyitása
+InfoBarGuiToggleAction_deselected_tt=Nyissa meg az Információs sávot
+InfoBarGuiToggleAction_selected=Információs sáv bezárása
+InfoBarGuiToggleAction_selected_tt=Információs sáv bezárása
+jd_plugins_optional_infobar_InfoDialog_help=Drag'N'Drop zóna
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Dobja az URL hivatkozások vagy DLC fájlokat ide!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Információs sáv elrejtése
 jd_plugins_optional_infobar_docking=Szélhez igazítás engedélyezése
+jd_plugins_optional_infobar_dropLocation2=Bedobó hely engedélyezése
 jd_plugins_optional_infobar_jdinfobar=JDInfoBar
+jd_plugins_optional_infobar_jdinfobar_description=A kis lebegő panel, amely a valós idejű letöltésekről és a Drag'N'Drop zónáról tartalmaz információkat. Linkeket, URL-eket vagy DLC fájlokat adhat a letöltési sorhoz..
 jd_plugins_optional_infobar_opacity=Felhasználói felület áttetszősége [%-ban]
