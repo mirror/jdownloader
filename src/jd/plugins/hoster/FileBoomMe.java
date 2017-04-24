@@ -345,8 +345,9 @@ public class FileBoomMe extends K2SApi {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* 2017-04-25: Always check cookies here */
+                    this.br.setCookies(this.getHost(), cookies);
                     getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()));
-                    if (br.containsHTML("/auth/logout") || force == false) {
+                    if (br.containsHTML("/auth/logout")) {
                         login = false;
                     }
                 }
