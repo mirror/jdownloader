@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -14,6 +12,8 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
@@ -514,6 +514,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("(?:'|\")(https?://(?:www\\.)?gotporn\\.com/video/\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(?:'|\")(https?://(?:www\\.)?camwhores\\.tv/embed/\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(jd.plugins.decrypter.CamwhoresTv.createDownloadUrlForHostPlugin(createDownloadlink(externID)));
             return decryptedLinks;
         }
         // filename needed for all IDs below
