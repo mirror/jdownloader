@@ -20,42 +20,38 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores\\.tv/videos/\\d+/.+" })
-public class CamwhoresTv extends PornEmbedParser {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "caminspector.net" }, urls = { "https?://(?:www\\.)?caminspector\\.net/videos/\\d+/[a-z0-9\\-]+/" })
+public class CaminspectorNet extends PornEmbedParser {
 
-    public CamwhoresTv(PluginWrapper wrapper) {
+    public CaminspectorNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        this.br.setCookiesExclusive(true);
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (jd.plugins.hoster.CamwhoresTv.isOffline(this.br)) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.size() == 0) {
-            /* Probably a selfhosted video. */
-            final DownloadLink dl = createDownloadUrlForHostPlugin(this.createDownloadlink(parameter));
-            decryptedLinks.add(dl);
+        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(parameter, "([a-z0-9\\-]+)/$").getMatch(0);
         }
+        decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
 
-    public static DownloadLink createDownloadUrlForHostPlugin(final DownloadLink dl) {
-        dl.setUrlDownload(dl.getDownloadURL().replace("camwhores.tv/", "camwhoresdecrypted.tv/"));
-        return dl;
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

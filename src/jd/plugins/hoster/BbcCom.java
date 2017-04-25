@@ -54,6 +54,8 @@ public class BbcCom extends PluginForHost {
 
     private String hls_master      = null;
 
+    private String title           = null;
+
     /** Thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/bbc.py */
     @SuppressWarnings("deprecation")
     @Override
@@ -61,7 +63,7 @@ public class BbcCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String vpid = new Regex(link.getDownloadURL(), "bbcdecrypted/(.+)").getMatch(0);
-        String title = link.getStringProperty("decrypterfilename");
+        title = link.getStringProperty("decrypterfilename");
         /* HLS - try that first as it will give us higher bitrates */
         this.br.getPage("http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/" + vpid);
         if (!this.br.getHttpConnection().isOK()) {
@@ -76,44 +78,53 @@ public class BbcCom extends PluginForHost {
         }
         String title_downloadurl = null;
         String transferformat = null;
-        String filesize_str = null;
-        long filesize_max = 0;
-        long filesize_temp = 0;
+        // int filesize_max = 0;
+        int filesize_temp = 0;
+        int bitrate_max = 0;
+        int bitrate_temp = 0;
+
         /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
         for (final String mediasingle : media) {
+            final String kind = new Regex(mediasingle, "kind=\"([a-z]+)\"").getMatch(0);
+            final String bitrate_str = new Regex(mediasingle, "bitrate=\"(\\d+)\"").getMatch(0);
+            final String filesize_str = new Regex(mediasingle, "media_file_size=\"(\\d+)\"").getMatch(0);
+            if (!"video".equalsIgnoreCase(kind) || bitrate_str == null) {
+                /* E.g. skip 'captions' and items without given filesize */
+                continue;
+            }
             final String[] connections = new Regex(mediasingle, "(<connection.*?)/>").getColumn(0);
             if (connections == null || connections.length == 0) {
                 /* Whatever - skip such a case */
                 continue;
             }
-            /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
-            for (final String connection : connections) {
-                transferformat = new Regex(connection, "transferFormat=\"([^<>\"]+)\"").getMatch(0);
-                if (transferformat != null && transferformat.matches("hds|dash")) {
-                    /* Skip unsupported protocols */
-                    continue;
-                }
-                filesize_str = new Regex(mediasingle, "media_file_size=\"(\\d+)\"").getMatch(0);
-                /* Do not RegEx again if we already have our hls_master */
-                if (hls_master == null) {
-                    hls_master = new Regex(connection, "\"(https?://[^<>\"]+\\.m3u8[^<>\"]*?)\"").getMatch(0);
-                }
-                /* Do not RegEx again if we already have our rtmp parameters */
-                if (rtmp_app == null && rtmp_host == null && rtmp_playpath == null && rtmp_authString == null) {
-                    rtmp_app = new Regex(connection, "application=\"([^<>\"]+)\"").getMatch(0);
-                    rtmp_host = new Regex(connection, "server=\"([^<>\"]+)\"").getMatch(0);
-                    rtmp_playpath = new Regex(connection, "identifier=\"((?:mp4|flv):[^<>\"]+)\"").getMatch(0);
-                    rtmp_authString = new Regex(connection, "authString=\"([^<>\"]*?)\"").getMatch(0);
-                }
+
+            bitrate_temp = Integer.parseInt(bitrate_str);
+            /* Filesize is not always given */
+            if (filesize_str != null) {
+                filesize_temp = Integer.parseInt(filesize_str);
+            } else {
+                filesize_temp = 0;
             }
-            if (filesize_str == null) {
-                /* No filesize given? Skip this media! */
-                continue;
-            }
-            filesize_temp = Long.parseLong(filesize_str);
-            if (filesize_temp > filesize_max) {
-                filesize_max = filesize_temp;
+
+            if (bitrate_temp > bitrate_max) {
+                bitrate_max = bitrate_temp;
+                /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
+                for (final String connection : connections) {
+                    transferformat = new Regex(connection, "transferFormat=\"([a-z]+)\"").getMatch(0);
+                    if (transferformat == null || (transferformat != null && transferformat.matches("hds|dash"))) {
+                        /* Skip unsupported protocols */
+                        continue;
+                    }
+                    if (transferformat.equals("hls")) {
+                        hls_master = new Regex(connection, "\"(https?://[^<>\"]+\\.m3u8[^<>\"]*?)\"").getMatch(0);
+                    } else if (transferformat.equals("rtmp")) {
+                        rtmp_app = new Regex(connection, "application=\"([^<>\"]+)\"").getMatch(0);
+                        rtmp_host = new Regex(connection, "server=\"([^<>\"]+)\"").getMatch(0);
+                        rtmp_playpath = new Regex(connection, "identifier=\"((?:mp4|flv):[^<>\"]+)\"").getMatch(0);
+                        rtmp_authString = new Regex(connection, "authString=\"([^<>\"]*?)\"").getMatch(0);
+                    }
+                }
             }
         }
 
@@ -124,13 +135,14 @@ public class BbcCom extends PluginForHost {
             title = title_downloadurl;
         }
         if (title == null) {
-            /* Finally, fallback to vpid as filename */
+            /* Final fallback to vpid as filename - if everything goes wrong! */
             title = vpid;
         }
 
-        link.setFinalFileName(title + ".mp4");
-        if (filesize_max > 0) {
-            link.setDownloadSize(filesize_max);
+        link.setName(title + ".mp4");
+        if (filesize_temp > 0) {
+            /* 2017-04-25: Changed from BEST by filesize to BEST by bitrate --> Filesize is not always given for BEST bitrate */
+            link.setDownloadSize(filesize_temp);
         }
 
         return AvailableStatus.TRUE;
@@ -147,40 +159,51 @@ public class BbcCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked");
         }
+        final String quality_string;
         if (hls_master != null) {
             hls_master = Encoding.htmlDecode(hls_master);
             br.getPage(hls_master);
 
             final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
-            String url_hls = null;
+            final String configuredPreferredVideoFramerate = getConfiguredVideoFramerate();
             final List<HlsContainer> containers = HlsContainer.getHlsQualities(this.br);
+            HlsContainer hlscontainer_chosen = null;
             if (!configuredPreferredVideoHeight.matches("\\d+")) {
-                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(containers);
-                url_hls = hlsbest.getDownloadurl();
+                hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
             } else {
                 final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(configuredPreferredVideoHeight));
-                for (final HlsContainer hlscont : containers) {
-                    final int height = hlscont.getHeight();
+                for (final HlsContainer hlscontainer_temp : containers) {
+                    final int height = hlscontainer_temp.getHeight();
                     final String height_for_quality_selection_temp = getHeightForQualitySelection(height);
-                    if (height_for_quality_selection_temp.equals(height_for_quality_selection)) {
+                    final String framerate = Integer.toString(hlscontainer_temp.getFramerate(25));
+                    if (height_for_quality_selection_temp.equals(height_for_quality_selection) && framerate.equals(configuredPreferredVideoFramerate)) {
                         logger.info("Found user selected quality");
-                        url_hls = hlscont.getDownloadurl();
+                        hlscontainer_chosen = hlscontainer_temp;
                         break;
                     }
                 }
-                if (url_hls == null) {
+                if (hlscontainer_chosen == null) {
                     logger.info("Failed to find user selecred quality --> Fallback to BEST");
-                    final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(containers);
-                    url_hls = hlsbest.getDownloadurl();
+                    hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
                 }
             }
+
+            quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
+            downloadLink.setFinalFileName(title + "_" + quality_string + ".mp4");
+
+            /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
+            downloadLink.setComment(hlscontainer_chosen.getDownloadurl());
+
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl = new HLSDownloader(downloadLink, br, hlscontainer_chosen.getDownloadurl());
             dl.startDownload();
         } else {
             if (this.rtmp_app == null || this.rtmp_host == null || this.rtmp_playpath == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* TODO: Complete quality_string at this place. */
+            quality_string = "rtmp_";
+            downloadLink.setFinalFileName(title + "_" + quality_string + ".mp4");
             String rtmpurl = "rtmp://" + this.rtmp_host + "/" + this.rtmp_app;
             /* authString is needed in some cases */
             if (this.rtmp_authString != null) {
@@ -258,11 +281,23 @@ public class BbcCom extends PluginForHost {
     // return formattedDate;
     // }
 
+    private String getConfiguredVideoFramerate() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final String selectedResolution = FORMATS[selection];
+        if (selectedResolution.contains("x")) {
+            final String framerate = selectedResolution.split("@")[1];
+            return framerate;
+        } else {
+            /* BEST selection */
+            return selectedResolution;
+        }
+    }
+
     private String getConfiguredVideoHeight() {
         final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
         final String selectedResolution = FORMATS[selection];
         if (selectedResolution.contains("x")) {
-            final String height = selectedResolution.split("x")[1];
+            final String height = new Regex(selectedResolution, "\\d+x(\\d+)").getMatch(0);
             return height;
         } else {
             /* BEST selection */
@@ -275,7 +310,7 @@ public class BbcCom extends PluginForHost {
     }
 
     /* The list of qualities displayed to the user */
-    private final String[] FORMATS               = new String[] { "BEST", "1920x1080", "1280x720", "1024x576", "768x432", "640x360", "480x270", "320x180" };
+    private final String[] FORMATS               = new String[] { "BEST", "1920x1080@50", "1920x1080@25", "1280x720@50", "1280x720@25", "1024x576@50", "1024x576@25", "768x432@50", "768x432@25", "640x360@25", "480x270@25", "320x180@25" };
     private final String   SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
 
     @Override
