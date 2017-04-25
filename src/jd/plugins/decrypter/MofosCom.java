@@ -164,7 +164,7 @@ public class MofosCom extends PluginForDecrypt {
                         /* 2017-03-08: Change server - according to a user, this speeds up the downloads */
                         dlurl = dlurl.replace("http.movies.mf.contentdef.com", "downloads.mf.contentdef.com");
                     }
-                    final DownloadLink dl = this.createDownloadlink(dlurl);
+                    final DownloadLink dl = this.createDownloadlink(dlurl, this.br.getURL());
                     if (filesize != null) {
                         dl.setDownloadSize(SizeFormatter.getSize(filesize));
                         dl.setAvailable(true);
@@ -176,7 +176,6 @@ public class MofosCom extends PluginForDecrypt {
                     dl.setLinkID(dl.getName());
                     dl.setProperty("fid", fid);
                     dl.setProperty("quality", quality);
-                    dl.setProperty("mainlink", this.br.getURL());
                     foundQualities.put(quality, dl);
                 }
             }
@@ -219,9 +218,7 @@ public class MofosCom extends PluginForDecrypt {
 
         } else if (isFreeVideoUrl(parameter)) {
             /* Add single url --> Trailer download */
-            final DownloadLink dl = this.createDownloadlink(parameter);
-            dl.setProperty("mainlink", parameter);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(this.createDownloadlink(parameter, parameter));
         } else {
             br.getPage(parameter);
             if (isOffline(this.br)) {
@@ -236,13 +233,12 @@ public class MofosCom extends PluginForDecrypt {
             final String pictures[] = getPictureArray(this.br);
             for (final String finallink : pictures) {
                 final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(finallink);
+                final DownloadLink dl = this.createDownloadlink(finallink, this.br.getURL());
                 dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
                 dl.setAvailable(true);
                 dl.setProperty("fid", fid);
                 dl.setProperty("linkpart", "");
                 dl.setProperty("picnumber_formatted", number_formatted);
-                dl.setProperty("mainlink", this.br.getURL());
                 decryptedLinks.add(dl);
             }
         }
@@ -253,9 +249,10 @@ public class MofosCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    protected DownloadLink createDownloadlink(final String url) {
-        return super.createDownloadlink(url.replaceAll("https?://", "mofosdecrypted://"));
+    private DownloadLink createDownloadlink(final String url, final String source_url) {
+        final DownloadLink dl = super.createDownloadlink(url.replaceAll("https?://", "mofosdecrypted://"));
+        dl.setProperty("mainlink", source_url);
+        return dl;
     }
 
     /**
@@ -303,7 +300,7 @@ public class MofosCom extends PluginForDecrypt {
     }
 
     public static boolean isFreeVideoUrl(final String url) {
-        return url.contains("/tour/");
+        return url != null && url.contains("/tour/");
     }
 
     public static boolean isVideoUrl(final String url) {

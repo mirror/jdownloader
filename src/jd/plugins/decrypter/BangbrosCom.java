@@ -43,7 +43,7 @@ public class BangbrosCom extends PluginForDecrypt {
     }
 
     protected DownloadLink createDownloadlink(String url, final String fid, final String productid, final String quality) {
-        url = url.replaceAll("https?://", "http://bangbrosdecrypted");
+        url = url.replaceAll("https?://", "bangbrosdecrypted://");
         final DownloadLink dl = super.createDownloadlink(url, true);
         dl.setProperty("fid", fid);
         dl.setProperty("quality", quality);

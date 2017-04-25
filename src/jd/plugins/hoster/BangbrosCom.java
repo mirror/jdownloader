@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "http://bangbrosdecrypted.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "bangbrosdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
 
     public BangbrosCom(PluginWrapper wrapper) {
@@ -78,7 +78,7 @@ public class BangbrosCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://bangbrosdecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("bangbrosdecrypted://", "http://"));
     }
 
     @SuppressWarnings("deprecation")
