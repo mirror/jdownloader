@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,7 +34,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(?:/scraps)?(?:/\\d+)?" })
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://(?:www\\.)?hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(?:/scraps)?(?:/\\d+)?|https?://(?:www\\.)?hentai\\-foundry\\.com/user/[A-Za-z0-9\\-_]+/faves/pictures" })
 public class HentaiFoundryComGallery extends PluginForDecrypt {
 
     public HentaiFoundryComGallery(PluginWrapper wrapper) {
@@ -74,12 +74,12 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             if (page > 1) {
                 br.getPage(next);
             }
-            String[] links = br.getRegex("<td class=\\'thumb_square\\'(.*?)\\s+</td>").getColumn(0);
+            String[] links = br.getRegex("<[^<>]+class=\\'thumb_square\\'.*?</").getColumn(-1);
             if (links == null || links.length == 0) {
                 return null;
             }
             for (String link : links) {
-                String title = new Regex(link, "thumbTitle\"><[^<>]*?>(.*?)</a>").getMatch(0);
+                String title = new Regex(link, "thumbTitle\"><[^<>]*?>([^<>]+)<").getMatch(0);
                 final String url = new Regex(link, "\"(/pictures/user/[A-Za-z0-9\\-_]+/\\d+[^<>\"]*?)\"").getMatch(0);
                 if (title == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
