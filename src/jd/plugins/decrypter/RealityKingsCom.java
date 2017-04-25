@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)|https?://(?:www\\.)?realitykings\\.com/tour/video/watch/\\d+/[a-z0-9\\-_]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)|https?://(?:www\\.)?realitykings\\.com/tour/video/watch/\\d+/(?:[a-z0-9\\-_]+/?)?" })
 public class RealityKingsCom extends PluginForDecrypt {
 
     public RealityKingsCom(PluginWrapper wrapper) {
@@ -67,7 +67,8 @@ public class RealityKingsCom extends PluginForDecrypt {
         String fid = null;
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         // Login if possible
-        if (!getUserLogin(false) && !parameter.matches(TYPE_VIDEO_FREE)) {
+        final boolean loggedin = getUserLogin(false);
+        if (!loggedin && !parameter.matches(TYPE_VIDEO_FREE)) {
             logger.info("No account present but url requires login --> Cannot decrypt anything!");
             return decryptedLinks;
         }
@@ -98,7 +99,7 @@ public class RealityKingsCom extends PluginForDecrypt {
                 /* Fallback to id from inside url */
                 title = fid;
             }
-            if (parameter.matches(TYPE_VIDEO) || parameter.matches(TYPE_VIDEO_FREE)) {
+            if (isVideoURL(parameter)) {
                 final String format_filename = "%s_%s%s";
                 final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
                 final String[] dlinfo = htmldownload != null ? htmldownload.split("</a>") : null;
@@ -156,18 +157,43 @@ public class RealityKingsCom extends PluginForDecrypt {
 
                     final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(json);
 
+                    int bitrate_max = 0;
+                    int bitrate_temp = 0;
+                    DownloadLink downloadlink_quality_BEST = null;
+
                     final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
                     final String ext = ".mp4";
                     while (it.hasNext()) {
                         final Entry<String, Object> entry = it.next();
                         final String quality_key = entry.getKey();
                         final String quality_url = (String) entry.getValue();
+
                         final DownloadLink dl = this.createDownloadlink(quality_url.replaceAll("https?://", host_decrypted));
                         dl.setName(String.format(format_filename, title, quality_key, ext));
                         dl.setProperty("fid", fid);
                         dl.setProperty("quality", quality_key);
+                        if (!loggedin) {
+                            dl.setProperty("free_downloadable", true);
+                        }
                         decryptedLinks.add(dl);
+
+                        if (quality_key.matches("\\d+")) {
+                            bitrate_temp = Integer.parseInt(quality_key);
+                            if (bitrate_temp > bitrate_max) {
+                                bitrate_max = bitrate_temp;
+                                downloadlink_quality_BEST = dl;
+                            }
+                        }
+
                     }
+
+                    /* Not logged in --> Usually only trailer / MOCH download --> Add BEST only */
+                    if (!loggedin && downloadlink_quality_BEST != null) {
+                        logger.info("Adding BEST quality only");
+                        decryptedLinks.clear();
+                        decryptedLinks.add(downloadlink_quality_BEST);
+                    }
+
                 }
 
             } else if (parameter.matches(TYPE_PHOTO)) {
@@ -193,6 +219,10 @@ public class RealityKingsCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    public static boolean isVideoURL(final String url) {
+        return url.matches(TYPE_VIDEO) || url.matches(TYPE_VIDEO_FREE) || url.contains(".mp4");
     }
 
     /**

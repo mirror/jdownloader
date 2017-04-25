@@ -60,9 +60,7 @@ public class MofosCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String fid = new Regex(parameter, "/(\\d+)/?").getMatch(0);
-        /* Most likely this will contain a string + fid (usually only required for FREE['Tour']-URLs) */
-        final String linkpart_free = new Regex(parameter, "tour/scene/([a-z0-9\\-]+/\\d+)").getMatch(0);
-        // Login if possible
+        /* Login if possible */
         final boolean loggedin = getUserLogin(false);
         if (!loggedin && requiresLogin(parameter)) {
             logger.info("No account present --> Cannot decrypt anything!");

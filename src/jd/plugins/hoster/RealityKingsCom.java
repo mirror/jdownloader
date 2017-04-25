@@ -38,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|realitykingsdecrypted://.+" })
@@ -85,13 +86,16 @@ public class RealityKingsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
+        if (aa == null && !link.getBooleanProperty("free_downloadable", false)) {
             link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        this.login(this.br, aa, false);
+        if (aa != null) {
+            /* Login whenever possible */
+            this.login(this.br, aa, false);
+        }
         dllink = link.getDownloadURL();
-        final String fid = link.getStringProperty("fid", null);
+        final String fid = getFID(link);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
@@ -151,8 +155,44 @@ public class RealityKingsCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    private String getFID(final DownloadLink dl) {
+        return dl.getStringProperty("fid", null);
+    }
+
+    private boolean isFreeDownloadable(final DownloadLink dl) {
+        return dl.getBooleanProperty("free_downloadable", false);
+    }
+
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (!isFreeDownloadable(downloadLink)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setProperty("free_directlink", dllink);
+        dl.startDownload();
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        if (!StringUtils.equals(this.getHost(), buildForThisPlugin.getHost()) && jd.plugins.decrypter.RealityKingsCom.isVideoURL(downloadLink.getDownloadURL())) {
+            return jd.plugins.decrypter.RealityKingsCom.getVideoUrlFree(this.getFID(downloadLink));
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        }
     }
 
     @Override
@@ -251,12 +291,35 @@ public class RealityKingsCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+        /* TODO */
+        return account != null || true;
+    }
+
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        if (is_this_plugin) {
+            /* The original plugin is always allowed to download. */
+            return true;
+        } else {
+            /* Multihosts can only download 'trailer' URLs */
+            final String url = downloadLink.getPluginPatternMatcher();
+            return jd.plugins.decrypter.RealityKingsCom.isVideoURL(downloadLink.getDownloadURL()) || "".equals(url);
+        }
     }
 
     @Override
