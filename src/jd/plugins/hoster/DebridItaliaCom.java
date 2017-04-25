@@ -21,9 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +33,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -172,18 +172,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 }
             }
         }
-        // prevent ddos work around
-        if (link.getBooleanProperty("hasFailed", false)) {
-            final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
-            // nullify old storeables
-            link.setProperty("hasFailed", Property.NULL);
-            link.setProperty("hasFailedWait", Property.NULL);
-            sleep(hasFailedInt * 1001, link);
-        }
 
         showMessage(link, "Generating link");
 
-        // since no requests are done with this.br we need to manually set so checkdirectlink is correct
+        /* since no requests are done with this.br we need to manually set so checkdirectlink is correct */
         prepBrowser(br, "https://debriditalia.com/");
         dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
@@ -221,7 +213,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             br.followConnection();
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
             if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the page or click the button below\\.</p>")) {
-                handleErrorRetries("Download not started", maxRetriesOnDownloadError, 10 * 60 * 1000l);
+                handleErrorRetries("Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
             }
             if (br.containsHTML("No htmlCode read")) {
                 handleErrorRetries("unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
@@ -361,9 +353,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             timesFailed++;
             logger.fine("Unknown download error! Retry attempt " + timesFailed + " of " + maxRetries);
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            // prevent ddos
-            this.currDownloadLink.setProperty("hasFailed", true);
-            this.currDownloadLink.setProperty("hasFailedWait", 60);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             logger.fine("Unknown download error! Max. retry attempts reached!");

@@ -43,7 +43,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofos.com" }, urls = { "https?://members\\d+\\.mofos\\.com/(?:scene/view/\\d+(?:/[a-z0-9\\-_]+/?)?|hqpics/\\d+(?:/[a-z0-9\\-_]+/?)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofos.com" }, urls = { "https?://members\\d+\\.mofos\\.com/(?:scene/view/\\d+(?:/[a-z0-9\\-_]+/?)?|hqpics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:www\\.)?mofos\\.com/tour/scene/[a-z0-9\\-]+/\\d+/?" })
 public class MofosCom extends PluginForDecrypt {
 
     public MofosCom(PluginWrapper wrapper) {
@@ -60,19 +60,23 @@ public class MofosCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String fid = new Regex(parameter, "/(\\d+)/?").getMatch(0);
+        /* Most likely this will contain a string + fid (usually only required for FREE['Tour']-URLs) */
+        final String linkpart_free = new Regex(parameter, "tour/scene/([a-z0-9\\-]+/\\d+)").getMatch(0);
         // Login if possible
-        if (!getUserLogin(false)) {
+        final boolean loggedin = getUserLogin(false);
+        if (!loggedin && requiresLogin(parameter)) {
             logger.info("No account present --> Cannot decrypt anything!");
             return decryptedLinks;
         }
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        String title = br.getRegex("<span>\\&nbsp;-\\&nbsp;([^<>]+)</span>").getMatch(0);
-        if (parameter.matches(TYPE_VIDEO)) {
+        String title = null;
+        if (isVideoUrl(parameter) && loggedin) {
+            br.getPage(getVideoUrlPremium(fid));
+            if (isOffline(this.br)) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            title = getTitle(this.br);
+
             List<String> selectedQualities = new ArrayList<String>();
             final MofosConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.MofosCom.MofosConfigInterface.class);
             final boolean fastLinkcheck = cfg.isFastLinkcheckEnabled();
@@ -172,6 +176,7 @@ public class MofosCom extends PluginForDecrypt {
                     dl.setLinkID(dl.getName());
                     dl.setProperty("fid", fid);
                     dl.setProperty("quality", quality);
+                    dl.setProperty("mainlink", this.br.getURL());
                     foundQualities.put(quality, dl);
                 }
             }
@@ -212,20 +217,32 @@ public class MofosCom extends PluginForDecrypt {
                 }
             }
 
+        } else if (isFreeVideoUrl(parameter)) {
+            /* Add single url --> Trailer download */
+            final DownloadLink dl = this.createDownloadlink(parameter);
+            dl.setProperty("mainlink", parameter);
+            decryptedLinks.add(dl);
         } else {
+            br.getPage(parameter);
+            if (isOffline(this.br)) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            title = getTitle(this.br);
             if (title == null) {
                 /* Fallback to id from inside url */
                 title = fid;
             }
             final String pictures[] = getPictureArray(this.br);
-            for (String finallink : pictures) {
+            for (final String finallink : pictures) {
                 final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
-                finallink = finallink.replaceAll("https?://", "http://mofosdecrypted");
                 final DownloadLink dl = this.createDownloadlink(finallink);
                 dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
                 dl.setAvailable(true);
                 dl.setProperty("fid", fid);
+                dl.setProperty("linkpart", "");
                 dl.setProperty("picnumber_formatted", number_formatted);
+                dl.setProperty("mainlink", this.br.getURL());
                 decryptedLinks.add(dl);
             }
         }
@@ -234,6 +251,11 @@ public class MofosCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    @Override
+    protected DownloadLink createDownloadlink(final String url) {
+        return super.createDownloadlink(url.replaceAll("https?://", "mofosdecrypted://"));
     }
 
     /**
@@ -264,16 +286,36 @@ public class MofosCom extends PluginForDecrypt {
         return jd.plugins.decrypter.BabesComDecrypter.getPictureArray(br);
     }
 
-    public static String getVideoUrlPremium(final String fid) {
-        return "http://members2.mofos.com/scene/view/" + fid + "/";
+    public static String getVideoUrlFree(final String linkpart) {
+        return String.format("http://www.mofos.com/tour/scene/%s/", linkpart);
     }
 
-    public static String getPicUrl(final String fid) {
-        return "http://members2.mofos.com/hqpics/" + fid + "/";
+    public static String getVideoUrlPremium(final String linkpart) {
+        return String.format("http://members2.mofos.com/scene/view/%s/", linkpart);
+    }
+
+    public static String getPicUrl(final String linkpart) {
+        return String.format("http://members2.mofos.com/hqpics/%s/", linkpart);
+    }
+
+    public static boolean requiresLogin(final String url) {
+        return !isFreeVideoUrl(url);
+    }
+
+    public static boolean isFreeVideoUrl(final String url) {
+        return url.contains("/tour/");
+    }
+
+    public static boolean isVideoUrl(final String url) {
+        return isFreeVideoUrl(url) || url.matches(TYPE_VIDEO);
     }
 
     public static boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404;
+    }
+
+    public static String getTitle(final Browser br) {
+        return br.getRegex("<span>\\&nbsp;\\-\\&nbsp;([^<>]+)</span>").getMatch(0);
     }
 
     /* NO OVERRIDE!! */
