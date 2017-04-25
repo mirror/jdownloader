@@ -86,20 +86,23 @@ public class RealityKingsCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + videourl));
             }
         } else {
-            /* TODO: Change url which we access according to account-type. Requirements: Free AND Premium test account! */
             fid = new Regex(parameter, "/(\\d+)/").getMatch(0);
-            br.getPage(parameter);
-            if (isOffline(this.br)) {
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            String title = br.getRegex("<title>([^<>\"]*?) / Reality Kings</title>").getMatch(0);
-            if (title == null) {
-                /* Fallback to id from inside url */
-                title = fid;
-            }
+            String title;
             if (isVideoURL(parameter)) {
+                if (loggedin) {
+                    br.getPage(getVideoUrlPremium(fid));
+                } else {
+                    br.getPage(getVideoUrlFree(fid));
+                }
+                if (isOffline(this.br)) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                title = getTitle();
+                if (title == null) {
+                    /* Fallback to id from inside url */
+                    title = fid;
+                }
                 final String format_filename = "%s_%s%s";
                 final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
                 final String[] dlinfo = htmldownload != null ? htmldownload.split("</a>") : null;
@@ -197,6 +200,16 @@ public class RealityKingsCom extends PluginForDecrypt {
                 }
 
             } else if (parameter.matches(TYPE_PHOTO)) {
+                br.getPage(parameter);
+                if (isOffline(this.br)) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                title = getTitle();
+                if (title == null) {
+                    /* Fallback to id from inside url */
+                    title = fid;
+                }
                 final String pictures[] = getPictureArray(this.br);
                 for (String finallink : pictures) {
                     final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
@@ -219,6 +232,10 @@ public class RealityKingsCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private String getTitle() {
+        return br.getRegex("<title>([^<>\"]*?) / Reality Kings</title>").getMatch(0);
     }
 
     public static boolean isVideoURL(final String url) {
