@@ -189,7 +189,7 @@ public class RealityKingsCom extends PluginForDecrypt {
 
                     /* Not logged in --> Usually only trailer / MOCH download --> Add BEST only */
                     if (!loggedin && downloadlink_quality_BEST != null) {
-                        logger.info("Adding BEST quality only");
+                        logger.info("Trailer download: Adding BEST quality only");
                         decryptedLinks.clear();
                         decryptedLinks.add(downloadlink_quality_BEST);
                     }
