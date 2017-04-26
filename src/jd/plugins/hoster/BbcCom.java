@@ -175,7 +175,7 @@ public class BbcCom extends PluginForHost {
                 for (final HlsContainer hlscontainer_temp : containers) {
                     final int height = hlscontainer_temp.getHeight();
                     final String height_for_quality_selection_temp = getHeightForQualitySelection(height);
-                    final String framerate = "";// Integer.toString(hlscontainer_temp.getFramerate(25));
+                    final String framerate = Integer.toString(hlscontainer_temp.getFramerate(25));
                     if (height_for_quality_selection_temp.equals(height_for_quality_selection) && framerate.equals(configuredPreferredVideoFramerate)) {
                         logger.info("Found user selected quality");
                         hlscontainer_chosen = hlscontainer_temp;
@@ -188,7 +188,7 @@ public class BbcCom extends PluginForHost {
                 }
             }
 
-            quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), "");
+            quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
             downloadLink.setFinalFileName(title + "_" + quality_string + ".mp4");
 
             /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
