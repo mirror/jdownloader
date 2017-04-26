@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -93,7 +92,7 @@ public class PCloudCom extends PluginForHost {
     private int                  statuscode                                      = 0;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                                         = new AtomicInteger(1);
+
     private static Object        LOCK                                            = new Object();
     private String               account_auth                                    = null;
 
@@ -326,18 +325,15 @@ public class PCloudCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         if ("true".equals(premium)) {
             ai.setStatus("Registered premium user");
-            maxPrem.set(20);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
         } else {
             ai.setStatus("Registered (free) user");
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
         }
-
         return ai;
     }
 
@@ -482,12 +478,6 @@ public class PCloudCom extends PluginForHost {
 
     private String getFID(final DownloadLink dl) {
         return dl.getStringProperty("plain_fileid", null);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     private String getAPISafe(final String accesslink) throws IOException, PluginException {
