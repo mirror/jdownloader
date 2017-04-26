@@ -19,22 +19,42 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me)/[^<>\r\n\t]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com)/[^<>\r\n\t]+" })
 public class ShorteSt extends antiDDoSForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com" };
+    }
 
     public ShorteSt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private boolean containsLoginRedirect(final String input) {
+        if (input == null) {
+            return false;
+        }
+        final String redirect = Request.getLocation(input, br.getRequest());
+        final String domain = Browser.getHost(redirect);
+        for (final String name : siteSupportedNames()) {
+            if (name.contains(domain + "/login")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -47,14 +67,14 @@ public class ShorteSt extends antiDDoSForDecrypt {
             parameter = parameter.replace("*", "u");
             parameter = parameter.replace("!", "a");
         }
-        br.getPage(parameter);
+        getPage(parameter);
         final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
-        if (redirect != null && (redirect.contains("sh.st/login") || redirect.contains("viid.me/login") || redirect.contains("wiid.me/login") || redirect.contains("skiip.me/login") || redirect.contains("clkme.me/login"))) {
+        if (containsLoginRedirect(redirect)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (redirect != null) {
             parameter = redirect;
-            br.getPage(parameter);
+            getPage(parameter);
         }
         if (br.containsHTML(">page not found<")) {
             if (!parameter.contains("!/")) {
@@ -80,7 +100,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
         br2.getHeaders().put("Accept", "application/json, text/javascript");
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage(cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
+        postPage(br2, cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
         final String finallink = PluginJSonUtils.getJsonValue(br2, "destinationUrl");
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
