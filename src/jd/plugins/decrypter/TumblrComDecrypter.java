@@ -51,7 +51,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -833,6 +833,14 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     /** For urls which will go back into the decrypter. */
     private DownloadLink createDownloadlinkTumblr(String url) {
+        final String url_corrected = new Regex(url, "(.+/post/\\d+)").getMatch(0);
+        if (url_corrected != null) {
+            /*
+             * 2017-04-26: Sometimes, URLs to single posts contain invalid stuff at the end so let's RegEx them here so that the "password"
+             * handling below fots the plugins' RegEx.
+             */
+            url = url_corrected;
+        }
         if (this.passCode != null) {
             url += "?password=" + this.passCode;
         }

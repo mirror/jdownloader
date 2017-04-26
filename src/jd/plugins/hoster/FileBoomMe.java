@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -453,8 +454,12 @@ public class FileBoomMe extends K2SApi {
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();
-                /* Maybe user has direct downloads disabled */
+                if (inValidate(dllink) && this.br.toString().startsWith("{")) {
+                    /* 2017-04-27: Strange - accessing just the downloadurl in premium mode, the website returns json (sometimes?). */
+                    dllink = PluginJSonUtils.getJson(this.br, "url");
+                }
                 if (inValidate(dllink)) {
+                    /* Maybe user has direct downloads disabled */
                     dllink = getDllink();
                     if (inValidate(dllink)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
