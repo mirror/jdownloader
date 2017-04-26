@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.cafe" }, urls = { "https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-]+/[a-z]{2}/\\d+/\\d+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.cafe" }, urls = { "https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/" })
 public class HentaiCafe extends antiDDoSForDecrypt {
 
     public HentaiCafe(PluginWrapper wrapper) {
