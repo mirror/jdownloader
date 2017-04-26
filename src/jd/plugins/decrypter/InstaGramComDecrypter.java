@@ -19,9 +19,7 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -37,6 +35,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -237,19 +238,23 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (resource_data_list != null && resource_data_list.size() > 0) {
+            final int padLength = getPadLength(resource_data_list.size());
+            int counter = 0;
             /* Album */
             for (final Object pictureo : resource_data_list) {
+                counter++;
+                final String orderid_formatted = String.format(Locale.US, "%0" + padLength + "d", counter);
                 entries = (LinkedHashMap<String, Object>) pictureo;
                 entries = (LinkedHashMap<String, Object>) entries.get("node");
-                decryptSingleImage(entries, linkid_main, date, description);
+                decryptSingleImage(entries, linkid_main, date, description, orderid_formatted);
             }
         } else {
             /* Single image */
-            decryptSingleImage(entries, linkid_main, date, description);
+            decryptSingleImage(entries, linkid_main, date, description, null);
         }
     }
 
-    private void decryptSingleImage(LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description) {
+    private void decryptSingleImage(LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description, final String orderid) {
         String server_filename = null;
         final String shortcode = (String) entries.get("shortcode");
         if (linkid_main == null && shortcode != null) {
@@ -332,6 +337,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             dl.setComment(description);
         }
+        if (!StringUtils.isEmpty(orderid)) {
+            /* For custom packagizer filenames */
+            dl.setProperty("orderid", orderid);
+        }
         decryptedLinks.add(dl);
         distribute(dl);
     }
@@ -354,5 +363,25 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 4;
+    }
+
+    private final int getPadLength(final int size) {
+        if (size < 10) {
+            return 1;
+        } else if (size < 100) {
+            return 2;
+        } else if (size < 1000) {
+            return 3;
+        } else if (size < 10000) {
+            return 4;
+        } else if (size < 100000) {
+            return 5;
+        } else if (size < 1000000) {
+            return 6;
+        } else if (size < 10000000) {
+            return 7;
+        } else {
+            return 8;
+        }
     }
 }
