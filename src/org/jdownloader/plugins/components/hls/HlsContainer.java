@@ -40,6 +40,7 @@ public class HlsContainer {
                 final String programID = new Regex(streamInfo, "PROGRAM-ID=(\\d+)").getMatch(0);
                 final String bandwidth = new Regex(streamInfo, "BANDWIDTH=(\\d+)").getMatch(0);
                 final String resolution = new Regex(streamInfo, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
+                final String framerate = new Regex(streamInfo, "FRAME\\-RATE=(\\d+)").getMatch(0);
                 final String codecs = new Regex(streamInfo, "CODECS=\"([^<>\"]+)\"").getMatch(0);
                 final String url = br.getURL(stream[1]).toString();
                 final HlsContainer hls = new HlsContainer();
@@ -64,6 +65,9 @@ public class HlsContainer {
                     hls.width = Integer.parseInt(width);
                     hls.height = Integer.parseInt(height);
                 }
+                if (framerate != null) {
+                    hls.framerate = Integer.parseInt(framerate);
+                }
                 hlsqualities.add(hls);
             }
         }
@@ -77,6 +81,7 @@ public class HlsContainer {
     private int    height    = -1;
     private int    bandwidth = -1;
     private int    programID = -1;
+    private int    framerate = -1;
 
     public int getProgramID() {
         return programID;
@@ -135,6 +140,22 @@ public class HlsContainer {
             height = this.height;
         }
         return height;
+    }
+
+    public int getFramerate() {
+        return framerate;
+    }
+
+    /**
+     * @param fallback
+     *            : Value to be returned if framerate is unknown - usually this will be 25.
+     */
+    public int getFramerate(final int fallback) {
+        if (framerate == -1) {
+            return fallback;
+        } else {
+            return framerate;
+        }
     }
 
     public String getResolution() {
