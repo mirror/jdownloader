@@ -89,7 +89,7 @@ public class BitvideoIo extends PluginForHost {
         if (getHost().equals("raptu.com")) {
             /* 2017-03-24: Special handling for this domain - video json is not encrypted! */
             br.getPage(link.getDownloadURL());
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Object not found<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
