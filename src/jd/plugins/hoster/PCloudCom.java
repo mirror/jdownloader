@@ -322,25 +322,22 @@ public class PCloudCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if ("true".equals(PluginJSonUtils.getJsonValue(br, "premium"))) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        final String premium = PluginJSonUtils.getJsonValue(br, "premium");
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-        try {
+        if ("true".equals(premium)) {
+            ai.setStatus("Registered premium user");
+            maxPrem.set(20);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(20);
+            account.setConcurrentUsePossible(true);
+        } else {
+            ai.setStatus("Registered (free) user");
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
-            /* free accounts cannot have captcha */
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
         }
-        ai.setStatus("Registered (free) user");
-        account.setValid(true);
+
         return ai;
     }
 

@@ -16,6 +16,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -100,9 +101,15 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             } else {
                 data = IO.readBytes(challenge.getImageFile());
             }
-            r.addFormData(new FormData("captchafile", "ByteData.captcha", data));
+            if (true) {
+                r.addFormData(new FormData("captchafile", "base64:" + Base64.encodeToString(data)));
+            } else {
+                r.addFormData(new FormData("captchafile", "ByteData.captcha", data));
+            }
 
-            URLConnectionAdapter conn = br.openRequestConnection(r);
+            final URLConnectionAdapter conn = br.openRequestConnection(r);
+            conn.setAllowedResponseCodes(new int[] { conn.getResponseCode() });
+            br.loadConnection(conn);
             // 303 See Other if your CAPTCHA was successfully uploaded: Location HTTP header will point you to the uploaded CAPTCHA status
             // page, you may follow the Location to get the uploaded CAPTCHA status or parse the CAPTCHA unique ID out of Location URL — the
             // scheme is http://api.cheapcaptcha.com/api/captcha/%CAPTCHA_ID%;
@@ -128,7 +135,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             }
 
             // Poll for the uploaded CAPTCHA status.
-            br.loadConnection(conn);
+
             String checkUrl = br.getRedirectLocation();
 
             String id = new Regex(checkUrl, ".*/(\\d+)$").getMatch(0);

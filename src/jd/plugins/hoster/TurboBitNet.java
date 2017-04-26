@@ -227,6 +227,9 @@ public class TurboBitNet extends PluginForHost {
             }
             throw e;
         }
+        if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You have reached limit of premium downloads", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         ai.setUnlimitedTraffic();
         // >Turbo access till 27.09.2015</span>
         final String expire = br.getRegex(">Turbo access till (.*?)</span>").getMatch(0);
@@ -238,9 +241,6 @@ public class TurboBitNet extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
         }
         ai.setStatus("Premium Account");
-        if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You have reached limit of premium downloads", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
         return ai;
     }
 
