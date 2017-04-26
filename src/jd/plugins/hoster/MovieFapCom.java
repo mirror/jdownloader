@@ -74,15 +74,25 @@ public class MovieFapCom extends PluginForHost {
             dllink = br.getRegex("flashvars\\.config = escape\\(\"(http://[^<>\"]*?)\"\\);").getMatch(0);
             if (!this.privatevideo && dllink != null) {
                 br.getPage(dllink);
-                dllink = br.getRegex("<videoLink>(http://[^<>\"]*?)</videoLink>").getMatch(0);
                 /* Video offline - not playable via browser either! */
                 if (this.br.toString().length() < 30) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (dllink != null) {
-                    dllink = Encoding.htmlDecode(dllink);
+                final String[] vps = { "720p", "360p", "240p" }; // Vertical pixel
+                for (final String vp : vps) {
+                    dllink = br.getRegex("<res>" + vp + "</res>\\s*<videoLink>((http:)?//[^<>\"]*?)</videoLink>").getMatch(0);
+                    if (dllink != null) {
+                        dllink = Encoding.htmlDecode(dllink);
+                        break;
+                    }
+                }
+                if (dllink == null) {
+                    dllink = br.getRegex("<videoLink>((?:http:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                 }
             }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename == null) {
             filename = url_filename;
@@ -96,6 +106,7 @@ public class MovieFapCom extends PluginForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
+        ext = ext.replace(".fid", ".flv"); // if (ext == ".fid") doesn't work?
         downloadLink.setFinalFileName(filename + ext);
         if (dllink != null) {
             final Browser br2 = br.cloneBrowser();
@@ -125,9 +136,6 @@ public class MovieFapCom extends PluginForHost {
         if (this.privatevideo) {
             /* Account only */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
