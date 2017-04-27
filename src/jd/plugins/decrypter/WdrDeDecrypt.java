@@ -25,6 +25,7 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -129,8 +130,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             }
             json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
         } else {
-            final String thisvideo_src = jd.plugins.hoster.EinsfestivalDe.getVideoSrc(this.br);
-            sendung = jd.plugins.hoster.EinsfestivalDe.getTitleSubtitleWithErrorhandlingFromVideoSrc(thisvideo_src);
+            final String thisvideo_src = einsfestivalGetVideoSrc(this.br);
+            sendung = einsfestivalGetTitleSubtitleWithErrorhandlingFromVideoSrc(thisvideo_src);
             json_api_url = new Regex(thisvideo_src, "adaptivePath\\s*?:\\s*?\\'(http://[^<>\"\\']+)\\'").getMatch(0);
         }
         if (sendung == null) {
@@ -402,6 +403,36 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    private static String einsfestivalGetTitleSubtitleFromVideoSrc(final String videosrc) {
+        return new Regex(videosrc, "startAlt\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+    }
+
+    private static String einsfestivalGetTitleSubtitleAlternativeFromVideoSrc(final String videosrc) {
+        return new Regex(videosrc, "zmdbTitle\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+    }
+
+    private static String einsfestivalGetTitleSubtitleWithErrorhandlingFromVideoSrc(final String videosrc) {
+        final String title_subtitle_alternative = einsfestivalGetTitleSubtitleAlternativeFromVideoSrc(videosrc);
+        String title_subtitle = einsfestivalGetTitleSubtitleFromVideoSrc(videosrc);
+        /* Avoid extremely long filenames with unneeded information! */
+        if (title_subtitle == null || title_subtitle.matches(".+(SENDER:|SENDETITEL:|UNTERTITEL:).+")) {
+            title_subtitle = title_subtitle_alternative;
+        }
+        return title_subtitle;
+    }
+
+    private static String einsfestivalGetVideoSrc(final Browser br) {
+        final String videoid = getVideoid(br.getURL());
+        if (videoid == null) {
+            return null;
+        }
+        return br.getRegex("arrVideos\\[" + videoid + "\\]\\s*?=\\s*?\\{(.*?)\\}").getMatch(0);
+    }
+
+    private static String getVideoid(final String url) {
+        return new Regex(url, "(\\d+)$").getMatch(0);
     }
 
     /* NO OVERRIDE!! */

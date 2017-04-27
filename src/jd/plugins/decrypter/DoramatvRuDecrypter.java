@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
  *
  */
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/.*" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/.*" })
 public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /*
@@ -91,7 +91,8 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
      * @throws Exception
      *             Any exception
      */
-    private ArrayList<DownloadLink> findDownloadLinksForEpisode(String url) throws Exception {
+    private ArrayList<DownloadLink> findDownloadLinksForEpisode(final String url) throws Exception {
+        ArrayList<DownloadLink> finalLinks = new ArrayList<DownloadLink>();
         String[] urlParts = url.replace("http://", "").split("/");
         String resolution = "";
 
@@ -127,6 +128,8 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
                 // vk.com
 
                 linkMap.put(match, true);
+            } else {
+                finalLinks.add(this.createDownloadlink(match));
             }
         }
 
@@ -148,91 +151,93 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
                 if (!linkMap.containsKey(match)) {
                     linkMap.put(match, false);
                 }
+            } else {
+                if (match.startsWith("//")) {
+                    match = "http:" + match;
+                }
+                finalLinks.add(this.createDownloadlink(match));
             }
 
         }
 
         // nothing was found
-        if (linkMap.size() < 1) {
-            return null;
+        if (linkMap.size() > 0) {
+
+            // sort the map containing the links
+            linkMap = sortByValue(linkMap);
+
+            /**
+             * Determines whether a video in the given resolution was found: {720p, 480p, 360p, 240p}
+             */
+            boolean[] foundResolution = new boolean[] { false, false, false, false };
+            Browser browser3;
+            for (String match : linkMap.keySet()) {
+                browser3 = br.cloneBrowser();
+                browser3.getPage(match);
+
+                Regex regex720 = foundResolution[0] ? null : browser3.getRegex("\"url720\":\"(.*?)\"");
+                Regex regex480 = foundResolution[1] ? null : browser3.getRegex("\"url480\":\"(.*?)\"");
+                Regex regex360 = foundResolution[2] ? null : browser3.getRegex("\"url360\":\"(.*?)\"");
+                Regex regex240 = foundResolution[3] ? null : browser3.getRegex("\"url240\":\"(.*?)\"");
+
+                DownloadLink result;
+
+                if (!foundResolution[0] && regex720.count() > 0) {
+                    resolution = "720";
+
+                    result = findDownloadLink(regex720.getMatches(), resolution, linkMap.get(match));
+
+                    if (result != null) {
+                        finalLinks.add(result);
+
+                        foundResolution[0] = true;
+                    }
+
+                }
+                if (!foundResolution[1] && regex480.count() > 0) {
+                    resolution = "480";
+
+                    result = findDownloadLink(regex480.getMatches(), resolution, linkMap.get(match));
+
+                    if (result != null) {
+                        finalLinks.add(result);
+
+                        foundResolution[1] = true;
+                    }
+                }
+                if (!foundResolution[2] && regex360.count() > 0) {
+                    resolution = "360";
+
+                    result = findDownloadLink(regex360.getMatches(), resolution, linkMap.get(match));
+
+                    if (result != null) {
+                        finalLinks.add(result);
+
+                        foundResolution[2] = true;
+                    }
+                }
+                if (!foundResolution[3] && regex240.count() > 0) {
+                    resolution = "240";
+
+                    result = findDownloadLink(regex240.getMatches(), resolution, linkMap.get(match));
+
+                    if (result != null) {
+                        finalLinks.add(result);
+
+                        foundResolution[3] = true;
+                    }
+                }
+
+                if (foundResolution[0] & foundResolution[1] & foundResolution[2] & foundResolution[3]) {
+                    break;
+                }
+            }
+
+            // create a new FilePackage for the episode
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title.replace("_", " ").trim());
+            fp.addLinks(finalLinks);
         }
-
-        // sort the map containing the links
-        linkMap = sortByValue(linkMap);
-
-        ArrayList<DownloadLink> finalLinks = new ArrayList<DownloadLink>();
-
-        /**
-         * Determines whether a video in the given resolution was found: {720p, 480p, 360p, 240p}
-         */
-        boolean[] foundResolution = new boolean[] { false, false, false, false };
-        Browser browser3;
-        for (String match : linkMap.keySet()) {
-            browser3 = br.cloneBrowser();
-            browser3.getPage(match);
-
-            Regex regex720 = foundResolution[0] ? null : browser3.getRegex("\"url720\":\"(.*?)\"");
-            Regex regex480 = foundResolution[1] ? null : browser3.getRegex("\"url480\":\"(.*?)\"");
-            Regex regex360 = foundResolution[2] ? null : browser3.getRegex("\"url360\":\"(.*?)\"");
-            Regex regex240 = foundResolution[3] ? null : browser3.getRegex("\"url240\":\"(.*?)\"");
-
-            DownloadLink result;
-
-            if (!foundResolution[0] && regex720.count() > 0) {
-                resolution = "720";
-
-                result = findDownloadLink(regex720.getMatches(), resolution, linkMap.get(match));
-
-                if (result != null) {
-                    finalLinks.add(result);
-
-                    foundResolution[0] = true;
-                }
-
-            }
-            if (!foundResolution[1] && regex480.count() > 0) {
-                resolution = "480";
-
-                result = findDownloadLink(regex480.getMatches(), resolution, linkMap.get(match));
-
-                if (result != null) {
-                    finalLinks.add(result);
-
-                    foundResolution[1] = true;
-                }
-            }
-            if (!foundResolution[2] && regex360.count() > 0) {
-                resolution = "360";
-
-                result = findDownloadLink(regex360.getMatches(), resolution, linkMap.get(match));
-
-                if (result != null) {
-                    finalLinks.add(result);
-
-                    foundResolution[2] = true;
-                }
-            }
-            if (!foundResolution[3] && regex240.count() > 0) {
-                resolution = "240";
-
-                result = findDownloadLink(regex240.getMatches(), resolution, linkMap.get(match));
-
-                if (result != null) {
-                    finalLinks.add(result);
-
-                    foundResolution[3] = true;
-                }
-            }
-
-            if (foundResolution[0] & foundResolution[1] & foundResolution[2] & foundResolution[3]) {
-                break;
-            }
-        }
-
-        // create a new FilePackage for the episode
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title.replace("_", " ").trim());
-        fp.addLinks(finalLinks);
 
         return finalLinks;
     }

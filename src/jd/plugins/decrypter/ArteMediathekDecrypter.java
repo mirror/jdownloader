@@ -162,6 +162,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             } else {
+                /* TODO: Find out when we can actually do this. */
+                videoid_base = new Regex(this.parameter, "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
+
                 video_section = this.br.toString();
                 scanForExternalUrls();
                 if (decryptedLinks.size() > 0) {

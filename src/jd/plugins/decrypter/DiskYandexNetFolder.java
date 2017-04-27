@@ -257,8 +257,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         } while (offset < numberof_entries);
         if (decryptedLinks.size() == 0) {
             /* Should never happen! */
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Probably empty folder");
+            return decryptedLinks;
         }
 
         /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip anyways which makes no sense. */
