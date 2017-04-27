@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/(videos/watch/video|watch/video)/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/(videos/watch/video|watch/video)/.+" })
 public class BingCom extends PluginForDecrypt {
 
     public BingCom(PluginWrapper wrapper) {

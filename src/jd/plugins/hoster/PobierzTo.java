@@ -22,11 +22,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,6 +43,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pobierz.to" }, urls = { "https?://(?:www\\.)?pobierz\\.to/[A-Za-z0-9]+" })
 public class PobierzTo extends PluginForHost {
@@ -95,7 +95,7 @@ public class PobierzTo extends PluginForHost {
     private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = ".*?e=(You\\+must\\+wait\\+|Musisz\\+poczeka%C4%87\\+\\d+\\+godzin%C4%99\\+pomi%C4%99dzy).*?";
     /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
     /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String            url_ERROR_PREMIUMONLY                        = "(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+)";
+    private static final String            url_ERROR_PREMIUMONLY                        = "(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+|.+wykup\\+konto\\+Premium.+)";
     /* Texts for the known errors */
     private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
     private static final String            errortext_ERROR_SERVER                       = "Server error";
@@ -127,12 +127,19 @@ public class PobierzTo extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
         final String fid = getFID(link);
         link.setLinkID(fid);
+
+        // /* 2017-04-28: For some URLs, availibility information is only visible for loggedin (or only premium??) users. */
+        // final Account aa = AccountController.getInstance().getValidAccount(this);
+        // if (aa != null) {
+        // this.login(aa, false);
+        // }
+
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {

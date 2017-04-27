@@ -22,11 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +40,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  *
@@ -65,7 +65,7 @@ public class Keep2ShareCc extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
-    public final String  MAINPAGE      = "http://keep2share.cc";                        // new.keep2share.cc and keep2share.cc share same
+    public final String  MAINPAGE      = "https://keep2share.cc";                       // new.keep2share.cc and keep2share.cc share same
     // tld
     private final String DOMAINS_PLAIN = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
@@ -517,7 +517,7 @@ public class Keep2ShareCc extends K2SApi {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            this.br.setCookie(account.getHoster(), key, value);
                         }
                         if (validateCookie != null) {
                             getPage(MAINPAGE + "/site/profile.html");
@@ -534,17 +534,24 @@ public class Keep2ShareCc extends K2SApi {
                     validateCookie.set(false);
                 }
                 getPage(MAINPAGE + "/login.html");
+                String csrftoken = br.getRegex("value=\"([^<>\"\\']+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
+                if (StringUtils.isEmpty(csrftoken)) {
+                    csrftoken = br.getCookie(account.getHoster(), "YII_CSRF_TOKEN");
+                }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                if (csrftoken != null) {
+                    postData += "&YII_CSRF_TOKEN=" + Encoding.urlEncode(csrftoken);
+                }
                 // Handle stupid login captcha
                 final String captchaLink = br.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
                 if (captchaLink != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
-                    final String code = getCaptchaCode("http://k2s.cc" + captchaLink, dummyLink);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
+                    final String code = getCaptchaCode("https://" + br.getHost() + captchaLink, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 } else {
                     if (br.containsHTML("recaptcha/api/challenge") || br.containsHTML("Recaptcha.create")) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
                         final Recaptcha rc = new Recaptcha(br, this);
                         String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
                         if (challenge == null) {
@@ -600,7 +607,7 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = this.br.getCookies(account.getHoster());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

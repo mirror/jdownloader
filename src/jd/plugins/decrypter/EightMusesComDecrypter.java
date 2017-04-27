@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/comix/(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,3})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/comix/(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,4})" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
 
     public EightMusesComDecrypter(PluginWrapper wrapper) {
