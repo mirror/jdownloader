@@ -227,28 +227,30 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptSubfolders = false;
             }
         }
-        for (final Object o : ressourcelist_files) {
-            entries = (LinkedHashMap<String, Object>) o;
-            String url = (String) entries.get("href");
-            if (url == null && isSingleFile) {
-                url = link;
-            }
-            final String filename = (String) entries.get("filename");
-            final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
+        if (ressourcelist_files != null) {
+            for (final Object o : ressourcelist_files) {
+                entries = (LinkedHashMap<String, Object>) o;
+                String url = (String) entries.get("href");
+                if (url == null && isSingleFile) {
+                    url = link;
+                }
+                final String filename = (String) entries.get("filename");
+                final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
 
-            if (url == null || url.equals("") || filename == null || filename.equals("")) {
-                return null;
-            }
+                if (url == null || url.equals("") || filename == null || filename.equals("")) {
+                    return null;
+                }
 
-            final DownloadLink dl = createSingleDownloadLink(url);
+                final DownloadLink dl = createSingleDownloadLink(url);
 
-            if (filesize > 0) {
-                dl.setDownloadSize(filesize);
+                if (filesize > 0) {
+                    dl.setDownloadSize(filesize);
+                }
+                dl.setName(filename);
+                dl.setAvailable(true);
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+                decryptedLinks.add(dl);
             }
-            dl.setName(filename);
-            dl.setAvailable(true);
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
-            decryptedLinks.add(dl);
         }
 
         if (decryptSubfolders) {

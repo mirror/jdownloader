@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://(www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "https?://(?:www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" })
 public class SwrMediathekDeDecrypter extends PluginForDecrypt {
 
     public SwrMediathekDeDecrypter(PluginWrapper wrapper) {

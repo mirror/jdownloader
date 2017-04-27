@@ -71,6 +71,9 @@ public class BongobdCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("var videoId\\s*?=\\s*?\"\";")) {
+            /* 2017-04-27: Serverside broken / offline video */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "v=([A-Za-z0-9]+)$").getMatch(0);
         String filename = br.getRegex("id=\"current\\-video\\-title\">([^<>\"]+)<").getMatch(0);
