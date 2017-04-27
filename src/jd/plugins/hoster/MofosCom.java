@@ -73,6 +73,7 @@ public class MofosCom extends PluginForHost {
 
     private String               dllink                       = null;
     private boolean              server_issues                = false;
+    private boolean              premiumonly                  = true;
 
     public static Browser prepBR(final Browser br) {
         return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "members2.mofos.com");
@@ -89,6 +90,7 @@ public class MofosCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        link.setName(getFID(link));
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null && !jd.plugins.decrypter.MofosCom.isFreeVideoUrl(link.getDownloadURL())) {
             link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
@@ -102,6 +104,9 @@ public class MofosCom extends PluginForHost {
             this.br.getPage(this.getMainlink(link));
             if (jd.plugins.decrypter.MofosCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("class=\"restricted\\-access\" style=\"display:block;\"")) {
+                logger.info("Trailer is not available or only available for premium users");
+                return AvailableStatus.TRUE;
             }
             final String json_source = this.br.getRegex("JSON\\.parse\\(\\'(.*?)\'\\)").getMatch(0);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
@@ -120,6 +125,7 @@ public class MofosCom extends PluginForHost {
                     dllink = url_temp;
                 }
             }
+            premiumonly = false;
 
         }
         final String fid = link.getStringProperty("fid", null);
@@ -185,7 +191,7 @@ public class MofosCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (!jd.plugins.decrypter.MofosCom.isFreeVideoUrl(this.getMainlink(downloadLink))) {
+        if (!jd.plugins.decrypter.MofosCom.isFreeVideoUrl(this.getMainlink(downloadLink)) || premiumonly) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -297,6 +303,17 @@ public class MofosCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    private String getFID(final DownloadLink dl) {
+        final String mainlink = getMainlink(dl);
+        final String fid;
+        if (jd.plugins.decrypter.MofosCom.isFreeVideoUrl(mainlink)) {
+            fid = new Regex(mainlink, "(\\d+)/?$").getMatch(0);
+        } else {
+            fid = new Regex(mainlink, "download/(\\d+/[A-Za-z0-9\\-_]+)/").getMatch(0);
+        }
+        return fid;
     }
 
     private String getMainlink(final DownloadLink dl) {
