@@ -61,12 +61,12 @@ public class OnecloudMediaFolder extends PluginForDecrypt {
             if (page > 1) {
                 this.br.getPage("/folder/" + fid + "?page=" + page);
             }
-            final String[] links = br.getRegex("(https?://(?:www\\.)?onecloud\\.media/file/[a-f0-9]{16}\\-[a-f0-9]{16})").getColumn(0);
+            final String[] links = br.getRegex("(/file/[a-f0-9]{16}\\-[a-f0-9]{16})").getColumn(0);
             if (links == null || links.length == 0) {
                 break;
             }
             for (final String singleLink : links) {
-                final DownloadLink dl = createDownloadlink(singleLink);
+                final DownloadLink dl = createDownloadlink("http://" + this.getHost() + singleLink);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);

@@ -16,9 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -26,6 +23,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbr.ee" }, urls = { "https?://(www\\.)?dbr\\.ee/[A-Za-z0-9]+" })
 public class DbrEe extends antiDDoSForHost {
@@ -49,7 +49,7 @@ public class DbrEe extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(br, link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"tab_file\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("header\\-file__title")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"dd\\-file\\-name\">([^<>\"]+)<").getMatch(0);
