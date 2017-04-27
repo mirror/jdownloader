@@ -128,7 +128,7 @@ public class SunexenusCom extends antiDDoSForHost {
     private String               passCode                           = null;
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(3);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
