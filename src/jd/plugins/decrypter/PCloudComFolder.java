@@ -63,6 +63,7 @@ public class PCloudComFolder extends PluginForDecrypt {
             main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);
+            main.setContentUrl(parameter);
             decryptedLinks.add(main);
             return decryptedLinks;
         }
@@ -123,6 +124,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         dl.setProperty("plain_code", foldercode);
         dl.setLinkID(foldercode + fileid);
         dl.setAvailable(true);
+        dl.setContentUrl(parameter);
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
