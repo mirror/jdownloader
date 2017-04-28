@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" })
 public class IwaraTv extends PluginForDecrypt {
 
     public IwaraTv(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class IwaraTv extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa != null) {
             try {
-                jd.plugins.hoster.IwaraTv.login(this.br, aa, false);
+                ((jd.plugins.hoster.IwaraTv) hostPlugin).login(this.br, aa, false);
             } catch (final Throwable e) {
             }
         }
