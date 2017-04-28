@@ -114,6 +114,7 @@ public class TwitterCom extends PluginForHost {
                     con = br.openHeadConnection(dllink_temp);
                     if (!con.getContentType().contains("html")) {
                         dllink = dllink_temp;
+                        link.setUrlDownload(dllink);
                     }
                 } finally {
                     con.disconnect();
