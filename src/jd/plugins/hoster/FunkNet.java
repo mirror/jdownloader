@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -37,7 +38,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funk.net" }, urls = { "https?://(?:www\\.)?funk\\.net/serien/[a-f0-9]{24}/items/[a-f0-9]{24}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funk.net" }, urls = { "https?://(?:www\\.)?funk\\.net/([^/]+)/[a-f0-9]{24}/items/[a-f0-9]{24}" })
 public class FunkNet extends PluginForHost {
 
     public FunkNet(PluginWrapper wrapper) {
@@ -223,6 +224,11 @@ public class FunkNet extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KalturaVideoPlatform;
     }
 
     @Override

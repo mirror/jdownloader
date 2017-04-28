@@ -83,14 +83,20 @@ public class BbcCom extends PluginForHost {
         int bitrate_max = 0;
         int bitrate_temp = 0;
 
+        /* Allow audio download if there is no video available at all --> We probably have a podcast then. */
+        final boolean allowAudio = !this.br.containsHTML("kind=\"video\"");
+
         /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
         for (final String mediasingle : media) {
             final String kind = new Regex(mediasingle, "kind=\"([a-z]+)\"").getMatch(0);
             final String bitrate_str = new Regex(mediasingle, "bitrate=\"(\\d+)\"").getMatch(0);
             final String filesize_str = new Regex(mediasingle, "media_file_size=\"(\\d+)\"").getMatch(0);
-            if (!"video".equalsIgnoreCase(kind) || bitrate_str == null) {
-                /* E.g. skip 'captions' and items without given filesize */
+            if (bitrate_str == null) {
+                /* Skip faulty items. */
+                continue;
+            } else if (!"video".equalsIgnoreCase(kind) && !("audio".equalsIgnoreCase(kind) && allowAudio)) {
+                /* E.g. skip 'captions' [subtitles] and skip audio content if video content is available. */
                 continue;
             }
             final String[] connections = new Regex(mediasingle, "(<connection.*?)/>").getColumn(0);
