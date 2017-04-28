@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 import jd.PluginWrapper;
@@ -27,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer;
+import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "handelsblatt.com" }, urls = { "http://(www\\.)?handelsblatt\\.com/[^<>\"]*?\\.html" })
 public class HandelsblattCom extends PluginForHost {
@@ -78,30 +81,47 @@ public class HandelsblattCom extends PluginForHost {
             publisherID = "110743091001";
         }
         final String videoID = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
-        if (flashID == null || videoID == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
 
-        final String brightcove_URL = "http://c.brightcove.com/services/viewer/htmlFederated?&width=340&height=192&flashID=" + flashID + "&includeAPI=true&templateLoadHandler=templateLoaded&templateReadyHandler=playerReady&bgcolor=%23FFFFFF&htmlFallback=true&playerID=" + playerID + "&publisherID=" + publisherID + "&playerKey=" + Encoding.urlEncode(playerKey) + "&isVid=true&isUI=true&dynamicStreaming=true&optimizedContentLoad=true&wmode=transparent&%40videoPlayer=" + videoID + "&allowScriptAccess=always";
-        this.br.getPage(brightcove_URL);
-        final jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this, this.br);
-
-        String filename = bestBrightcoveVersion.getDisplayName();
-        if (bestBrightcoveVersion == null || bestBrightcoveVersion.getCreationDate() == -1 || filename == null || bestBrightcoveVersion.getDownloadURL() == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename;
+        final long filesize;
+        final String date_formatted;
+        if (flashID != null && videoID != null) {
+            /* Old Brightcove handling [Before April 2017] */
+            final String brightcove_URL = "http://c.brightcove.com/services/viewer/htmlFederated?&width=340&height=192&flashID=" + flashID + "&includeAPI=true&templateLoadHandler=templateLoaded&templateReadyHandler=playerReady&bgcolor=%23FFFFFF&htmlFallback=true&playerID=" + playerID + "&publisherID=" + publisherID + "&playerKey=" + Encoding.urlEncode(playerKey) + "&isVid=true&isUI=true&dynamicStreaming=true&optimizedContentLoad=true&wmode=transparent&%40videoPlayer=" + videoID + "&allowScriptAccess=always";
+            this.br.getPage(brightcove_URL);
+            final jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this, this.br);
+            if (bestBrightcoveVersion == null || bestBrightcoveVersion.getCreationDate() == -1 || bestBrightcoveVersion.getDownloadURL() == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filesize = bestBrightcoveVersion.getFilesize();
+            date_formatted = formatDate(bestBrightcoveVersion.getCreationDate());
+            filename = bestBrightcoveVersion.getDisplayName();
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            filename = date_formatted + "_handelsblatt_" + filename;
+            dllink = bestBrightcoveVersion.getDownloadURL();
+        } else {
+            /* 2017-04-28: New Brightcove handling */
+            /* 2017-04-28: http available --> Grab only http as hls seems to be always lower quality (for mobile devices). */
+            final BrightcoveEdgeContainer bestQuality = jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainerAuto(this.br, Arrays.asList(new Protocol[] { Protocol.HTTP }));
+            if (bestQuality == null) {
+                /* We assume that the page does not contain any video-content --> Offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = bestQuality.getDownloadURL();
+            date_formatted = bestQuality.getPublishedAT();
+            filename = bestQuality.getStandardFilename();
+            filesize = bestQuality.getFilesize();
         }
-        dllink = bestBrightcoveVersion.getDownloadURL();
-        final String date_formatted = formatDate(bestBrightcoveVersion.getCreationDate());
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        filename = date_formatted + "_handelsblatt_" + filename;
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        downloadLink.setDownloadSize(bestBrightcoveVersion.getFilesize());
+        if (filesize > 0) {
+            downloadLink.setDownloadSize(filesize);
+        }
         return AvailableStatus.TRUE;
     }
 

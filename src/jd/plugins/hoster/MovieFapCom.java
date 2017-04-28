@@ -61,7 +61,7 @@ public class MovieFapCom extends PluginForHost {
             filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         } else {
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("video does not exist|This video is set to private")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("video does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (this.br.containsHTML("This video is set to private")) {
@@ -90,9 +90,6 @@ public class MovieFapCom extends PluginForHost {
                     dllink = br.getRegex("<videoLink>((?:http:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                 }
             }
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename == null) {
             filename = url_filename;

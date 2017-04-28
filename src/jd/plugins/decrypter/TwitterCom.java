@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -54,6 +55,7 @@ public class TwitterCom extends PornEmbedParser {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setAllowedResponseCodes(new int[] { 429 });
         final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9_\\-]+)").getMatch(0);
@@ -68,7 +70,7 @@ public class TwitterCom extends PornEmbedParser {
 
         if (parameter.matches(TYPE_REDIRECT)) {
             this.br.setFollowRedirects(false);
-            br.getPage(parameter);
+            getPage(parameter);
             String finallink = this.br.getRedirectLocation();
             if (finallink == null) {
                 finallink = this.br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(https?[^<>\"]*?)(#_=_)?\"").getMatch(0);
@@ -90,7 +92,7 @@ public class TwitterCom extends PornEmbedParser {
         } else {
             logger.info("No account available or login failed");
         }
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             if (parameter.contains("/cards/")) {
                 return decryptedLinks;
@@ -163,7 +165,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 if (decryptedLinks.size() == 0 && this.br.containsHTML("class=\"modal\\-title embed\\-video\\-title\"")) {
                     /* Seems like we have a single video */
-                    this.br.getPage("/i/videos/tweet/" + tweet_id + "?embed_source=clientlib&player_id=0&rpc_init=1");
+                    getPage("/i/videos/tweet/" + tweet_id + "?embed_source=clientlib&player_id=0&rpc_init=1");
                     final String final_videolink = regexTwitterVideo();
                     if (final_videolink != null) {
                         decryptedLinks.add(this.createDownloadlink(final_videolink));
@@ -315,7 +317,7 @@ public class TwitterCom extends PornEmbedParser {
                 if (addedlinks_all == 0 || maxid == null) {
                     break;
                 }
-                br.getPage(String.format(twitter_reload_url_format, maxid));
+                getPage(String.format(twitter_reload_url_format, maxid));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 reloadNumber++;
             } while (br.containsHTML("\"has_more_items\":true"));
@@ -325,6 +327,17 @@ public class TwitterCom extends PornEmbedParser {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    protected void getPage(final Browser br, final String url) throws Exception {
+        super.getPage(br, url);
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            logger.info("Error 429 too many requests - add less URLs and/or perform a reconnect!");
+        }
+    }
+
+    protected void getPage(final String url) throws Exception {
+        getPage(this.br, url);
     }
 
     private String regexTwitterVideo() {
