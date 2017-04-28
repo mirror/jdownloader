@@ -20,11 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "https?://(?:www\\.)?pornsexwank\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "https?://(?:www\\.)?pornsexwank\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" })
 public class PornsexwankCom extends PornEmbedParser {
 
     public PornsexwankCom(PluginWrapper wrapper) {
@@ -43,12 +44,21 @@ public class PornsexwankCom extends PornEmbedParser {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String filename = getTitle(this.br);
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.size() == 0) {
+            /* No external URL found? Video must be hosted on their own servers! */
+            decryptedLinks.add(this.createDownloadlink(parameter.replaceAll("https?://", "pornsexwankdecrypted://")));
+        }
+        return decryptedLinks;
+    }
+
+    public static String getTitle(final Browser br) {
         String filename = br.getRegex("<title>([^<>\"]+) \\- PornSexWank</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         }
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        return decryptedLinks;
+        return filename;
     }
 
 }

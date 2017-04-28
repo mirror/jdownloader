@@ -17,10 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,15 +28,22 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+(.+)?" })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "https?://(?:www\\.)?moviki\\.ru/(?:embed|videos)/\\d+(.+)?" })
 public class MovikiRu extends PluginForHost {
 
     public MovikiRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dllink = null;
+    /* Extension which will be used if no correct extension is found */
+    private static final String default_extension = ".mp4";
+
+    private String              dllink            = null;
+    private boolean             server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -47,14 +52,15 @@ public class MovikiRu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        final String vid = new Regex(link.getDownloadURL(), "moviki\\.ru/[^/]+/(\\d+)").getMatch(0);
-        link.setUrlDownload("http://www.moviki.ru/videos/" + vid + "/x/");
-        link.setLinkID(vid);
+        final String fid = new Regex(link.getDownloadURL(), "moviki\\.ru/[^/]+/(\\d+)").getMatch(0);
+        link.setUrlDownload("http://www.moviki.ru/videos/" + fid + "/x/");
+        link.setLinkID(fid);
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "moviki\\.ru/(?:embed|videos)/(\\d+)").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -69,6 +75,9 @@ public class MovikiRu extends PluginForHost {
             filename = br.getRegex("([^<>\"]+)").getMatch(0);
         }
         if (filename == null) {
+            filename = fid;
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
@@ -77,49 +86,49 @@ public class MovikiRu extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = jd.plugins.hoster.CamwhoresTv.getDllinkCrypted(this.br);
+        String ext = null;
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         }
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        if (ext == null) {
+            ext = default_extension;
+        }
         downloadLink.setFinalFileName(filename + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (!StringUtils.isEmpty(dllink)) {
+            URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final SocketTimeoutException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("Это личное видео пользователя <a")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Private video!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        }
+        /* 2017-04-28: The final downloadlink is only valid once - we have to create a new one to be able to download the file. */
+        this.br.clearCookies(this.br.getURL());
+        br.getPage(downloadLink.getDownloadURL());
+        dllink = jd.plugins.hoster.CamwhoresTv.getDllinkCrypted(this.br);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -127,6 +136,11 @@ public class MovikiRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

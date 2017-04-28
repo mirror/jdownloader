@@ -141,6 +141,7 @@ public class CamwhoresTv extends PluginForHost {
         this.dllink = getDllinkCrypted(this.br);
     }
 
+    /** 2017-04-28: Universal decrypt function for a lot, if not all KernelVideoSharing website which crypt their final downloadlinks. */
     public static String getDllinkCrypted(final Browser br) throws PluginException, IOException {
         String dllink = null;
         final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
