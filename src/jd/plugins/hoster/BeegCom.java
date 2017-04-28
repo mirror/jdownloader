@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
 public class BeegCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -47,6 +47,9 @@ public class BeegCom extends PluginForHost {
     public String getAGBLink() {
         return "http://beeg.com/contacts/";
     }
+
+    private static final String BEEG_VERSION = "2096";
+    private static final String JSALT        = "PwK3K7xvlyx";
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -66,7 +69,7 @@ public class BeegCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getPage("https://api.beeg.com/api/v5/video/" + fid);
+        this.br.getPage("https://api.beeg.com/api/v6/" + BEEG_VERSION + "/video/" + fid);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -89,7 +92,8 @@ public class BeegCom extends PluginForHost {
         DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.DE");
         final String key = new Regex(this.DLLINK, "/key=([^<>\"=]+)%2Cend=").getMatch(0);
         if (key != null) {
-
+            String deckey = decryptKey(key);
+            DLLINK = DLLINK.replace(key, deckey).replace("%2C", ",");
         }
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
@@ -133,9 +137,37 @@ public class BeegCom extends PluginForHost {
         dl.startDownload();
     }
 
-    /** TODO: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/beeg.py */
     private String decryptKey(final String key) {
-        return null;
+        String decodeKey = Encoding.htmlDecode(key);
+        int s = JSALT.length();
+        StringBuffer t = new StringBuffer();
+        for (int o = 0; o < decodeKey.length(); o++) {
+            char l = decodeKey.charAt(o);
+            int n = o % s;
+            int i = JSALT.charAt(n) % 21;
+            t.append(String.valueOf(Character.toChars(l - i)));
+        }
+        String result = t.toString();
+        result = strSplitReverse(result, 3, true);
+        return result;
+    }
+
+    private String strSplitReverse(final String key, final int e, final boolean t) {
+        String n = key;
+        StringBuffer r = new StringBuffer();
+        if (t) {
+            int a = n.length() % e;
+            if (a > 0) {
+                r.append(new StringBuffer(n.substring(0, a)).reverse());
+                n = n.substring(a);
+            }
+        }
+        for (; n.length() > e;) {
+            r.append(new StringBuffer(n.substring(0, e)).reverse());
+            n = n.substring(e);
+        }
+        r.append(new StringBuffer(n).reverse());
+        return r.reverse().toString();
     }
 
     @Override
