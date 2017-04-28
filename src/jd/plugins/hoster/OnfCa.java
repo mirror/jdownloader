@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onf.ca" }, urls = { "https?://(www\\.)?(onf|nfb)\\.ca/film/[a-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onf.ca" }, urls = { "https?://(www\\.)?(onf|nfb)\\.ca/film/[a-z0-9\\-_]+" })
 public class OnfCa extends PluginForHost {
 
     public OnfCa(PluginWrapper wrapper) {
@@ -57,6 +57,9 @@ public class OnfCa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"title\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
