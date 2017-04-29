@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -58,8 +59,7 @@ public class DonkPartyCom extends PluginForDecrypt {
             filename = br.getRegex("<title>(.*?) (free sex video)? ?\\- Donk\\s*Party</title>").getMatch(0);
         }
         if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         filename = filename.trim();
         String sources = br.getRegex("sources\":\\[\\{\"src\":\"(.*?)\"").getMatch(0);
@@ -75,8 +75,7 @@ public class DonkPartyCom extends PluginForDecrypt {
             br.getPage(tempID);
             String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setFinalFileName(filename + ".flv");
@@ -97,9 +96,13 @@ public class DonkPartyCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        String iframe = br.getRegex("<iframe src=\"([^<>\"]+)\"[^<>]*allowfullscreen[^<>]*").getMatch(0);
+        if (iframe != null) {
+            decryptedLinks.add(createDownloadlink(iframe));
+            return decryptedLinks;
+        }
         if (tempID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         return decryptedLinks;
     }
