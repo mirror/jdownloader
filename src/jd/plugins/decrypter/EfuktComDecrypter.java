@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktComDecrypter extends antiDDoSForDecrypt {
@@ -71,7 +71,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
                 title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)").getMatch(0);
             }
             if (title == null) {
-                title = br.getRegex("<title>eFukt.com\\s*\\|\\s*(.*?)\\s*\\|").getMatch(0);
+                title = br.getRegex("<title>(?:eFukt.com\\s*\\|\\s*)?(.*?)\\s*\\|").getMatch(0);
             }
             if (title == null) {
                 title = new Regex(parameter, "efukt\\.com/(\\d+[A-Za-z0-9_\\-]+)\\.html").getMatch(0);
