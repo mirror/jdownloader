@@ -6,9 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -18,17 +21,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?\\w+|playlists/\\d+/[^/]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "https?://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?[\\w_]+|[\\w_]+\\?language=\\w+|playlists/\\d+/[^/]+)" })
 public class TedCom extends PluginForDecrypt {
 
     public TedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_PLAYLIST                      = "http://(?:www\\.)?ted\\.com/playlists/\\d+/[^/]+";
-    private static final String     TYPE_VIDEO                         = "http://(?:www\\.)?ted\\.com/talks/(?:lang/[a-zA-Z\\-]+/)?\\w+";
+    private static final String     TYPE_PLAYLIST                      = "https?://(?:www\\.)?ted\\.com/playlists/\\d+/[^/]+";
+    private static final String     TYPE_VIDEO                         = "https?://(?:www\\.)?ted\\.com/talks/(?:(?:lang/[a-zA-Z\\-]+/)?\\w+|[\\w_]+\\?language=\\w+)";
 
     private static final String     CHECKFAST_VIDEOS                   = "CHECKFAST_VIDEOS";
     private static final String     CHECKFAST_MP3                      = "CHECKFAST_MP3";
@@ -129,7 +130,7 @@ public class TedCom extends PluginForDecrypt {
             json = this.br.getRegex("<script>q\\(\"permalink\\.init\",(\\{.*?)</script>").getMatch(0);
         } else {
             /** Look for external links */
-            String externalLink = br.getRegex("class=\"external\" href=\"(http://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
+            String externalLink = br.getRegex("class=\"external\" href=\"(https?://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
             if (externalLink == null) {
                 externalLink = br.getRegex("<iframe src=\"(https?://(www\\.)?youtube\\.com/embed/[A-Za-z0-9\\-_]+)").getMatch(0);
             }
@@ -172,7 +173,7 @@ public class TedCom extends PluginForDecrypt {
                 if (url_rtmp_part == null) {
                     throw new DecrypterException("Decrypter broken");
                 }
-                final String url_http = "http://download.ted.com/talks/" + url_rtmp_part + "?dnt";
+                final String url_http = Request.getLocation("//download.ted.com/talks/" + url_rtmp_part + "?dnt", br.getRequest());
                 final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 dl.setProperty("directlink", url_http);
                 dl.setProperty("type", "video");
@@ -242,20 +243,33 @@ public class TedCom extends PluginForDecrypt {
                 }
                 dl.setProperty("directlink", dlMP3);
                 dl.setProperty("type", "mp3");
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 dl.setContentUrl(url_source);
                 decryptedLinks.add(dl);
             }
 
             /** Decrypt subtitles */
-            if (subtitleText != null && tedID != null) {
-                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" },
-                        { "sr", "Serbian" }, { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
+            if (subtitleText != null && tedID != null || entries.containsKey("languages")) {
+                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" }, { "sr", "Serbian" },
+                        { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
                 final ArrayList<String[]> selectedSubtitles = new ArrayList<String[]>();
-                final String[] availableSubtitles = new Regex(subtitleText, "value=\"([a-z\\-]{2,5})\">").getColumn(0);
                 final LinkedHashMap<String, String> foundSubtitles = new LinkedHashMap();
-                for (final String currentSubtitle : availableSubtitles) {
-                    foundSubtitles.put(currentSubtitle, "http://www.ted.com/talks/subtitles/id/" + tedID + "/lang/" + currentSubtitle + "/format/srt");
+                if (subtitleText != null) {
+                    final String[] availableSubtitles = new Regex(subtitleText, "value=\"([a-z\\-]{2,5})\">").getColumn(0);
+                    for (final String currentSubtitle : availableSubtitles) {
+                        foundSubtitles.put(currentSubtitle, Request.getLocation("/talks/subtitles/id/" + tedID + "/lang/" + currentSubtitle + "/format/srt", br.getRequest()));
+                    }
+                } else {
+                    // back ported for JSON
+                    final ArrayList<Object> subtitles = (ArrayList) entries.get("languages");
+                    if (subtitles != null) {
+                        for (final Object result : subtitles) {
+                            final LinkedHashMap<String, String> yay = (LinkedHashMap<String, String>) result;
+                            // assume its the lower case one from the code below.
+                            final String langCode = yay.get("languageCode");
+                            foundSubtitles.put(langCode, Request.getLocation("/talks/subtitles/id/" + tedID + "/lang/" + langCode + "/format/srt", br.getRequest()));
+                        }
+                    }
                 }
                 if (cfg.getBooleanProperty(GRAB_ALL_AVAILABLE_SUBTITLES, false)) {
                     for (final String[] subtitleValue : allSubtitleValues) {
@@ -413,7 +427,7 @@ public class TedCom extends PluginForDecrypt {
                         if (cfg.getBooleanProperty(CHECKFAST_SUBTITLES, false)) {
                             dl.setAvailable(true);
                         }
-                        dl._setFilePackage(fp);
+                        fp.add(dl);
                         dl.setContentUrl(url_source);
                         decryptedLinks.add(dl);
                     }
