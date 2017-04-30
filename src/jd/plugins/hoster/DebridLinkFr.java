@@ -355,12 +355,12 @@ public class DebridLinkFr extends PluginForHost {
             // handling for download routines!
             if (downloadLink != null) {
                 if ("notDebrid".equals(error)) {
-                    // Maybe the filehoster is down or the link is not online
-                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
+                    // mh didn't detect online status & download didn't start = generic error message. but specific to this link not the hoster.
+                    // tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if ("fileNotFound".equals(error)) {
                     // The filehoster return a 'file not found' error.
                     // let another download method kick in? **
-                    // NOTE: ** = jiaz new handling behaviour
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if ("badFileUrl".equals(error)) {
                     // The link format is not valid
@@ -387,7 +387,7 @@ public class DebridLinkFr extends PluginForHost {
                 } else if ("maxLinkHost".equals(error)) {
                     // max link limit reached, see linkLimit
                     tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
-                } else if ("maxlink".equals(error)) {
+                } else if ("maxLink".equals(error)) {
                     // this is for any hoster, so can't effectively use account. temp disalbe?
                     throw new AccountUnavailableException("Download limit reached", 1 * 60 * 60 * 1001l);
                 }
@@ -508,7 +508,7 @@ public class DebridLinkFr extends PluginForHost {
 
         String dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
         if (dllink == null) {
-            logger.warning("Unhandled download error on debrid-link,fr:");
+            logger.warning("Unhandled download error on Service Provider:");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Phase 2/2: Download begins!");
@@ -520,7 +520,7 @@ public class DebridLinkFr extends PluginForHost {
             if (br.containsHTML("<img src='http://debrid-link\\.fr/images/logo\\.png")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
-            logger.warning("Unhandled download error on debrid-link.fr:");
+            logger.warning("Unhandled download error on Service Provider side:");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
