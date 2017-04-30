@@ -42,7 +42,7 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "safelinkconverter.com", "safelinkreview.com", "getcomics\\.ga" };
+        return new String[] { "safelinkconverter.com", "safelinkreview.com", "getcomics.ga" };
     }
 
     public SfLnkCnvCm(final PluginWrapper wrapper) {
