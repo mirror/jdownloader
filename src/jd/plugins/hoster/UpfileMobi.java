@@ -104,14 +104,17 @@ public class UpfileMobi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        br.cloneBrowser().openGetConnection("http://upfile.mobi/index.php?page=screen&id=" + fid + "&p=");
+        br.cloneBrowser().openGetConnection("//upfile.mobi/index.php?page=screen&id=" + fid + "&p=");
         final String ad_sht = br.getRegex("\"(ga\\.php[^<>\"]*?)\"").getMatch(0);
         if (ad_sht != null) {
-            br.cloneBrowser().openGetConnection("http://upfile.mobi/" + ad_sht);
+            br.cloneBrowser().openGetConnection("//upfile.mobi/" + ad_sht);
         }
         String dllink = br.getRegex("\"(https?://(www\\.)?upfile\\.mobi/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("\"(/download/\\?page=download[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -131,9 +134,9 @@ public class UpfileMobi extends PluginForHost {
         if (downloadLink == null) {
             return null;
         }
-        String s = new Regex(downloadLink.getDownloadURL(), "http://(?:www\\.)?upfile\\.mobi/(\\d+)").getMatch(0);
+        String s = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?upfile\\.mobi/(\\d+)").getMatch(0);
         if (s == null) {
-            s = new Regex(downloadLink.getDownloadURL(), "http://(?:www\\.)?upfile\\.mobi/index\\.php\\?page=file&f=(\\d+)").getMatch(0);
+            s = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?upfile\\.mobi/index\\.php\\?page=file&f=(\\d+)").getMatch(0);
             if (s == null) {
                 s = new Regex(downloadLink.getDownloadURL(), "upfile\\.mobi/([a-zA-Z0-9]{6,12})").getMatch(0);
             }
