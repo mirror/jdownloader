@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.io" }, urls = { "https?://(?:www\\.)?volafile\\.io/(?:get|download)/[A-Za-z0-9\\-_]+/[^/]+|https?://dl\\d+\\.volafile\\.io/(?:redir/)?get/[A-Za-z0-9\\-_]+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.org/(?:get|download)/[A-Za-z0-9\\-_]+/[^/]+|https?://dl\\d+\\.volafile\\.org/(?:redir/)?get/[A-Za-z0-9\\-_]+/[^/]+" })
 public class VolafileIo extends PluginForHost {
 
     public VolafileIo(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class VolafileIo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://volafile.io/tos";
+        return "https://volafile.org/tos";
     }
 
     @SuppressWarnings("deprecation")
@@ -53,7 +53,7 @@ public class VolafileIo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
-        String filename = br.getRegex("<title>Download ([^<>\"]+) \\- Volafile\\.io Live Filesharing \\& Chat</title>").getMatch(0);
+        String filename = br.getRegex("<title>Download ([^<>\"]+) \\- Volafile\\.org Live Filesharing \\& Chat</title>").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = Encoding.htmlDecode(url_filename);
