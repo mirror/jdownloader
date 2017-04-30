@@ -190,7 +190,7 @@ public class FilesUploadOrg extends antiDDoSForHost {
                 if (isNewLinkType(downloadLink)) {
                     continue_link = br.getRegex("<a href=\"(/download-or-watch/" + fuid + "/[^\"]+)").getMatch(0);
                     getPage(continue_link);
-                    continue_link = br.getRegex("<source src=\"(https?://[a-zA-Z0-9_-.]*filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
+                    continue_link = br.getRegex("<source src=\"(https?://[a-zA-Z0-9_-\\.]*filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
                     continue_link = HTMLEntities.unhtmlentities(continue_link);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     if (dl.getConnection().isContentDisposition()) {
