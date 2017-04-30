@@ -19,16 +19,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
 
 /**
  * c & user values are required in order to not have faked output in other sections of the site.
@@ -36,12 +37,13 @@ import org.appwork.utils.StringUtils;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safelinkconverter.com" },
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safelinkconverter.com" }, urls = { "https?://(?:\\w+\\.)?(?:safelinkconverter\\.com/(?:index\\.php|review\\.php|noadsense\\.php|decrypt(?:-2)?/)?|safelinkreview\\.com/[a-z]{2}/\\w+/|getcomics\\.ga/[a-z]{2}/\\w+/[^\\?]+)\\?(?:.*?&)?id=([a-zA-Z0-9_/\\+\\=\\-%]+)[^\\s%]*" })
+public class SfLnkCnvCm extends antiDDoSForDecrypt {
 
-urls = { "https?://(?:\\w+\\.)?(?:safelinkconverter\\.com/(?:index\\.php|review\\.php|noadsense\\.php|decrypt(?:-2)?/)?|safelinkreview\\.com/[a-z]{2}/\\w+/)\\?(?:.*?&)?id=([a-zA-Z0-9_/\\+\\=\\-%]+)[^\\s%]*" }
-
-)
-public class SfLnkCnvCm extends PluginForDecrypt {
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "safelinkconverter.com", "safelinkreview.com", "getcomics\\.ga" };
+    }
 
     public SfLnkCnvCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -49,6 +51,7 @@ public class SfLnkCnvCm extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String b64 = Encoding.htmlDecode(new Regex(parameter, this.getSupportedLinks()).getMatch(0));
@@ -65,9 +68,9 @@ public class SfLnkCnvCm extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        br.getPage(parameter.replace("http://", "https://"));
+        getPage(parameter.replace("http://", "https://"));
         String link = null;
-        if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkreview.com/")) {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkreview.com/") || StringUtils.containsIgnoreCase(br.getURL(), "getcomics.ga/")) {
             link = br.getRegex("onclick=\"window\\.open\\('(.*?)'").getMatch(0);
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
@@ -75,11 +78,11 @@ public class SfLnkCnvCm extends PluginForDecrypt {
             }
         } else if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkconverter.com/decrypt-\\d+/")) {
             // stuff that ends up going to /decrypted-2/ with solvemedia can be bypassed.
-            br.getPage(br.getURL().replace("/decrypt-2/", "/decrypt/"));
+            getPage(br.getURL().replace("/decrypt-2/", "/decrypt/"));
         } else if (br.containsHTML("decrypt.safelinkconverter")) {
             link = br.getRegex("onclick=\"window\\.open\\('(.*?)'").getMatch(0);
             if (link != null) {
-                br.getPage(link);
+                getPage(link);
             }
         }
         link = br.getRedirectLocation();
@@ -99,11 +102,6 @@ public class SfLnkCnvCm extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "safelinkconverter.com", "safelinkreview.com" };
     }
 
 }
