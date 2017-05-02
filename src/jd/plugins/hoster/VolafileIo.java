@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.org/(?:get|download)/[A-Za-z0-9\\-_]+/[^/]+|https?://dl\\d+\\.volafile\\.org/(?:redir/)?get/[A-Za-z0-9\\-_]+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/(?:get|download)/[A-Za-z0-9\\-_]+/[^/]+|https?://dl\\d+\\.volafile\\.org/(?:redir/)?get/[A-Za-z0-9\\-_]+/[^/]+" })
 public class VolafileIo extends PluginForHost {
 
     public VolafileIo(PluginWrapper wrapper) {
@@ -41,6 +41,16 @@ public class VolafileIo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://volafile.org/tos";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("volafile.io".equals(getHost())) {
+            if (host == null || "volafile.io".equals(host)) {
+                return "volafile.org";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
