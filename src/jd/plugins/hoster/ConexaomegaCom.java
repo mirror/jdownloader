@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
@@ -36,6 +34,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class ConexaomegaCom extends PluginForHost {
@@ -144,7 +144,7 @@ public class ConexaomegaCom extends PluginForHost {
         // now let's get a list of all supported hosts:
         br.getPage("http://www.conexaomega.com/");
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "VideoBB", "videobb.com" }, { "FileFactory", "filefactory.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "RapdiGator", "rapidgator.net" } };
+        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "FileFactory", "filefactory.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "RapdiGator", "rapidgator.net" } };
         for (final String[] hostSet : hostsList) {
             if (br.containsHTML(hostSet[0] + ": Disponível")) {
                 supportedHosts.add(hostSet[1]);

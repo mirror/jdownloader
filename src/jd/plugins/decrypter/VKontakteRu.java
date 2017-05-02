@@ -1361,10 +1361,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private void decryptWallPostCommentsViaWebsiteAfterApiDecryption() throws Exception {
         /* wallSinglePostIDs!= null --> User wants contents of comments! */
         if (wallSinglePostIDs != null) {
-            final boolean allow_photos = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_PHOTOS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_PHOTOS);
-            final boolean allow_audio = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_AUDIO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_AUDIO);
-            final boolean allow_videos = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_VIDEO);
-            final boolean allow_urls = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_URLS);
             final short max_comments_per_page = 20;
             int offset = max_comments_per_page;
             int last_offset_increase = 0;
