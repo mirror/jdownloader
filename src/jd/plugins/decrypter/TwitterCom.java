@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -141,7 +141,7 @@ public class TwitterCom extends PornEmbedParser {
             /* Single Tweet */
             tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             final String twitter_text = this.br.getRegex("<title>(.*?)</title>").getMatch(0);
-            if (br.containsHTML("data-autoplay-src=|video:url")) {
+            if (br.containsHTML("data\\-autoplay\\-src=|video:url")) {
                 final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
                 decryptedLinks.add(dl);
             } else {
@@ -163,13 +163,10 @@ public class TwitterCom extends PornEmbedParser {
                         }
                     }
                 }
-                if (decryptedLinks.size() == 0 && this.br.containsHTML("class=\"modal\\-title embed\\-video\\-title\"")) {
+                if (decryptedLinks.size() == 0 && this.br.containsHTML("class=\"modal\\-title embed\\-video\\-title\"|<meta[^<>]*?property=\"og:type\"[^<>]*?content=\"video\"[^<>]*?>")) {
                     /* Seems like we have a single video */
-                    getPage("/i/videos/tweet/" + tweet_id + "?embed_source=clientlib&player_id=0&rpc_init=1");
-                    final String final_videolink = regexTwitterVideo();
-                    if (final_videolink != null) {
-                        decryptedLinks.add(this.createDownloadlink(final_videolink));
-                    }
+                    final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
+                    decryptedLinks.add(dl);
                 }
                 if (decryptedLinks.size() == 0 && twitter_text != null) {
                     /* Maybe the tweet only consists of text which maybe contains URLs which maybe lead to content. */
@@ -340,20 +337,8 @@ public class TwitterCom extends PornEmbedParser {
         getPage(this.br, url);
     }
 
-    private String regexTwitterVideo() {
-        return regexTwitterVideo(this.br.toString());
-    }
-
-    private String regexTwitterVideo(final String source) {
-        String finallink = new Regex(source, "video_url\\&quot;:\\&quot;(https:[^<>\"]*?\\.mp4)\\&").getMatch(0);
-        if (finallink != null) {
-            finallink = finallink.replace("\\", "");
-        }
-        return finallink;
-    }
-
     private String createVideourl(final String stream_id) {
-        return "https://twitter.com/i/cards/tfw/v1/" + stream_id;
+        return String.format("https://twitter.com/i/videos/tweet/%s", stream_id);
     }
 
     private String getUrlFname(final String parameter) {

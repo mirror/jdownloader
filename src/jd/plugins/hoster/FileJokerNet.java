@@ -760,9 +760,10 @@ public class FileJokerNet extends antiDDoSForHost {
         if (new Regex(correctedBR, ">\\s*No free download slots are available at this time\\.\\s*<").matches()) {
             /* 2016-12-30: According to multiple users this is a 45 minute IP_BLOCKED waittime. */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 45 * 60 * 1000l);
-        } else if (new Regex(correctedBR, "(You have reached (the|your) download(-| )limit|You have to wait|until the next download becomes available<|>\\s*Please try again later or upgrade to Premium and download right now!)").matches()) {
+        } else if (new Regex(correctedBR, "(You have reached (the|your) download(-| )limit|You have to wait|until the next download becomes available<|>\\s*Please try again later or upgrade to Premium and download right now\\!|ait .*? to download for free)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String WAIT = new Regex(correctedBR, "(You have reached (the|your) download(-| )limit|You have to wait)[^<>]+").getMatch(-1);
+            /* 2017-05-02: Added one special RegEx */
+            String WAIT = new Regex(correctedBR, "[^<>]*?(You have reached (the|your) download(-| )limit|You have to wait|ait .*? to download for free)[^<>]+").getMatch(-1);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "Please wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);

@@ -101,7 +101,7 @@ public class CamwhoresTv extends PluginForHost {
         }
         if (is_private_video && br.containsHTML("login-required")) {
             link.setName(filename);
-            return AvailableStatus.UNCHECKABLE;
+            return AvailableStatus.TRUE;
         }
         getDllink(link);
         if (dllink != null) {
