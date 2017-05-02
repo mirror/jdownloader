@@ -191,7 +191,11 @@ public class PobierzTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
-            filename = fInfo.getMatch(0);
+            /* 2017-05-02: The filename in the usual place may contain unwanted spaces so we take it from the 'title' tag. */
+            filename = this.br.getRegex("<title>([^<>\"]+) \\- Pobierz\\.to</title>").getMatch(0);
+            if (filename == null) {
+                filename = fInfo.getMatch(0);
+            }
             filesize = fInfo.getMatch(1);
             if (filesize == null) {
                 filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
