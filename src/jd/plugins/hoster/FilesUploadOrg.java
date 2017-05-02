@@ -190,7 +190,6 @@ public class FilesUploadOrg extends antiDDoSForHost {
                 if (isNewLinkType(downloadLink)) {
                     continue_link = br.getRegex("<a href=\"(/download-or-watch/" + fuid + "/[^\"]+)").getMatch(0);
                     getPage(continue_link);
-                    // src="https://content.filesupload.org:442/dd5/download.php?md5=950c8e5ec398facca1f171d059b59858&amp;name=NCIS.Los.Angeles.S08E21.1080p.AMZN.WEBRip.DD5.1.x264-ViSUM.part2.rar&token=g1ul3piktg017u5hhm2bpiggv3"
                     continue_link = br.getRegex("src=\"(https?://[A-Za-z0-9_\\-\\.]+filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
                     continue_link = HTMLEntities.unhtmlentities(continue_link);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
