@@ -12,7 +12,6 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -223,24 +222,20 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     public CheapCaptchaAccount loadAccount() {
-
         CheapCaptchaAccount ret = new CheapCaptchaAccount();
         try {
-            Browser br = new Browser();
-            PostFormDataRequest r = new PostFormDataRequest("http://api.cheapcaptcha.com/api/user");
-
+            final Browser br = new Browser();
+            final PostFormDataRequest r = new PostFormDataRequest("http://api.cheapcaptcha.com/api/user");
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
-
-            URLConnectionAdapter conn = br.openRequestConnection(r);
+            final URLConnectionAdapter conn = br.openRequestConnection(r);
             br.loadConnection(conn);
             if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
-                throw new WTFException(br.toString());
+                throw new SolverException(br.toString());
             }
-            UrlQuery response = Request.parseQuery(br.toString());
+            final UrlQuery response = Request.parseQuery(br.toString());
             ret.setUserName(response.get("user") + " (" + config.getUserName() + ")");
             ret.setBalance(Double.parseDouble(response.get("balance")) / 100);
-
         } catch (Exception e) {
             logger.log(e);
             ret.setError(e.getMessage());

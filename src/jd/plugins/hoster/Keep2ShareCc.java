@@ -203,7 +203,11 @@ public class Keep2ShareCc extends K2SApi {
         final String filesize = getFileSize();
 
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            if (filename.contains("...")) {
+                super.checkLinks(new DownloadLink[] { link });
+            } else {
+                link.setName(Encoding.htmlDecode(filename.trim()));
+            }
         }
         if (filesize != null) {
             /* Remove spaces to support such inputs: 1 000.0 MB */
@@ -244,7 +248,11 @@ public class Keep2ShareCc extends K2SApi {
         final String filesize = getFileSize();
 
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            if (filename.contains("...")) {
+                super.checkLinks(new DownloadLink[] { link });
+            } else {
+                link.setName(Encoding.htmlDecode(filename.trim()));
+            }
         }
         if (filesize != null) {
             /* Remove spaces to support such inputs: 1 000.0 MB */
@@ -286,19 +294,19 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileName() {
-        String filename = getFileNameNew2017();
+        String fileName = getFileNameNew2017();
         // This might not be needed anymore but keeping it doesn't hurt either
-        if (filename == null && freeDownloadImmediatelyPossible()) {
-            filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
+        if (fileName == null && freeDownloadImmediatelyPossible()) {
+            fileName = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
         }
-        if (filename == null) {
-            filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
-            if (filename == null) {
+        if (fileName == null) {
+            fileName = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
+            if (fileName == null) {
                 // offline/deleted
-                filename = br.getRegex("File name:</b>(.*?)<br>").getMatch(0);
+                fileName = br.getRegex("File name:</b>(.*?)<br>").getMatch(0);
             }
         }
-        return filename;
+        return fileName;
     }
 
     public String getFileSize() {

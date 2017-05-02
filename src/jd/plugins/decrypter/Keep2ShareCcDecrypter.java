@@ -103,8 +103,12 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             if (filename == null) {
                 singlink.setAvailable(false);
             } else {
-                // prevent wasteful double linkchecks.
-                singlink.setAvailable(true);
+                if (filename.contains("...")) {
+                    singlink.setAvailableStatus(null);
+                } else {
+                    // prevent wasteful double linkchecks.
+                    singlink.setAvailable(true);
+                }
             }
             if (br.containsHTML("Downloading blocked due to")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);

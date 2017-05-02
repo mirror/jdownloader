@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-\\d+\\-page\\-\\d+\\.html" })
+@DecrypterPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-\\d+(\\-page\\-\\d+\\.html)?" })
 public class MangaTradersBiz extends PluginForDecrypt {
 
     private PluginForHost plugin = null;
@@ -78,7 +78,7 @@ public class MangaTradersBiz extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String extension_fallback = ".jpg";
-            final Regex urlinfo = new Regex(parameter, "read\\-online/(.+)\\-chapter\\-(\\d+)\\-page\\-\\d+\\.html$");
+            final Regex urlinfo = new Regex(parameter, "read\\-online/(.+)\\-chapter\\-(\\d+)(?:\\-page\\-\\d+\\.html)?$");
             final String url_chapter = urlinfo.getMatch(1);
             final String url_name = urlinfo.getMatch(0);
             String ext = null;

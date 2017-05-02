@@ -5,7 +5,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.appwork.exceptions.WTFException;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -24,11 +28,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_END_CAPTCHA;
 import org.seamless.util.io.IO;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
 
 public class EndCaptchaSolver extends CESChallengeSolver<String> {
 
@@ -71,6 +70,24 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
+    private void errorHandling(Browser br) throws Exception {
+        if (br.containsHTML("ERROR:NOT AUTHENTICATED")) {
+            throw new SolverException("Wrong Logins");
+        } else if (br.containsHTML("ERROR:NOT ENOUGH BALANCE")) {
+            throw new SolverException("No Credits");
+        } else if (br.containsHTML("ERROR:NOT A VALID CAPTCHA")) {
+            throw new SolverException("Bad Captcha Image");
+        } else if (br.containsHTML("ERROR:SERVICE EXTREMELY LOADED")) {
+            throw new SolverException("Service Overloaded");
+        } else if (br.containsHTML("ERROR:UNSUCCESSFUL UPLOAD")) {
+            throw new SolverException("Upload error");
+        } else if (br.containsHTML("ERROR:INCORRECT CAPTCHA ID")) {
+            throw new SolverException("Bad Captcha ID");
+        } else if (br.containsHTML("ERROR:")) {
+            throw new SolverException("Unknown Error:" + br.toString());
+        }
+    }
+
     protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
         job.showBubble(this);
         checkInterruption();
@@ -94,41 +111,36 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
             r.addFormData(new FormData("image", "ByteData.captcha", data));
             conn = br.openRequestConnection(r);
             br.loadConnection(conn);
-            String id = null;
+            String pollID = null;
             if (br.containsHTML("UNSOLVED_YET:/poll/")) {
                 // do poll
-                id = br.getRegex("/poll/(.+)").getMatch(0);
-            } else if (br.containsHTML("ERROR:NOT AUTHENTICATED")) {
-                throw new SolverException("Wrong Logins");
-            } else if (br.containsHTML("ERROR:NOT ENOUGH BALANCE")) {
-                throw new SolverException("No Credits");
-            } else if (br.containsHTML("ERROR:NOT A VALID CAPTCHA")) {
-                throw new SolverException("Bad Captcha Image");
-            } else if (br.containsHTML("ERROR:SERVICE EXTREMELY LOADED")) {
-                throw new SolverException("Service Overloaded");
-            } else if (br.containsHTML("ERROR:UNSUCCESSFUL UPLOAD")) {
-                throw new SolverException("Upload error");
+                pollID = br.getRegex("/poll/(.+)").getMatch(0);
             } else {
+                errorHandling(br);
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
-                job.setAnswer(new EndCaptchaResponse(challenge, this, id, br.toString()));
+                job.setAnswer(new EndCaptchaResponse(challenge, this, pollID, br.toString()));
                 return;
             }
-            String checkUrl = "/poll/" + id;
-            if (null != checkUrl) {
+            if (pollID != null) {
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
-                while (true) {
+                while (pollID != null) {
+                    Thread.sleep(3 * 1000);
+                    final PostFormDataRequest poll = new PostFormDataRequest("http://api.endcaptcha.com/poll/" + pollID);
+                    r.addFormData(new FormData("username", (config.getUserName())));
+                    r.addFormData(new FormData("password", (config.getPassword())));
+                    conn = br.openRequestConnection(poll);
+                    br.loadConnection(conn);
                     if (br.containsHTML("UNSOLVED_YET:/poll/")) {
-                        // do poll
-                        Thread.sleep(3 * 1000);
-                    } else if (br.containsHTML("ERROR:INCORRECT CAPTCHA ID")) {
-                        throw new SolverException("Bad Captcha ID: " + id);
+                        pollID = br.getRegex("/poll/(.+)").getMatch(0);
                     } else {
+                        errorHandling(br);
                         job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
-                        job.setAnswer(new EndCaptchaResponse(challenge, this, id, br.toString()));
+                        job.setAnswer(new EndCaptchaResponse(challenge, this, pollID, br.toString()));
                         return;
                     }
                 }
             }
+            throw new SolverException("Unknown Error:" + br.toString());
         } catch (Exception e) {
             job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
@@ -173,7 +185,6 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
                             r.addFormData(new FormData("password", (config.getPassword())));
                             conn = br.openRequestConnection(r);
                             br.loadConnection(conn);
-                            System.out.println(conn);
                         }
                         // // Report incorrectly solved CAPTCHA if neccessary.
                         // // Make sure you've checked if the CAPTCHA was in fact
@@ -207,8 +218,9 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
             r.addFormData(new FormData("password", (config.getPassword())));
             conn = br.openRequestConnection(r);
             br.loadConnection(conn);
+            errorHandling(br);
             if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
-                throw new WTFException(br.toString());
+                throw new SolverException(br.toString());
             }
             ret.setUserName(config.getUserName());
             ret.setBalance(Double.parseDouble(br.toString()) / 100);

@@ -78,9 +78,12 @@ public class FunkNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "serien/(.+)").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) \\| [^<>]+</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        String fileName = br.getRegex("decodedTitle\\s*=\\s*\\$\\(\"<textarea/>\"\\)\\.html\\(\"(.*?)\"\\)\\.text\\(\\)").getMatch(0);
+        if (fileName == null) {
+            fileName = br.getRegex("<title>([^<>\"]+) \\| [^<>]+</title>").getMatch(0);
+            if (fileName == null) {
+                fileName = url_filename;
+            }
         }
 
         final String player_embed_url = this.br.getRegex("(\\.kaltura\\.com/p/\\d+/sp/\\d+/embedIframeJs/[^<>\"]+)\"").getMatch(0);
@@ -146,15 +149,15 @@ public class FunkNet extends PluginForHost {
         }
         br.getPage(dllink);
         dllink = PluginJSonUtils.getJson(this.br, "url");
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        fileName = Encoding.htmlDecode(fileName);
+        fileName = fileName.trim();
+        fileName = encodeUnicode(fileName);
         final String ext = default_extension;
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (!fileName.endsWith(ext)) {
+            fileName += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
-            link.setFinalFileName(filename);
+            link.setFinalFileName(fileName);
             if (dllink.contains(".m3u8")) {
                 checkFFProbe(link, "Download a HLS Stream");
                 br.getPage(dllink);
@@ -190,7 +193,7 @@ public class FunkNet extends PluginForHost {
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            link.setName(fileName);
         }
         return AvailableStatus.TRUE;
     }

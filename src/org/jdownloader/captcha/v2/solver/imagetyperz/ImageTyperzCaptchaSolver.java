@@ -10,7 +10,6 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -105,6 +104,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             // ERROR: AUTHENTICATION_FAILED = Provided username and password are invalid.
             // ERROR: INVALID_IMAGE_SIZE_30_KB = The uploading image file must be 30 KB.
             // ERROR: UNKNOWN = Unknown error happened, close the program and reopen.
+            // ERROR: INSUFFICIENT_BALANCE
             // ERROR: NOT_DECODED = The captcha is timedout
             // if success the captcha decoded text along with image id will be returned.
             // Example of output: "1245986|HGFJD"
@@ -114,7 +114,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             br.loadConnection(conn);
             final String response = br.toString();
             if (response.startsWith("ERROR: ")) {
-                throw new WTFException(response.substring("ERROR: ".length()));
+                throw new SolverException(response.substring("ERROR: ".length()));
             }
             final String[] result = br.getRegex("(\\d+)\\|(.*)").getRow(0);
             if (result != null) {
@@ -210,7 +210,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             br.loadConnection(conn);
             final String response = br.toString();
             if (response.startsWith("ERROR: ")) {
-                throw new WTFException(response.substring("Error: ".length()));
+                throw new SolverException(response.substring("Error: ".length()));
             }
             ret.setUserName(userName);
             ret.setBalance(100 * Double.parseDouble(response));
