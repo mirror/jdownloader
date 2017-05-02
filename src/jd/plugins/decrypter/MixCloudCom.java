@@ -31,12 +31,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
-public class MxCloudCom extends antiDDoSForDecrypt {
+public class MixCloudCom extends antiDDoSForDecrypt {
 
-    public MxCloudCom(final PluginWrapper wrapper) {
+    public MixCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -69,16 +70,33 @@ public class MxCloudCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
 
+        final String url_thumbnail = this.br.getRegex("class=\"album\\-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) {
             theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
-            if (theName == null) {
-                theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-                if (theName == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-            }
+        }
+        if (theName == null) {
+            theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (theName == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        theName = Encoding.htmlDecode(theName).trim();
+
+        /* 2017-05-02: Set useful information as comment (user request) */
+        final String textinfo_playing_tracks_by = this.br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
+        final String textinfo_chart_positions = this.br.getRegex("<h3>Chart Positions</h3><p>([^<>]+)</p>").getMatch(0);
+        final String textinfo_tagged = this.br.getRegex("<h3>Tagged</h3>(<a.*?</a>)</div>").getMatch(0);
+        String comment = "";
+        if (textinfo_playing_tracks_by != null) {
+            comment += textinfo_playing_tracks_by + ";";
+        }
+        if (textinfo_chart_positions != null) {
+            comment += textinfo_chart_positions + ";";
+        }
+        if (textinfo_tagged != null) {
+            comment += textinfo_tagged;
         }
 
         final String playInfo = br.getRegex("m\\-play\\-info=\"([^\"]+)\"").getMatch(0);
@@ -130,8 +148,11 @@ public class MxCloudCom extends antiDDoSForDecrypt {
             }
             URLConnectionAdapter con = null;
             final Browser br = this.br.cloneBrowser();
-            final DownloadLink dlink = createDownloadlink("directhttp://" + dl);
-            dlink.setFinalFileName(Encoding.htmlDecode(theName).trim() + new Regex(dl, "(\\..{3}$)").getMatch(0));
+            final DownloadLink dlink = createDownloadlink(dl);
+            if (!StringUtils.isEmpty(comment)) {
+                dlink.setComment(comment);
+            }
+            dlink.setFinalFileName(theName + new Regex(dl, "(\\..{3}$)").getMatch(0));
             /* Nicht alle Links im Array sets[] sind verfügbar. */
             try {
                 try {
@@ -156,6 +177,16 @@ public class MxCloudCom extends antiDDoSForDecrypt {
                 } catch (final Throwable e) {
                 }
             }
+        }
+
+        /* Add thumbnail if possible. */
+        if (!StringUtils.isEmpty(url_thumbnail)) {
+            final DownloadLink dlink = createDownloadlink(url_thumbnail);
+            if (!StringUtils.isEmpty(comment)) {
+                dlink.setComment(comment);
+            }
+            dlink.setFinalFileName(theName + ".jpeg");
+            decryptedLinks.add(dlink);
         }
 
         final FilePackage fp = FilePackage.getInstance();

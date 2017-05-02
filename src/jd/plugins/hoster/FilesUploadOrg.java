@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +31,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesupload.org" }, urls = { "https?://(www\\.)?filesupload\\.org/([a-f0-9]{32}/.+|[A-Za-z0-9]+)" })
 public class FilesUploadOrg extends antiDDoSForHost {
@@ -190,7 +190,8 @@ public class FilesUploadOrg extends antiDDoSForHost {
                 if (isNewLinkType(downloadLink)) {
                     continue_link = br.getRegex("<a href=\"(/download-or-watch/" + fuid + "/[^\"]+)").getMatch(0);
                     getPage(continue_link);
-                    continue_link = br.getRegex("<source src=\"(https?://[a-zA-Z0-9_-\\.]*filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
+                    // src="https://content.filesupload.org:442/dd5/download.php?md5=950c8e5ec398facca1f171d059b59858&amp;name=NCIS.Los.Angeles.S08E21.1080p.AMZN.WEBRip.DD5.1.x264-ViSUM.part2.rar&token=g1ul3piktg017u5hhm2bpiggv3"
+                    continue_link = br.getRegex("src=\"(https?://[A-Za-z0-9_\\-\\.]+filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
                     continue_link = HTMLEntities.unhtmlentities(continue_link);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     if (dl.getConnection().isContentDisposition()) {

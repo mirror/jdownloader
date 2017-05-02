@@ -811,6 +811,9 @@ public class FileJokerNet extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
+        } else if (correctedBR.contains("Your downloader software mak")) {
+            /* 2017-05-02: "Your downloader software make requests too often." */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 10 * 60 * 1000l);
         }
         if (correctedBR.contains("You're using all download slots for IP")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
