@@ -178,6 +178,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
     }
 
+    /** Crawls list of URLs which lead to single videos. */
     private void decryptProgrammi() throws Exception {
         final String programm_type = new Regex(this.parameter, "/programmi/([^/]+)/").getMatch(0);
         this.br.getPage(String.format("http://www.raiplay.it/raiplay/programmi/%s/?json", programm_type));
@@ -242,6 +243,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         date = this.br.getRegex("content=\"(\\d{4}\\-\\d{2}\\-\\d{2}) \\d{2}:\\d{2}:\\d{2}\" property=\"gen\\-date\"").getMatch(0);
+
+        /* 2017-05-02: Avoid the same string multiple times in filenames. */
+        final String name_show = this.br.getRegex("<meta property=\"nomeProgramma\" content=\"([^<>\"]+)\"/>").getMatch(0);
+        final String name_episode = this.br.getRegex("<meta property=\"programma\" content=\"([^<>\"]+)\"/>").getMatch(0);
+        if (!StringUtils.isEmpty(name_show) && !StringUtils.isEmpty(name_episode) && name_show.equals(name_episode)) {
+            title = name_show;
+        }
 
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
