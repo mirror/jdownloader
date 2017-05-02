@@ -378,49 +378,48 @@ public class FileFactory extends PluginForHost {
                 br.getPage("/account/");
             }
             // <li class="tooltipster" title="Premium valid until: <strong>30th Jan, 2014</strong>">
-            if (!br.containsHTML("title=\"(Premium valid until|Lifetime Member)")) {
+            if (!br.containsHTML("title=\"(Premium valid until|Lifetime Member)") && !br.containsHTML("<strong>Lifetime</strong>")) {
                 ai.setStatus("Registered (free) User");
                 ai.setUnlimitedTraffic();
                 account.setProperty("free", true);
-
             } else {
                 account.setProperty("free", false);
-                if (br.containsHTML(">Lifetime Member<")) {
+                if (br.containsHTML(">Lifetime Member<") || br.containsHTML("<strong>Lifetime</strong>")) {
                     ai.setValidUntil(-1);
+                    ai.setStatus("Lifetime User");
                 } else {
-                    String expire = br.getRegex("Premium valid until: <strong>(.*?)</strong>").getMatch(0);
+                    final String expire = br.getRegex("Premium valid until: <strong>(.*?)</strong>").getMatch(0);
                     if (expire == null) {
-                        account.setValid(false);
-                        return ai;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     // remove st/nd/rd/th
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("(st|nd|rd|th)", ""), "d MMM, yyyy", Locale.UK));
-                }
-                String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
-                if (space != null) {
-                    ai.setUsedSpace(space);
-                }
-                String traffic = br.getRegex("donoyet(.*?)xyz").getMatch(0);
-                if (traffic != null) {
-                    // OLD SHIT
-                    String loaded = br.getRegex("You have used (.*?) out").getMatch(0);
-                    String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
-                    if (max != null && loaded != null) {
-                        // you don't need to strip characters or reorder its structure. The source is fine!
-                        ai.setTrafficMax(SizeFormatter.getSize(max));
-                        ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
-                    } else {
-                        max = br.getRegex("You can now download up to (.*?) in").getMatch(0);
-                        if (max != null) {
-                            ai.setTrafficLeft(SizeFormatter.getSize(max));
-                        } else {
-                            ai.setUnlimitedTraffic();
-                        }
+                    final String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
+                    if (space != null) {
+                        ai.setUsedSpace(space);
                     }
-                } else {
-                    ai.setUnlimitedTraffic();
+                    final String traffic = br.getRegex("donoyet(.*?)xyz").getMatch(0);
+                    if (traffic != null) {
+                        // OLD SHIT
+                        String loaded = br.getRegex("You have used (.*?) out").getMatch(0);
+                        String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
+                        if (max != null && loaded != null) {
+                            // you don't need to strip characters or reorder its structure. The source is fine!
+                            ai.setTrafficMax(SizeFormatter.getSize(max));
+                            ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
+                        } else {
+                            max = br.getRegex("You can now download up to (.*?) in").getMatch(0);
+                            if (max != null) {
+                                ai.setTrafficLeft(SizeFormatter.getSize(max));
+                            } else {
+                                ai.setUnlimitedTraffic();
+                            }
+                        }
+                    } else {
+                        ai.setUnlimitedTraffic();
+                    }
+                    ai.setStatus("Premium User");
                 }
-                ai.setStatus("Premium User");
             }
         }
         return ai;

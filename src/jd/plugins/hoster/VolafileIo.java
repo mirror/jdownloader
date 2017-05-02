@@ -45,10 +45,8 @@ public class VolafileIo extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("volafile.io".equals(getHost())) {
-            if (host == null || "volafile.io".equals(host)) {
-                return "volafile.org";
-            }
+        if (host == null || "volafile.io".equals(host)) {
+            return "volafile.org";
         }
         return super.rewriteHost(host);
     }

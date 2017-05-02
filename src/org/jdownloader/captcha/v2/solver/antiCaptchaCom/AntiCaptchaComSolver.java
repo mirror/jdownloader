@@ -3,6 +3,8 @@ package org.jdownloader.captcha.v2.solver.antiCaptchaCom;
 import java.util.HashMap;
 import java.util.Map;
 
+import jd.http.Browser;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
@@ -21,8 +23,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_ANTICAPTCHA_COM;
-
-import jd.http.Browser;
 
 public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
     private static final AntiCaptchaComSolver INSTANCE = new AntiCaptchaComSolver();
@@ -58,6 +58,30 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
+    private void errorHandling(AntiCaptchaComAccount account, Map<String, Object> response) throws Exception {
+        // https://anticaptcha.atlassian.net/wiki/display/API/Errors
+        final Number errorID = (Number) response.get("errorId");
+        switch (errorID.intValue()) {
+        case 0:
+            return;
+        case 1:
+            // ERROR_KEY_DOES_NOT_EXIST
+            if (account != null) {
+                account.setError(String.valueOf(response.get("errorDescription")));
+            }
+            CFG_ANTICAPTCHA_COM.API_KEY.setValue(null);
+            throw new SolverException("ErrorID:" + errorID + "|Error:" + response.get("errorDescription"));
+        case 10:
+            // ERROR_ZERO_BALANCE
+            if (account != null) {
+                account.setError(String.valueOf(response.get("errorDescription")));
+            }
+            throw new SolverException("ErrorID:" + errorID + "|Error:" + response.get("errorDescription"));
+        default:
+            throw new SolverException("ErrorID:" + errorID + "|Error:" + response.get("errorDescription"));
+        }
+    }
+
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         Challenge<String> challenge = job.getChallenge();
@@ -90,9 +114,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                 dataMap.put("softId", 832);
                 String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
                 HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                if (!new Integer(0).equals(response.get("errorId"))) {
-                    throw new Exception("Error: " + response.get("errorDescription"));
-                }
+                errorHandling(null, response);
                 int taskID = ((Number) response.get("taskId")).intValue();
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 while (true) {
@@ -101,9 +123,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                     dataMap.put("taskId", taskID);
                     json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult ", JSonStorage.serializeToJson(dataMap));
                     response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                    if (!new Integer(0).equals(response.get("errorId"))) {
-                        throw new Exception("Error: " + response.get("errorDescription"));
-                    }
+                    errorHandling(null, response);
                     logger.info(json);
                     if ("ready".equals(response.get("status"))) {
                         Map<String, Object> solution = ((Map<String, Object>) response.get("solution"));
@@ -147,9 +167,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             dataMap.put("softId", 832);
             String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
             HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            if (!new Integer(0).equals(response.get("errorId"))) {
-                throw new Exception("Error: " + response.get("errorDescription"));
-            }
+            errorHandling(null, response);
             int taskID = ((Number) response.get("taskId")).intValue();
             job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
             while (true) {
@@ -158,9 +176,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                 dataMap.put("taskId", taskID);
                 json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult ", JSonStorage.serializeToJson(dataMap));
                 response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                if (!new Integer(0).equals(response.get("errorId"))) {
-                    throw new Exception("Error: " + response.get("errorDescription"));
-                }
+                errorHandling(null, response);
                 logger.info(json);
                 if ("ready".equals(response.get("status"))) {
                     Map<String, Object> solution = ((Map<String, Object>) response.get("solution"));
@@ -218,19 +234,15 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
     }
 
     public AntiCaptchaComAccount loadAccount() {
-        AntiCaptchaComAccount ret = new AntiCaptchaComAccount();
+        final AntiCaptchaComAccount ret = new AntiCaptchaComAccount();
         try {
-            Browser br = new Browser();
-            HashMap<String, Object> dataMap = new HashMap<String, Object>();
+            final Browser br = new Browser();
+            final HashMap<String, Object> dataMap = new HashMap<String, Object>();
             dataMap.put("clientKey", config.getApiKey());
-            String json = br.postPageRaw("https://api.anti-captcha.com/getBalance", JSonStorage.serializeToJson(dataMap));
-            HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            if (new Integer(0).equals(response.get("errorId"))) {
-                ret.setBalance(((Number) response.get("balance")).doubleValue());
-            } else {
-                ret.setError(String.valueOf(response.get("errorDescription")));
-                return ret;
-            }
+            final String json = br.postPageRaw("https://api.anti-captcha.com/getBalance", JSonStorage.serializeToJson(dataMap));
+            final HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            errorHandling(null, response);
+            ret.setBalance(((Number) response.get("balance")).doubleValue());
         } catch (Exception e) {
             logger.log(e);
             ret.setError(e.getMessage());

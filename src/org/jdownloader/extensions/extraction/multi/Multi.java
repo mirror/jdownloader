@@ -509,7 +509,7 @@ public class Multi extends IExtraction {
                             throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                         }
                         if (callback.hasError()) {
-                            throw new SevenZipException("callback encountered an error!");
+                            throw new SevenZipException("callback encountered an error!", callback.getError());
                         }
                         if (callback.isResultMissing()) {
                             throw new SevenZipException("callback is missing results!");
