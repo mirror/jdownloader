@@ -18,19 +18,21 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-mylinks.com" }, urls = { "https?://(?:www\\.)?protect\\-mylinks\\.com/(?:decrypt|f)\\?i=[a-z0-9]+" })
-public class ProtectMylinksCom extends PluginForDecrypt {
+public class ProtectMylinksCom extends antiDDoSForDecrypt {
 
     public ProtectMylinksCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,28 +43,29 @@ public class ProtectMylinksCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         String fpName = null;
-        br.getPage(parameter);
+        getPage(parameter);
         if (parameter.matches(".+/decrypt\\?i=.+")) {
             /* Multiple links + captcha */
-            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("alert alert\\-danger text\\-center")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("alert alert-danger text-center")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             fpName = br.getRegex("value=\"Title: ([^<>\"]+)\"").getMatch(0);
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            this.br.postPage(this.br.getURL(), "submit=Decrypt+link&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            postPage(br.getURL(), "submit=Decrypt+link&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             final String[] links = br.getRegex("(v\\?auth=[^<>\"\\']+)").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            this.br.setFollowRedirects(false);
+            br.setFollowRedirects(false);
             for (final String singleLink : links) {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
-                br.getPage(singleLink);
-                final String finallink = this.br.getRedirectLocation();
+                final Browser br2 = br.cloneBrowser();
+                getPage(br2, singleLink);
+                final String finallink = br.getRedirectLocation();
                 if (finallink == null || finallink.contains(this.getHost() + "/")) {
                     continue;
                 }
@@ -71,14 +74,14 @@ public class ProtectMylinksCom extends PluginForDecrypt {
         } else {
             /* Single link */
             /* 2017-04-20: Server will always return 404 (fake 404)Server */
-            final String finallink = this.br.getRegex("window\\.location\\s*?=\\s*?\"(http[^<>\"]+)\";").getMatch(0);
-            if (finallink == null && this.br.getHttpConnection().getResponseCode() == 404) {
+            final String finallink = br.getRegex("window\\.location\\s*?=\\s*?\"((?:https?:)?//[^<>\"]+)\";").getMatch(0);
+            if (finallink == null && br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             } else if (finallink == null) {
                 return null;
             }
-            decryptedLinks.add(this.createDownloadlink(finallink));
+            decryptedLinks.add(this.createDownloadlink(Request.getLocation(finallink, br.getRequest())));
         }
 
         if (fpName != null) {
