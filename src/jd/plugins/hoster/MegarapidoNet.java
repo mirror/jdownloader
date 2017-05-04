@@ -251,18 +251,26 @@ public class MegarapidoNet extends PluginForHost {
         if (!br.getURL().endsWith("/gerador")) {
             br.getPage("/gerador");
         }
-        final Regex premium_time = br.getRegex("(\\d{1,2}) DIAS, (\\d{1,2}) HORAS, (\\d{1,2}) MINUTOS E (\\d{1,2}) SEGUNDOS");
-        final String[][] time_matches = premium_time.getMatches();
-        if (time_matches.length == 0) {
-            /* Prevent downloads via free account - they have no traffic! */
-            ai.setTrafficLeft(0);
-            ai.setStatus("Free Account");
-            account.setType(AccountType.FREE);
-        } else {
-            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(time_matches[0][0]) * 24 * 60 * 60 * 1000 + Long.parseLong(time_matches[0][1]) * 60 * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 1000l);
+        final String segundos = br.getRegex("var\\s*segundos\\s*=\\s*(\\d+)").getMatch(0);
+        if (segundos != null) {
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(segundos) * 1000l);
             ai.setUnlimitedTraffic();
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
+        } else {
+            final Regex premium_time = br.getRegex("(\\d{1,2}) DIAS, (\\d{1,2}) HORAS, (\\d{1,2}) MINUTOS E (\\d{1,2}) SEGUNDOS");
+            final String[][] time_matches = premium_time.getMatches();
+            if (time_matches.length == 0) {
+                /* Prevent downloads via free account - they have no traffic! */
+                ai.setTrafficLeft(0);
+                ai.setStatus("Free Account");
+                account.setType(AccountType.FREE);
+            } else {
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(time_matches[0][0]) * 24 * 60 * 60 * 1000 + Long.parseLong(time_matches[0][1]) * 60 * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 1000l);
+                ai.setUnlimitedTraffic();
+                ai.setStatus("Premium Account");
+                account.setType(AccountType.PREMIUM);
+            }
         }
         account.setValid(true);
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
