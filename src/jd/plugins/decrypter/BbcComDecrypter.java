@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" })
 public class BbcComDecrypter extends PluginForDecrypt {
-
     public BbcComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -66,7 +64,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             jsons = this.br.getRegex("_exposedData=(\\{.+),").getColumn(0);
         }
         if (jsons == null || jsons.length == 0) {
-            /* Type 4 */
+            /* Type 4 + 5 (4 OR 5) */
             jsons = this.br.getRegex("mediator\\.bind\\((\\{.*?\\}),\\s*?document\\.").getColumn(0);
         }
         if (jsons == null) {
@@ -80,8 +78,9 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 json = Encoding.htmlDecode(json);
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            final Object story = entries.get("story");
-            final Object player = entries.get("player");
+            final Object o_story = entries.get("story");
+            final Object o_player = entries.get("player");
+            final Object o_episode = entries.get("episode");
             String title = null;
             String subtitle = null;
             String description = null;
@@ -90,7 +89,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             String date = null;
             String date_formatted = null;
             String vpid = null;
-            if (story != null) {
+            if (o_story != null) {
                 /* Type 3 */
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "story/Content/AssetVideoIb2/{0}");
                 if (entries == null) {
@@ -99,16 +98,25 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 }
                 title = (String) entries.get("Title");
                 vpid = (String) entries.get("Vpid");
-            } else if (player != null) {
+            } else if (o_player != null) {
                 /* Type 4 */
-                entries2 = (LinkedHashMap<String, Object>) entries.get("episode");
-                entries = (LinkedHashMap<String, Object>) player;
+                entries2 = (LinkedHashMap<String, Object>) o_episode;
+                entries = (LinkedHashMap<String, Object>) o_player;
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
                 vpid = (String) entries.get("vpid");
                 tv_brand = (String) entries.get("masterbrand");
                 episodeType = (String) entries.get("episodeType");
                 date = (String) entries2.get("release_date_time");
+                description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
+            } else if (o_episode != null) {
+                /* Type 5 */
+                entries = (LinkedHashMap<String, Object>) o_episode;
+                title = (String) entries.get("title");
+                vpid = (String) JavaScriptEngineFactory.walkJson(entries, "master_brand/ident_id");
+                tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "master_brand/id");
+                episodeType = (String) entries.get("type");
+                date = (String) entries.get("release_date_time");
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else {
                 /* Type 1 */
@@ -130,14 +138,12 @@ public class BbcComDecrypter extends PluginForDecrypt {
             if (inValidate(title) || inValidate(vpid)) {
                 continue;
             }
-
             if (inValidate(tv_brand)) {
                 tv_brand = "bbc";
             }
             if (date != null) {
                 date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
             }
-
             String filename_plain = "";
             if (date_formatted != null) {
                 filename_plain = date_formatted + "_";
@@ -148,20 +154,16 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 filename_plain += " - " + subtitle;
             }
             filename_plain = encodeUnicode(filename_plain);
-
             final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
             dl.setLinkID(vpid);
             dl.setName(filename_plain + ".mp4");
             dl.setProperty("decrypterfilename", filename_plain);
             dl.setContentUrl(parameter);
-
             if (!inValidate(description)) {
                 dl.setComment(description);
             }
-
             decryptedLinks.add(dl);
         }
-
         if (decryptedLinks.size() == 0 && this.br.getURL().matches("https?://[^/]+/programmes/[^/]+")) {
             /* 2017-03-24: Final fallback - UNSURE if that is a good idea as these IDs must not be real videoIDs!! */
             final String[] videoIDs = this.br.getRegex("episode_id=([pb][a-z0-9]{7})").getColumn(0);
@@ -169,18 +171,15 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(String.format("http://www.bbc.co.uk/iplayer/episode/%s", vpid)));
             }
         }
-
         if (decryptedLinks.size() == 0) {
             logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
             decryptedLinks.add(this.createOfflinelink(parameter));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -199,5 +198,4 @@ public class BbcComDecrypter extends PluginForDecrypt {
             return false;
         }
     }
-
 }

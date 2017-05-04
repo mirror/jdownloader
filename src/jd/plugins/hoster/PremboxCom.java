@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -46,21 +45,17 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class PremboxCom extends PluginForHost {
-
     private static final String                            CLEAR_DOWNLOAD_HISTORY                    = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
-
     /* Properties */
     private static final String                            PROPERTY_DOWNLOADTYPE                     = "premboxdownloadtype";
     private static final String                            PROPERTY_DOWNLOADTYPE_instant             = "instant";
     private static final String                            PROPERTY_DOWNLOADTYPE_cloud               = "cloud";
-
     /* Other constants & properties */
     private static final String                            API_SERVER                                = "http://prembox.com/uapi";
     private static final String                            NICE_HOST                                 = "prembox.com";
     private static final String                            NICE_HOSTproperty                         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NOCHUNKS                                  = NICE_HOSTproperty + "NOCHUNKS";
     private static final String                            NORESUME                                  = NICE_HOSTproperty + "NORESUME";
-
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME                    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
@@ -70,7 +65,6 @@ public class PremboxCom extends PluginForHost {
      * does check the account)
      */
     private static final long                              DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
-
     private int                                            statuscode                                = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                        = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><Boolean resume possible|impossible> */
@@ -164,7 +158,6 @@ public class PremboxCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -180,7 +173,6 @@ public class PremboxCom extends PluginForHost {
                 }
             }
         }
-
         /* Code unused as values are not given by API */
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
@@ -193,7 +185,6 @@ public class PremboxCom extends PluginForHost {
             }
         }
         setConstants(account, link);
-
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             if (cloudOnlyHosts.contains(link.getHost())) {
@@ -364,7 +355,6 @@ public class PremboxCom extends PluginForHost {
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         final LinkedHashMap<String, Object> traffic_standard = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "traffic/standard");
         final LinkedHashMap<String, Object> traffic_daily = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "traffic/daily");
-
         String status = null;
         long traffic_left_total = 0;
         long expire_timestamp_standard = JavaScriptEngineFactory.toLong(traffic_standard.get("expireTstamp"), -1);
@@ -374,7 +364,6 @@ public class PremboxCom extends PluginForHost {
         long traffic_left_standard = JavaScriptEngineFactory.toLong(traffic_standard.get("left"), 0);
         long traffic_left_daily = JavaScriptEngineFactory.toLong(traffic_daily.get("left"), 0);
         final String accounttype = (String) entries.get("accountType");
-
         if (traffic_left_daily > 0 && traffic_left_standard > 0) {
             status = " account with daily & standard traffic";
             traffic_left_total = traffic_left_daily + traffic_left_standard;
@@ -388,14 +377,12 @@ public class PremboxCom extends PluginForHost {
             status = " account without traffic";
             traffic_left_total = 0;
         }
-
         if (expire_timestamp_standard > expire_timestamp_daily) {
             expire_timestamp = expire_timestamp_standard;
         } else {
             expire_timestamp = expire_timestamp_daily;
         }
         expire_timestamp = expire_timestamp * 1000;
-
         if ("premium".equals(accounttype) && expire_timestamp > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
             status = "Premium" + status;
@@ -491,7 +478,6 @@ public class PremboxCom extends PluginForHost {
     // }
     // return type;
     // }
-
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago() {
         return System.currentTimeMillis() - this.currAcc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
@@ -556,6 +542,7 @@ public class PremboxCom extends PluginForHost {
     }
 
     private void handleAPIErrors(final Browser br) throws PluginException {
+        final String apiStatusMessage = PluginJSonUtils.getJsonArray(br, "errorDescr");
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -576,8 +563,15 @@ public class PremboxCom extends PluginForHost {
             case 3:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
             case 4:
-                statusMessage = "Host unsupported ?!";
-                tempUnavailableHoster(5 * 60 * 1000l);
+                if (apiStatusMessage != null && apiStatusMessage.contains("File size cannot be lower than")) {
+                    /* 2017-05-04 */
+                    /* E.g. {"success":false,"error":"invalidUrl","errorDescr":["File size cannot be lower than 8 KB",""]} */
+                    /* --> Skip this URL but do not disable the complete host! */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
+                } else {
+                    statusMessage = "Host unsupported ?!";
+                    tempUnavailableHoster(5 * 60 * 1000l);
+                }
             case 5:
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent downloads with this account", 1 * 60 * 1000l);
             case 6:
@@ -697,5 +691,4 @@ public class PremboxCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
