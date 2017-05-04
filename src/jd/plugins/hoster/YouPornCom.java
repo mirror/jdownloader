@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
 public class YouPornCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -128,8 +128,11 @@ public class YouPornCom extends PluginForHost {
         }
         /* Find highest quality */
         final String[] qualities = { "1080", "720", "480", "240" };
-        for (final String possibleQuality : qualities) {
-            DLLINK = br.getRegex("sources\\s*?:.*?" + possibleQuality + "\\s*?:\\s*?\\'([^']+)\\'").getMatch(0);
+        for (final String qualitiy : qualities) {
+            DLLINK = br.getRegex("(?:sources\\s*?:.*?)?" + qualitiy + "\\s*?:\\s*?(?:\"|\\')([^'\"]+)(?:\"|\\')").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("(https?://[^'\"]+?" + qualitiy + "p[^'\"]+)(?:\"|\\')").getMatch(0);
+            }
             if (DLLINK != null) {
                 break;
             }
