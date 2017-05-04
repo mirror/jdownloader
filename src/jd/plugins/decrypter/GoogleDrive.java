@@ -69,7 +69,7 @@ public class GoogleDrive extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("http:", "https:");
         final PluginForHost plg = JDUtilities.getPluginForHost("docs.google.com");
         final Account aa = AccountController.getInstance().getValidAccount(plg);
         if (aa != null) {
