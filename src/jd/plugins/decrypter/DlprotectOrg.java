@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
@@ -26,6 +26,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -36,7 +37,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dlprotect.org" }, urls = { "https?://(?:www\\.)?dlprotect\\.org/\\?type=[a-z0-9]+\\&id=[a-z0-9]+\\&ps=\\d+" })
 public class DlprotectOrg extends PluginForDecrypt {
-
     public DlprotectOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,6 +75,9 @@ public class DlprotectOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String type = new Regex(parameter, "type=([a-z0-9]+)").getMatch(0);
+        final String id = new Regex(parameter, "id=([a-z0-9]+)").getMatch(0);
+        final String ps = new Regex(parameter, "ps=(\\d+)").getMatch(0);
         prepBrowser(this.br, this.getHost());
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -85,9 +88,20 @@ public class DlprotectOrg extends PluginForDecrypt {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             br.getPage(parameter);
+        } else if (this.br.containsHTML("class=\"QapTcha\"")) {
+            final String magic = this.getSoup();
+            br.postPage("/qcap/qaptcha.php", "action=qaptcha&qaptcha_key=" + magic + "&type=" + type + "&id=" + id + "&ps=" + ps);
+            br.getPage("/slinks.php?id=" + id + "&type=" + type + "&ps=" + ps + "&action=qaptcha");
         }
         String fpName = null;
-        final String[] links = br.getRegex("class=\"link\\-value\" valign=\"top\">\\s*?<a href=\"(http[^<>\"]+)\"").getColumn(0);
+        String[] links = br.getRegex("class=\"link\\-value\" valign=\"top\">\\s*?<a href=\"(http[^<>\"]+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            /* 2017-05-04: Added this RegEx along with the qaptcha implementation. */
+            links = br.getRegex("target=\"_blank\">(http[^<>\"]+)</td>").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("<a href=\"(http[^<>\"]+)\" target=\"_blank\">").getColumn(0);
+            }
+        }
         if (links == null || links.length == 0) {
             if (br.containsHTML("class=\"link\\-value\"") && this.br.containsHTML("<a href=\"\"")) {
                 /* No urls available --> Empty/Offline */
@@ -103,19 +117,25 @@ public class DlprotectOrg extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         // save the session!
         synchronized (cookies) {
             cookies.put(br.getHost(), br.getCookies(br.getHost()));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
+    private String getSoup() {
+        final Random r = new Random();
+        final String soup = "azertyupqsdfghjkmwxcvbn23456789AZERTYUPQSDFGHJKMWXCVBN_-#@";
+        String v = "";
+        for (int i = 0; i < 31; i++) {
+            v = v + soup.charAt(r.nextInt(soup.length()));
+        }
+        return v;
+    }
 }

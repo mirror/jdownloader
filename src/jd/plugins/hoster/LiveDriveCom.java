@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //This plugin only takes decrypted links from the livedrive decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrivedecrypted\\.com/item/[a-z0-9]{32}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrivedecrypted\\.com/item/[a-z0-9]{32}" })
 public class LiveDriveCom extends PluginForHost {
-
     public LiveDriveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,10 +51,20 @@ public class LiveDriveCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
+        /* 2017-05-04: https is forced now */
+        br.getPage(link.getDownloadURL().replace("http://", "https://"));
         String filename = br.getRegex("<div id=\"Preview\">[\t\n\r ]+<img src=\"/Content/Images/filetypes/180x230/[^<>\"/]*?\" alt=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("id=\"PageTitle\" class=\"Hidden\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("id=\"PageTitle\" class=\"Hidden\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            /* 2017-05-04 */
+            filename = br.getRegex("class=\"file\\-details\">\\s*?<h2>([^<>\"]+)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -64,11 +72,14 @@ public class LiveDriveCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String nodeID = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0);
         String liveDriveUrlUserPart = new Regex(downloadLink.getDownloadURL(), "(.*?)\\.livedrive\\.com").getMatch(0);
-        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
-        final String aid = br.getRegex("\\'(\\d+)\\'\\);\">Download</a>").getMatch(0);
-        if (aid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String dllink = "http://" + liveDriveUrlUserPart + ".livedrive.com/IO/DownloadSharedFile?NodeID=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0) + "&AID=" + aid;
+        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(https?://|www\\.)", "");
+        final String aid = br.getRegex("DownloadSharedFile\\(\\'" + nodeID + "\\',\\'(\\d+)\\'\\)").getMatch(0);
+        if (aid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String dllink = "https://" + liveDriveUrlUserPart + ".livedrive.com/IO/DownloadSharedFile?NodeID=" + nodeID + "&AID=" + aid;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -84,5 +95,4 @@ public class LiveDriveCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

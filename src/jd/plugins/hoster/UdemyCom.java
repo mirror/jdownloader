@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -26,7 +25,6 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -49,7 +47,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
-
     public UdemyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.udemy.com/courses/");
@@ -59,19 +56,16 @@ public class UdemyCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension              = ".mp4";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                    = true;
     private static final int     FREE_MAXCHUNKS                 = 0;
     private static final int     FREE_MAXDOWNLOADS              = 20;
-
     private String               dllink                         = null;
+    private boolean              server_issues                  = false;
     private boolean              textAssetType                  = false;
     private boolean              is_officially_downloadable     = true;
-
     private static final String  TYPE_SINGLE_FREE_OLD           = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
     public static final String   TYPE_SINGLE_PREMIUM_WEBSITE    = ".+/lecture/\\d+$";
     public static final String   TYPE_SINGLE_PREMIUM__DECRYPRED = ".+/lecture_id/\\d+$";
@@ -94,9 +88,9 @@ public class UdemyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = null;
+        server_issues = false;
         textAssetType = false;
         is_officially_downloadable = true;
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = downloadLink.getStringProperty("filename_decrypter", null);
@@ -190,9 +184,8 @@ public class UdemyCom extends PluginForHost {
                     if (json_view_html == null) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    json_view_html = json_view_html.replace("\\", "");
+                    json_view_html = Encoding.unescape(json_view_html);
                     json_view_html = Encoding.htmlDecode(json_view_html);
-
                     final String jssource = new Regex(json_view_html, "sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
                     if (jssource != null) {
                         /* 2017-04-24: New: json inside json - */
@@ -204,7 +197,7 @@ public class UdemyCom extends PluginForHost {
                             final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                             for (final Object videoo : ressourcelist) {
                                 entries = (LinkedHashMap<String, Object>) videoo;
-                                dllink_temp = (String) entries.get("file");
+                                dllink_temp = (String) entries.get("src");
                                 quality_temp_o = entries.get("label");
                                 if (quality_temp_o != null && quality_temp_o instanceof Long) {
                                     quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
@@ -227,7 +220,6 @@ public class UdemyCom extends PluginForHost {
                             logger.info("JSON-BEST handling for multiple video source failed");
                         }
                     }
-
                     if (StringUtils.isEmpty(dllink)) {
                         final String[] possibleQualities = { "HD", "SD", "1080", "720", "480", "360", "240", "144" };
                         for (final String possibleQuality : possibleQualities) {
@@ -271,7 +263,6 @@ public class UdemyCom extends PluginForHost {
             this.br.getPage(url_embed);
             dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
         }
-
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -291,21 +282,17 @@ public class UdemyCom extends PluginForHost {
         if (description != null && downloadLink.getComment() == null) {
             downloadLink.setComment(description);
         }
-        if (dllink != null && !dllink.contains(".m3u8")) {
+        if (dllink != null && dllink.startsWith("http") && !dllink.contains(".m3u8")) {
             final Browser br2 = new Browser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br2.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
                 }
             } finally {
                 try {
@@ -354,6 +341,8 @@ public class UdemyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
             } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (this.server_issues) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             /*
              * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server

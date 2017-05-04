@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -42,7 +42,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https?://ma\\.wicked\\.com/(?:watch/\\d+(?:/[a-z0-9\\-_]+/?)?|galleries/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:www\\.)?wicked\\.com/tour/movie/\\d+(?:/[a-z0-9\\-_]+/?)?" })
 public class WickedCom extends PluginForDecrypt {
-
     public WickedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -93,13 +92,11 @@ public class WickedCom extends PluginForDecrypt {
                 if (json == null) {
                     return null;
                 }
-
                 entries = getVideoMapHttpStream(json);
             } else {
                 /* We're not logged in but maybe the user has an account to download later. */
                 entries = getDummyQualityMap(fid);
             }
-
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
@@ -139,12 +136,15 @@ public class WickedCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
     private LinkedHashMap<String, Object> getDummyQualityMap(final String fid) {
+        final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
+        final boolean moch_account_available = moch_accounts != null && moch_accounts.size() > 0;
         final String[] possibleQualityKeys = { "-480x272_H264", "-640x368_H264", "-176x144_H263", "-128x96_H263", "_256p_600", "_400p_1300", "_720p_2500", "_1080p_6000" };
+        int counter = 0;
+        final int place_of_last_item = possibleQualityKeys.length - 1;
         LinkedHashMap<String, Object> dummymap = new LinkedHashMap<String, Object>();
         for (final String possibleQualityKey : possibleQualityKeys) {
             /*
@@ -152,7 +152,12 @@ public class WickedCom extends PluginForDecrypt {
              * http://http.movies.wickedcdn.com/44177/vids/wkd_teen_yoga_scene_1-480x272_H264.mp4?nvb=20161102203730&nva=20161103023730&
              * hash=077f0507af518ba62a11d
              */
+            if (moch_account_available && counter == place_of_last_item) {
+                /* MOCH account available --> Only add one dummy quality. */
+                dummymap.clear();
+            }
             dummymap.put(possibleQualityKey, String.format("http://http.movies.wickedcdn.com/%s/vids/%s.mp4", fid, possibleQualityKey));
+            counter++;
         }
         return dummymap;
     }
@@ -174,7 +179,6 @@ public class WickedCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.WickedCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }
@@ -220,5 +224,4 @@ public class WickedCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.PornPortal;
     }
-
 }
