@@ -933,7 +933,7 @@ public class Up4everCom extends antiDDoSForHost {
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        getPage(br, page);
+        super.getPage(br, page);
         if (correctBr) {
             correctBR();
         }
