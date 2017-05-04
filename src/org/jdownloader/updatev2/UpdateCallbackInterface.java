@@ -11,14 +11,13 @@ import javax.swing.ImageIcon;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public interface UpdateCallbackInterface {
-
     void updateGuiIcon(ImageIcon icon);
 
     void updateGuiText(String icon);
 
     /**
      * progress 0.0 ->100.0
-     * 
+     *
      * @param progress
      */
     void updateGuiProgress(double progress);
@@ -48,5 +47,4 @@ public interface UpdateCallbackInterface {
     HTTPProxy updateProxyAuth(int retries, HTTPProxy usedProxy, List<String> proxyAuths, URL url);
 
     List<HTTPProxy> selectProxy(URL url);
-
 }
