@@ -32,6 +32,7 @@ public class VolaFileOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(parameter.getCryptedUrl().replace(".io/", ".org/"));
+        br.followRedirect();
         final String checksum = br.getRegex("\"checksum2\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         final String room = new Regex(parameter.getCryptedUrl(), "/r/([A-Za-z0-9\\-_]+)").getMatch(0);
         final WebSocketClient wsc = new WebSocketClient(br, new URL("https://volafile.org/api/?EIO=3&transport=websocket"));
