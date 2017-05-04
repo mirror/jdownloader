@@ -1,6 +1,7 @@
 package jd.controlling.linkcollector;
 
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -65,7 +66,9 @@ public class LinkCollectingJob {
     }
 
     public void setCustomSourceUrl(String customSource) {
-        this.customSourceUrl = customSource;
+        if (HTMLParser.getProtocol(customSource) != null) {
+            this.customSourceUrl = customSource;
+        }
     }
 
     public LinkCollectingJob(LinkOriginDetails origin) {
