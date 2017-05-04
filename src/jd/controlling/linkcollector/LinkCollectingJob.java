@@ -3,6 +3,7 @@ package jd.controlling.linkcollector;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.parser.html.HTMLParser;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class LinkCollectingJob {
@@ -66,7 +67,8 @@ public class LinkCollectingJob {
     }
 
     public void setCustomSourceUrl(String customSource) {
-        if (HTMLParser.getProtocol(customSource) != null) {
+        final String protocol = HTMLParser.getProtocol(customSource);
+        if (StringUtils.startsWithCaseInsensitive(protocol, "http") || StringUtils.startsWithCaseInsensitive(protocol, "ftp")) {
             this.customSourceUrl = customSource;
         }
     }
