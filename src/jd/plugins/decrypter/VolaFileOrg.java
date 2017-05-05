@@ -20,6 +20,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.websocket.ReadWebSocketFrame;
+import org.appwork.utils.net.websocket.WebSocketFrameHeader;
 
 @DecrypterPlugin(revision = "$Revision: 36721 $", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/r/[A-Za-z0-9\\-_]+" })
 public class VolaFileOrg extends PluginForDecrypt {
@@ -41,7 +42,7 @@ public class VolaFileOrg extends PluginForDecrypt {
             wsc.readNextFrame();// sid
             wsc.readNextFrame();// session
             final ReadWebSocketFrame frame = wsc.readNextFrame();// subscription
-            if (WebSocketClient.OP_CODE.UTF8_TEXT.equals(frame.getOpcode()) && frame.isFin()) {
+            if (WebSocketFrameHeader.OP_CODE.UTF8_TEXT.equals(frame.getOpCode()) && frame.isFin()) {
                 String string = new String(frame.getPayload(), "UTF-8");
                 string = string.replaceFirst("^\\d+", "");
                 final List<Object> list = JSonStorage.restoreFromString(string, TypeRef.LIST);
