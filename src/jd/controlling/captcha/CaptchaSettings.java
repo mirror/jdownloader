@@ -15,7 +15,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.CaptchaQualityEnsuranceRule;
 
 public interface CaptchaSettings extends ConfigInterface {
-
     public static enum MODE {
         // AUTO_ONLY,
         NORMAL,
@@ -82,7 +81,7 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaMode(MODE mode);
 
     @AboutConfig
-    @DefaultIntValue(5 * 60 * 1000)
+    @DefaultIntValue(10 * 60 * 1000)
     @DescriptionForConfigEntry("Timeout after which a challenge (captcha) invalidates (e.g sessions run out...) this timeout should be set by the plugins")
     int getDefaultChallengeTimeout();
 
