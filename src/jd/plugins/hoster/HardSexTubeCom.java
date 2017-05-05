@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com", "hardsextube.com" }, urls = { "https?://(?:www\\.)?hardsextube\\.com/(video|embed)/\\d+|https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+|https?://(?:www\\.)?gotporn\\.com/video/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com", "hardsextube.com" }, urls = { "https?://(?:www\\.)?hardsextube\\.com/(video/)?(video|embed)/?-?\\d+|https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+|https?://(?:www\\.)?gotporn\\.com/video/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class HardSexTubeCom extends antiDDoSForHost {
 
     public HardSexTubeCom(PluginWrapper wrapper) {
@@ -69,7 +69,9 @@ public class HardSexTubeCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.gotporn.com/video/video-" + new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0));
+        if (link.getDownloadURL().contains("gotporn")) {
+            link.setUrlDownload("http://www.gotporn.com/video/video-" + new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0));
+        }
     }
 
     private static final String NORESUME                           = "NORESUME";
@@ -110,6 +112,9 @@ public class HardSexTubeCom extends antiDDoSForHost {
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 class=\"title-block\">([^<>\"]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) { // hardsextube 20170505
+            filename = br.getRegex("gp-title=\"([^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
