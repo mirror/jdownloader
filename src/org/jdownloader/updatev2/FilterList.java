@@ -1,6 +1,5 @@
 package org.jdownloader.updatev2;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
@@ -96,25 +95,23 @@ public class FilterList implements Storable {
             host = "";
         }
         final Pattern[][] lPatterns = patterns;
+        final int size = this.size;
         final Pattern[] accountPatterns = lPatterns[0];
         final Pattern[] domainPatterns = lPatterns[1];
         switch (type) {
         case BLACKLIST:
             for (int i = 0; i < domainPatterns.length; i++) {
                 final Pattern domain = domainPatterns[i];
-                if (domain == null) {
-                    continue;
-                }
-                final Pattern account = accountPatterns[i];
-                if (account != null && accUser != null) {
-                    if (domain.matcher(host).find() && account.matcher(accUser).find()) {
-                        //
-                        return false;
-                    }
-                } else {
-                    if (domain.matcher(host).find()) {
-                        //
-                        return false;
+                if (domain != null) {
+                    final Pattern account = accountPatterns[i];
+                    if (account != null && accUser != null) {
+                        if (domain.matcher(host).find() && account.matcher(accUser).find()) {
+                            return false;
+                        }
+                    } else {
+                        if (domain.matcher(host).find()) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -122,25 +119,25 @@ public class FilterList implements Storable {
         case WHITELIST:
             for (int i = 0; i < domainPatterns.length; i++) {
                 final Pattern domain = domainPatterns[i];
-                if (domain == null) {
-                    continue;
-                }
-                final Pattern account = accountPatterns[i];
-                if (account != null && accUser != null) {
-                    if (domain.matcher(host).find() && account.matcher(accUser).find()) {
-                        //
-                        return true;
-                    }
-                } else {
-                    Matcher matcher = domain.matcher(host);
-                    if (matcher.find()) {
-                        //
-                        // String g0 = matcher.group(0);
-                        return true;
+                if (domain != null) {
+                    final Pattern account = accountPatterns[i];
+                    if (account != null && accUser != null) {
+                        if (domain.matcher(host).find() && account.matcher(accUser).find()) {
+                            return true;
+                        }
+                    } else {
+                        if (domain.matcher(host).find()) {
+                            return true;
+                        }
                     }
                 }
             }
-            return false;
+            /**
+             * whitelist is only active with at least one valid entry
+             *
+             * it is too easy to switch to whitelist without any entry -> blocks all connections
+             */
+            return size == 0;
         default:
             throw new WTFException("Unknown Type: " + type);
         }

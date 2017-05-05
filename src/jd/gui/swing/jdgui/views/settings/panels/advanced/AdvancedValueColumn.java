@@ -41,7 +41,6 @@ import org.jdownloader.settings.advanced.RangeValidator;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> {
-
     private static final long                              serialVersionUID = 1L;
     private ExtTextColumn<AdvancedConfigEntry>             stringColumn;
     private ExtCheckColumn<AdvancedConfigEntry>            booleanColumn;
@@ -52,7 +51,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private ExtTextColumn<AdvancedConfigEntry>             colorColumn;
 
     // private ExtComponentColumn<AdvancedConfigEntry> actionColumn;
-
     public AdvancedValueColumn() {
         super(_GUI.T.AdvancedValueColumn_AdvancedValueColumn_object_());
         columns = new ArrayList<ExtColumn<AdvancedConfigEntry>>();
@@ -161,12 +159,10 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         //
         // };
         // register(actionColumn);
-
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
             {
                 rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-
             }
 
             @Override
@@ -191,29 +187,24 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
         };
         register(stringColumn);
-
         colorColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
             {
                 rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-
             }
 
             public boolean onDoubleClick(final MouseEvent e, final AdvancedConfigEntry value) {
-
                 Object v = value.getValue();
                 Color c = v == null ? null : LAFOptions.createColor(v.toString());
                 Color newColor = JColorChooser.showDialog(getModel().getTable(), _GUI.T.AdvancedValueColumn_onSingleClick_colorchooser_title_(), c);
                 if (newColor != null) {
                     setStringValue("#" + LAFOptions.toHex(newColor), value);
                 }
-
                 return true;
             }
 
             @Override
             public boolean isEditable(final AdvancedConfigEntry obj) {
-
                 return false;
             }
 
@@ -230,9 +221,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 super.configureEditorComponent(value, isSelected, row, column);
                 Object v = value.getValue();
                 Color c = v == null ? null : LAFOptions.createColor(v.toString());
-
                 if (c != null) {
-
                     editorField.setBackground(c);
                     editorField.setForeground(getContrastColor(c));
                     editorField.setOpaque(true);
@@ -245,11 +234,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             public void configureRendererComponent(final AdvancedConfigEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
                 Object v = value.getValue();
                 Color c = v == null ? null : LAFOptions.createColor(v.toString());
-
                 if (c != null) {
                     rendererField.setBackground(c);
                     rendererField.setForeground(getContrastColor(c));
@@ -286,7 +273,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         register(colorColumn);
         defaultColumn = new ExtTextAreaColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
-
             {
                 renderer.setHorizontalAlignment(SwingConstants.RIGHT);
             }
@@ -308,7 +294,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             protected void setStringValue(String value, AdvancedConfigEntry object) {
-
                 Object newV = JSonStorage.restoreFromString(value, new TypeRef<Object>(object.getType()) {
                 }, null);
                 if (newV != null) {
@@ -319,12 +304,10 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                         Dialog.getInstance().showErrorDialog("'" + value + "' is not a valid '" + object.getTypeString() + "'");
                     }
                 }
-
             }
         };
         register(defaultColumn);
         booleanColumn = new ExtCheckColumn<AdvancedConfigEntry>(getName()) {
-
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -350,9 +333,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
         };
         register(booleanColumn);
-
         longColumn = new ExtSpinnerColumn<AdvancedConfigEntry>(getName()) {
-
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -363,10 +344,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             protected SpinnerNumberModel getModel(AdvancedConfigEntry value, Number n) {
                 SpinnerNumberModel ret = super.getModel(value, n);
-
                 if (value.getValidator() != null) {
                     if (value.getValidator() instanceof RangeValidator) {
-
                         if (Clazz.isDouble(n.getClass())) {
                             ret.setMaximum((double) ((RangeValidator) value.getValidator()).getMax());
                             ret.setMinimum((double) ((RangeValidator) value.getValidator()).getMin());
@@ -392,11 +371,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                             ret.setMinimum((byte) ((RangeValidator) value.getValidator()).getMin());
                             ret.setStepSize((byte) ((RangeValidator) value.getValidator()).getSteps());
                         }
-
                     }
                 }
                 return ret;
-
             }
 
             @Override
@@ -414,10 +391,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             public String getStringValue(AdvancedConfigEntry value) {
                 return value.getValue() + "";
             }
-
         };
         register(longColumn);
-
         enumColumn = new ExtTextColumn<AdvancedConfigEntry>(getName(), null) {
             private static final long serialVersionUID = 1L;
             {
@@ -425,12 +400,10 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 renderer.setLayout(new MigLayout("ins 0", "[grow,fill]0[12]5", "[grow,fill]"));
                 renderer.add(rendererField);
                 renderer.add(rendererIcon);
-
             }
 
             @Override
             public void configureRendererComponent(final AdvancedConfigEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-
                 Icon icon;
                 this.rendererIcon.setIcon(icon = this.getIcon(value));
                 String str = this.getStringValue(value);
@@ -439,11 +412,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                     // opaque.
                     str = "";
                 }
-
                 if (this.getTableColumn() != null) {
                     try {
                         this.rendererField.setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - 18 - (icon != null ? icon.getIconWidth() : 0)));
-
                     } catch (Throwable e) {
                         // fallback if org.appwork.swing.sunwrapper.SwingUtilities2 disappears someday
                         e.printStackTrace();
@@ -452,25 +423,20 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 } else {
                     this.rendererField.setText(str);
                 }
-
             }
 
             public boolean onSingleClick(final MouseEvent e, final AdvancedConfigEntry value) {
-
                 ExtPopupMenu popup = new ExtPopupMenu();
                 try {
                     Object[] values = (Object[]) ((Class) value.getClazz()).getMethod("values", new Class[] {}).invoke(null, new Object[] {});
                     for (final Object o : values) {
                         popup.add(new JMenuItem(new AppAction() {
                             {
-
                                 EnumLabel lbl = value.getClazz().getDeclaredField(o.toString()).getAnnotation(EnumLabel.class);
                                 if (lbl != null) {
                                     setName(lbl.value());
                                 } else {
-
                                     if (o instanceof LabelInterface) {
-
                                         setName(((LabelInterface) o).getLabel());
                                     } else {
                                         setName(o.toString());
@@ -481,7 +447,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                                 } else {
                                     setSmallIcon(CheckBoxIcon.FALSE);
                                 }
-
                             }
 
                             @Override
@@ -489,10 +454,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                                 value.setValue(o);
                                 AdvancedValueColumn.this.getModel().getTable().repaint();
                             }
-
                         }));
                     }
-
                     Rectangle bounds = getModel().getTable().getCellRect(getModel().getTable().rowAtPoint(new Point(e.getX(), e.getY())), getModel().getTable().columnAtPoint(new Point(e.getX(), e.getY())), true);
                     Dimension pref = popup.getPreferredSize();
                     popup.setPreferredSize(new Dimension(Math.max(pref.width, bounds.width), pref.height));
@@ -509,7 +472,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             protected void setSelectedIndex(int value, AdvancedConfigEntry object) {
-
                 Object[] values;
                 try {
                     values = (Object[]) object.getClazz().getMethod("values", new Class[] {}).invoke(null, new Object[] {});
@@ -534,27 +496,19 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
-
                 try {
-
                     EnumLabel lbl = value.getClazz().getDeclaredField(value.getValue().toString()).getAnnotation(EnumLabel.class);
                     if (lbl != null) {
-
                         return lbl.value();
                     }
-
                     if (value.getValue() instanceof LabelInterface) {
                         return ((LabelInterface) value.getValue()).getLabel();
                     }
-
                     if (value instanceof LabelInterface) {
                         return ((LabelInterface) value).getLabel();
                     }
-
                 } catch (Exception e) {
-
                 }
-
                 return value.getValue().toString();
             }
         };
@@ -563,7 +517,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
     private void register(ExtColumn<AdvancedConfigEntry> col) {
         columns.add(col);
-
     }
 
     @Override
@@ -593,7 +546,5 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         } else {
             return defaultColumn;
         }
-
     }
-
 }
