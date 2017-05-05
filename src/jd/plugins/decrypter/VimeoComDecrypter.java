@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.URL;
@@ -21,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -54,7 +54,6 @@ import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
-
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
     private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
@@ -65,7 +64,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String Q_HD                                = "Q_HD";
     private static final String Q_SD                                = "Q_SD";
     private static final String Q_BEST                              = "Q_BEST";
-    private String              password                            = null;
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -103,6 +101,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 400, 410 });
+        String password = null;
         if (parameter.matches(LINKTYPE_USER) || parameter.matches(LINKTYPE_GROUP)) {
             /* Decrypt all videos of a user- or group. */
             br.getPage(parameter);
@@ -110,7 +109,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter, "Could not find that page"));
                 return decryptedLinks;
             }
-
             final String urlpart_pagination;
             final String user_or_group_id;
             String userName = null;
@@ -223,7 +221,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 if (br.containsHTML(containsPass())) {
                     try {
-                        handlePW(param, videoID, this.br);
+                        password = handlePW(param, videoID, this.br);
                     } catch (final DecrypterException edc) {
                         logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
                         decryptedLinks.add(createOfflinelink(parameter, videoID, null));
@@ -272,20 +270,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                     throw e;
                 }
-
                 /* Workaround for User from Iran */
                 if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
                     br.getPage("//player.vimeo.com/config/" + videoID);
                 }
-
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
                     decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                     return decryptedLinks;
                 }
-
                 if (br.containsHTML(containsPass())) {
                     try {
-                        handlePW(param, videoID, br);
+                        password = handlePW(param, videoID, br);
                         /*
                          * After successful password input we'll get json but we want the "normal" html which suits the code below -->
                          * Access main video url again!
@@ -297,7 +292,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                 }
-
                 if (br.containsHTML(">There was a problem loading this video")) {
                     decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                     return decryptedLinks;
@@ -307,7 +301,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (vuid != null) {
                     br.setCookie(br.getURL(), "vuid", vuid);
                 }
-
                 date = br.getRegex("datetime=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
                 channelName = br.getRegex("\"Person\",\"name\":\"([^<>\"]*?)\"").getMatch(0);
                 if (channelName == null) {
@@ -319,7 +312,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 channelName = getFormattedString(channelName);
             }
             title = getFormattedString(title);
-
             String qualities[][] = getQualities(br, videoID);
             if (qualities == null) {
                 return null;
@@ -332,13 +324,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             // qx[5] = fileSize (\d [a-zA-Z]{2})
             // qx[6] = Codec
             // qx[7] = ID
-
             final boolean qMobile = cfg.getBooleanProperty(Q_MOBILE, true);
             final boolean qHD = cfg.getBooleanProperty(Q_HD, true);
             final boolean qSD = cfg.getBooleanProperty(Q_SD, true);
             final boolean qORG = cfg.getBooleanProperty(Q_ORIGINAL, true);
             final boolean qALL = (qMobile == false && qHD == false && qSD == false && qORG == false);
-
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
             int format = 0;
@@ -425,7 +415,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     link.setProperty("channel", channelName);
                 }
                 link.setFinalFileName(getFormattedFilename(link));
-
                 if (quality[5] != null) {
                     link.setDownloadSize(SizeFormatter.getSize(quality[5].trim()));
                 }
@@ -475,7 +464,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         }
                     }
                     fpName += title;
-
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(fpName);
                     fp.addLinks(newRet);
@@ -483,7 +471,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 decryptedLinks.addAll(newRet);
             }
         }
-
         if ((decryptedLinks == null || decryptedLinks.size() == 0) && skippedLinks == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -537,24 +524,26 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void handlePW(final CryptedLink param, final String videoID, final Browser br) throws Exception {
+    private String handlePW(final CryptedLink param, final String videoID, final Browser br) throws Exception {
+        final List<String> passwords = getPreSetPasswords();
         // check for a password. Store latest password in DB
-        Form pwForm = null;
         /* Try stored password first */
-        password = getPluginConfig().getStringProperty("lastusedpass", null);
+        final String lastUsedPass = getPluginConfig().getStringProperty("lastusedpass", null);
+        if (StringUtils.isNotEmpty(lastUsedPass) && !passwords.contains(lastUsedPass)) {
+            passwords.add(lastUsedPass);
+        }
         final String videourl = "https://player.vimeo.com/video/" + videoID;
-        boolean failed = true;
-
         // lastusedpasswd == null, or lastusedpasswd is wrong
-        for (int i = 0; i < 3; i++) {
-            if (i > 0) {
-                br.getPage(videourl);
-            }
-            pwForm = getPasswordForm(br);
+        retry: for (int i = 0; i < 3; i++) {
+            final Form pwForm = getPasswordForm(br);
             pwForm.setAction("https://player.vimeo.com/video/" + videoID + "/check-password");
             /* 2016-06-09: Seems like token is no longer needed! */
             // pwForm.put("token", getXsrft(br));
-            if (password == null) {
+            final String password;
+            if (passwords.size() > 0) {
+                i -= 1;
+                password = passwords.remove(0);
+            } else {
                 password = Plugin.getUserInput("Password for link: " + param.toString() + " ?", param);
             }
             if (password == null || "".equals(password)) {
@@ -569,8 +558,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
                     logger.warning("Wrong password for Link: " + param.toString());
                     if (i < 2) {
-                        password = null;
-                        continue;
+                        br.getPage(videourl);
+                        continue retry;
                     } else {
                         logger.warning("Exausted password retry count. " + param.toString());
                         throw new DecrypterException(DecrypterException.PASSWORD);
@@ -578,18 +567,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
             }
             if (br.containsHTML(containsPass()) || br.getHttpConnection().getResponseCode() == 405 || "false".equalsIgnoreCase(br.toString())) {
-                password = null;
-                continue;
+                br.getPage(videourl);
+                continue retry;
             }
-            failed = false;
             getPluginConfig().setProperty("lastusedpass", password);
             getPluginConfig().save();
-            break;
+            return password;
         }
-
-        if (failed) {
-            throw new DecrypterException(DecrypterException.PASSWORD);
-        }
+        throw new DecrypterException(DecrypterException.PASSWORD);
     }
 
     private Form getPasswordForm(final Browser br) {
@@ -611,5 +596,4 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
