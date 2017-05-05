@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -40,7 +39,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funk.net" }, urls = { "https?://(?:www\\.)?funk\\.net/([^/]+)/[a-f0-9]{24}/items/[a-f0-9]{24}" })
 public class FunkNet extends PluginForHost {
-
     public FunkNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,14 +47,12 @@ public class FunkNet extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -72,20 +68,22 @@ public class FunkNet extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String geturl = new Regex(link.getDownloadURL(), "(.+)/items/[a-f0-9]+$").getMatch(0);
-        br.getPage(geturl);
+        final String pluginURL = link.getPluginPatternMatcher();
+        final String type = new Regex(pluginURL, "net/([^/]+)/").getMatch(0);
+        final String id1 = new Regex(pluginURL, "net/(?:[^/]+)/([a-f0-9]{24})").getMatch(0);
+        final String id2 = new Regex(pluginURL, "net/(?:[^/]+)/[a-f0-9]{24}/items/([a-f0-9]{24})").getMatch(0);
+        br.getPage("https://www.funk.net/" + type + "/" + id1 + "#popup" + id2);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("error\\-container")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "serien/(.+)").getMatch(0);
-        String fileName = br.getRegex("decodedTitle\\s*=\\s*\\$\\(\"<textarea/>\"\\)\\.html\\(\"(.*?)\"\\)\\.text\\(\\)").getMatch(0);
+        String fileName = br.getRegex("popup" + id2 + ".*?decodedTitle\\s*=\\s*\\$\\(\"<textarea/>\"\\)\\.html\\(\"(.*?)\"\\)\\.text\\(\\)").getMatch(0);
         if (fileName == null) {
             fileName = br.getRegex("<title>([^<>\"]+) \\| [^<>]+</title>").getMatch(0);
             if (fileName == null) {
                 fileName = url_filename;
             }
         }
-
         final String player_embed_url = this.br.getRegex("(\\.kaltura\\.com/p/\\d+/sp/\\d+/embedIframeJs/[^<>\"]+)\"").getMatch(0);
         if (player_embed_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,18 +100,10 @@ public class FunkNet extends PluginForHost {
         if (sp == null) {
             sp = "198505100";
         }
-        String entry_id = new Regex(player_embed_url, "/entry_id/([^/]+)").getMatch(0);
-        if (entry_id == null) {
-            entry_id = new Regex(player_embed_url, "entry_id=([^\\&=]+)").getMatch(0);
-        }
-        if (entry_id == null) {
-            entry_id = this.br.getRegex("renderPlayer\\(\\'media[a-z0-9]+\\', \\'([^<>\"\\']+)\\'\\)").getMatch(0);
-        }
-
+        final String entry_id = this.br.getRegex("renderPlayer\\(\\'media" + id2 + "\\', \\'([^<>\"\\']+)\\'\\)").getMatch(0);
         if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         this.br.getPage("https://cdnapisec.kaltura.com/html5/html5lib/v2.51/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&entry_id=" + entry_id + "&flashvars[autoPlay]=false&flashvars[EmbedPlayer.OverlayControls]=true&flashvars[EmbedPlayer.EnableNativeChromeFullscreen]=true&flashvars[EmbedPlayer.EnableIpadNativeFullscreen]=true&flashvars[LeadWithHLSOnJs]=true&flashvars[hlsjs.plugin]=true&flashvars[IframeCustomPluginCss1]=%2Fcss%2Fstyle.css&flashvars[localizationCode]=de&flashvars[strings]=%7B%22de%22%3A%7B%22mwe-embedplayer-volume-mute%22%3A%22Ton%20aus%22%2C%22mwe-embedplayer-volume-unmute%22%3A%22Ton%20an%22%2C%22mwe-timedtext-no-subtitles%22%3A%22Kein%20Untertitel%22%7D%7D&playerId=media58f78ed8e4b0c62b74eba239&forceMobileHTML5=true&urid=2.51&protocol=https&callback=mwi_media58f78ed8e4b0c62b74eba2390");
         String js = this.br.getRegex("kalturaIframePackageData = (\\{.*?\\}\\}\\});").getMatch(0);
         if (js == null) {
