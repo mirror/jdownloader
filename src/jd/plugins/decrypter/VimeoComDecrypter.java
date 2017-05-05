@@ -533,7 +533,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             passwords.add(lastUsedPass);
         }
         final String videourl = "https://player.vimeo.com/video/" + videoID;
-        // lastusedpasswd == null, or lastusedpasswd is wrong
         retry: for (int i = 0; i < 3; i++) {
             final Form pwForm = getPasswordForm(br);
             pwForm.setAction("https://player.vimeo.com/video/" + videoID + "/check-password");
@@ -571,7 +570,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 continue retry;
             }
             getPluginConfig().setProperty("lastusedpass", password);
-            getPluginConfig().save();
             return password;
         }
         throw new DecrypterException(DecrypterException.PASSWORD);
