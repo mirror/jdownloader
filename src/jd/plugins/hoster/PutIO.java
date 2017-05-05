@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import java.util.Locale;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -8,6 +10,7 @@ import jd.http.Request;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -15,6 +18,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 
@@ -22,6 +26,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.putio.PutIOFileWrapper;
 import org.jdownloader.plugins.components.putio.PutIOInfoWrapper;
@@ -30,15 +35,11 @@ import org.jdownloader.plugins.components.putio.PutIOInfoWrapper;
 // actual downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://[a-z0-9\\-]+\\.put\\.io/(?:v2/files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
-
     private static final String REQUIRES_ACCOUNT = "requiresAccount";
-
     private static final String ACCESS_TOKEN     = "access_token";
-
     private static final String COOKIE_HOST      = "http://put.io";
-
     private static final String SESSION_TOKEN_2  = "session2";
-
+    public static final long    trust_cookie_age = 300000l;
     private String              accessToken;
 
     public PutIO(PluginWrapper wrapper) {
@@ -47,7 +48,7 @@ public class PutIO extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             // freemode is possible if the link has a token
             return StringUtils.isNotEmpty(downloadLink.getPluginPatternMatcher());
@@ -59,11 +60,10 @@ public class PutIO extends PluginForHost {
             }
         }
         return super.canHandle(downloadLink, account);
-
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -71,8 +71,24 @@ public class PutIO extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ai.setStatus("Premium Account");
         ai.setUnlimitedTraffic();
+        final String date_created_str = PluginJSonUtils.getJson(this.br, "created_at");
+        final String date_expire_str = PluginJSonUtils.getJson(this.br, "plan_expiration_date");
+        long date_expire = 0;
+        if (!StringUtils.isEmpty(date_created_str)) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(date_created_str, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH));
+        }
+        if (!StringUtils.isEmpty(date_expire_str)) {
+            date_expire = TimeFormatter.getMilliSeconds(date_expire_str, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
+        }
+        if (date_expire - System.currentTimeMillis() > 0) {
+            ai.setStatus("Premium Account");
+            ai.setValidUntil(date_expire);
+            account.setType(AccountType.PREMIUM);
+        } else {
+            ai.setStatus("Free Account");
+            account.setType(AccountType.FREE);
+        }
         account.setValid(true);
         return ai;
     }
@@ -84,7 +100,7 @@ public class PutIO extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -166,7 +182,7 @@ public class PutIO extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final String access_token = account.getStringProperty(ACCESS_TOKEN);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force && StringUtils.isNotEmpty(access_token)) {
+                if (cookies != null && !force && StringUtils.isNotEmpty(access_token) && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                     this.br.setCookies(this.getHost(), cookies);
                     this.accessToken = access_token;
                     setAccessTokenHeader(this.accessToken);
@@ -271,6 +287,10 @@ public class PutIO extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(false);
             brc.getPage(createDownloadUrl(id, token));
+            if (brc.getHttpConnection().getResponseCode() == 401) {
+                /* Account required */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             final String redirect = brc.getRedirectLocation();
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
