@@ -14,16 +14,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.websocket.ReadWebSocketFrame;
 import jd.websocket.WebSocketClient;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
+import org.appwork.utils.net.websocket.ReadWebSocketFrame;
 
 @DecrypterPlugin(revision = "$Revision: 36721 $", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/r/[A-Za-z0-9\\-_]+" })
 public class VolaFileOrg extends PluginForDecrypt {
-
     public VolaFileOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
