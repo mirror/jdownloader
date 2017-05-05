@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
@@ -48,12 +47,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class CocoleechCom extends PluginForHost {
-
     private static final String                            API_ENDPOINT         = "https://members.cocoleech.com/auth/api";
     private static final String                            NICE_HOST            = "cocoleech.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            PROPERTY_LOGINTOKEN  = "cocoleechlogintoken";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
@@ -63,13 +60,11 @@ public class CocoleechCom extends PluginForHost {
     private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
-
     /* Last updated: 2017-02-08 according to admin request. */
     private static final int                               defaultMAXDOWNLOADS  = 20;
     private static final int                               defaultMAXCHUNKS     = -4;
     private static final boolean                           defaultRESUME        = true;
     private final String                                   apikey               = "cdb5efc9c72196c1bd8b7a594b46b44f";
-
     private static Object                                  CTRLLOCK             = new Object();
     private int                                            statuscode           = 0;
     private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
@@ -81,6 +76,7 @@ public class CocoleechCom extends PluginForHost {
     public CocoleechCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://members.cocoleech.com/");
+        this.setStartIntervall(3000l);
     }
 
     @Override
@@ -131,10 +127,12 @@ public class CocoleechCom extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
+                    /* Max simultaneous downloads reached for current host. */
                     return false;
                 }
             }
         }
+        /* We are allowed to start more simultaneous downloads for this host. */
         return true;
     }
 
@@ -150,7 +148,6 @@ public class CocoleechCom extends PluginForHost {
         handleDL(account, link);
     }
 
-    @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         String maxchunksStr = null;
@@ -188,7 +185,6 @@ public class CocoleechCom extends PluginForHost {
                     }
                 }
             }
-
             if (hostResumeMap != null) {
                 final String thishost = link.getHost();
                 synchronized (hostResumeMap) {
@@ -226,7 +222,6 @@ public class CocoleechCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBR(this.br);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -242,7 +237,6 @@ public class CocoleechCom extends PluginForHost {
                 }
             }
         }
-
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
@@ -254,7 +248,6 @@ public class CocoleechCom extends PluginForHost {
             }
         }
         this.setConstants(account, link);
-
         handleDL(account, link);
     }
 
@@ -320,9 +313,7 @@ public class CocoleechCom extends PluginForHost {
         this.setConstants(account, null);
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
-
         login(true);
-
         final String accounttype = PluginJSonUtils.getJsonValue(br, "type");
         final String trafficleft = PluginJSonUtils.getJsonValue(br, "traffic_left");
         final String validuntil = PluginJSonUtils.getJsonValue(br, "expire_date");
@@ -351,7 +342,6 @@ public class CocoleechCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
         }
-
         this.getAPISafe(API_ENDPOINT + "/hosts-status");
         ArrayList<String> supportedhostslist = new ArrayList();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -365,7 +355,6 @@ public class CocoleechCom extends PluginForHost {
                 final int maxdownloads = defaultMAXDOWNLOADS;
                 final int maxchunks = defaultMAXCHUNKS;
                 boolean resumable = defaultRESUME;
-
                 hostMaxchunksMap.put(host, maxchunks);
                 hostMaxdlsMap.put(host, maxdownloads);
                 hostResumeMap.put(host, resumable);
@@ -373,7 +362,6 @@ public class CocoleechCom extends PluginForHost {
             }
         }
         account.setValid(true);
-
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
         ai.setMultiHostSupport(this, supportedhostslist);
@@ -413,7 +401,6 @@ public class CocoleechCom extends PluginForHost {
     // updatestatuscode();
     // handleAPIErrors(this.br);
     // }
-
     private String getLoginToken() {
         return currAcc.getStringProperty(PROPERTY_LOGINTOKEN, null);
     }
@@ -480,7 +467,11 @@ public class CocoleechCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
+        if (account != null) {
+            return defaultMAXDOWNLOADS;
+        } else {
+            return 0;
+        }
     }
 
     @Override
@@ -490,5 +481,4 @@ public class CocoleechCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
