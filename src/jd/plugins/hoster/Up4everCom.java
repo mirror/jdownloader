@@ -62,7 +62,7 @@ public class Up4everCom extends antiDDoSForHost {
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://up-4ever.com";
+    private static final String  COOKIE_HOST                        = "https://www.up-4ever.com";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -86,7 +86,7 @@ public class Up4everCom extends antiDDoSForHost {
      */
     private final boolean        IMAGEHOSTER                        = false;
     private final boolean        SUPPORTS_HTTPS                     = true;
-    // depending on location, https will redirect to http, thus not enforced.
+    // depending on domain, https will redirect to http, thus not enforced.
     private final boolean        SUPPORTS_HTTPS_FORCED              = false;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
@@ -182,6 +182,7 @@ public class Up4everCom extends antiDDoSForHost {
         Browser altbr = null;
         correctDownloadLink(link);
         setFUID(link);
+        br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
