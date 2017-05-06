@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -53,7 +52,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" })
 public class NovaFileCom extends antiDDoSForHost {
-
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "https://novafile.com";
@@ -78,7 +76,6 @@ public class NovaFileCom extends antiDDoSForHost {
     // protocol: redirects to https
     // captchatype: recaptcha
     // other: OLD standard-JD User-Agent is blocked!
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
@@ -596,26 +593,21 @@ public class NovaFileCom extends antiDDoSForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -646,7 +638,7 @@ public class NovaFileCom extends antiDDoSForHost {
             try {
                 Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getLongContentLength() == 7) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -925,5 +917,4 @@ public class NovaFileCom extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
