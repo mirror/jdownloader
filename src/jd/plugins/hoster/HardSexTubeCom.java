@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -41,7 +40,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com", "hardsextube.com" }, urls = { "https?://(?:www\\.)?hardsextube\\.com/(video/)?(video|embed)/?-?\\d+|https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+|https?://(?:www\\.)?gotporn\\.com/video/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class HardSexTubeCom extends antiDDoSForHost {
-
     public HardSexTubeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.gotporn.com/");
@@ -117,7 +115,7 @@ public class HardSexTubeCom extends antiDDoSForHost {
             filename = br.getRegex("gp-title=\"([^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = br.getRegex("data-video-id=\"([^<>\"]*?)\"").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setProperty("plain_title", filename);
@@ -174,7 +172,6 @@ public class HardSexTubeCom extends antiDDoSForHost {
             return AvailableStatus.TRUE;
         }
         downloadLink.setFinalFileName(filename + ext);
-
         URLConnectionAdapter con = null;
         dllink = HTMLEntities.unhtmlentities(dllink);
         try {
@@ -206,14 +203,12 @@ public class HardSexTubeCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-
         boolean resume = true;
         if (downloadLink.getBooleanProperty(HardSexTubeCom.NORESUME, false)) {
             logger.info("Resume is disabled for this try");
             resume = false;
             downloadLink.setProperty(HardSexTubeCom.NORESUME, Boolean.valueOf(false));
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
