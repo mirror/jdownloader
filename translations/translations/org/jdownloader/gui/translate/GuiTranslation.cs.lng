@@ -545,6 +545,7 @@ GUISettings_GUISettings_framestate_os_default=podle %s1 specifikací
 GUISettings_GUISettings_newlinks_focus=zobrazit sběrač odkazů před všemi ostatními okny a ukrást zaměření
 GUISettings_GUISettings_newlinks_front=zobrazit sběrač odkazů před všemi ostatními okny
 GUISettings_GUISettings_newlinks_nothing=nedělat nic
+GUISettings_GUISettings_newlinks_switch=přepnout na sběrač odkazů
 GUISettings_GUISettings_object_frames=Správa oken
 GUISettings_GUISettings_object_frames_description=Otravovala vás někdy vyskakovací dialogová okna, okna na popředí, dialogová okna captcha kradoucí fokus ostatním oknům, nebo cokoliv jiného souvisejícího s okny a fokusem? Pak berte následující volby jako naši omluvu.
 GUISettings_GUISettings_object_urls=Zobrazení adresy odkazu na stažení
