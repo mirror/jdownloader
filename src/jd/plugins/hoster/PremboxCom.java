@@ -194,7 +194,9 @@ public class PremboxCom extends PluginForHost {
                 this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=0&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
                 /* 'downloadLink' value will be "fileNotReadyYet" at this stage. */
                 do {
-                    this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
+                    // this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" +
+                    // JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
+                    br.postPage(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
                     dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
                     if (!inValidate(dllink)) {
                         break;
