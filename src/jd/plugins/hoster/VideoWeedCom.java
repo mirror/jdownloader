@@ -178,7 +178,7 @@ public class VideoWeedCom extends PluginForHost {
         }
     }
 
-    public String getDllink() {
+    public static String getDllink(final Browser br) {
         return br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
     }
 
@@ -195,7 +195,7 @@ public class VideoWeedCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = getDllink();
+            dllink = getDllink(br);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
