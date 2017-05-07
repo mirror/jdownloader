@@ -22,7 +22,7 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.apache.commons.lang3.StringUtils;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -85,7 +85,7 @@ public class VideoWeedCom extends PluginForHost {
         br.setReadTimeout(180 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        checkForContinueForm(this.br);
+        checkForContinueForm(br);
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
