@@ -13,16 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Cookie;
-import jd.http.Cookies;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -33,15 +34,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "http://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "http://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
-
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fastshare.cz/cenik_cs");
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     @Override
@@ -55,6 +57,7 @@ public class FastShareCz extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "cs");
@@ -93,10 +96,15 @@ public class FastShareCz extends antiDDoSForHost {
         br.setFollowRedirects(false);
         final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
         String action = br.getRegex("=(/free/[^<>\"]*?)>").getMatch(0);
-        if (captchaLink == null || action == null) {
+        if (action == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        super.postPage(action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
+        if (captchaLink != null) {
+            final String captcha = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
+            super.postPage(action, "code=" + Encoding.urlEncode(captcha));
+        } else {
+            super.postPage(action, "");
+        }
         if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
         } else if (br.containsHTML("Špatně zadaný kód. Zkuste to znovu")) {
@@ -108,9 +116,9 @@ public class FastShareCz extends antiDDoSForHost {
              * E.g.
              * "<script>alert('Přes FREE můžete stahovat jen jeden soubor současně.');top.location.href='http://www.fastshare.cz/123456789/blabla.bla';</script>"
              */
-            if (this.br.containsHTML("Přes FREE můžete stahovat jen jeden soubor současně")) {
+            if (br.containsHTML("Přes FREE můžete stahovat jen jeden soubor současně")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting more free downloads", 3 * 60 * 1000l);
-            } else if (this.br.containsHTML("<script>alert\\(")) {
+            } else if (br.containsHTML("<script>alert\\(")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #1", 30 * 60 * 1000l);
             } else if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #2", 30 * 60 * 1000l);
@@ -158,7 +166,7 @@ public class FastShareCz extends antiDDoSForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
@@ -168,15 +176,9 @@ public class FastShareCz extends antiDDoSForHost {
                 if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(MAINPAGE));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -188,12 +190,7 @@ public class FastShareCz extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         String availabletraffic = br.getRegex(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>[\r\n\t ]+<td[^>]*?>([^<>\"&]+)").getMatch(0);
         if (availabletraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
@@ -202,12 +199,7 @@ public class FastShareCz extends antiDDoSForHost {
             return ai;
         }
         account.setValid(true);
-        try {
-            account.setType(AccountType.PREMIUM);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            account.setProperty("free", false);
-        }
+        account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium Account");
         return ai;
     }
