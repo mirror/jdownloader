@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -22,6 +21,10 @@ import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.apache.commons.lang3.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,12 +46,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx" }, urls = { "https?://(?:www\\.)?bitvid\\.sx/file/[a-z0-9]+|https?://(?:www\\.)?videoweed\\.(?:com|es)/.+[a-z0-9]+" })
 public class VideoWeedCom extends PluginForHost {
-
     public VideoWeedCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.bitvid.sx/premium.php");
@@ -91,15 +90,15 @@ public class VideoWeedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"text_shadow\">(.*?)</h1>").getMatch(0);
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("name=\"title\" content=\"Watch (.*?) online \\| \\w+ \"").getMatch(0);
-            if (filename == null) {
+            if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("\\w+\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+\\w+\\.com\"").getMatch(0);
-                if (filename == null) {
+                if (StringUtils.isEmpty(filename)) {
                     filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
+                    if (StringUtils.isEmpty(filename)) {
                         filename = br.getRegex("<td width=\"580\">[\t\n\r ]+<div class=\"div_titlu\">(.*?) \\- <a").getMatch(0);
-                        if (filename == null) {
+                        if (StringUtils.isEmpty(filename)) {
                             filename = br.getRegex("colspan=\"2\"><strong>Title: </strong>(.*?)</td>").getMatch(0);
                         }
                     }
@@ -107,24 +106,46 @@ public class VideoWeedCom extends PluginForHost {
             }
         }
         if (filename == null) {
+            // could be error... not defect
+            hasError = errorCheck(downloadLink);
+            if (Boolean.FALSE.equals(hasError)) {
+                return AvailableStatus.FALSE;
+            } else if (Boolean.TRUE.equals(hasError)) {
+                return AvailableStatus.TRUE;
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
         filename = removeDoubleExtensions(filename, "flv");
         downloadLink.setFinalFileName(filename);
-        if (br.containsHTML("error_msg=The video is being transfered")) {
-            downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
+        hasError = errorCheck(downloadLink);
+        if (Boolean.FALSE.equals(hasError)) {
+            return AvailableStatus.FALSE;
+        } else {
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("error_msg=The video has failed to convert")) {
+    }
+
+    Boolean hasError = null;
+
+    private Boolean errorCheck(final DownloadLink downloadLink) {
+        if (br.containsHTML("class=\"vidError\"><p>This video is not yet ready! Please try again later!</p></div>")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
-            return AvailableStatus.TRUE;
+            return Boolean.TRUE;
+        }
+        if (br.containsHTML("error_msg=The video is being transfered")) {
+            downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
+            return Boolean.TRUE;
+        }
+        if (br.containsHTML("error_msg=The video has failed to convert")) {
+            downloadLink.getLinkStatus().setStatusText("Failed to convert.");
+            return Boolean.FALSE;
         }
         if (br.containsHTML("error_msg=The video is converting")) {
             downloadLink.getLinkStatus().setStatusText("Server says: This video is converting");
-            return AvailableStatus.TRUE;
+            return Boolean.TRUE;
         }
-        return AvailableStatus.TRUE;
+        return null;
     }
 
     private String removeDoubleExtensions(String filename, final String defaultExtension) {
@@ -157,20 +178,24 @@ public class VideoWeedCom extends PluginForHost {
         }
     }
 
-    public static String getDllink(final Browser br) {
+    public String getDllink() {
         return br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        // error handling
+        if (Boolean.TRUE.equals(hasError)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
         doFree(downloadLink, true, 0, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = getDllink(this.br);
+            dllink = getDllink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -285,12 +310,7 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         br.getPage("/premium.php");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex(">Your premium membership expires on: ([^<>\"]*?)<").getMatch(0);
@@ -314,6 +334,10 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        // error handling
+        if (Boolean.TRUE.equals(hasError)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
