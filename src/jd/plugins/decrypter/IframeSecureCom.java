@@ -25,6 +25,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -54,7 +55,7 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
+        decryptedLinks.add(createDownloadlink(Request.getLocation(finallink, br.getRequest())));
         return decryptedLinks;
     }
 
