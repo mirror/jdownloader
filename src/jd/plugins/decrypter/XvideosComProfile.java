@@ -56,36 +56,40 @@ public class XvideosComProfile extends PluginForDecrypt {
             }
             logger.info(String.format("Decrypting page %d", pageNum));
             decryptedLinksNum = 0;
-            br.getPage("/profiles/searchcelebrityhd/videos/best/" + pageNum);
+            br.getPage("/profiles/" + username + "/videos/best/" + pageNum);
             final String[] links = br.getRegex("(/prof\\-video\\-click/upload/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
             if (links == null || links.length == 0) {
                 break;
             }
             decryptedLinksNum = links.length;
             for (String singleLink : links) {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                }
                 final String linkid = new Regex(singleLink, "prof\\-video\\-click/upload/[^/]+/(\\d+)").getMatch(0);
                 /* Only add new URLs */
+                http: // www.xvideos.com/profiles/lunalove96/videos/best
                 if (!dupeList.contains(linkid)) {
-                    singleLink = "http://www." + this.getHost() + singleLink;
-                    final String url_name = new Regex(singleLink, "/\\d+/(.+)").getMatch(0);
-                    final String name_temp;
-                    final DownloadLink dl = createDownloadlink(singleLink);
-                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    dl.setLinkID(linkid);
-                    if (url_name != null) {
-                        name_temp = linkid + "_" + url_name;
-                    } else {
-                        name_temp = linkid;
+                        singleLink = "http://www." + this.getHost() + singleLink;
+                        final String url_name = new Regex(singleLink, "/\\d+/(.+)").getMatch(0);
+                        final String name_temp;
+                        final DownloadLink dl = createDownloadlink(singleLink);
+                        /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                        dl.setAvailable(true);
+                        dl._setFilePackage(fp);
+                        dl.setLinkID(linkid);
+                        if (url_name != null) {
+                            name_temp = linkid + "_" + url_name;
+                        } else {
+                            name_temp = linkid;
+                        }
+                        dl.setName(name_temp);
+                        dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                        decryptedLinksNum++;
+                        dupeList.add(linkid);
                     }
-                    dl.setName(name_temp);
-                    dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    decryptedLinksNum++;
-                    dupeList.add(linkid);
-                }
             }
             pageNum++;
         } while (decryptedLinksNum >= 36);
