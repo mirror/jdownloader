@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.action;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -39,27 +42,26 @@ import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
-    private static final String PATTERN_NAME          = "{name}";
-    private static final String PATTERN_NAME_NOEXT    = "{name_noext}";
-    private static final String PATTERN_NEWLINE       = "{newline}";
-    private static final String PATTERN_COMMENT       = "{comment}";
-    private static final String PATTERN_SHA256        = "{sha256}";
-    private static final String PATTERN_MD5           = "{md5}";
-    private static final String PATTERN_FILESIZE      = "{filesize}";
-
-    private static final String PATTERN_FILESIZE_KIB  = "{filesize_kib}";
-    private static final String PATTERN_FILESIZE_MIB  = "{filesize_mib}";
-    private static final String PATTERN_FILESIZE_GIB  = "{filesize_gib}";
-
-    private static final String PATTERN_URL           = "{url}";
-    private static final String PATTERN_HOST          = "{host}";
-    private static final String PATTERN_URL_CONTAINER = "{url.container}";
-    private static final String PATTERN_URL_ORIGIN    = "{url.origin}";
-    private static final String PATTERN_URL_CONTENT   = "{url.content}";
-    private static final String PATTERN_URL_REFERRER  = "{url.referrer}";
-    private static final String PATTERN_TYPE          = "{type}";
-    private static final String PATTERN_EXTENSION     = "{ext}";
-    private static final String PATTERN_PATH          = "{path}";
+    private static final String PATTERN_NAME             = "{name}";
+    private static final String PATTERN_NAME_NOEXT       = "{name_noext}";
+    private static final String PATTERN_NEWLINE          = "{newline}";
+    private static final String PATTERN_COMMENT          = "{comment}";
+    private static final String PATTERN_SHA256           = "{sha256}";
+    private static final String PATTERN_MD5              = "{md5}";
+    private static final String PATTERN_FILESIZE         = "{filesize}";
+    private static final String PATTERN_FILESIZE_KIB     = "{filesize_kib}";
+    private static final String PATTERN_FILESIZE_MIB     = "{filesize_mib}";
+    private static final String PATTERN_FILESIZE_GIB     = "{filesize_gib}";
+    private static final String PATTERN_URL              = "{url}";
+    private static final String PATTERN_HOST             = "{host}";
+    private static final String PATTERN_URL_CONTAINER    = "{url.container}";
+    private static final String PATTERN_URL_ORIGIN       = "{url.origin}";
+    private static final String PATTERN_URL_CONTENT      = "{url.content}";
+    private static final String PATTERN_URL_REFERRER     = "{url.referrer}";
+    private static final String PATTERN_ARCHIVE_PASSWORD = "{archive.password}";
+    private static final String PATTERN_TYPE             = "{type}";
+    private static final String PATTERN_EXTENSION        = "{ext}";
+    private static final String PATTERN_PATH             = "{path}";
 
     public CopyGenericContextAction() {
         super(true, true);
@@ -117,7 +119,6 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
 
     @Override
     protected void initTableContext(boolean empty, boolean selection) {
-
     }
 
     @Override
@@ -241,6 +242,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
+            line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
             line = line.replace(PATTERN_EXTENSION, nulltoString(null));
             line = line.replace(PATTERN_SHA256, nulltoString(null));
@@ -281,6 +283,12 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         } else if (pv instanceof CrawledLink) {
             line = getPatternLinks();
             line = replaceDate(line);
+            final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(Arrays.asList(new AbstractNode[] { pv }), 1);
+            if (archives != null && archives.size() == 1) {
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(archives.get(0).getFinalPassword()));
+            } else {
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
+            }
             final CrawledLink link = (CrawledLink) pv;
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
@@ -310,6 +318,12 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         } else if (pv instanceof CrawledPackage) {
             line = getPatternPackages();
             line = replaceDate(line);
+            final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(Arrays.asList(new AbstractNode[] { pv }), 1);
+            if (archives != null && archives.size() == 1) {
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(archives.get(0).getFinalPassword()));
+            } else {
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
+            }
             final CrawledPackage pkg = (CrawledPackage) pv;
             final CrawledPackageView fpv = new CrawledPackageView();
             final boolean readL = pkg.getModifyLock().readLock();
@@ -328,6 +342,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 final String name = pkg.getName();
                 line = line.replace(PATTERN_NAME, nulltoString(name));
                 line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
+                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
                 line = line.replace(PATTERN_EXTENSION, nulltoString(null));
                 line = line.replace(PATTERN_SHA256, nulltoString(null));
                 line = line.replace(PATTERN_URL, nulltoString(null));
@@ -360,5 +375,4 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         }
         return null;
     }
-
 }
