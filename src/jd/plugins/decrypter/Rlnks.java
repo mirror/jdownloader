@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -47,9 +46,8 @@ import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15}|f/[a-f0-9]{10})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "https?://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15}|f/[a-f0-9]{10})" })
 public class Rlnks extends antiDDoSForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "relink.to", "relink.us" };
@@ -95,7 +93,6 @@ public class Rlnks extends antiDDoSForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-
         /* Handle Captcha and/or password */
         handleCaptchaAndPassword(parameter, param);
         if (!new Regex(br.getURL(), domains).matches()) {
@@ -113,7 +110,6 @@ public class Rlnks extends antiDDoSForDecrypt {
         if (allForm != null && allForm.getRegex("captcha").matches()) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-
         final String page = br.toString();
         String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
         if (title != null && title.contains("No title")) {
@@ -126,12 +122,10 @@ public class Rlnks extends antiDDoSForDecrypt {
             fp.setName(title);
             fp.setProperty("ALLOW_MERGE", true);
         }
-
         /* use cnl2 button if available */
         final String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
         if (br.containsHTML(cnlUrl)) {
             final Browser cnlbr = br.cloneBrowser();
-
             Form cnlForm = null;
             for (Form f : cnlbr.getForms()) {
                 if (f.containsHTML(cnlUrl)) {
@@ -244,7 +238,6 @@ public class Rlnks extends antiDDoSForDecrypt {
                 logger.warning("Possible Plugin Defect!");
             }
         }
-
         if (b) {
             allForm = br.getForm(0);
             allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?" + domains + "/container_password\\d*\\.php.*") ? allForm : null;
@@ -323,5 +316,4 @@ public class Rlnks extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }
