@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -48,19 +47,16 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingdebrid.com" }, urls = { "" })
 public class KingdebridCom extends PluginForHost {
-
     private static final String                            DOMAIN                       = "https://kingdebrid.com/";
     private static final String                            NICE_HOST                    = "kingdebrid.com";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
-
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String                                   default_UA                   = "JDownloader";
     private final String                                   html_loggedin                = "id=\"dropdown\\-user\"";
-
     private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
@@ -125,7 +121,6 @@ public class KingdebridCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = prepBR(this.br);
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -141,7 +136,6 @@ public class KingdebridCom extends PluginForHost {
                 }
             }
         }
-
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
@@ -225,7 +219,6 @@ public class KingdebridCom extends PluginForHost {
             br.getPage("//" + this.getHost());
         }
         String supportedhosts_source = null;
-
         final String expire = this.br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
         long trafficleft = 0;
         String trafficleft_str = this.br.getRegex("<br>Total: <div class=\\'badge badge\\-warning\\'>([^<>\"]+)<").getMatch(0);
@@ -241,7 +234,7 @@ public class KingdebridCom extends PluginForHost {
             } else {
                 ai.setTrafficLeft(trafficleft);
             }
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss a", Locale.US), br);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss a", Locale.US), br);
         } else {
             /* TODO: Check if free accounts have traffic. */
             account.setType(AccountType.FREE);
@@ -252,12 +245,10 @@ public class KingdebridCom extends PluginForHost {
                 ai.setTrafficLeft(trafficleft);
             }
         }
-
         if (supportedhosts_source == null) {
             /* Fallback to all supported hosts (or for premium, we need ALL). */
             supportedhosts_source = this.br.toString();
         }
-
         account.setValid(true);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String hosttexts[] = new Regex(supportedhosts_source, "cdn/img/hosters/([^<>\"]+)\\.png\"").getColumn(0);
@@ -270,7 +261,6 @@ public class KingdebridCom extends PluginForHost {
             }
             ai.setMultiHostSupport(this, supportedHosts);
         }
-
         return ai;
     }
 
@@ -298,11 +288,9 @@ public class KingdebridCom extends PluginForHost {
                         return;
                     }
                 }
-
                 /* 2017-03-16: Needs to be accessed twice! */
                 br.getPage("https://" + this.getHost() + "/login");
                 br.getPage("https://" + this.getHost() + "/login");
-
                 String postData = "&login%5Bremember%5D=1&login%5Busername%5D=" + Encoding.urlEncode(currAcc.getUser()) + "&login%5Bpassword%5D=" + Encoding.urlEncode(currAcc.getPass());
                 if (this.br.containsHTML("g\\-recaptcha")) {
                     final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -417,5 +405,4 @@ public class KingdebridCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
