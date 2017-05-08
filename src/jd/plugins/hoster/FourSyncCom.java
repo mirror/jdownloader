@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sync.com" }, urls = { "https?://(?:www\\.)?4sync\\.com/(?:rar|file|video)/[A-Za-z0-9\\_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sync.com" }, urls = { "https?://(?:www\\.)?4sync\\.com/(?:rar|file|video)/[A-Za-z0-9\\_\\-]+" })
 public class FourSyncCom extends PluginForHost {
     public FourSyncCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +42,7 @@ public class FourSyncCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        final Regex reg = new Regex(link.getDownloadURL(), "4sync\\.com/[a-z0-9]+/([A-Za-z0-9\\_]+)");
+        final Regex reg = new Regex(link.getDownloadURL(), "4sync\\.com/[a-z0-9]+/([A-Za-z0-9\\_\\-]+)");
         link.setUrlDownload("http://www.4sync.com/file/" + reg.getMatch(0));
     }
 
