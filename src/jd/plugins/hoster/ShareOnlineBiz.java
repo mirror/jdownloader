@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -66,7 +65,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" })
 public class ShareOnlineBiz extends antiDDoSForHost {
-
     private static final String                                     COOKIE_HOST                             = "http://share-online.biz";
     private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                            = new WeakHashMap<Account, HashMap<String, String>>();
     private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                          = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
@@ -74,9 +72,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private static HashMap<Long, Long>                              noFreeSlot                              = new HashMap<Long, Long>();
     private static HashMap<Long, Long>                              overloadedServer                        = new HashMap<Long, Long>();
     private long                                                    server                                  = -1;
-    private long                                                    waitNoFreeSlot                          = 10 * 60 * 1000l;
+    private long                                                    waitNoFreeSlot                          = 5 * 60 * 1000l;
     private long                                                    waitOverloadedServer                    = 5 * 60 * 1000l;
-
     /* Connection stuff */
     private static final boolean                                    free_resume                             = false;
     private static final int                                        free_maxchunks                          = 1;
@@ -86,14 +83,12 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private static final int                                        account_premium_maxdownloads            = 10;
     private static final int                                        account_premium_vipspecial_maxdownloads = 2;
     private static final int                                        account_premium_penalty_maxdownloads    = 2;
-
     private boolean                                                 hideID                                  = true;
     private static AtomicInteger                                    maxChunksnew                            = new AtomicInteger(-2);
     private char[]                                                  FILENAMEREPLACES                        = new char[] { '_', '&', 'ü' };
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
-
     private static AtomicInteger                                    maxPrem                                 = new AtomicInteger(1);
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
@@ -263,9 +258,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             // Transfer-Encoding: chunked
             // Connection: keep-alive....
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Error. Try again later...", 10 * 60 * 1000l);
-
         }
-
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
             if (br.containsHTML("The server was not able to find the desired file")) {
@@ -515,7 +508,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         account.setProperty("group", group);
         final int maxDownloads = getMaxSimultanDownload(null, account);
         ai.setStatus(infos.get("group") + ":maxDownloads(current)=" + maxDownloads);
-
         return ai;
     }
 
@@ -682,7 +674,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         } else {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-
                     @Override
                     public void run() {
                         try {
@@ -753,7 +744,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", waitNoFreeSlot);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", waitOverloadedServer);
                     } else {
                         overloadedServer.remove(server);
                     }
@@ -796,11 +787,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         String dlINFO = br.getRegex("var dl=\"(.*?)\"").getMatch(0);
         String url = Encoding.Base64Decode(dlINFO);
         if (captcha) {
-
             /* recaptcha handling */
             final Recaptcha rc = new Recaptcha(br, this);
             rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
-
             rc.load();
             long last = -1;
             int imax = 15;
@@ -820,7 +809,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode("recaptcha", cf, downloadLink);
-
                 if (StringUtils.isEmpty(c)) {
                     rc.reload();
                     continue;
@@ -833,7 +821,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         this.sleep(gotWait, downloadLink);
                     }
                 }
-
                 postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
                 url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
                 if ("0".equals(url)) {
@@ -1120,7 +1107,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     final Long validUntil = Long.parseLong(infos.get("expire_date"));
                     if (validUntil > 0 && (System.currentTimeMillis() / 1000) > validUntil) {
                         if (account.getAccountInfo() != null) {
-
                             // may be null if the account has been added expired
                             account.getAccountInfo().setExpired(true);
                         }
@@ -1151,7 +1137,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
-
             // // document.getElementById('id').href
             // engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return
             // a.href; } this[a].href = href(); } return this[a]; }};");
@@ -1160,10 +1145,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             engine.eval("function info(a){a=a.split(\"\").reverse().join(\"\").split(\"a|b\");var b=a[1].split(\"\");a[1]=new Array();var i=0;for(j=0;j<b.length;j++){if(j%3==0&&j!=0){i++}if(typeof(a[1][i])==\"undefined\"){a[1][i]=\"\"}a[1][i]+=b[j]}b=new Array();a[0]=a[0].split(\"\");for(i=0;i<a[1].length;i++){a[1][i]=parseInt(a[1][i].toUpperCase(),16);b[a[1][i]]=parseInt(i)}a[1]=\"\";for(i=0;i<b.length;i++){if(typeof(a[0][b[i]])!=\"undefined\"){a[1]+=a[0][b[i]]}else{a[1]+=\" \"}}return a[1]}");
             engine.eval("var result=info(nfo);");
             result = engine.get("result");
-
         } catch (final Throwable e) {
             throw new Exception("JS Problem in Rev" + getVersion(), e);
-
         }
         return result == null ? null : result.toString();
     }
@@ -1185,7 +1168,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setKeepResponseContentBytes(true);
         try {
             postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id);
-
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             if (br.getRequest().getHtmlCode().matches("\\s*")) {
                 // web method failover.
@@ -1197,7 +1179,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
                 js = execJS(js);
                 String[] strings = js.split(",");
-
                 if (strings == null || strings.length != 5) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -1213,7 +1194,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 downloadLink.setMD5Hash(strings[1]);
                 return AvailableStatus.TRUE;
             }
-
             final String infosUTF8[] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)")).getRow(0);
             final String infosISO88591[] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)")).getRow(0);
             if (infosUTF8 == null || !infosUTF8[1].equalsIgnoreCase("OK")) {

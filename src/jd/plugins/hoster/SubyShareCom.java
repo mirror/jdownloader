@@ -946,6 +946,9 @@ public class SubyShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        if (!br.getURL().contains("/?op=my_account")) {
+            getPage("/?op=my_account");
+        }
         final String space[] = new Regex(correctedBR, ">Storage:</strong>\\s*([0-9\\.]+)\\s*(KB|MB|GB|TB)?\\s*of").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1014,8 +1017,22 @@ public class SubyShareCom extends PluginForHost {
                     getPage(COOKIE_HOST);
                     if (correctedBR.contains("/account/logout")) {
                         /* Cookies valid --> All good --> Save cookies (because of the new timestamp which might be useful in the future). */
-                        account.saveCookies(br.getCookies(br.getURL()), "");
-                        return;
+                        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                            br.clearCookies(getHost());
+                        } else {
+                            if (!br.getURL().contains("/?op=my_account")) {
+                                getPage("/?op=my_account");
+                            }
+                            if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<|>\\s*PREMIUM User\\s*</span>)").matches() || new Regex(correctedBR, ">\\s*REGISTERED User\\s*</span").matches()) {
+                                account.setType(AccountType.FREE);
+                            } else {
+                                account.setType(AccountType.PREMIUM);
+                            }
+                            account.saveCookies(br.getCookies(br.getURL()), "");
+                            return;
+                        }
+                    } else {
+                        br.clearCookies(getHost());
                     }
                     /* Perform full login */
                 }
