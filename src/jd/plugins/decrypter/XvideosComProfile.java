@@ -68,28 +68,27 @@ public class XvideosComProfile extends PluginForDecrypt {
                 }
                 final String linkid = new Regex(singleLink, "prof\\-video\\-click/upload/[^/]+/(\\d+)").getMatch(0);
                 /* Only add new URLs */
-                http: // www.xvideos.com/profiles/lunalove96/videos/best
                 if (!dupeList.contains(linkid)) {
-                        singleLink = "http://www." + this.getHost() + singleLink;
-                        final String url_name = new Regex(singleLink, "/\\d+/(.+)").getMatch(0);
-                        final String name_temp;
-                        final DownloadLink dl = createDownloadlink(singleLink);
-                        /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                        dl.setAvailable(true);
-                        dl._setFilePackage(fp);
-                        dl.setLinkID(linkid);
-                        if (url_name != null) {
-                            name_temp = linkid + "_" + url_name;
-                        } else {
-                            name_temp = linkid;
-                        }
-                        dl.setName(name_temp);
-                        dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
-                        decryptedLinks.add(dl);
-                        distribute(dl);
-                        decryptedLinksNum++;
-                        dupeList.add(linkid);
+                    singleLink = "http://www." + this.getHost() + singleLink;
+                    final String url_name = new Regex(singleLink, "/\\d+/(.+)").getMatch(0);
+                    final String name_temp;
+                    final DownloadLink dl = createDownloadlink(singleLink);
+                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                    dl.setAvailable(true);
+                    fp.add(dl);
+                    dl.setLinkID(linkid);
+                    if (url_name != null) {
+                        name_temp = linkid + "_" + url_name;
+                    } else {
+                        name_temp = linkid;
                     }
+                    dl.setName(name_temp);
+                    dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                    decryptedLinksNum++;
+                    dupeList.add(linkid);
+                }
             }
             pageNum++;
         } while (decryptedLinksNum >= 36);
