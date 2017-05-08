@@ -11,12 +11,18 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
+
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -39,10 +45,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class UpdateController implements UpdateCallbackInterface {
     private static final UpdateController INSTANCE = new UpdateController();
@@ -186,9 +188,16 @@ public class UpdateController implements UpdateCallbackInterface {
 
     private int readRevision(String rev) {
         try {
-            File file = Application.getResource(rev);
-            if (file.exists()) {
-                return Integer.parseInt(IO.readFileToString(file).trim());
+            final File revisionFile = Application.getResource(rev);
+            if (revisionFile.exists()) {
+                final String string = IO.readFileToTrimmedString(revisionFile);
+                if (string != null && string.matches("^\\d+$")) {
+                    return Integer.parseInt(string);
+                }
+                final Map<String, Object> ret = JSonStorage.restoreFromString(string, TypeRef.HASHMAP);
+                if (ret != null && ret.containsKey("id")) {
+                    return ((Number) ret.get("id")).intValue();
+                }
             }
         } catch (Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
@@ -465,11 +474,11 @@ public class UpdateController implements UpdateCallbackInterface {
         } finally {
         }
     }
+
     // public static final String UPDATE = "update";
     // public static final String SELFTEST = "selftest";
     // public static final String SELFUPDATE_ERROR = "selfupdateerror";
     // public static final String AFTER_SELF_UPDATE = "afterupdate";
-
     // public static final String OK = "OK";
     private void fireUpdatesAvailable(boolean self, InstallLog installLog) {
         hasPendingUpdates = handler.hasPendingUpdates();
