@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,6 +30,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,11 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shutterstock.com" }, urls = { "http://(www\\.)?shutterstock\\.com/pic\\-\\d+/[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shutterstock.com" }, urls = { "http://(www\\.)?shutterstock\\.com/pic\\-\\d+/[a-z0-9\\-]+\\.html" })
 public class ShutterStockCom extends PluginForHost {
-
     public ShutterStockCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("");
@@ -133,10 +132,18 @@ public class ShutterStockCom extends PluginForHost {
                         return;
                     }
                 }
+                br = new Browser();
                 br.setFollowRedirects(true);
-                br.getPage("http://www.shutterstock.com/login.mhtml");
+                br.getPage("https://www.shutterstock.com/login.mhtml");
                 final String lang = System.getProperty("user.language");
-                if (br.containsHTML("google\\.com/recaptcha/")) {
+                // we want forms because if you don't you can can post/get to the wrong URL!
+                final Form login = br.getForm(0);
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("user", Encoding.urlEncode(account.getUser()));
+                login.put("pass", Encoding.urlEncode(account.getPass()));
+                if (login.containsHTML("google\\.com/recaptcha/")) {
                     // Handle stupid login captcha
                     final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (rcID == null) {
@@ -153,7 +160,9 @@ public class ShutterStockCom extends PluginForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
                     final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    br.postPage("http://www.shutterstock.com/login.mhtml", "submit=Sign+In&landing_page=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "");
+                    login.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
+                    login.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    br.submitForm(login);
                     if (br.containsHTML("google\\.com/recaptcha/")) {
                         logger.info("Wrong password, username or captcha, stopping...");
                         if ("de".equalsIgnoreCase(lang)) {
@@ -163,7 +172,7 @@ public class ShutterStockCom extends PluginForHost {
                         }
                     }
                 } else {
-                    br.postPage("http://www.shutterstock.com/login.mhtml", "submit=Sign+In&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                    br.submitForm(login);
                     if (br.containsHTML("You\\'ve entered an incorrect username/password combination")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -191,14 +200,12 @@ public class ShutterStockCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
+        // we need to be on the account traffic URL!
+        br.getPage("/account/plans");
         ai.setUnlimitedTraffic();
         long expireTime = 0;
+        // todo fix the rest.
         final Regex hoursMinutes = br.getRegex("<span class=\"detail\"><nobr>(\\d+)h (\\d+)m</nobr><span");
         if (hoursMinutes.getMatches().length != 0) {
             expireTime += (Integer.parseInt(hoursMinutes.getMatch(0)) * 60 * 60 * 1000) + (Integer.parseInt(hoursMinutes.getMatch(1)) * 60 * 1000);
@@ -218,12 +225,8 @@ public class ShutterStockCom extends PluginForHost {
             ai.setValidUntil(System.currentTimeMillis() + expireTime);
         }
         account.setValid(true);
-        try {
-            // Can request captchas
-            account.setConcurrentUsePossible(false);
-        } catch (final Exception e) {
-            // Not available in old Stable
-        }
+        // Can request captchas
+        account.setConcurrentUsePossible(false);
         final String downloadsLeftToday = br.getRegex("<span class=\"lihp_detail_wrapper\">[\t\n\r ]+<span class=\"detail\">(\\d+)</span>").getMatch(0);
         if (downloadsLeftToday != null) {
             ai.setStatus("Premium User with " + downloadsLeftToday + " downloads left for today.");
@@ -269,7 +272,6 @@ public class ShutterStockCom extends PluginForHost {
                     logger.info("Login fail #2");
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Login fail #2");
                 }
-
                 if (captchaLink == null) {
                     logger.warning("Captcha fail begin:" + br.toString() + " Captcha fail end");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
