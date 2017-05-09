@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
@@ -39,7 +38,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "francetelevisions.fr" }, urls = { "http://francetelevisionsdecrypted/[A-Za-z0-9\\-_]+@[A-Za-z0-9\\-_]+" })
 public class FrancetelevisionsCom extends PluginForHost {
-
     public FrancetelevisionsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,8 +61,9 @@ public class FrancetelevisionsCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         final String[] videoinfo = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/") + 1).split("@");
         final String videoid = videoinfo[0];
-        final String catalogue = videoinfo[1];
-        this.br.getPage("http://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=" + videoid + "&catalogue=" + catalogue + "&callback=_jsonp_loader_callback_request_0");
+        /* 2017-05-10: The 'catalogue' parameter is not required anymore or at least not for all videoids! */
+        final String catalogue = videoinfo[1].equals("null") ? "" : videoinfo[1];
+        this.br.getPage("https://sivideo.webservices.francetelevisions.fr/tools/getInfosOeuvre/v2/?idDiffusion=" + videoid + "&catalogue=" + catalogue + "&callback=_jsonp_loader_callback_request_0");
         final String json = this.br.getRegex("^_jsonp_loader_callback_request_0\\((.+)\\)$").getMatch(0);
         final long responsecode = this.br.getHttpConnection().getResponseCode();
         if (responsecode == 400 || responsecode == 404 || json == null) {
@@ -76,11 +75,9 @@ public class FrancetelevisionsCom extends PluginForHost {
         final String description = (String) entries.get("synopsis");
         final String date = (String) JavaScriptEngineFactory.walkJson(entries, "diffusion/date_debut");
         String channel = (String) entries.get("chaine");
-
         final DecimalFormat df = new DecimalFormat("00");
         final long season = JavaScriptEngineFactory.toLong(entries.get("saison"), -1);
         final long episode = JavaScriptEngineFactory.toLong(entries.get("episode"), -1);
-
         if (inValidate(title)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -105,11 +102,9 @@ public class FrancetelevisionsCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
-
         if (!inValidate(description) && inValidate(link.getComment())) {
             link.setComment(description);
         }
-
         return AvailableStatus.TRUE;
     }
 
@@ -161,7 +156,6 @@ public class FrancetelevisionsCom extends PluginForHost {
             // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             // hls_master = (String) entries.get("url");
             // this.br.getPage(hls_master);
-
             /* Download hls */
             br.getPage(hls_master);
             if (this.br.getHttpConnection().getResponseCode() == 403) {
@@ -223,5 +217,4 @@ public class FrancetelevisionsCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

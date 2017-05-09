@@ -113,7 +113,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 /* Type 5 */
                 entries = (LinkedHashMap<String, Object>) o_episode;
                 title = (String) entries.get("title");
-                vpid = (String) JavaScriptEngineFactory.walkJson(entries, "master_brand/ident_id");
+                vpid = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/id");
                 tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "master_brand/id");
                 episodeType = (String) entries.get("type");
                 date = (String) entries.get("release_date_time");
