@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -37,7 +36,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "littlebyte.net" }, urls = { "https?://(?:www\\.)?littlebyte\\.net/download/\\d+\\.[a-z0-9]{10}/[^<>\"\\'/]+\\.html" })
 public class LittlebyteNet extends PluginForHost {
-
     public LittlebyteNet(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -101,22 +99,26 @@ public class LittlebyteNet extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            if (this.br.containsHTML("/asdownload/")) {
+                /* 'Archive download' --> File only available to premiumusers. */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             final Regex finfo = new Regex(downloadLink.getDownloadURL(), "/download/(\\d+)\\.([a-z0-9]+)/");
             final String file_id = finfo.getMatch(0);
             final String file_uid = finfo.getMatch(1);
-
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.postPage("/ajax.php", "action=getSlowDownload&params%5Bfile_id%5D=" + file_id + "&params%5Bfile_uid%5D=" + file_uid);
+            if (this.br.toString().equalsIgnoreCase("UNAVAILABLE!")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             handleErrors();
-
             final String captcha_answer = this.br.getRegex("videoSpan\"\\)\\.html\\(\\'<h1>(\\d+)</h1>").getMatch(0);
             final String captchaId = this.br.getRegex("captchaId\\s*?:\\s*?(\\d+)").getMatch(0);
             final String captchaHash = this.br.getRegex("captchaHash\\s*?:\\s*?\\'([a-f0-9]{32})\\'").getMatch(0);
             if (captcha_answer == null || captchaId == null || captchaHash == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             /* 2017-04-26: Waittime is skippable */
             // int wait = 60;
             // final String wait_str = this.br.getRegex("id=\"free\\-seconds\">(\\d+)<").getMatch(0);
@@ -158,6 +160,7 @@ public class LittlebyteNet extends PluginForHost {
         dl.startDownload();
     }
 
+    /** Errorhandling after /ajax.php requests */
     private void handleErrors() throws NumberFormatException, PluginException {
         final String wait_minutes = this.br.getRegex("will be available for you after (\\d+) minutes of waiting").getMatch(0);
         if (wait_minutes != null) {
@@ -303,7 +306,6 @@ public class LittlebyteNet extends PluginForHost {
     // dl.startDownload();
     // }
     // }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_FREE_MAXDOWNLOADS;
@@ -316,5 +318,4 @@ public class LittlebyteNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
