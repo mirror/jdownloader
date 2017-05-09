@@ -112,10 +112,14 @@ public class HardSexTubeCom extends antiDDoSForHost {
             filename = br.getRegex("<h1 class=\"title-block\">([^<>\"]*?)</h1>").getMatch(0);
         }
         if (filename == null) { // hardsextube 20170505
-            filename = br.getRegex("gp-title=\"([^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("gp\\-title=\"([^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("data-video-id=\"([^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("data\\-video\\-id=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            /* Last chance fallback */
+            filename = vid;
         }
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setProperty("plain_title", filename);

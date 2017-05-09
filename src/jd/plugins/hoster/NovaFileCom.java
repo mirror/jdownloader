@@ -638,6 +638,7 @@ public class NovaFileCom extends antiDDoSForHost {
             try {
                 Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
+                /* 2017-05-06: Detection for bad 7b file has been added */
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getLongContentLength() == 7) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;

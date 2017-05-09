@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,12 +21,15 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -38,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
@@ -47,7 +50,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" })
 public class MinhatecaComBr extends PluginForHost {
-
     @Override
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
         if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
@@ -64,6 +66,7 @@ public class MinhatecaComBr extends PluginForHost {
     public MinhatecaComBr(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
+        setConfigElements();
     }
 
     @Override
@@ -81,12 +84,10 @@ public class MinhatecaComBr extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
     private static boolean       pluginloaded                 = false;
 
     @Override
@@ -120,19 +121,52 @@ public class MinhatecaComBr extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         handlePWProtected(downloadLink);
-        final String req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String requestVerificationToken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String fid = downloadLink.getStringProperty("plain_fid", null);
         String dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null && downloadLink.getFinalFileName().contains(".mp3") && this.getPluginConfig().getBooleanProperty("ENABLE_STREAM_DOWNLOAD", true)) {
+            /*
+             * 2017-05-09: Captcha can be bypassed by downloading the stream. Only disadvantage I have noticed: Cover inside audio file is
+             * missing (quality == original-download-quality)
+             */
+            try {
+                final Browser br2 = this.br.cloneBrowser();
+                br2.setFollowRedirects(false);
+                br2.getPage("http://minhateca.com.br/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
+                dllink = br2.getRedirectLocation();
+            } catch (final Throwable e) {
+            }
+        }
         if (dllink == null) {
-            if (req_token == null) {
+            if (requestVerificationToken == null) {
+                logger.warning("req_token is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://" + this.getHost() + "/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
-            if (dllink == null) {
-                dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+            br.postPage("http://" + this.getHost() + "/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+            /* 2017-05-09: Added captcha support */
+            String captchaurl = getCaptchaURL();
+            if (captchaurl != null) {
+                final String unescapedBR = unescape(br.toString());
+                final String serializedUserSelection = new Regex(unescapedBR, "name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
+                final String serializedOrgFile = new Regex(unescapedBR, "name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
+                if (serializedUserSelection == null || serializedOrgFile == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                int counter = 0;
+                do {
+                    final String captcha = this.getCaptchaCode(captchaurl, downloadLink);
+                    br.postPage("/action/License/DownloadNotLoggedCaptchaEntered", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&recaptcha_response_field=" + Encoding.urlEncode(captcha) + "&FileName=" + Encoding.urlEncode(downloadLink.getFinalFileName()));
+                    captchaurl = getCaptchaURL();
+                    counter++;
+                } while (captchaurl != null && counter <= 4);
+                if (captchaurl != null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
             }
-            if (dllink == null) {
+            dllink = PluginJSonUtils.getJson(this.br, "redirectUrl");
+            if (StringUtils.isEmpty(dllink)) {
                 if (br.containsHTML("payment_window")) {
                     /* User needs to use an account and/or buy traffic for his existing account to download this file. */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -148,6 +182,10 @@ public class MinhatecaComBr extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String getCaptchaURL() {
+        return this.br.getRegex("(/captcha\\.axd\\?ts=\\d+)").getMatch(0);
     }
 
     @Override
@@ -357,6 +395,10 @@ public class MinhatecaComBr extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_STREAM_DOWNLOAD", "Enable stream download?\r\nThis may skip captcha for audio files but the quality can be worse than via official download and cover inside the audio file is missing.").setDefaultValue(true));
     }
 
     @Override

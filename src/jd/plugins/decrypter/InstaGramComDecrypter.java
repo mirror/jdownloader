@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.URL;
@@ -41,18 +40,17 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
-
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String           TYPE_GALLERY           = ".+/p/[A-Za-z0-9_-]+/?$";
-
     private String                        username_url           = null;
     private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
     private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
     private Boolean                       isPrivate              = false;
     private FilePackage                   fp                     = null;
+    private String                        parameter              = null;
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -61,7 +59,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         fp = FilePackage.getInstance();
         fp.setProperty("ALLOW_MERGE", true);
         // https and www. is required!
-        String parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
+        parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
         if (parameter.contains("?private_url=true")) {
             isPrivate = Boolean.TRUE;
             /* Remove this from url as it is only required for decrypter */
@@ -82,12 +80,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-
         if (isPrivate && !logged_in) {
             logger.info("Account required to crawl this url");
             return decryptedLinks;
         }
-
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -123,11 +119,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final String id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
             username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
             final boolean isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
-
             if (username_url != null) {
                 fp.setName(username_url);
             }
-
             final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
             final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
             final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
@@ -140,12 +134,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-
             if (id_owner == null) {
                 // this isn't a error persay! check https://www.instagram.com/israbox/
                 return decryptedLinks;
             }
-
             int page = 0;
             do {
                 if (this.isAbort()) {
@@ -163,14 +155,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     int errorcounter_429_ratelimit_reached = 0;
                     boolean failed = true;
                     int responsecode;
-
                     /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
                     do {
                         if (this.isAbort()) {
                             logger.info("User aborted decryption");
                             return decryptedLinks;
                         }
-
                         br = this.br.cloneBrowser();
                         if (retrycounter > 1) {
                             if (abort_on_rate_limit_reached) {
@@ -204,7 +194,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         retrycounter++;
                         /* Stop on too many 403s as 403 is not a rate limit issue! */
                     } while (failed && retrycounter <= 300 && errorcounter_403_wtf < 20);
-
                     if (failed) {
                         logger.warning("Failed to bypass rate-limit!");
                         return decryptedLinks;
@@ -226,18 +215,23 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 page++;
             } while (nextid != null);
         }
-
         return decryptedLinks;
     }
 
     private void decryptAlbum(LinkedHashMap<String, Object> entries) {
         final long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
         // is this id? // final String linkid_main = (String) entries.get("id");
+        final String typename = (String) entries.get("__typename");
         final String linkid_main = (String) entries.get("code");
         final String description = (String) entries.get("caption");
-
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
-        if (resource_data_list != null && resource_data_list.size() > 0) {
+        if ("GraphSidecar".equalsIgnoreCase(typename) && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
+            /*
+             * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
+             * the json does not contain the other images --> This has to go back into the decrypter and get crawled as a single item.
+             */
+            this.decryptedLinks.add(this.createDownloadlink(createSingle_P_url(linkid_main)));
+        } else if (resource_data_list != null && resource_data_list.size() > 0) {
             final int padLength = getPadLength(resource_data_list.size());
             int counter = 0;
             /* Album */
@@ -313,10 +307,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(shortcode)) {
             hostplugin_url += "/" + shortcode;
         }
-
         final DownloadLink dl = this.createDownloadlink(hostplugin_url);
         final String linkid = linkid_main + shortcode != null ? shortcode : "";
-        String content_url = "https://www.instagram.com/p/" + linkid_main;
+        String content_url = createSingle_P_url(linkid_main);
         if (isPrivate) {
             /*
              * Without account, private urls look exactly the same as offline urls --> Save private status for better host plugin
@@ -351,6 +344,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.add(dl);
         distribute(dl);
+    }
+
+    private String createSingle_P_url(final String p_id) {
+        return String.format("https://www.instagram.com/p/%s", p_id);
     }
 
     private void prepBRAjax(final Browser br, final String username_url, final String maxid) {
