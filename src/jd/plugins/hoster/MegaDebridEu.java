@@ -201,7 +201,7 @@ public class MegaDebridEu extends PluginForHost {
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
         if (dllink == null) {
             if (br.containsHTML("Limite de trafic dépassée pour cet hébergeur")) {
-                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 10 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
