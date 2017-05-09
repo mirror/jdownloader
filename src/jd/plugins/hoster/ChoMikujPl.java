@@ -274,7 +274,6 @@ public class ChoMikujPl extends antiDDoSForHost {
                     /* Plugin broken */
                     return false;
                 }
-                br.getHeaders().put("Referer", "http://chomikuj.pl/a1n2i3a4/*e2*97*8fKsiazki/Rosyjskie/Grin_Dchennifer_Miss_Blagorazumie,3615568710.zip(archive)");
                 postPageWithCleanup(br, "/action/License/DownloadWarningAccept", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile));
                 unescapedBR = unescape(br.toString());
             }
@@ -292,7 +291,6 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcSiteKey).getToken();
                 final String postData = "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&FileName=" + Encoding.urlEncode(theLink.getName()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
-                br.getHeaders().put("Referer", "http://chomikuj.pl/a1n2i3a4/*e2*97*8fKsiazki/Rosyjskie/Grin_Dchennifer_Miss_Blagorazumie,3615568710.zip(archive)");
                 postPageWithCleanup(br, "/action/License/DownloadNotLoggedCaptchaEntered", postData);
             } else {
                 postPageWithCleanup(br, "/action/License/Download", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
