@@ -3861,12 +3861,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     throw new InterruptedException("Controller is aborted");
                 }
                 final DownloadLink downloadLink = controller.getDownloadLink();
+                final MirrorDetectionDecision mirrorDetectionDecision = config.getMirrorDetectionDecision();
+                /**
+                 * this call may return an unsafe(not final) fileOutput, but it is the fileOutput we want to start with
+                 */
                 final File fileOutput = controller.getFileOutput(false, true);
                 if (fileOutput.isDirectory()) {
                     controller.getLogger().severe("fileOutput is a directory " + fileOutput);
                     throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                 }
-                boolean fileExists = fileOutput.exists();
+                final boolean fileExists = fileOutput.exists();
                 if (!fileExists) {
                     try {
                         validateDestination(fileOutput);
@@ -3930,32 +3934,48 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                 }
-                final boolean insideDownloadInstance = controller.getDownloadInstance() != null;
-                if (!insideDownloadInstance) {
-                    /* we are outside DownloadInterface */
-                    File localCheck2 = controller.getFileOutput(true, true);
-                    if (localCheck2 == null) {
-                        /*
-                         * dont proceed when we do not have a finalFilename yet
-                         */
-                        return;
-                    }
+                if (config.isAllowUnsafeFileNameForFileExistsCheck() == false && controller.getDownloadInstance() == null && controller.getFileOutput(true, true) == null) {
+                    /*
+                     * dont proceed when we do not have a finalFilename yet
+                     */
+                    return;
                 }
                 boolean fileInProgress = false;
                 if (!fileExists) {
-                    final MirrorDetectionDecision mirrorDetectionDecision = config.getMirrorDetectionDecision();
+                    final String fileName;
+                    if (MirrorDetectionDecision.SAFE.equals(mirrorDetectionDecision)) {
+                        /**
+                         * this returns a safe checkFile or null (if not available yet, eg no final/forcedFileName set)
+                         */
+                        final File checkFile = controller.getFileOutput(true, true);
+                        if (checkFile != null) {
+                            /**
+                             * we use fileName from checkFile
+                             */
+                            fileName = checkFile.getName();
+                        } else {
+                            /**
+                             * we use final/forcedFileName from downloadLink
+                             */
+                            fileName = downloadLink.getName(true, false);
+                        }
+                    } else {
+                        /**
+                         * we use fileName from fileOutput (may be unsafe)
+                         */
+                        fileName = fileOutput.getName();
+                    }
                     for (SingleDownloadController downloadController : session.getControllers()) {
                         if (downloadController == controller) {
                             continue;
                         }
-                        DownloadLink block = downloadController.getDownloadLink();
+                        final DownloadLink block = downloadController.getDownloadLink();
                         if (block == downloadLink) {
                             continue;
                         }
-                        final String localCheck = fileOutput.getAbsolutePath();
                         if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) {
                             /* fileOutput is already locked */
-                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, localCheck, block, mirrorDetectionDecision)) {
+                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, fileName, block, mirrorDetectionDecision)) {
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             } else {
@@ -3966,9 +3986,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
                 if (fileExists || fileInProgress) {
-                    IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
+                    IfFileExistsAction doAction = config.getIfFileExistsAction();
                     if (doAction == null || IfFileExistsAction.ASK_FOR_EACH_FILE == doAction) {
-                        DownloadSession currentSession = getSession();
+                        final DownloadSession currentSession = getSession();
                         doAction = currentSession.getOnFileExistsAction(downloadLink.getFilePackage());
                         if (doAction == null || doAction == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                             IfFileExistsDialogInterface io = new IfFileExistsDialog(downloadLink).show();
@@ -4005,7 +4025,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         if (plugin != null) {
                                             final Downloadable downloadable = plugin.newDownloadable(downloadLink, null);
                                             if (downloadable != null) {
-                                                switch (config.getMirrorDetectionDecision()) {
+                                                switch (mirrorDetectionDecision) {
                                                 case AUTO:
                                                     final HashInfo hashInfo = downloadable.getHashInfo();
                                                     if (hashInfo != null) {
@@ -4137,7 +4157,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public void interrupt() {
-                Thread watchDogThread = getWatchDogThread();
+                final Thread watchDogThread = getWatchDogThread();
                 if (getCurrentDownloadWatchDogJob() == this && watchDogThread != null) {
                     watchDogThread.interrupt();
                 }
@@ -4145,7 +4165,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public boolean isHighPriority() {
-                return false;
+                return true;
             }
         });
         Object ret = null;
