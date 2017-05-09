@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Denna dialog har en nedräknare och stängs efter
 active=Aktivera
 connecting=Kopplar upp..
 crossSystem_open_url_failed_msg=Öppna denna länk i din webbläsare:
+debug_menu=Debug- & Utvecklarmeny
 download_msg=Laddar ner fil
 download_title=Nerladdning
 extdatecolumn_dateandtimeformat=yyyy-MM-dd HH:mm
