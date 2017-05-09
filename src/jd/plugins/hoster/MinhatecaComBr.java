@@ -157,7 +157,11 @@ public class MinhatecaComBr extends PluginForHost {
                 int counter = 0;
                 do {
                     final String captcha = this.getCaptchaCode(captchaurl, downloadLink);
-                    br.postPage("/action/License/DownloadNotLoggedCaptchaEntered", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&recaptcha_response_field=" + Encoding.urlEncode(captcha) + "&FileName=" + Encoding.urlEncode(downloadLink.getFinalFileName()));
+                    /*
+                     * This request can contain one more parameter (optional): + "&FileName=" +
+                     * Encoding.urlEncode(downloadLink.getFinalFileName())
+                     */
+                    br.postPage("/action/License/DownloadNotLoggedCaptchaEntered", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&recaptcha_response_field=" + Encoding.urlEncode(captcha));
                     captchaurl = getCaptchaURL();
                     counter++;
                 } while (captchaurl != null && counter <= 4);
