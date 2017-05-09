@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,9 +35,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "https?://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" })
 public class MinhatecaComBr extends PluginForDecrypt {
-
     public MinhatecaComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +49,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("http://", "https://");
         br.setAllowedResponseCodes(new int[] { 401 });
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -117,7 +115,6 @@ public class MinhatecaComBr extends PluginForDecrypt {
             }
             br.getPage(parameter);
         }
-
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -128,7 +125,6 @@ public class MinhatecaComBr extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
             String filename = br.getRegex("Baixar: <b>([^<>\"]*?)</b>").getMatch(0);
@@ -140,7 +136,6 @@ public class MinhatecaComBr extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename).trim();
             final DownloadLink dl = getDecryptedDownloadlink();
-
             dl.setProperty("plain_filename", filename);
             dl.setProperty("plain_filesize", filesize);
             dl.setProperty("plain_fid", fid);
@@ -148,11 +143,9 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("pass", passCode);
             dl.setContentUrl(parameter);
             dl.setLinkID(getHost() + "://" + fid);
-
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
-
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
@@ -239,7 +232,6 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     String ext = null;
-
                     final String finfoName;
                     if (finfo.getMatch(0) != null && finfo.getMatch(1) != null) {
                         finfoName = Encoding.htmlDecode(finfo.getMatch(0)).trim() + Encoding.htmlDecode(finfo.getMatch(1)).trim();
@@ -270,29 +262,23 @@ public class MinhatecaComBr extends PluginForDecrypt {
                         return null;
                     }
                     final DownloadLink dl = getDecryptedDownloadlink();
-
                     dl.setProperty("plain_filename", filename);
                     dl.setProperty("plain_filesize", filesize);
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("pass", passCode);
-
                     dl.setContentUrl(content_url);
                     dl.setLinkID(getHost() + "://" + fid);
-
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
-
                     decryptedLinks.add(dl);
                 }
             }
-
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 

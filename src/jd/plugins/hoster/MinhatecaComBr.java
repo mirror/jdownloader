@@ -119,22 +119,48 @@ public class MinhatecaComBr extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         handlePWProtected(downloadLink);
         final String requestVerificationToken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String fid = downloadLink.getStringProperty("plain_fid", null);
         String dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null && downloadLink.getFinalFileName().contains(".mp3") && this.getPluginConfig().getBooleanProperty("ENABLE_STREAM_DOWNLOAD", true)) {
+        if (dllink == null && downloadLink.getFinalFileName().contains(".mp3") && this.getPluginConfig().getBooleanProperty("ENABLE_MP3_STREAM_DOWNLOAD", true)) {
             /*
-             * 2017-05-09: Captcha can be bypassed by downloading the stream. Only disadvantage I have noticed: Cover inside audio file is
-             * missing (quality == original-download-quality)
+             * 2017-05-09: Captcha can be bypassed by downloading the mp4 stream. Only disadvantage I have noticed: Cover inside audio file
+             * is missing (quality == original-download-quality)
              */
             try {
                 final Browser br2 = this.br.cloneBrowser();
                 br2.setFollowRedirects(false);
                 br2.getPage("http://minhateca.com.br/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
                 dllink = br2.getRedirectLocation();
+                if (!StringUtils.isEmpty(dllink)) {
+                    maxchunks = 1;
+                    resumable = true;
+                }
             } catch (final Throwable e) {
+            }
+        }
+        if (dllink == null && this.br.containsHTML("class=\"videoWrapper\"") && this.getPluginConfig().getBooleanProperty("ENABLE_MP4_STREAM_DOWNLOAD", true)) {
+            /*
+             * 2017-05-09: Captcha can be bypassed by downloading the mp4 stream. Quality is usually much worse than the
+             * original-file-download. This can not only skip the captcha but also it makes it possible to download premiumonly video files
+             * as freeuser.
+             */
+            String video_redirecturl = this.br.getRegex("(https?://[^/]+/Video\\.ashx[^<>\"\\'/]+)").getMatch(0);
+            if (video_redirecturl != null) {
+                video_redirecturl = Encoding.htmlDecode(video_redirecturl);
+                try {
+                    final Browser br2 = this.br.cloneBrowser();
+                    br2.setFollowRedirects(false);
+                    br2.getPage(video_redirecturl);
+                    dllink = br2.getRedirectLocation();
+                    if (!StringUtils.isEmpty(dllink)) {
+                        maxchunks = 1;
+                        resumable = false;
+                    }
+                } catch (final Throwable e) {
+                }
             }
         }
         if (dllink == null) {
@@ -402,7 +428,8 @@ public class MinhatecaComBr extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_STREAM_DOWNLOAD", "Enable stream download?\r\nThis may skip captcha for audio files but the quality can be worse than via official download and cover inside the audio file is missing.").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_MP3_STREAM_DOWNLOAD", "Enable mp3 stream download?\r\nThis may skip captcha for audio files but the quality can be worse than via official download and cover inside the audio file is missing.").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_MP4_STREAM_DOWNLOAD", "Enable mp4 stream download?\r\nThis may skip captcha for video files but the quality is usually worse than via official download.").setDefaultValue(true));
     }
 
     @Override

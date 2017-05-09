@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[pb][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
-
     public BbcCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -51,11 +49,10 @@ public class BbcCom extends PluginForHost {
     private String rtmp_app        = null;
     private String rtmp_playpath   = null;
     private String rtmp_authString = null;
-
     private String hls_master      = null;
-
     private String title           = null;
 
+    /** E.g. json instead of xml: http://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/<vpid>/format/json */
     /** Thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/bbc.py */
     @SuppressWarnings("deprecation")
     @Override
@@ -82,10 +79,8 @@ public class BbcCom extends PluginForHost {
         int filesize_temp = 0;
         int bitrate_max = 0;
         int bitrate_temp = 0;
-
         /* Allow audio download if there is no video available at all --> We probably have a podcast then. */
         final boolean allowAudio = !this.br.containsHTML("kind=\"video\"");
-
         /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
         for (final String mediasingle : media) {
@@ -104,7 +99,6 @@ public class BbcCom extends PluginForHost {
                 /* Whatever - skip such a case */
                 continue;
             }
-
             bitrate_temp = Integer.parseInt(bitrate_str);
             /* Filesize is not always given */
             if (filesize_str != null) {
@@ -112,7 +106,6 @@ public class BbcCom extends PluginForHost {
             } else {
                 filesize_temp = 0;
             }
-
             if (bitrate_temp > bitrate_max) {
                 bitrate_max = bitrate_temp;
                 /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
@@ -133,7 +126,6 @@ public class BbcCom extends PluginForHost {
                 }
             }
         }
-
         if (rtmp_playpath != null) {
             title_downloadurl = new Regex(rtmp_playpath, "([^<>\"/]+)\\.mp4").getMatch(0);
         }
@@ -144,13 +136,11 @@ public class BbcCom extends PluginForHost {
             /* Final fallback to vpid as filename - if everything goes wrong! */
             title = vpid;
         }
-
         link.setName(title + ".mp4");
         if (filesize_temp > 0) {
             /* 2017-04-25: Changed from BEST by filesize to BEST by bitrate --> Filesize is not always given for BEST bitrate */
             link.setDownloadSize(filesize_temp);
         }
-
         return AvailableStatus.TRUE;
     }
 
@@ -169,7 +159,6 @@ public class BbcCom extends PluginForHost {
         if (hls_master != null) {
             hls_master = Encoding.htmlDecode(hls_master);
             br.getPage(hls_master);
-
             final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
             final String configuredPreferredVideoFramerate = getConfiguredVideoFramerate();
             final List<HlsContainer> containers = HlsContainer.getHlsQualities(this.br);
@@ -193,13 +182,10 @@ public class BbcCom extends PluginForHost {
                     hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
                 }
             }
-
             quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
             downloadLink.setFinalFileName(title + "_" + quality_string + ".mp4");
-
             /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
             downloadLink.setComment(hlscontainer_chosen.getDownloadurl());
-
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, hlscontainer_chosen.getDownloadurl());
             dl.startDownload();
@@ -286,7 +272,6 @@ public class BbcCom extends PluginForHost {
     // }
     // return formattedDate;
     // }
-
     private String getConfiguredVideoFramerate() {
         final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
         final String selectedResolution = FORMATS[selection];
@@ -331,5 +316,4 @@ public class BbcCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
