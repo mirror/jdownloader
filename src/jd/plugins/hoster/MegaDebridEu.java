@@ -13,14 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,9 +33,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static Object                                  ACCLOCK            = new Object();
@@ -83,7 +81,6 @@ public class MegaDebridEu extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-
         // now it's time to get all supported hosts
         br.getPage("/api.php?action=getHosters");
         if (!"ok".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_code"))) {
@@ -122,7 +119,6 @@ public class MegaDebridEu extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -138,7 +134,6 @@ public class MegaDebridEu extends PluginForHost {
                 }
             }
         }
-
         String url = link.getDownloadURL();
         // link corrections
         if (link.getHost().matches("ddlstorage\\.com")) {
@@ -152,7 +147,6 @@ public class MegaDebridEu extends PluginForHost {
             url += "/n/" + link.getName();
         }
         url = Encoding.urlEncode(url);
-
         showMessage(link, "Phase 1/2: Generate download link");
         prepBrowser(br);
         String token = account.getStringProperty("token", null);
@@ -206,16 +200,17 @@ public class MegaDebridEu extends PluginForHost {
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
         if (dllink == null) {
+            if (br.containsHTML("Limite de trafic dépassée pour cet hébergeur")) {
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "").replace("\"", "");
         showMessage(link, "Phase 2/2: Download");
-
         int maxChunks = 0;
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -292,5 +287,4 @@ public class MegaDebridEu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
