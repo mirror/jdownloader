@@ -29,18 +29,7 @@ import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
 public interface GeneralSettings extends ConfigInterface {
-
-    class DefaultBrowserCommand extends AbstractDefaultFactory<String[]> {
-
-        @Override
-        public String[] getDefaultValue() {
-            return CrossSystem.isWindows() ? new String[] { "rundll32.exe", "url.dll,FileProtocolHandler", "%s" } : null;
-        }
-
-    }
-
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
-
         @Override
         public String getDefaultValue() {
             /* convert old value */
@@ -137,7 +126,6 @@ public interface GeneralSettings extends ConfigInterface {
     String getDefaultDownloadFolder();
 
     // ArrayList<String[]> getDownloadFolderHistory();
-
     @AboutConfig
     @DefaultLongValue(5 * 60 * 1000l)
     @DescriptionForConfigEntry("Waittime in ms if a Download HashCheck Failed")
@@ -217,6 +205,13 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultIntValue(128)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getForcedFreeSpaceOnDisk();
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Allow unsafe filenames for file exists check")
+    boolean isAllowUnsafeFileNameForFileExistsCheck();
+
+    void setAllowUnsafeFileNameForFileExistsCheck(boolean b);
 
     @AboutConfig
     @DefaultEnumValue("ASK_FOR_EACH_FILE")
@@ -367,7 +362,6 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultEnumValue("ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS")
     void setAutoStartDownloadOption(AutoDownloadStartOption option);
 
-    @DefaultFactory(DefaultBrowserCommand.class)
     @AboutConfig
     @DescriptionForConfigEntry("CommandLine to open a link in a browser. Use %s as wildcard for the url")
     void setBrowserCommandLine(String[] b);
@@ -389,7 +383,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setDefaultDownloadFolder(String ddl);
 
     // void setDownloadFolderHistory(ArrayList<String[]> history);
-
     void setDownloadHashCheckFailedRetryWaittime(long ms);
 
     void setDownloadSpeedLimit(int bytes);
@@ -473,7 +466,7 @@ public interface GeneralSettings extends ConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("ASK_FOR_DELETE")
+    @DefaultEnumValue("DONT_DELETE")
     @DescriptionForConfigEntry("What Action should be performed after adding a container (DLC RSDF,METALINK,CCF,...)")
     DeleteContainerAction getDeleteContainerFilesAfterAddingThemAction();
 
@@ -484,7 +477,6 @@ public interface GeneralSettings extends ConfigInterface {
         ON_DOWNLOAD_START,
         @EnumLabel("When the links are added to the Downloadlist")
         ON_LINKS_ADDED,
-
     }
 
     @AboutConfig
@@ -526,25 +518,21 @@ public interface GeneralSettings extends ConfigInterface {
     void setCrawlerCrawlerPluginBlacklist(String[] blacklist);
 
     public static enum OnSkipDueToAlreadyExistsAction implements LabelInterface {
-
         SKIP_FILE() {
             public String getLabel() {
                 return _GUI.T.OnSkipDueToAlreadyExistsAction_skip_file();
             }
-
         },
         SET_FILE_TO_SUCCESSFUL {
             public String getLabel() {
                 return _GUI.T.OnSkipDueToAlreadyExistsAction_mark_successful();
             }
         },
-
         SET_FILE_TO_SUCCESSFUL_MIRROR {
             public String getLabel() {
                 return _GUI.T.OnSkipDueToAlreadyExistsAction_mark_successful_mirror();
             }
         }
-
     }
 
     @AboutConfig
@@ -663,7 +651,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isPreferBouncyCastleForTLS();
 
     void setPreferBouncyCastleForTLS(boolean b);
-
     // @AboutConfig
     // @DefaultBooleanValue(true)
     // @DescriptionForConfigEntry("Enable/Disable JXBrowser usage. JXBrowser Plugin required!")
