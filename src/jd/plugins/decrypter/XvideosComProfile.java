@@ -58,6 +58,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             decryptedLinksNum = 0;
             br.getPage("/profiles/" + username + "/videos/best/" + pageNum);
             if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort")) {
+                logger.info("This user does not have any videos");
                 return decryptedLinks;
             }
             final String[] links = br.getRegex("(/prof\\-video\\-click/upload/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);

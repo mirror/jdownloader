@@ -13,18 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.List;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -43,13 +36,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.translate._JDT;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
 public class BrazzersCom extends antiDDoSForHost {
-
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://enter.brazzers.com/signup/signup.php");
-        setConfigElements();
     }
 
     @Override
@@ -64,15 +65,11 @@ public class BrazzersCom extends antiDDoSForHost {
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private boolean              not_yet_released             = false;
-
     private final String         type_normal_moch             = "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/";
     private final String         type_premium_video           = "https?://ma\\.brazzers\\.com/download/.+";
     private final String         type_premium_pic             = "https?://(?:brazzersdecrypted\\.)?photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+";
-
     public static final String   html_loggedin                = "id=\"my\\-account\"";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -120,6 +117,9 @@ public class BrazzersCom extends antiDDoSForHost {
                 }
             }
         }
+        final BrazzersConfigInterface cfg = PluginJsonConfig.get(BrazzersConfigInterface.class);
+        final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
+        final boolean use_server_filenames = cfg.isUseServerFilenames();
         final String fid;
         if (link.getDownloadURL().matches(type_premium_video) || link.getDownloadURL().matches(type_premium_pic)) {
             fid = link.getStringProperty("fid", null);
@@ -129,7 +129,11 @@ public class BrazzersCom extends antiDDoSForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    link.setFinalFileName(getFileNameFromHeader(con));
+                    if (use_server_filenames || StringUtils.isEmpty(decrypter_filename)) {
+                        link.setFinalFileName(getFileNameFromHeader(con));
+                    } else {
+                        link.setFinalFileName(decrypter_filename);
+                    }
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
                     if (link.getDownloadURL().matches(type_premium_pic)) {
@@ -178,10 +182,8 @@ public class BrazzersCom extends antiDDoSForHost {
             }
             final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/([^/]+)").getMatch(0);
             String filename = br.getRegex("<h1[^>]*?itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
-
             /* This way we have a better dupe-detection! */
             link.setLinkID(fid);
-
             /* Two fallbacks in case we do not get any filename via html code */
             if (inValidate(filename)) {
                 filename = url_name;
@@ -445,12 +447,85 @@ public class BrazzersCom extends antiDDoSForHost {
         return "Download videos- and pictures with the brazzers.com plugin.";
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_1080_12000", "Grab 1080p HD MP4 1080P (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_720_8000", "Grab 720p HD MP4 720P (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_480_2000", "Grab 480p SD MP4 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_480_1000", "Grab 480p MPEG4 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_272_650", "Grab 270p IPHONE/MOBILE (mp4)?").setDefaultValue(true));
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return BrazzersConfigInterface.class;
+    }
+
+    public static interface BrazzersConfigInterface extends PluginConfigInterface {
+        public static class TRANSLATION {
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
+            }
+
+            public String getUseServerFilenames_label() {
+                return "Use original server filenames? If disabled, plugin-filenames will be used.";
+            }
+
+            public String getGrabHTTPMp4_1080pEnabled_label() {
+                return "Grab 1080p HD MP4 1080P (mp4)?";
+            }
+
+            public String getGrabHTTPMp4_720pHDEnabled_label() {
+                return "Grab 720p HD MP4 720P (mp4)?";
+            }
+
+            public String getGrabHTTPMp4_480pSDEnabled_label() {
+                return "Grab 480p SD MP4 (mp4)?";
+            }
+
+            public String getGrabHTTPMp4_480pMPEG4Enabled_label() {
+                return "Grab 480p MPEG4 (mp4)?";
+            }
+
+            public String getGrabHTTPMp4_270piPHONEMOBILEEnabled_label() {
+                return "Grab 270p IPHONE/MOBILE (mp4)?";
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isUseServerFilenames();
+
+        void setUseServerFilenames(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(90)
+        boolean isGrabHTTPMp4_1080pEnabled();
+
+        void setGrabHTTPMp4_1080pEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(100)
+        boolean isGrabHTTPMp4_720pHDEnabled();
+
+        void setGrabHTTPMp4_720pHDEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(110)
+        boolean isGrabHTTPMp4_480pSDEnabled();
+
+        void setGrabHTTPMp4_480pSDEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(120)
+        boolean isGrabHTTPMp4_480pMPEG4Enabled();
+
+        void setGrabHTTPMp4_480pMPEG4Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(130)
+        boolean isGrabHTTPMp4_270piPHONEMOBILEEnabled();
+
+        void setGrabHTTPMp4_270piPHONEMOBILEEnabled(boolean b);
     }
 
     @Override
@@ -465,5 +540,4 @@ public class BrazzersCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
