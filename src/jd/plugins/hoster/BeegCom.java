@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -31,12 +28,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
 public class BeegCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
     private String DLLINK = null;
 
     public BeegCom(PluginWrapper wrapper) {
@@ -82,14 +79,13 @@ public class BeegCom extends PluginForHost {
                 break;
             }
         }
-
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (DLLINK.startsWith("//")) {
             DLLINK = "https:" + DLLINK;
         }
-        DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.DE");
+        DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.XX");
         final String key = new Regex(this.DLLINK, "/key=([^<>\"=]+)%2Cend=").getMatch(0);
         if (key != null) {
             String deckey = decryptKey(key);
