@@ -13,7 +13,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -33,8 +32,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -44,7 +41,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
-
     /**
      * @author raztoki
      */
@@ -61,7 +57,6 @@ public class GoogleDrive extends PluginForDecrypt {
     // - with /list?rm=whitebox&hl=en_GB&forcehl=1&pref=2&pli=1"; - not used and commented out, supported except for scanLinks
     // language determined by the accept-language
     // user-agent required to use new ones otherwise blocks with javascript notice.
-
     private static final String FOLDER_NORMAL  = "https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+";
     private static final String FOLDER_OLD     = "https?://(?:www\\.)?docs\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[^/]+";
@@ -77,11 +72,13 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         if (parameter.contains("open?id")) {
             br.getPage(parameter);
+            /* Check whether we have a single file or a folder */
             if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "google.com/file/")) {
+                logger.info("Found single file");
                 decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation(), false));
                 return decryptedLinks;
-            } else if (!StringUtils.containsIgnoreCase(br.getRedirectLocation(), "google.com/folderview")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                logger.info("Found folder");
             }
         }
         final String fid;
@@ -93,7 +90,6 @@ public class GoogleDrive extends PluginForDecrypt {
         parameter = "https://drive.google.com/drive/folders/" + fid;
         final PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
         ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br);
-
         final CrawledLink source = getCurrentLink().getSourceLink();
         final String subfolder;
         if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
@@ -122,7 +118,6 @@ public class GoogleDrive extends PluginForDecrypt {
             }
             retry++;
         } while (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500 && retry <= 3);
-
         if (br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -131,12 +126,10 @@ public class GoogleDrive extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?) (?:– Google Drive)?</title>").getMatch(0);
         }
-
         /* 2016-08-26: TODO: Check if this works fine for big folders too */
         String json_src = this.br.getRegex("window\\[\\'_DRIVE_ivd\\'\\]\\s*?=\\s*?\\'\\[(.*?)\\';").getMatch(0);
         String[] results = null;
@@ -285,7 +278,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     counter++;
                 }
             }
-
             final String[] folderlinks = new Regex(content, "(" + FOLDER_CURRENT + ")").getColumn(0);
             if (folderlinks != null && folderlinks.length != 0) {
                 for (String folderlink : folderlinks) {
@@ -296,7 +288,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     }
                 }
             }
-
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
@@ -316,7 +307,6 @@ public class GoogleDrive extends PluginForDecrypt {
         if (plugin == null) {
             throw new IllegalStateException("youtube plugin not found!");
         }
-
         return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
@@ -324,5 +314,4 @@ public class GoogleDrive extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
