@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
-
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -67,7 +65,6 @@ public class TwitterCom extends PornEmbedParser {
             fp.setName(user);
         }
         String tweet_id = null;
-
         if (parameter.matches(TYPE_REDIRECT)) {
             this.br.setFollowRedirects(false);
             getPage(parameter);
@@ -84,7 +81,6 @@ public class TwitterCom extends PornEmbedParser {
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
-
         br.setFollowRedirects(true);
         /* Some profiles can only be accessed if they accepted others as followers --> Log in if the user has added his twitter account */
         if (getUserLogin(false)) {
@@ -102,7 +98,7 @@ public class TwitterCom extends PornEmbedParser {
             decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
-            logger.info("This tweet timeline is protected");
+            logger.info("This tweet timeline is protected (private)");
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName("This tweet timeline is protected_" + urlfilename);
             decryptedLinks.add(offline);
@@ -367,5 +363,4 @@ public class TwitterCom extends PornEmbedParser {
         }
         return true;
     }
-
 }

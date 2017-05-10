@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -45,7 +44,6 @@ import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+" })
 public class PlayVidComDecrypter extends PluginForDecrypt {
-
     public PlayVidComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,7 +59,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     private String                        parameter      = null;
     private CryptedLink                   param          = null;
     private String                        videoID        = null;
-
     /** Settings stuff */
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
     private static final String           ALLOW_BEST     = "ALLOW_BEST";
@@ -78,6 +75,8 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         } else {
             parameter = param.toString();
         }
+        /* 2017-05-10: Changed from http to https */
+        parameter = parameter.replace("http://", "https://");
         this.param = param;
         br.setFollowRedirects(true);
         if (plugin == null) {
@@ -109,7 +108,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
         /** Decrypt qualities START */
-
         foundQualities = ((jd.plugins.hoster.PlayVidCom) plugin).getQualities(this.br);
         if (foundQualities == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -123,9 +121,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         final boolean q480p = cfg.getBooleanProperty(ALLOW_480P, true);
         final boolean q720p = cfg.getBooleanProperty(ALLOW_720P, true);
         final boolean all = (q360p == false && q480p == false && q720p == false);
-
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
-
         List<DownloadLink> ret = getVideoDownloadlinks("720p");
         if (ret != null && (q720p || all)) {
             List<DownloadLink> list = results.get("720p");
@@ -146,7 +142,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 list.addAll(ret);
             }
         }
-
         ret = getVideoDownloadlinks("480p");
         if (ret != null && (q480p || all)) {
             List<DownloadLink> list = results.get("480p");
@@ -158,7 +153,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 list.addAll(ret);
             }
         }
-
         ret = getVideoDownloadlinks("360p");
         if (ret != null && (q360p || all)) {
             List<DownloadLink> list = results.get("360p");
@@ -170,14 +164,12 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 list.addAll(ret);
             }
         }
-
         for (List<DownloadLink> list : results.values()) {
             for (DownloadLink link : list) {
                 fp.add(link);
                 decryptedLinks.add(link);
             }
         }
-
         if (decryptedLinks.size() == 0) {
             logger.info("None of the selected qualities were found, decrypting done...");
             return decryptedLinks;
@@ -297,5 +289,4 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

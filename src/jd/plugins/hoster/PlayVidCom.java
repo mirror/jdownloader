@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -48,7 +47,6 @@ import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
-
     public PlayVidCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -68,7 +66,6 @@ public class PlayVidCom extends PluginForHost {
     private static final String ALLOW_360P    = "ALLOW_360P";
     private static final String ALLOW_480P    = "ALLOW_480P";
     private static final String ALLOW_720     = "ALLOW_720";
-
     private static final String quality_360   = "360p";
     private static final String quality_480   = "480p";
     private static final String quality_720   = "720p";
@@ -148,7 +145,8 @@ public class PlayVidCom extends PluginForHost {
             if (container == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
-                br.getPage(downloadLink.getStringProperty("mainlink", null));
+                br.setFollowRedirects(true);
+                br.getPage(downloadLink.getStringProperty("mainlink", null).replace("http://", "https://"));
                 final LinkedHashMap<String, String> foundQualities = getQualities(br);
                 final String f4m = foundQualities.get(qualityvalue);
                 if (f4m == null) {
