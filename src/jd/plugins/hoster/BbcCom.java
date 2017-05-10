@@ -178,7 +178,7 @@ public class BbcCom extends PluginForHost {
                     }
                 }
                 if (hlscontainer_chosen == null) {
-                    logger.info("Failed to find user selecred quality --> Fallback to BEST");
+                    logger.info("Failed to find user selected quality --> Fallback to BEST");
                     hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
                 }
             }
