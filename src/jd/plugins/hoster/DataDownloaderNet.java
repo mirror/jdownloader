@@ -180,7 +180,7 @@ public class DataDownloaderNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if ("Account not found".equalsIgnoreCase(message.toString())) {
                 synchronized (account) {
-                    if (apiKey.equals(account.getStringProperty(APIKEY, null))) {
+                    if (apiKey != null && apiKey.equals(account.getStringProperty(APIKEY, null))) {
                         account.removeProperty(APIKEY);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
@@ -204,5 +204,4 @@ public class DataDownloaderNet extends PluginForHost {
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
-
 }
