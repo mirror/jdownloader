@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "http://(?:www\\.)?bibeltv\\.de/mediathek/video/[a-z0-9\\-]+/\\?no_cache=1\\&cHash=[a-f0-9]{32}" })
 public class BibeltvDe extends PluginForHost {
-
     public BibeltvDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,12 +44,10 @@ public class BibeltvDe extends PluginForHost {
     // Tags: kaltura player, medianac, api.medianac.com */
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              tempunavailable   = false;
 
@@ -74,10 +70,12 @@ public class BibeltvDe extends PluginForHost {
         } else if (this.br.containsHTML("An error occurred while trying to")) {
             /* Wrong url */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML(">Das Video ist derzeit nicht öffentlich|<h1>Video nicht verfügbar</h1>")) {
+        } else if (this.br.containsHTML(">Das Video ist derzeit nicht öffentlich")) {
             /* Video not available at this moment. */
             tempunavailable = true;
             return AvailableStatus.TRUE;
+        } else if (this.br.containsHTML(">Video nicht verf")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
@@ -109,7 +107,6 @@ public class BibeltvDe extends PluginForHost {
             /* New 2016-12-07 */
             entry_id = this.br.getRegex("/entry_id/([^/]+)").getMatch(0);
         }
-
         if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
