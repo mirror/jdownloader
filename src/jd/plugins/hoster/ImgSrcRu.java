@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,12 +41,9 @@ import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
-
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
-
     private String                         ddlink    = null;
-    private String                         password  = null;
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
     private static AtomicInteger           uaInt     = new AtomicInteger(0);
 
@@ -187,7 +183,6 @@ public class ImgSrcRu extends PluginForHost {
         if (ddlink == null) {
             ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
         }
-
     }
 
     @Override
@@ -234,20 +229,18 @@ public class ImgSrcRu extends PluginForHost {
             }
             br.getPage(newLink);
         }
-        if (br.containsHTML(">Album owner has protected his work from unauthorized access")) {
+        if (br.containsHTML(">Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:")) {
             Form pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm == null) {
                 logger.warning("Password form finder failed!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            String password = downloadLink.getStringProperty("pass");
             if (password == null) {
-                password = downloadLink.getStringProperty("pass");
-                if (password == null) {
-                    password = getUserInput("Enter password for link:", downloadLink);
-                    if (password == null || password.equals("")) {
-                        logger.info("User abored/entered blank password");
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
+                password = getUserInput("Enter password for link:", downloadLink);
+                if (password == null || password.equals("")) {
+                    logger.info("User abored/entered blank password");
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
             }
             pwForm.put("pwd", Encoding.urlEncode(password));
@@ -277,5 +270,4 @@ public class ImgSrcRu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

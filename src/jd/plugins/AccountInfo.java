@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.text.SimpleDateFormat;
@@ -35,6 +34,7 @@ import jd.nutils.NaturalOrderComparator;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -43,26 +43,20 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class AccountInfo extends Property {
-
     private static final long serialVersionUID       = 1825140346023286206L;
-
     private long              account_validUntil     = -1;
-
     private long              account_trafficLeft    = -1;
     private long              account_trafficMax     = -1;
-
     private long              account_filesNum       = -1;
     private long              account_premiumPoints  = -1;
     private long              account_accountBalance = -1;
     private long              account_usedSpace      = -1;
-
     private String            account_status;
     private long              account_createTime     = 0;
     /**
      * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
     private boolean           specialTraffic         = false;
-
     private boolean           account_trafficRefill  = true;
 
     public boolean isTrafficRefill() {
@@ -311,10 +305,9 @@ public class AccountInfo extends Property {
      * @param multiHostPlugin
      * @since JD2
      */
-
     public List<String> setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport) {
         if (multiHostPlugin != null && multiHostPlugin.getLogger() != null) {
-            return setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder(multiHostPlugin.getLogger()));
+            return setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder(LogController.TRASH));
         } else {
             final LogSource logSource = LogController.getFastPluginLogger(Thread.currentThread().getName());
             try {
@@ -323,7 +316,6 @@ public class AccountInfo extends Property {
                 logSource.close();
             }
         }
-
     }
 
     public List<String> setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
@@ -470,6 +462,14 @@ public class AccountInfo extends Property {
                             it.remove();
                             break;
                         }
+                    }
+                }
+            }
+            if (unassignedMultiHostSupport.size() > 0 && multiHostPlugin != null) {
+                final LogInterface logger = multiHostPlugin.getLogger();
+                if (logger != null) {
+                    for (final String host : unassignedMultiHostSupport) {
+                        logger.info("Could not assign any host for:" + host);
                     }
                 }
             }
