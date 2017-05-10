@@ -72,14 +72,14 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(www\\.)?powvideo\\.net/((vid)?embed-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(?:www\\.)?powvideo\\.(?:net|xyz)/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class PowVideoNet extends antiDDoSForHost {
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://powvideo.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(powvideo\\.net)";
+    private final String               DOMAINS                      = "(powvideo\\.net|powvideo\\.xyz)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{50,}/v(?:ideo)?\\.mp4)";
@@ -433,7 +433,6 @@ public class PowVideoNet extends antiDDoSForHost {
             final String tcurl = new Regex(this.dllink, "(rtmpe?://[^/]+/[^/]+/)").getMatch(0);
             dl = new RTMPDownload(this, downloadLink, tcurl);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
             if (playpath != null) {
                 rtmp.setPlayPath(playpath);
             }
@@ -499,7 +498,6 @@ public class PowVideoNet extends antiDDoSForHost {
             // remove download slot
             controlSlot(-1, account);
         }
-
     }
 
     /**
@@ -1399,7 +1397,6 @@ public class PowVideoNet extends antiDDoSForHost {
         if (url_rtmp != null && preferRTMP) {
             result = url_rtmp;
         }
-
         if (inValidate(result)) {
             /* 2016-11-04: Special */
             result = new Regex(source, "(\"|')(" + dllinkRegex + ")\\1").getMatch(1);
