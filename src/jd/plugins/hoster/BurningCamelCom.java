@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/[a-z0-9\\-]+(/\\d+)?" })
 public class BurningCamelCom extends PluginForHost {
-
     private String DLLINK = null;
 
     public BurningCamelCom(PluginWrapper wrapper) {
@@ -40,8 +38,8 @@ public class BurningCamelCom extends PluginForHost {
     }
 
     /* DEV NOTES */
+    /* 2017-05-10: porn.to now redirects to burningcamel.com --> deleted porn.to decrypter- and hosterplugin. */
     /* Porn_plugin */
-
     @Override
     public String getAGBLink() {
         return "http://www.burningcamel.com/dmca";

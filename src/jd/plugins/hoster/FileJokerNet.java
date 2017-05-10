@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -57,7 +56,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class FileJokerNet extends antiDDoSForHost {
-
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -81,20 +79,17 @@ public class FileJokerNet extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
     private String               fuid                         = null;
-
     private static final String  INVALIDLINKS                 = "https?://(www\\.)?filejoker\\.net/registration";
-
     /* Plugin settings */
     private static final String  CUSTOM_REFERER               = "CUSTOM_REFERER";
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.5.7
-    // mods: erandom UA|ours is blocked, heavily modified, DO NOT UPGRADE!
+    // mods: random UA|ours is blocked, heavily modified, DO NOT UPGRADE!
     // limit-info:
     // protocol: no https
     // captchatype: recaptcha
     // other: forced https
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* forced https */
@@ -136,8 +131,9 @@ public class FileJokerNet extends antiDDoSForHost {
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        } else if (ddosBlocked()) {
+            return AvailableStatus.UNCHECKABLE;
+        } else if (br.getURL().contains("/?op=login&redirect=")) {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             return AvailableStatus.UNCHECKABLE;
         }
@@ -374,7 +370,6 @@ public class FileJokerNet extends antiDDoSForHost {
                     skipWaittime = false;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -517,14 +512,11 @@ public class FileJokerNet extends antiDDoSForHost {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -556,26 +548,21 @@ public class FileJokerNet extends antiDDoSForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -811,8 +798,7 @@ public class FileJokerNet extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
-        } else if (correctedBR.contains("Your downloader software mak")) {
-            /* 2017-05-02: "Your downloader software make requests too often." */
+        } else if (ddosBlocked()) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 10 * 60 * 1000l);
         }
         if (correctedBR.contains("You're using all download slots for IP")) {
@@ -844,6 +830,11 @@ public class FileJokerNet extends antiDDoSForHost {
             final Long parsedTime = parseTime(accountIpBlocked);
             throw new PluginException(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, "Multiple connections from multiple IP addresses in short duration", parsedTime > 0 ? parsedTime : 3 * 60 * 60 * 1000l);
         }
+    }
+
+    private boolean ddosBlocked() {
+        /* 2017-05-02: "Your downloader software make requests too often." */
+        return correctedBR.contains("Your downloader software mak");
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -996,7 +987,6 @@ public class FileJokerNet extends antiDDoSForHost {
                         this.setDownloadLink(new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
-
                     if (dlinkbefore != null) {
                         this.setDownloadLink(dlinkbefore);
                     }
@@ -1115,5 +1105,4 @@ public class FileJokerNet extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
