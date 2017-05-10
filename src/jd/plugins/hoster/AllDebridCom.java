@@ -13,17 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,9 +38,12 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public AllDebridCom(PluginWrapper wrapper) {
@@ -61,10 +59,8 @@ public class AllDebridCom extends antiDDoSForHost {
 
     private static final String NICE_HOST         = "alldebrid.com";
     private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private static final String NOCHUNKS          = "NOCHUNKS";
     private final String        hash1             = "593f356a67e32332c13d6692d1fe10b7";
-
     private int                 statuscode        = 0;
     private Account             currAcc           = null;
     private DownloadLink        currDownloadLink  = null;
@@ -72,15 +68,13 @@ public class AllDebridCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ac = new AccountInfo();
         setConstants(account, null);
         HashMap<String, String> accDetails = new HashMap<String, String>();
-        AccountInfo ac = new AccountInfo();
         getPage("https://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         handleErrors();
-
         /* parse api response in easy2handle hashmap */
         String info[][] = br.getRegex("<([^<>]*?)>([^<]*?)</.*?>").getMatches();
-
         for (String data[] : info) {
             accDetails.put(data[0].toLowerCase(Locale.ENGLISH), data[1].toLowerCase(Locale.ENGLISH));
         }
@@ -210,7 +204,6 @@ public class AllDebridCom extends antiDDoSForHost {
         if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
             final String host = Browser.getHost(link.getDownloadURL());
             final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-
                 @Override
                 public HashInfo getHashInfo() {
                     return null;
@@ -225,7 +218,6 @@ public class AllDebridCom extends antiDDoSForHost {
                 public String getHost() {
                     return host;
                 }
-
             };
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, maxChunks);
         } else {
@@ -287,7 +279,6 @@ public class AllDebridCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -303,9 +294,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 }
             }
         }
-
         showMessage(link, "Phase 1/2: Generating link");
-
         String host_downloadlink = link.getDownloadURL();
         /* here we can get a 503 error page, which causes an exception */
         getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&json=true");
@@ -521,5 +510,4 @@ public class AllDebridCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
