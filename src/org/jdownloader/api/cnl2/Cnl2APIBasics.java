@@ -15,7 +15,7 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this method returns the needed crossdomain.xml file for the flash stuff
-     * 
+     *
      * @param response
      */
     @APIParameterNames({ "response" })
@@ -25,27 +25,27 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this method sets a js variable to signal that jdownloader is running
-     * 
+     *
      * @param response
      */
     @APIParameterNames({ "response" })
-    public void jdcheckjs(RemoteAPIResponse response) throws InternalApiException;
+    public void jdcheckjs(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException;
 
     @ApiMethodName("jdcheckjson")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this method returns a json object containing information about the JD {version: #JD_VERSION#, deviceId: #MY_JD_DEVICE_ID}
-     * 
+     *
      * @param response
      */
     @APIParameterNames({ "response" })
-    public void jdcheckjson(RemoteAPIResponse response) throws InternalApiException;
+    public void jdcheckjson(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException;
 
     @ApiMethodName("flash")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this function returns "JDownloader" and has no function name /flash
-     * 
+     *
      * @param response
      * @param request
      */
@@ -56,7 +56,7 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this returns the jdownloader logo as favicon
-     * 
+     *
      * @param response
      */
     @APIParameterNames({ "response" })

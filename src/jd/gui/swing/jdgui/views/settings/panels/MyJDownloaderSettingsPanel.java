@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings.panels;
 
 import java.awt.Color;
@@ -55,12 +54,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements GenericConfigEventListener<Enum>, MyJDownloaderListener {
-
     private static final long    serialVersionUID = 1L;
     private final SettingsButton openMyJDownloader;
     private final TextInput      email;
     private final PasswordInput  passWord;
-
     private final JTextArea      error;
     private final JTextArea      status;
     private final JButton        connectButton;
@@ -77,11 +74,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
     public MyJDownloaderSettingsPanel() {
         super();
-
         openMyJDownloader = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
-
             }
 
             @Override
@@ -96,7 +91,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         openMyJDownloaderTab = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_tab_());
-
             }
 
             @Override
@@ -108,7 +102,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         email = new TextInput(CFG_MYJD.EMAIL);
         passWord = new PasswordInput(CFG_MYJD.PASSWORD);
         GenericConfigEventListener<String> loginsChangeListener = new GenericConfigEventListener<String>() {
-
             @Override
             public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
             }
@@ -129,34 +122,13 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         error.setFocusable(false);
         error.setForeground(Color.RED);
         SwingUtils.toBold(error);
-
         status = new JTextArea();
         SwingUtils.setOpaque(status, false);
         status.setEditable(false);
         status.setLineWrap(true);
         status.setWrapStyleWord(true);
         status.setFocusable(false);
-
         SwingUtils.toBold(error);
-        reconnectAction = new AppAction() {
-            {
-                setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_());
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        MyJDownloaderController.getInstance().disconnect();
-                        MyJDownloaderController.getInstance().connect();
-                        return null;
-                    }
-                });
-
-            }
-        };
         connectAction = new AppAction() {
             {
                 setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_connect_());
@@ -165,10 +137,13 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
             @Override
             public void actionPerformed(ActionEvent e) {
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
-                        MyJDownloaderController.getInstance().connect();
+                        if (MyJDownloaderController.getInstance().isLoginValid()) {
+                            MyJDownloaderController.getInstance().connect();
+                        } else {
+                            MyJDownloaderController.getInstance().onError(MyJDownloaderError.BAD_LOGINS);
+                        }
                         return null;
                     }
                 });
@@ -182,10 +157,26 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
             @Override
             public void actionPerformed(ActionEvent e) {
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         MyJDownloaderController.getInstance().disconnect();
+                        return null;
+                    }
+                });
+            }
+        };
+        reconnectAction = new AppAction() {
+            {
+                setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_());
+            }
+
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        disconnectAction.actionPerformed(e);
+                        connectAction.actionPerformed(e);
                         return null;
                     }
                 });
@@ -207,24 +198,19 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         this.addDescriptionPlain(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins());
         addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_(), null, email);
         addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_(), null, passWord);
-
         this.addDescriptionPlain(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_name());
-
         addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_(), null, deviceName);
-
         MigPanel p = new MigPanel("ins 0 0 0 0", "[grow,fill][][]", "[]");
         p.setOpaque(false);
         p.add(status, "wmin 10");
         // add(status, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
         // p.add(Box.createHorizontalGlue());
-
         p.add(connectButton);
         p.add(disconnectButton);
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
-
     }
 
     @Override
@@ -234,7 +220,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
     @Override
     public void save() {
-
     }
 
     @Override
@@ -242,7 +227,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         onMyJDownloaderConnectionStatusChanged(MyJDownloaderController.getInstance().getConnectionStatus(), MyJDownloaderController.getInstance().getEstablishedConnections());
         final MyJDownloaderError latestError = CFG_MYJD.CFG.getLatestError();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 switch (latestError) {
@@ -278,7 +262,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                 }
             }
         };
-
     }
 
     @Override
@@ -293,20 +276,18 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     @Override
     public void onMyJDownloaderConnectionStatusChanged(final MyJDownloaderConnectionStatus connectionStatus, final int connections) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (!MyJDownloaderSettingsPanel.this.isShowing()) {
                     return;
                 }
-                boolean connected = connectionStatus != MyJDownloaderConnectionStatus.UNCONNECTED;
+                final String cUser = MyJDownloaderController.getInstance().getCurrentEmail();
+                final String cPass = MyJDownloaderController.getInstance().getCurrentPassword();
+                final boolean connected = connectionStatus != MyJDownloaderConnectionStatus.UNCONNECTED;
                 disconnectAction.setEnabled(connected);
                 connectAction.setEnabled(!connected);
                 reconnectAction.setEnabled(false);
-
                 if (connected) {
-                    String cUser = MyJDownloaderController.getInstance().getCurrentEmail();
-                    String cPass = MyJDownloaderController.getInstance().getCurrentPassword();
                     String cDevice = MyJDownloaderController.getInstance().getCurrentDeviceName();
                     connectButton.setAction(connectAction);
                     if (MyJDownloaderController.validateLogins(cUser, cPass)) {
@@ -346,9 +327,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     status.setForeground(Color.RED);
                     connectButton.setAction(connectAction);
                 }
-
             }
         };
     }
-
 }
