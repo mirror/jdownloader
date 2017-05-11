@@ -16,6 +16,20 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+import net.sf.image4j.codec.ico.ICOEncoder;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -45,22 +59,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-import net.sf.image4j.codec.ico.ICOEncoder;
-
 public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
-
     private final static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
     public void crossdomainxml(RemoteAPIResponse response) throws InternalApiException {
@@ -102,14 +101,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    public void jdcheckjs(RemoteAPIResponse response) throws InternalApiException {
+    public void jdcheckjs(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {
         final StringBuilder sb = new StringBuilder();
         sb.append("jdownloader=true;\r\n");
         sb.append("var version='" + JDUtilities.getRevision() + "';\r\n");
         writeString(response, null, sb.toString(), false);
     }
 
-    public void jdcheckjson(RemoteAPIResponse response) throws InternalApiException {
+    public void jdcheckjson(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {
         final MyJDownloaderSettings set = CFG_MYJD.CFG;
         final JSonObject obj = new JSonObject();
         obj.put("version", new JSonValue(JDUtilities.getRevision()));
@@ -197,7 +196,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             }
             if (jobs.size() > 0) {
                 final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-
                     @Override
                     public void modifyCrawledLink(CrawledLink link) {
                         final DownloadLink dl = link.getDownloadLink();
@@ -289,7 +287,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private HashSet<String> pws = null;
-
             {
                 if (StringUtils.isNotEmpty(finalPasswords)) {
                     pws = new HashSet<String>();
@@ -432,7 +429,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final String finalPackageName = request.getParameterbyKey("package");
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
                 private HashSet<String> pws = null;
-
                 {
                     if (StringUtils.isNotEmpty(finalPasswords)) {
                         pws = new HashSet<String>();
@@ -549,7 +545,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             /* the url is already allowed to add links */
             return;
         }
-
         final String from = url != null ? url : app;
         try {
             final ConfirmDialog d = new ConfirmDialog(0, ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_title(from), ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_message(), null, ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_btn_allow(), ExternInterfaceTranslation.T.jd_plugins_optional_interfaces_jdflashgot_security_btn_deny()) {
@@ -570,7 +565,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             allowed.add(url);
             JsonConfig.create(RemoteAPIConfig.class).setExternInterfaceAuth(allowed);
         }
-
     }
 
     public void alive(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
@@ -644,7 +638,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 }
                 if (finalAutostart != null || pws.size() > 0) {
                     final CrawledLinkModifier preModifier = new CrawledLinkModifier() {
-
                         @Override
                         public void modifyCrawledLink(CrawledLink link) {
                             if (pws.size() > 0) {
@@ -660,7 +653,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 }
                 if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
                     final CrawledLinkModifier postModifier = new CrawledLinkModifier() {
-
                         @Override
                         public void modifyCrawledLink(CrawledLink link) {
                             if (StringUtils.isNotEmpty(finalPackageName)) {
@@ -688,7 +680,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     job.setCrawledLinkModifierPostPackagizer(postModifier);
                 }
                 final UnknownCrawledLinkHandler unknownCrawledLinkHandler = new UnknownCrawledLinkHandler() {
-
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                         final DownloadLink dl = link.getDownloadLink();
                         if (dl != null && !StringUtils.startsWithCaseInsensitive(dl.getPluginPatternMatcher(), "directhttp://")) {
@@ -714,7 +705,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     crawledLink.setSourceJob(job);
                     if (StringUtils.isNotEmpty(referer)) {
                         crawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
-
                             public void modifyCrawledLink(CrawledLink link) {
                                 final DownloadLink dl = link.getDownloadLink();
                                 if (dl != null) {
@@ -736,5 +726,4 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             throw new InternalApiException(e);
         }
     }
-
 }

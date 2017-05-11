@@ -95,18 +95,17 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     protected void start() {
         stop();
-        String email = null;
-        String password = null;
-        if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword()) && Application.isHeadless()) {
+        String email = CFG_MYJD.CFG.getEmail();
+        String password = CFG_MYJD.CFG.getPassword();
+        if (!validateLogins(email, password) && Application.isHeadless()) {
             synchronized (AbstractConsole.LOCK) {
-                ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
+                final ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
                 cd.start();
                 try {
                     cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
                     try {
                         while (true) {
                             cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
-
                             email = cd.ask("Please Enter your MyJDownloader Email:");
                             password = cd.askHidden("Please Enter your MyJDownloader Password:");
                             if (validateLogins(email, password)) {
@@ -120,7 +119,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     } catch (DialogNoAnswerException e) {
                         ShutdownController.getInstance().requestShutdown();
                     }
-
                 } finally {
                     cd.end();
                 }
@@ -128,7 +126,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         }
         if (validateLogins(email, password)) {
             MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
-
             lthread.setEmail(email);
             lthread.setPassword(password);
             lthread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
@@ -326,7 +323,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         default:
             break;
         }
-
         eventSender.fireEvent(new MyJDownloaderEvent(this, MyJDownloaderEvent.Type.CONNECTION_STATUS_UPDATE, status, connections));
     }
 
@@ -346,6 +342,10 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             return false;
         }
         return true;
+    }
+
+    public boolean isLoginValid() {
+        return validateLogins(CFG_MYJD.CFG.getEmail(), CFG_MYJD.CFG.getPassword());
     }
 
     /**
@@ -373,7 +373,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             case CONNECTED:
             case PENDING:
                 return th.pushChallenge(ch);
-
             }
         }
         return null;
@@ -397,7 +396,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             case CONNECTED:
             case PENDING:
                 return th.getChallengeResponse(id);
-
             }
         }
         return null;
@@ -413,11 +411,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             case CONNECTED:
             case PENDING:
                 return th.sendChallengeFeedback(id, correct);
-
             }
         }
         return false;
-
     }
 
     public void terminateSession(String connectToken) throws MyJDownloaderException {
@@ -426,5 +422,4 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             ct.killSession(connectToken);
         }
     }
-
 }

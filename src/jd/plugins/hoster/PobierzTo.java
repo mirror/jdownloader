@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -51,7 +50,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pobierz.to" }, urls = { "https?://(?:www\\.)?pobierz\\.to/[A-Za-z0-9]+" })
 public class PobierzTo extends PluginForHost {
-
     public PobierzTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -66,7 +64,6 @@ public class PobierzTo extends PluginForHost {
      * captchatype: reCaptchaV2<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -85,10 +82,8 @@ public class PobierzTo extends PluginForHost {
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = false;
     private static final boolean           useOldLoginMethod                            = false;
     private static final boolean           enable_RANDOM_UA                             = false;
-
     private static final boolean           enable_embed                                 = false;
     private static final boolean           enable_regex_stream_url                      = true;
-
     /* Known urlErrors */
     private static final String            url_ERROR_SIMULTANDLSLIMIT                   = ".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?";
     private static final String            url_ERROR_SERVER                             = ".*?e=Error%3A\\+Could\\+not\\+open\\+file\\+for\\+reading.*?";
@@ -101,7 +96,6 @@ public class PobierzTo extends PluginForHost {
     private static final String            errortext_ERROR_SERVER                       = "Server error";
     private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
     private static final int               free_MAXCHUNKS                               = 1;
@@ -112,7 +106,6 @@ public class PobierzTo extends PluginForHost {
     private static final boolean           account_PREMIUM_RESUME                       = true;
     private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
-
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
@@ -133,53 +126,89 @@ public class PobierzTo extends PluginForHost {
         prepBrowser(this.br);
         final String fid = getFID(link);
         link.setLinkID(fid);
-
         // /* 2017-04-28: For some URLs, availibility information is only visible for loggedin (or only premium??) users. */
         // final Account aa = AccountController.getInstance().getValidAccount(this);
         // if (aa != null) {
         // this.login(aa, false);
         // }
-
-        String filename;
-        String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
+            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
+            /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
+            String filename = br.getRegex("<!--<filename>(.*?)</filename>").getMatch(0);
+            if (filename == null) {
+                filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+                if (filename == null) {
+                    /* "Information about"-filename-trait without the animation(delay). */
+                    filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
+                }
+                if (filename == null) {
+                    filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                }
+                if (filename == null) {
+                    try {
+                        /* Language-independant attempt ... */
+                        filename = tableData[0];
+                    } catch (final Throwable e) {
+                    }
+                }
+                if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
+                    /* Filename might not be available here either */
+                    filename = fid;
+                }
+            }
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename).trim());
+            }
+            String filesize = br.getRegex("<!--<filesize>(.*?)</filesize>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                if (filesize == null) {
+                    try {
+                        /* Language-independant attempt ... */
+                        filesize = tableData[1];
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+            }
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
-            /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
-            if (filename == null) {
-                /* "Information about"-filename-trait without the animation(delay). */
-                filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-            }
-            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-            try {
-                /* Language-independant attempt ... */
-                if (filename == null) {
-                    filename = tableData[0];
-                }
-                if (filesize == null) {
-                    filesize = tableData[1];
-                }
-            } catch (final Throwable e) {
-            }
-            if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
-                /* Filename might not be available here either */
-                filename = fid;
-            }
+            return AvailableStatus.TRUE;
         } else {
             br.getPage(link.getDownloadURL());
+            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
+            String filename = br.getRegex("!--<filename>(.*?)</filename>").getMatch(0);
+            /* 2017-05-02: The filename in the usual place may contain unwanted spaces so we take it from the 'title' tag. */
+            if (filename == null) {
+                filename = this.br.getRegex("<title>([^<>\"]+) \\- Pobierz\\.to</title>").getMatch(0);
+                if (filename == null) {
+                    filename = fInfo.getMatch(0);
+                }
+            }
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename).trim());
+            }
+            String filesize = br.getRegex("<!--<filesize>(.*?)</filesize>").getMatch(0);
+            if (filesize == null) {
+                filesize = fInfo.getMatch(1);
+                if (filesize == null) {
+                    filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
+                }
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+            }
             if (new Regex(br.getURL(), Pattern.compile("Musisz\\+poczeka%C4%87\\+1\\+godzin%C4%99\\+pomi%C4%99dzy", Pattern.CASE_INSENSITIVE)).matches()) {
-                link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
                 return AvailableStatus.TRUE;
             } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_SERVER, Pattern.CASE_INSENSITIVE)).matches()) {
-                link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_SERVER);
                 return AvailableStatus.TRUE;
             } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_PREMIUMONLY, Pattern.CASE_INSENSITIVE)).matches()) {
@@ -190,23 +219,11 @@ public class PobierzTo extends PluginForHost {
             if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
-            /* 2017-05-02: The filename in the usual place may contain unwanted spaces so we take it from the 'title' tag. */
-            filename = this.br.getRegex("<title>([^<>\"]+) \\- Pobierz\\.to</title>").getMatch(0);
-            if (filename == null) {
-                filename = fInfo.getMatch(0);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            filesize = fInfo.getMatch(1);
-            if (filesize == null) {
-                filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
-            }
+            return AvailableStatus.TRUE;
         }
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename).trim());
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -613,7 +630,6 @@ public class PobierzTo extends PluginForHost {
             ai.setUnlimitedTraffic();
         } else {
             br.getPage("/account_edit." + type);
-
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -722,5 +738,4 @@ public class PobierzTo extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }
