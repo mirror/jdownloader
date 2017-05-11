@@ -29,8 +29,7 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
 import org.jdownloader.myjdownloader.client.json.JSonRequest;
 
 public class MyJDownloaderPostRequest extends PostRequest implements MyJDownloaderRequestInterface {
-
-    private JSonRequest jsonRequest;
+    private JSonRequest jsonRequest = null;
 
     public MyJDownloaderPostRequest(MyJDownloaderHttpConnection myJDownloaderHttpConnection) {
         super(myJDownloaderHttpConnection);
@@ -160,7 +159,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
                 final String json = new String(jsonBytes, "UTF-8");
                 jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
                 });
-
                 return jsonRequest;
             } catch (IOException e) {
                 throw e;
@@ -181,7 +179,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
             if (StringUtils.startsWithCaseInsensitive(contentType, "application/rsajson")) {
                 final InputStream is = super.getInputStream();
                 final InputStream rsaKey = new InputStream() {
-
                     private boolean eof = false;
 
                     @Override
