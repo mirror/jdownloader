@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-\\d+(\\-page\\-\\d+\\.html)?" })
+@DecrypterPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-[0-9\\.,]+(\\-page\\-[0-9\\.,]+\\.html)?" })
 public class MangaTradersBiz extends PluginForDecrypt {
-
     private PluginForHost plugin = null;
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -78,11 +76,10 @@ public class MangaTradersBiz extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String extension_fallback = ".jpg";
-            final Regex urlinfo = new Regex(parameter, "read\\-online/(.+)\\-chapter\\-(\\d+)(?:\\-page\\-\\d+\\.html)?$");
+            final Regex urlinfo = new Regex(parameter, "read\\-online/(.+)\\-chapter\\-([0-9\\.,]+)(?:\\-page\\-[0-9\\.,]+\\.html)?$");
             final String url_chapter = urlinfo.getMatch(1);
             final String url_name = urlinfo.getMatch(0);
             String ext = null;
-
             short page_max = 0;
             final String[] pages = this.br.getRegex(">Page (\\d+)</option>").getColumn(0);
             for (final String page_temp_str : pages) {
@@ -91,11 +88,8 @@ public class MangaTradersBiz extends PluginForDecrypt {
                     page_max = page_temp;
                 }
             }
-
             fp.setName(url_chapter + "_" + url_name);
-
             final int padLength = getPadLength(page_max);
-
             for (short page = 1; page <= page_max; page++) {
                 if (this.isAbort()) {
                     return decryptedLinks;
@@ -103,7 +97,6 @@ public class MangaTradersBiz extends PluginForDecrypt {
                 final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
                 final String page_url = String.format("http://%s/read-online/%s-chapter-%s-page-%s.html", this.getHost(), url_name, url_chapter, Short.toString(page));
                 getPage(page_url);
-
                 final String finallink = this.br.getRegex("class=\"CurImage\" src=\"(http[^<>\"]+)\"").getMatch(0);
                 if (finallink == null) {
                     return null;
@@ -113,7 +106,6 @@ public class MangaTradersBiz extends PluginForDecrypt {
                     ext = extension_fallback;
                 }
                 final String filename = url_chapter + "_" + url_name + "_" + page_formatted + ext;
-
                 final DownloadLink dl = this.createDownloadlink(finallink);
                 dl._setFilePackage(fp);
                 dl.setFinalFileName(filename);
@@ -130,13 +122,11 @@ public class MangaTradersBiz extends PluginForDecrypt {
                 return decryptedLinks;
             }
             br.setFollowRedirects(true);
-
             getPage(parameter);
             if (isOffline(this.br)) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
-
             final String seriesNameUrl = new Regex(parameter, "series/(.+)").getMatch(0);
             String fpName = br.getRegex("class=\"SeriesName\">([^<>]+)<").getMatch(0);
             if (fpName == null) {
@@ -144,10 +134,8 @@ public class MangaTradersBiz extends PluginForDecrypt {
                 fpName = seriesNameUrl;
             }
             fp.setName(fpName);
-
             // logger.info(br.toString());
             final String[][] linkinfos = br.getRegex("linkValue=\"([A-Za-z0-9]+)\">\\s*<[^<>]+>([^<>]+)</span>").getMatches();
-
             if (linkinfos == null || linkinfos.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -162,7 +150,6 @@ public class MangaTradersBiz extends PluginForDecrypt {
                 }
             }
         }
-
         if (decryptedLinks.size() > 0) {
             fp.addLinks(decryptedLinks);
             return decryptedLinks;
@@ -217,5 +204,4 @@ public class MangaTradersBiz extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
