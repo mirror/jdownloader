@@ -186,7 +186,7 @@ public class PlayVidCom extends PluginForHost {
     }
 
     public static final boolean isOffline(final Browser br) {
-        if (br.containsHTML("Video not found<|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Video not found<|>This video has been removed|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
         }
         return false;
