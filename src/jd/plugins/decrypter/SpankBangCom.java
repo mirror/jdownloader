@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -37,18 +36,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
-
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String           DOMAIN         = "spankbang.com";
-
     private LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
     private String                        parameter      = null;
-
     /** Settings stuff */
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
     private static final String           ALLOW_BEST     = "ALLOW_BEST";
@@ -81,13 +77,13 @@ public class SpankBangCom extends PluginForDecrypt {
         br.setCookie("http://spankbang.com/", "country", "GB");
         br.getHeaders().put("Accept-Language", "en");
         getPage(parameter);
+        logger.info(br.toString());
         if (isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         /* Decrypt start */
         final FilePackage fp = FilePackage.getInstance();
-
         /* Decrypt qualities START */
         String title = br.getRegex("<title>([^<>\"]*?) \\- SpankBang</title>").getMatch(0);
         final String fid = getFid(parameter);
@@ -96,7 +92,6 @@ public class SpankBangCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         title = Encoding.htmlDecode(title.trim());
         fp.setName(title);
         /* Decrypt qualities, selected by the user */
@@ -242,5 +237,4 @@ public class SpankBangCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
