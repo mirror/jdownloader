@@ -12,6 +12,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
+import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.CharSequenceInputStream;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -132,7 +133,7 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
                 final Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 aesCipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 final String value = requestedURLParameters.get(0).value;
-                final byte[] jsonBytes = IO.readStream(-1, new CipherInputStream(new CharSequenceInputStream(value), aesCipher));
+                final byte[] jsonBytes = IO.readStream(-1, new CipherInputStream(new Base64InputStream(new CharSequenceInputStream(value)), aesCipher));
                 final String json = new String(jsonBytes, "UTF-8");
                 return JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
                 });
