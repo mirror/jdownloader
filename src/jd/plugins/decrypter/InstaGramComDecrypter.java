@@ -219,7 +219,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     private void decryptAlbum(LinkedHashMap<String, Object> entries) {
-        final long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
+        long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
+        if (date == 0) {
+            date = JavaScriptEngineFactory.toLong(entries.get("taken_at_timestamp"), 0);
+        }
         // is this id? // final String linkid_main = (String) entries.get("id");
         final String typename = (String) entries.get("__typename");
         final String linkid_main = (String) entries.get("code");
