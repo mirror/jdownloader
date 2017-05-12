@@ -545,6 +545,7 @@ GUISettings_GUISettings_framestate_os_default=de acordo com as especificações 
 GUISettings_GUISettings_newlinks_focus=mostrar captura de links na frente das outras janelas & focalizar
 GUISettings_GUISettings_newlinks_front=mostrar captura de links na frente das outras janelas
 GUISettings_GUISettings_newlinks_nothing=não fazer nada
+GUISettings_GUISettings_newlinks_switch=mudar para captura de links
 GUISettings_GUISettings_object_frames=Gerenciador de Janelas
 GUISettings_GUISettings_object_frames_description=Já ficou irritado com diálogos, janelas aparecendo, diálogos captcha que tiram o foco de outras janelas ou qualquer coisa relacionada a janelas e foco? \r\nDesculpe-nos! Por favor, utilize as seguintes opções como nosso pedido de desculpas.
 GUISettings_GUISettings_object_urls=Exibição do endereço do link de download

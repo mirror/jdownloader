@@ -6,6 +6,7 @@ config_toolbarbutton=Botão da Barra de Ferramentas visível
 gui_config_jdshutdown_close=Fechar o JDownloader
 gui_config_jdshutdown_forceshutdown=Forçar saída (Não disponível em todos os Sistemas Operacionais)
 gui_config_jdshutdown_hibernate=Hibernar (Não disponível em todos os Sistemas Operacionais)
+gui_config_jdshutdown_logoff=Fazer logoff
 gui_config_jdshutdown_mode=Modo:
 gui_config_jdshutdown_shutdown=Desligar
 gui_config_jdshutdown_standby=Suspender  (Não disponível em todos os Sistemas Operacionais)
@@ -14,10 +15,12 @@ install_msg=Deseja preparar seu Sistema para o recurso desligamento forçado?
 install_title=Instalar Desligamento Forçado
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">O JDownloader será fechado!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red"> O sistema entrará em modo de hibernação!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">O usuário será desconectado!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">O sistema será desligado!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><fotn color="red">O sistema entrará em modo de espera!</font></h2>
 interaction_shutdown_dialog_title_closejd=Fechar o JDownloader?
 interaction_shutdown_dialog_title_hibernate=Hibernar?
+interaction_shutdown_dialog_title_logoff=Fazer logoff?
 interaction_shutdown_dialog_title_shutdown=Desligar?
 interaction_shutdown_dialog_title_standby=Modo de espera?
 jd_plugins_optional_jdshutdown=Desligamento
