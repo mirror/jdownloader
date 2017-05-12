@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -360,7 +359,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
     private void handleHumanCheck(final Browser br) throws Exception {
         int retries = 5;
-        while (retries-- > 0) {
+        loop: while (retries-- > 0) {
             if (isAbort()) {
                 throw new InterruptedException("Aborted");
             }
@@ -402,20 +401,16 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     if (phrase == null || captchaImages == null || captchaImages.length == 0) {
                         throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                     }
-                    final File[] images = new File[captchaImages.length];
+                    final BufferedImage[] images = new BufferedImage[captchaImages.length];
                     int i = -1;
                     for (final String ci : captchaImages) {
                         // download each image
                         URLConnectionAdapter con = null;
                         try {
                             i++;
-                            images[i] = getLocalCaptchaFile(".jpg");
                             final Browser img = br.cloneBrowser();
                             img.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
-                            Browser.download(images[i], con = img.openGetConnection(ci));
-                        } catch (IOException e) {
-                            images[i].delete();
-                            throw e;
+                            images[i] = ImageIO.read(img.openGetConnection(ci).getInputStream());
                         } finally {
                             try {
                                 con.disconnect();
@@ -430,8 +425,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     int h = 0;
                     int w = 0;
                     i = 0;
-                    for (final File f : images) {
-                        final BufferedImage bi = ImageIO.read(f);
+                    for (final BufferedImage bi : images) {
                         if (h < bi.getHeight()) {
                             h = bi.getHeight();
                         }
@@ -441,38 +435,36 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     }
                     final BufferedImage stichedImageBuffer = IconIO.createEmptyImage(w, h);
                     final Graphics graphic = stichedImageBuffer.getGraphics();
-                    // biggest image will set delimiter
-                    final File stitchedImageOutput = getLocalCaptchaFile(".jpg");
                     w = 0;
-                    for (final File f : images) {
-                        BufferedImage bi = ImageIO.read(f);
+                    for (final BufferedImage bi : images) {
                         graphic.drawImage(bi, w, 0, null);
                         w += bi.getWidth();
                     }
+                    final File stitchedImageOutput = getLocalCaptchaFile(".jpg");
                     ImageIO.write(stichedImageBuffer, "jpg", stitchedImageOutput);
                     final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, null, phrase);
                     // determine cords
                     final int x = c.getX();
-                    int count = 0;
+                    i = 0;
                     int min = 0;
                     int max = 0;
-                    for (final File f : images) {
+                    for (final BufferedImage bi : images) {
                         // image width
-                        max = min + widths[count];
+                        max = min + widths[i];
                         if (x >= min && x <= max) {
                             // return count;
-                            ruh.put("answerCap", String.valueOf(count));
+                            ruh.put("answerCap", String.valueOf(i));
                             submitForm(br, ruh);
                             // error checking, they say wrong when answer is correct... happens in browser also.
                             if (br.toString().startsWith("Wrong answer. Click <a href='/Special/AreYouHuman?")) {
                                 final String link = br.getRegex("<a href=('|\")(.*?)\\1").getMatch(1);
                                 getPage(link);
-                                continue;
+                                continue loop;
                             }
-                            break;
+                            return;
                         }
                         min = max;
-                        count++;
+                        i++;
                     }
                 } else {
                     // unsupported captcha type?
