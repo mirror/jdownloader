@@ -129,7 +129,10 @@ public class GoogleDrive extends PluginForDecrypt {
         final boolean allow_website_item_crawl = false;
         String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>([^<>\"]*?) (?:– Google Drive)?</title>").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"]*?) - Google Drive</title>").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
         String json_src = this.br.getRegex("window\\[\\'_DRIVE_ivd\\'\\]\\s*?=\\s*?\\'\\[(.*?)\\';").getMatch(0);
         String[] results = null;
