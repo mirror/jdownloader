@@ -25,6 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,13 +49,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamplay.to" }, urls = { "https?://(?:www\\.)?streamplay\\.to/(?:embed\\-)?[a-z0-9]{12}" })
 public class StreamplayTo extends antiDDoSForHost {
@@ -521,7 +521,7 @@ public class StreamplayTo extends antiDDoSForHost {
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(downloadLink, false);
-                dllink = getDllink();
+                dllink = decodeHash(getDllink());
             }
         }
         if (dllink == null) {
@@ -900,6 +900,19 @@ public class StreamplayTo extends antiDDoSForHost {
             }
         }
         return finallink;
+    }
+
+    private String decodeHash(final String s) {
+        if (s == null) {
+            return null;
+        }
+        // hook Array.size
+        String result = s;
+        String hash = new Regex(s, "([0-9a-z]{40,})").getMatch(0);
+        StringBuffer sb = new StringBuffer(hash);
+        sb.reverse();
+        sb.replace(3, 3 + 1, "");
+        return result.replace(hash, sb.toString());
     }
 
     @Override
