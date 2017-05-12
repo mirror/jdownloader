@@ -6,7 +6,6 @@ import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
 public interface ShutdownTranslation extends TranslateInterface {
-
     @Default(lngs = { "en" }, values = { "Mode:" })
     String gui_config_jdshutdown_mode();
 
@@ -39,6 +38,15 @@ public interface ShutdownTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Shutdown" })
     String gui_config_jdshutdown_shutdown();
+
+    @Default(lngs = { "en" }, values = { "Logoff" })
+    String gui_config_jdshutdown_logoff();
+
+    @Default(lngs = { "en" }, values = { "Logoff?" })
+    String interaction_shutdown_dialog_title_logoff();
+
+    @Default(lngs = { "en" }, values = { "<h2><font color=\"red\">User will be logged off!</font></h2>" })
+    String interaction_shutdown_dialog_msg_logoff();
 
     @Default(lngs = { "en" }, values = { "Shutdown?" })
     String interaction_shutdown_dialog_title_shutdown();
