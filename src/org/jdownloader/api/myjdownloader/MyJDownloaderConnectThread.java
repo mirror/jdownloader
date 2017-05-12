@@ -66,9 +66,7 @@ import org.jdownloader.settings.staticreferences.CFG_MYJD;
 import org.jdownloader.statistics.StatsManager;
 
 public class MyJDownloaderConnectThread extends Thread {
-
     public static class SessionInfoWrapper extends SessionInfo {
-
         public static enum STATE {
             VALID,
             INVALID,
@@ -96,7 +94,6 @@ public class MyJDownloaderConnectThread extends Thread {
 
     protected class DeviceConnectionHelper {
         private final AtomicLong    backoffCounter = new AtomicLong(0);
-
         private final AtomicBoolean backOff        = new AtomicBoolean(false);
         private final String        host;
 
@@ -109,7 +106,6 @@ public class MyJDownloaderConnectThread extends Thread {
         }
 
         private final int                  port;
-
         private volatile InetSocketAddress addr;
 
         public InetSocketAddress getAddr() {
@@ -145,12 +141,12 @@ public class MyJDownloaderConnectThread extends Thread {
                         refresh();
                         long currentBackOff = backoffCounter.get();
                         try {
-                            long timeout = 300 * 1000l;
+                            long timeout = 120 * 1000l;
                             if (currentBackOff <= 5) {
                                 timeout = ((long) Math.pow(3.0d, currentBackOff)) * 1000;
                             }
-                            timeout = Math.min(300 * 1000l, timeout);
-                            timeout = timeout + new Random().nextInt(5000);
+                            timeout = Math.min(180 * 1000l, timeout);
+                            timeout = timeout + new Random().nextInt(10000);
                             log("Error #:" + currentBackOff + " next retry: " + timeout);
                             Thread.sleep(timeout);
                         } finally {
@@ -176,7 +172,6 @@ public class MyJDownloaderConnectThread extends Thread {
 
     protected final AtomicLong            THREADCOUNTER = new AtomicLong(0);
     private final MyJDownloaderController myJDownloaderController;
-
     private volatile MyJDownloaderAPI     api           = null;
     private final LogSource               logger;
 
@@ -195,7 +190,6 @@ public class MyJDownloaderConnectThread extends Thread {
     private final Set<TYPE>                                              notifyInterests           = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
     private final static HashMap<Thread, SocketStreamInterface>          openConnections           = new HashMap<Thread, SocketStreamInterface>();
     private final static HashSet<String>                                 KILLEDSESSIONS            = new HashSet<String>();
-
     private final ArrayDeque<MyJDownloaderConnectionResponse>            responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
     private final ArrayList<MyJDownloaderWaitingConnectionThread>        waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
     private final int                                                    minimumWaitingConnections = 1;
@@ -230,7 +224,6 @@ public class MyJDownloaderConnectThread extends Thread {
             logger = myJDownloaderExtension.getLogger();
         } else {
             logger = new LogSource("Dummy") {
-
                 @Override
                 public synchronized void clear() {
                 }
@@ -927,7 +920,6 @@ public class MyJDownloaderConnectThread extends Thread {
                 final byte[] key = HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue()));
                 final byte[] json = JSonStorage.getMapper().objectToByteArray(new SessionInfoStorable(session));
                 final Runnable run = new Runnable() {
-
                     @Override
                     public void run() {
                         JSonStorage.saveTo(sessionInfoCache, false, key, json);
@@ -1166,5 +1158,4 @@ public class MyJDownloaderConnectThread extends Thread {
             }
         }
     }
-
 }
