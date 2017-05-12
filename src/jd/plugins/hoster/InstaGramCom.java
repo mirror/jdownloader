@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -48,7 +47,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,7 +68,6 @@ public class InstaGramCom extends PluginForHost {
     private static final int     MAXCHUNKS_pictures                = 1;
     private static final int     MAXCHUNKS_videos                  = 0;
     private static final int     MAXDOWNLOADS                      = -1;
-
     private static final String  MAINPAGE                          = "https://www.instagram.com";
     public static final String   QUIT_ON_RATE_LIMIT_REACHED        = "QUIT_ON_RATE_LIMIT_REACHED";
     public static final String   PREFER_SERVER_FILENAMES           = "PREFER_SERVER_FILENAMES";
@@ -80,9 +77,7 @@ public class InstaGramCom extends PluginForHost {
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED = false;
     public static final boolean  defaultONLY_GRAB_X_ITEMS          = false;
     public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER   = 25;
-
     private static Object        LOCK                              = new Object();
-
     private boolean              is_private_url                    = false;
 
     @SuppressWarnings("deprecation")
@@ -91,7 +86,6 @@ public class InstaGramCom extends PluginForHost {
         dllink = null;
         server_issues = false;
         is_private_url = downloadLink.getBooleanProperty("private_url", false);
-
         this.setBrowserExclusive();
         /*
          * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
@@ -126,13 +120,14 @@ public class InstaGramCom extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             /* Set releasedate as property */
-            final String date = PluginJSonUtils.getJson(this.br, "date");
+            String date = PluginJSonUtils.getJson(this.br, "date");
+            if (date == null || !date.matches("\\d+")) {
+                date = PluginJSonUtils.getJson(this.br, "taken_at_timestamp");
+            }
             if (date != null && date.matches("\\d+")) {
                 setReleaseDate(downloadLink, Long.parseLong(date));
             }
-
             String ext = ".mp4";
             dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
             // Maybe we have a picture
@@ -302,7 +297,6 @@ public class InstaGramCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-
                 if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
