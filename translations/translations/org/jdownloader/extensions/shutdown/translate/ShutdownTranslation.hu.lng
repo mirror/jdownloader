@@ -6,6 +6,7 @@ config_toolbarbutton=Eszköztár gomb látható
 gui_config_jdshutdown_close=Jdownloader bezárása
 gui_config_jdshutdown_forceshutdown=Kényszerített kikapcsolás (nem minden operációs rendszer támogatja)
 gui_config_jdshutdown_hibernate=Hibernálás  (nem minden operációs rendszer támogatja)
+gui_config_jdshutdown_logoff=Kijelentkezés
 gui_config_jdshutdown_mode=Mód:
 gui_config_jdshutdown_shutdown=Leállítás
 gui_config_jdshutdown_standby=Készenlét  (nem minden operációs rendszer támogatja)
@@ -14,10 +15,12 @@ install_msg=Azt szeretné, hogy a program kényszerítse a rendszert a leállít
 install_title=Engedélyezheti a programnak, hogy  leállíthatsa a számítógépet
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">A JDownloader bezárásra kerül!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">A rendszer hibernál!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">A felhasználó kijelentkezik!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">A rendszer leáll!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">A rendszer alvó állapotba kerül!</font></h2>
 interaction_shutdown_dialog_title_closejd=JDownloader bezárása?
 interaction_shutdown_dialog_title_hibernate=Hibernálás?
+interaction_shutdown_dialog_title_logoff=Kijelentkezés?
 interaction_shutdown_dialog_title_shutdown=Kikapcsolás?
 interaction_shutdown_dialog_title_standby=Alvó állapot?
 jd_plugins_optional_jdshutdown=JD Leállító
