@@ -31,13 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +56,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me", "vidtome.co" }, urls = { "https?://(www\\.)?vidto\\.me/((vid)?embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?vidtome\\.co/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
@@ -102,7 +102,6 @@ public class VidToMe extends antiDDoSForHost {
     // vidto.me, and vidtome.co, assume they are the same site. vidtome.co has the same favicon and shows 'vidto.me' logo throughout the
     // website
     // vidtome.co fuid are not trasnsferable to vidto.me
-
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
@@ -529,6 +528,9 @@ public class VidToMe extends antiDDoSForHost {
         if (inValidate(dllink)) {
             /* RegExes sometimes used for streaming */
             final String jssource = cbr.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+            if (inValidate(dllink) && jssource != null) {
+                dllink = getConfiguredQualityDownloadlink(dl, jssource);
+            }
             if (inValidate(dllink) && jssource != null) {
                 try {
                     HashMap<String, Object> entries = null;
@@ -1835,21 +1837,21 @@ public class VidToMe extends antiDDoSForHost {
     }
 
     private void get720p(final DownloadLink dl, final String source) {
-        dllink = new Regex(source, "label:\"720p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        dllink = new Regex(source, "file:\"(http://[^<>\"]*?)\",label:\"720p\"").getMatch(0);
         if (!inValidate(dllink)) {
             addQualityToFilename(dl, "720p");
         }
     }
 
     private void get360p(final DownloadLink dl, final String source) {
-        dllink = new Regex(source, "label:\"360p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        dllink = new Regex(source, "file:\"(http://[^<>\"]*?)\",label:\"360p\"").getMatch(0);
         if (!inValidate(dllink)) {
             addQualityToFilename(dl, "360p");
         }
     }
 
     private void get240p(final DownloadLink dl, final String source) {
-        dllink = new Regex(source, "label:\"240p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        dllink = new Regex(source, "file:\"(http://[^<>\"]*?)\",label:\"240p\"").getMatch(0);
         if (!inValidate(dllink)) {
             addQualityToFilename(dl, "240p");
         }
