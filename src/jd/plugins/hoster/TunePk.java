@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tune.pk" }, urls = { "https?://(?:www\\.)?tune\\.pk/player/embed_player\\.php\\?vid=\\d+|https?://embed\\.tune\\.pk/play/\\d+|https?(?:www\\.)?://tune\\.pk/video/\\d+" })
 public class TunePk extends PluginForHost {
-
     public TunePk(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,14 +44,12 @@ public class TunePk extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
     BrowserException             e                 = null;
@@ -76,20 +72,17 @@ public class TunePk extends PluginForHost {
         // br.getPage("https://embed." + this.getHost() + "/play/" + fid + "?autoplay=no&ssl=no&inline=true");
         // br.getPage(link.getDownloadURL().replace("http:", "https:"));
         /* 2017-04-27: apikey from website: 777750fea4d3bd585bf47dc1873619fc */
-
         br.getPage("https://" + this.getHost() + "/api_public/playerConfigs/?api_key=777750fea4d3bd585bf47dc1873619fc&id=" + fid + "&autoplay=yes&embed=true&country=de");
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"gotune\"|>Not available!<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"gotune\"|>Not available!<|Video does not exist")) {
             /* E.g. Woops,<br>this video has been deactivated <a href="//tune.pk" class="gotune" target="_blank">Goto tune.pk</a> */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         String filename = (String) JavaScriptEngineFactory.walkJson(entries, "data/details/video/title");
         final String errormessage = (String) JavaScriptEngineFactory.walkJson(entries, "data/error/message");
         if (!StringUtils.isEmpty(errormessage) && errormessage.equalsIgnoreCase("This video has been deactivated")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         /* Find highest quality */
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/details/player/sources");
         String dllinktemp = null;
@@ -104,7 +97,6 @@ public class TunePk extends PluginForHost {
                 dllink = dllinktemp;
             }
         }
-
         if (StringUtils.isEmpty(filename)) {
             filename = fid;
         }
