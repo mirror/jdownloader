@@ -145,7 +145,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setAutoMaxDownloadsSpeedLimit(int speed);
 
-    final static int SOFT_MAX_DOWNLOADS = 50;
+    final static int SOFT_MAX_DOWNLOADS = 20;
     final static int HARD_MAX_DOWNLOADS = SOFT_MAX_DOWNLOADS * 2;
 
     @AboutConfig
