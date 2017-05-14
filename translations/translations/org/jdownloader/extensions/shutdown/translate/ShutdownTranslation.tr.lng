@@ -6,6 +6,7 @@ config_toolbarbutton=Araç Çubuğu Düğmesi görünsün
 gui_config_jdshutdown_close=JDownloader'ı Kapat
 gui_config_jdshutdown_forceshutdown=Kapatmaya Zorla (Tüm İşletim Sistemleri için değildir)
 gui_config_jdshutdown_hibernate=Hazırda Beklet (Tüm İşletim Sistemleri için değildir)
+gui_config_jdshutdown_logoff=Oturumu kapat
 gui_config_jdshutdown_mode=Kip:
 gui_config_jdshutdown_shutdown=Bilgisayarı Kapat
 gui_config_jdshutdown_standby=Beklemeye Al (Tüm İşletim Sistemleri için değildir)
@@ -14,10 +15,12 @@ install_msg=Sisteminizi zorla kapatma özelliği için hazırlamak istiyor musun
 install_title=Zorla Kapatmayı Yükle
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda beklet kipine alınacak!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">Kullanıcı oturumu kapatılacaktır!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sistem bekleme kipine alınacak!</font></h2>
 interaction_shutdown_dialog_title_closejd=JDownloader Kapatılsın mı?
 interaction_shutdown_dialog_title_hibernate=Hazırda Bekletilsin mi?
+interaction_shutdown_dialog_title_logoff=Oturum kapatılsın mı?
 interaction_shutdown_dialog_title_shutdown=Bilgisayar Kapatılsın mı?
 interaction_shutdown_dialog_title_standby=Beklemeye Alınsın mı?
 jd_plugins_optional_jdshutdown=JD Kapatma
