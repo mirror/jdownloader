@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,11 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(video-watch/|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "https?://(www\\.)?xtube\\.com/(video-watch/|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" })
 public class XTubeCom extends PluginForHost {
-
     private String              DLLINK   = null;
-
     private static final String MAINPAGE = "http://www.xtube.com";
 
     public XTubeCom(PluginWrapper wrapper) {
@@ -137,6 +134,7 @@ public class XTubeCom extends PluginForHost {
         if (DLLINK.contains("/notfound")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        DLLINK = (Encoding.htmlDecode(DLLINK));
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
         br.setDebug(true);
