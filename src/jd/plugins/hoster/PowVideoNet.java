@@ -36,6 +36,14 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,14 +72,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(?:www\\.)?powvideo\\.(?:net|xyz)/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class PowVideoNet extends antiDDoSForHost {
@@ -87,7 +87,7 @@ public class PowVideoNet extends antiDDoSForHost {
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = true;
+    private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000l;
     private final boolean              waitTimeSkipableReCaptcha    = true;
@@ -168,7 +168,7 @@ public class PowVideoNet extends antiDDoSForHost {
 
     @Override
     protected boolean useRUA() {
-        return true;
+        return false;
     }
 
     /**
@@ -380,6 +380,7 @@ public class PowVideoNet extends antiDDoSForHost {
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
+                dllink = decodeHash(dllink);
             }
         }
         if (inValidate(dllink)) {
@@ -566,6 +567,19 @@ public class PowVideoNet extends antiDDoSForHost {
         if (pic_server != null && hFUvalue != null) {
             dllink = pic_server + "/" + hFUvalue + "/v.flv";
         }
+    }
+
+    private String decodeHash(final String s) {
+        if (s == null) {
+            return null;
+        }
+        // hook Array.size
+        String result = s;
+        String hash = new Regex(s, "([0-9a-z]{40,})").getMatch(0);
+        StringBuffer sb = new StringBuffer(hash);
+        sb.reverse();
+        sb.replace(3, 3 + 1, "");
+        return result.replace(hash, sb.toString());
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -1400,17 +1414,6 @@ public class PowVideoNet extends antiDDoSForHost {
         if (inValidate(result)) {
             /* 2016-11-04: Special */
             result = new Regex(source, "(\"|')(" + dllinkRegex + ")\\1").getMatch(1);
-        }
-        if (!inValidate(result)) {
-            /*
-             * 2016-11-29: They added one character to the beginning of the h value. With this, our final downloadurl will be invalid and
-             * server will only return html "Wrong IP" on download attempt --> This correction is required!
-             */
-            final String h_source = new Regex(result, "/([a-z0-9]+)/v\\.mp4").getMatch(0);
-            if (h_source != null) {
-                final String h_corrected = h_source.substring(1);
-                result = result.replace(h_source, h_corrected);
-            }
         }
         return result;
     }
