@@ -3,9 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -27,6 +24,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import jd.utils.JDUtilities;
 
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
@@ -145,7 +145,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setAutoMaxDownloadsSpeedLimit(int speed);
 
-    final static int SOFT_MAX_DOWNLOADS = 20;
+    final static int SOFT_MAX_DOWNLOADS = 50;
     final static int HARD_MAX_DOWNLOADS = SOFT_MAX_DOWNLOADS * 2;
 
     @AboutConfig
