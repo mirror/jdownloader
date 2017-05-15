@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pobierz.to" }, urls = { "https?://(?:www\\.)?pobierz\\.to/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pobierz.to" }, urls = { "https?://(?:www\\.)?pobierz\\.to/[A-Za-z0-9]{16}" })
 public class PobierzTo extends PluginForHost {
     public PobierzTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -215,10 +215,10 @@ public class PobierzTo extends PluginForHost {
                 link.getLinkStatus().setStatusText(errortext_ERROR_PREMIUMONLY);
                 return AvailableStatus.TRUE;
             }
-            handleErrors();
             if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            handleErrors();
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
