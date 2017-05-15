@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -32,11 +31,9 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "http://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
 public class BookFiOrg extends antiDDoSForHost {
-
     // DEV NOTES
     // they share the same template
     // hosted on different IP ranges
-
     public BookFiOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,19 +72,18 @@ public class BookFiOrg extends antiDDoSForHost {
         }
         if (parameter.contains("/md5/")) {
             // bookfi
-            String bookid = br.getRegex("<a href=\"/?(book/\\d+)\" ><h3").getMatch(0);
+            String bookid = br.getRegex("<a href=\"/?(book/\\d+)\"[^>]*><h3").getMatch(0);
             if (bookid == null) {
                 // bookos && bookzz
-                bookid = br.getRegex("<a href=\"/?(book/\\d+/[a-z0-9]+)\"><h3").getMatch(0);
+                bookid = br.getRegex("<a href=\"/?(book/\\d+/[a-z0-9]+)\"[^>]*><h3").getMatch(0);
                 if (bookid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             getPage("/" + bookid);
         }
-
         // bookfi
-        String[] info = br.getRegex("<a class=\"button active\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
+        String[] info = br.getRegex("<a class=\"button active[^\"]*\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
         if (info == null) {
             // bookos
             info = br.getRegex("<a class=\"button active dnthandler\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
@@ -166,5 +162,4 @@ public class BookFiOrg extends antiDDoSForHost {
         }
         return false;
     }
-
 }
