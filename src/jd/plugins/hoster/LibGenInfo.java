@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
@@ -59,11 +57,9 @@ public class LibGenInfo extends PluginForHost {
 
     private static final String  type_picture        = ".+/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
     public static final String   type_libgen_get     = "/get\\.php\\?md5=[A-Za-z0-9]{32}";
-
     private static final boolean FREE_RESUME         = false;
     private static final int     FREE_MAXCHUNKS      = 1;
     private static final int     FREE_MAXDOWNLOADS   = 2;
-
     private String               dllink              = null;
     private boolean              allow_html_download = false;
 
@@ -75,7 +71,6 @@ public class LibGenInfo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
@@ -101,7 +96,6 @@ public class LibGenInfo extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-
         if (br.containsHTML(">There are no records to display\\.<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -158,6 +152,14 @@ public class LibGenInfo extends PluginForHost {
             if (br.containsHTML(">Sorry, huge and large files are available to download in local network only, try later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             }
+            if (br.containsHTML("too many or too often downloads\\.\\.\\.")) {
+                final String wait = br.getRegex("wait for (\\d+)hrs automatic amnesty").getMatch(0);
+                if (wait != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many downloads", Integer.parseInt(wait) * 60 * 60 * 1001l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many downloads", 1 * 60 * 60 * 1001l);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -191,5 +193,4 @@ public class LibGenInfo extends PluginForHost {
         }
         return false;
     }
-
 }
