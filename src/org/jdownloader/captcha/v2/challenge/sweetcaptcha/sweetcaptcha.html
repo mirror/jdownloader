@@ -26,444 +26,367 @@ iframe {
 }
 </style>
 
-        <style type='text/css'>
+<style type='text/css'>
+
 [draggable] {
-    -moz-user-select: none;
-    -khtml-user-select: none;
-    -webkit-user-select: none;
-    user-select: none;
-    -khtml-user-drag: element;
-    -webkit-user-drag: element
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -khtml-user-drag: element;
+  -webkit-user-drag: element
 }
 
-div.sweetcaptcha,div.sweetcaptcha * {
-    margin: 0;
-    padding: 0;
-    font-size: 12px;
-    font-family: arial, helvetica, sans-serif;
-    line-height: normal
+div.sweetcaptcha,
+div.sweetcaptcha * {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-family: arial, helvetica, sans-serif;
+  line-height: normal
 }
 
 div.sweetcaptcha {
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    border-radius: 5px;
-    background: #f5f5f5;
-    color: #000;
-    padding: 10px;
-    margin-bottom: 10px;
-    overflow: hidden;
-    min-height: 120px;
-    max-width: 350px;
-    position: relative;
-    font-weight: 400
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  background: #f5f5f5;
+  color: #000;
+  padding: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  min-height: 120px;
+  max-width: 350px;
+  position: relative;
+  font-weight: 400
 }
 
 div.sweetcaptcha ul {
-    list-style-type: none !important;
-    margin: 0 !important;
-    padding: 0 !important
+  list-style-type: none !important;
+  margin: 0 !important;
+  padding: 0 !important
 }
 
 div.sweetcaptcha ul li {
-    clear: none !important;
-    background: #cad9e8;
-    display: inline-block;
-    border-radius: 5px;
-    margin: 0 4px 4px 0 !important;
-    z-index: 2;
-    float: left;
-    list-style-type: none !important;
-    width: 42px;
-    height: 42px
+  clear: none !important;
+  background: #cad9e8;
+  display: inline-block;
+  border-radius: 5px;
+  margin: 0 4px 4px 0 !important;
+  z-index: 2;
+  float: left;
+  list-style-type: none !important;
+  width: 42px;
+  height: 42px
 }
 
 div.sweetcaptcha.rtl ul li {
-    padding: 0 0 0 4px !important;
-    float: right
+  padding: 0 0 0 4px !important;
+  float: right
 }
 
 div.sweetcaptcha ul li.selected {
-    background: none;
-    position: absolute;
-    top: 5px;
-    text-align: right;
-    right: 0;
-    -webkit-animation: selected 500ms linear forwards;
-    -moz-animation: selected 500ms linear forwards;
-    -ms-animation: selected 500ms linear forwards;
-    -o-animation: selected 500ms linear forwards;
-    animation: selected 500ms linear forwards
+  background: none;
+  position: absolute;
+  top: 5px;
+  text-align: right;
+  right: 0;
+  -webkit-animation: selected 500ms linear forwards;
+  -moz-animation: selected 500ms linear forwards;
+  -ms-animation: selected 500ms linear forwards;
+  -o-animation: selected 500ms linear forwards;
+  animation: selected 500ms linear forwards
 }
 
 div.sweetcaptcha.rtl ul li.selected {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    text-align: left;
-    -webkit-animation: selected_rtl 500ms linear forwards;
-    -moz-animation: selected_rtl 500ms linear forwards;
-    -ms-animation: selected_rtl 500ms linear forwards;
-    -o-animation: selected_rtl 500ms linear forwards;
-    animation: selected_rtl 500ms linear forwards
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  text-align: left;
+  -webkit-animation: selected_rtl 500ms linear forwards;
+  -moz-animation: selected_rtl 500ms linear forwards;
+  -ms-animation: selected_rtl 500ms linear forwards;
+  -o-animation: selected_rtl 500ms linear forwards;
+  animation: selected_rtl 500ms linear forwards
 }
 
 div.sweetcaptcha ul li.static_selected {
-    background: none;
-    position: absolute;
-    right: 0;
-    text-align: right;
-    top: 5px
+  background: none;
+  position: absolute;
+  right: 0;
+  text-align: right;
+  top: 5px
 }
 
 div.sweetcaptcha.rtl ul li.static_selected {
-    position: absolute;
-    left: 5px;
-    top: 5px
+  position: absolute;
+  left: 5px;
+  top: 5px
 }
 
 div.sweetcaptcha ul li.static_selected img {
-    width: 25px;
-    height: 25px
+  width: 25px;
+  height: 25px
 }
 
 div.sweetcaptcha img {
-    margin: 0;
-    padding: 0;
-    background: 0 0
+  margin: 0;
+  padding: 0;
+  background: 0 0
 }
 
-div.sweetcaptcha ol li img,div.sweetcaptcha ul li img {
-    display: inline
+div.sweetcaptcha ol li img,
+div.sweetcaptcha ul li img {
+  display: inline
 }
 
 div.sweetcaptcha p {
-    padding-bottom: 10px;
-    color: #000
+  padding-bottom: 10px;
+  color: #000
 }
 
 div.sweetcaptcha .reset {
-    color: #a00;
-    font-size: 10px;
-    clear: both;
-    cursor: pointer;
-    padding-top: 3px;
-    float: left
+  color: #a00;
+  font-size: 10px;
+  clear: both;
+  cursor: pointer;
+  padding-top: 3px;
+  float: left
 }
 
 div.sweetcaptcha #sc2powered {
-    position: absolute;
-    bottom: 2px;
-    right: 4px;
-    padding: 2px 4px;
-    z-index: 2;
-    background: url(//sweetcaptcha.s3.amazonaws.com/widget/v2/strip.png?1)
-        no-repeat right top;
-    padding-right: 14px;
-    text-align: right;
-    white-space: nowrap;
-    margin-right: 1px
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  padding: 2px 4px;
+  z-index: 2;
+  background: url(//sweetcaptcha.s3.amazonaws.com/widget/v2/strip.png?1) no-repeat right top;
+  padding-right: 14px;
+  text-align: right;
+  white-space: nowrap;
+  margin-right: 1px
 }
 
 div.sweetcaptcha #sc2powered #scwpowered {
-    display: none
+  display: none
 }
 
-div.sweetcaptcha #sc2powered,div.sweetcaptcha #sc2powered * {
-    font-size: 9px;
-    color: #111;
-    text-decoration: none
+div.sweetcaptcha #sc2powered,
+div.sweetcaptcha #sc2powered * {
+  font-size: 9px;
+  color: #111;
+  text-decoration: none
 }
 
 div.sweetcaptcha span.holder {
-    background-repeat: no-repeat;
-    background-position: center right;
-    display: block;
-    width: 90px;
-    height: 100px;
-    float: right;
-    z-index: 1;
-    margin: 2px
+  background-repeat: no-repeat;
+  background-position: center right;
+  display: block;
+  width: 90px;
+  height: 100px;
+  float: right;
+  z-index: 1;
+  margin: 2px
 }
 
 div.sweetcaptcha p {
-    direction: ltr;
-    text-align: left
+  direction: ltr;
+  text-align: left
 }
 
 div.sweetcaptcha ul {
-    text-align: left;
-    display: block !important
+  text-align: left;
+  display: block !important
 }
 
 div.sweetcaptcha.rtl p {
-    direction: rtl;
-    text-align: right
+  direction: rtl;
+  text-align: right
 }
 
 div.sweetcaptcha.rtl span.holder {
-    right: auto;
-    left: 10px;
-    background-position: bottom left
+  right: auto;
+  left: 10px;
+  background-position: bottom left
 }
 
 div.sweetcaptcha.rtl ul {
-    text-align: right
+  text-align: right
 }
 
 div.sweetcaptcha.rtl #sc2powered {
-    right: auto;
-    left: 0
+  right: auto;
+  left: 0
 }
 
 div.sweetcaptcha.rtl .reset {
-    float: right
+  float: right
 }
 
 div.sweetcaptcha #sc2powered span {
-    position: relative;
-    margin-left: -2px;
-    font-weight: 700
+  position: relative;
+  margin-left: -2px;
+  font-weight: 700
 }
 
-@
--moz-keyframes selected { 0%{
+@ -moz-keyframes selected {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    right: 0;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    right: 0;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;right
-:
-0;opacity
-:
-0
-}
-100%{
-top
-:
-5px;right
-:
-0;opacity
-:
-1
-}
-}
-@
--ms-keyframes selected { 0%{
+@ -ms-keyframes selected {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    right: 0;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    right: 0;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;right
-:
-0;opacity
-:
-0
-}
-100%{
-top
-:
-5px;right
-:
-0;opacity
-:
-1
-}
-}
-@
--o-keyframes selected { 0%{
+@ -o-keyframes selected {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    right: 0;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    right: 0;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;right
-:
-0;opacity
-:
-0
-}
-100%{
-top
-:
-5px;right
-:
-0;opacity
-:
-1
-}
-}
-@
--webkit-keyframes selected { 0%{
+@ -webkit-keyframes selected {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    right: 0;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    right: 0;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;right
-:
-0;opacity
-:
-0
-}
-100%{
-top
-:
-5px;right
-:
-0;opacity
-:
-1
-}
-}
-@
-keyframes selected { 0%{
+@ keyframes selected {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    left: 5px;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    left: 5px;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;left
-:
-5px;opacity
-:
-0
-}
-100%{
-top
-:
-5px;left
-:
-5px;opacity
-:
-1
-}
-}
-@
--moz-keyframes selected_rtl { 0%{
+@ -moz-keyframes selected_rtl {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    left: 5px;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    left: 5px;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;left
-:
-5px;opacity
-:
-0
-}
-100%{
-top
-:
-5px;left
-:
-5px;opacity
-:
-1
-}
-}
-@
--ms-keyframes selected_rtl { 0%{
+@ -ms-keyframes selected_rtl {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    left: 5px;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    left: 5px;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;left
-:
-5px;opacity
-:
-0
-}
-100%{
-top
-:
-5px;left
-:
-5px;opacity
-:
-1
-}
-}
-@
--o-keyframes selected_rtl { 0%{
+@ -o-keyframes selected_rtl {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    left: 5px;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    left: 5px;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;left
-:
-5px;opacity
-:
-0
-}
-100%{
-top
-:
-5px;left
-:
-5px;opacity
-:
-1
-}
-}
-@
--webkit-keyframes selected_rtl { 0%{
+@ -webkit-keyframes selected_rtl {
+  0% {
     opacity: 0
+  }
+  25% {
+    top: -50px;
+    left: 5px;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    left: 5px;
+    opacity: 1
+  }
 }
 
-25%{
-top
-:
--50px;left
-:
-5px;opacity
-:
-0
-}
-100%{
-top
-:
-5px;left
-:
-5px;opacity
-:
-1
-}
-}
-@
-keyframes selected_rtl { 0%{
+@ keyframes selected_rtl {
+  0% {
     opacity: 0
-}
-25%{
-top
-:
--50px;left
-:
-5px;opacity
-:
-0
-}
-100%{
-top
-:
-5px;left
-:
-5px;opacity
-:
-1
-}
+  }
+  25% {
+    top: -50px;
+    left: 5px;
+    opacity: 0
+  }
+  100% {
+    top: 5px;
+    left: 5px;
+    opacity: 1
+  }
 }
 </style>
 

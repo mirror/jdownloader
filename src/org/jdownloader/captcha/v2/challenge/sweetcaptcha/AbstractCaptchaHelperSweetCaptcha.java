@@ -1,11 +1,13 @@
 package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Plugin;
 
 public abstract class AbstractCaptchaHelperSweetCaptcha<T extends Plugin> {
     protected T            plugin;
@@ -81,4 +83,12 @@ public abstract class AbstractCaptchaHelperSweetCaptcha<T extends Plugin> {
         return apiKey;
     }
 
+    public Form setFormValues(final Form form, final String results) {
+        // results can not be null, as check is done within getToken
+        final String[][] args = new Regex(results, "\\[\\s*\"(.*?)\"\\s*,\\s*\"(.*?)\"\\s*\\]").getMatches();
+        for (final String[] arg : args) {
+            form.put(arg[0], Encoding.urlEncode(arg[1]));
+        }
+        return form;
+    }
 }

@@ -2,20 +2,6 @@ package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
 import java.awt.Rectangle;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DecrypterException;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
@@ -26,11 +12,23 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 
-public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForDecrypt> {
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.plugins.CaptchaException;
+import jd.plugins.DecrypterException;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
+public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForDecrypt> {
     public CaptchaHelperCrawlerPluginSweetCaptcha(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String apiKey) {
         super(plugin, br, siteKey, apiKey);
-
     }
 
     public CaptchaHelperCrawlerPluginSweetCaptcha(final PluginForDecrypt plugin, final Browser br) {
@@ -56,10 +54,7 @@ public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelpe
             }
         }
         final PluginForDecrypt plugin = getPlugin();
-        final LinkCrawler currentCrawler = plugin.getCrawler();
-        final CrawledLink currentOrigin = plugin.getCurrentLink().getOriginLink();
         SweetCaptchaChallenge c = new SweetCaptchaChallenge(sitekey, appkey, plugin) {
-
             @Override
             public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                 return null;
@@ -118,4 +113,10 @@ public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelpe
         return c.getResult().getValue();
     }
 
+    public Form setFormValues(final Form form) throws PluginException, InterruptedException, DecrypterException {
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Form not provided");
+        }
+        return setFormValues(form, this.getToken());
+    }
 }

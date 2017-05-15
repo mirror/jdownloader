@@ -33,6 +33,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.KissanimeToConfig;
 import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
@@ -67,6 +68,17 @@ import jd.plugins.components.PluginJSonUtils;
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            // this will give you alternative captcha: select an image from selection that best fits provided phrase
+            // prepBr.setCookie(this.getHost(), "AreYouHumanUrlMETHOD", "AreYouHuman2");
+        }
+        return prepBr;
     }
 
     @Override
@@ -130,8 +142,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             return decryptedLinks;
         }
         title = title.replaceAll("\\s+", " ");
-        final String url_base = this.br.getURL();
-        String[] mirrors = this.br.getRegex("(\\&s=[A-Za-z0-9\\-_]+)\"").getColumn(0);
+        final String url_base = br.getURL();
+        String[] mirrors = br.getRegex("(\\&s=[A-Za-z0-9\\-_]+)\"").getColumn(0);
         if (mirrors.length == 0) {
             mirrors = new String[] { "dummy" };
         }
@@ -143,9 +155,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             // we have two things we need to base64decode
             final String[][] quals;
             if (hostType == HostType.KISS_CARTOON) {
-                quals = getQualsCartoon(this.br, parameter);
+                quals = getQualsCartoon(br, parameter);
             } else {
-                quals = getQuals(this.br);
+                quals = getQuals(br);
             }
             if (quals != null) {
                 String skey = null;
@@ -466,6 +478,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                         min = max;
                         i++;
                     }
+                } else if (ruh.containsHTML("sweetcaptcha\\.com/api/v\\d+/apps/")) {
+                    new CaptchaHelperCrawlerPluginSweetCaptcha(this, br).setFormValues(ruh);
+                    submitForm(br, ruh);
                 } else {
                     // unsupported captcha type?
                     throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
