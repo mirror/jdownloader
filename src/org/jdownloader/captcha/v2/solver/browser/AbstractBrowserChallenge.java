@@ -22,7 +22,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
-
     private Plugin    plugin;
     protected Browser pluginBrowser;
 
@@ -39,17 +38,16 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         return results != null && results.getValue() != null;
     }
 
-    public AbstractBrowserChallenge(String method, Plugin pluginForHost) {
-
+    public AbstractBrowserChallenge(final String method, final Plugin plugin) {
         super(method, null);
-        this.plugin = pluginForHost;
-        if (pluginForHost == null) {
-            plugin = getPluginFromThread();
+        this.plugin = plugin;
+        if (plugin == null) {
+            this.plugin = getPluginFromThread();
         }
-        if (pluginForHost instanceof PluginForHost) {
-            this.pluginBrowser = ((PluginForHost) pluginForHost).getBrowser();
-        } else if (pluginForHost instanceof PluginForDecrypt) {
-            this.pluginBrowser = ((PluginForDecrypt) pluginForHost).getBrowser();
+        if (this.plugin instanceof PluginForHost) {
+            this.pluginBrowser = ((PluginForHost) this.plugin).getBrowser();
+        } else if (this.plugin instanceof PluginForDecrypt) {
+            this.pluginBrowser = ((PluginForDecrypt) this.plugin).getBrowser();
         }
     }
 
@@ -104,5 +102,4 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         Thread th = Thread.currentThread();
         return "jd";
     }
-
 }

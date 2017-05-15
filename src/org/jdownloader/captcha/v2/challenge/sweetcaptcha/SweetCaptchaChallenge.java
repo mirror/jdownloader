@@ -3,8 +3,6 @@ package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 import java.io.IOException;
 import java.net.URL;
 
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -18,8 +16,9 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 
-public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
+import jd.plugins.Plugin;
 
+public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
     private String siteKey;
     private String appKey;
 
@@ -42,7 +41,6 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
 
     @Override
     public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
-
         final String sckey = request.getParameterbyKey("sckey");
         final String scvalue = request.getParameterbyKey("scvalue");
         final String scvalue2 = request.getParameterbyKey("scvalue2");
@@ -50,12 +48,10 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
             browserReference.onResponse(JSonStorage.serializeToJson(new String[][] { { "sckey", sckey }, { "scvalue", scvalue }, { "scvalue2", scvalue2 } }));
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
             response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
             return true;
         }
         return false;
-
     }
 
     @Override
@@ -64,7 +60,6 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
         try {
             URL url = SweetCaptchaChallenge.class.getResource("sweetcaptcha.html");
             html = IO.readURLToString(url);
-
             html = html.replace("%%%sitekey%%%", siteKey).replace("%%%appkey%%%", appKey);
             return html;
         } catch (IOException e) {
