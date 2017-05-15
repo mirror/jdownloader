@@ -76,7 +76,11 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         final MyJDownloaderConnectThread lThread = thread.getAndSet(null);
         if (lThread != null) {
             ShutdownController.getInstance().removeShutdownVetoListener(this);
-            new Thread("MyJDownloaderController:Stop") {
+            new Thread("MyJDownloaderController:Stop:" + lThread) {
+                {
+                    setDaemon(true);
+                }
+
                 public void run() {
                     lThread.disconnect();
                 };
@@ -84,10 +88,14 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         }
     }
 
+    private final boolean isAlwaysConnectEnabled() {
+        return Application.isHeadless();
+    }
+
     private MyJDownloaderController() {
         logger = LogController.getInstance().getLogger(MyJDownloaderController.class.getName());
         eventSender = new MyJDownloaderEventSender();
-        if (CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
+        if (isAlwaysConnectEnabled() || CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
             start();
         }
         CFG_MYJD.AUTO_CONNECT_ENABLED.getEventSender().addListener(this);
@@ -97,7 +105,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         stop();
         String email = CFG_MYJD.CFG.getEmail();
         String password = CFG_MYJD.CFG.getPassword();
-        if (!validateLogins(email, password) && Application.isHeadless()) {
+        if (!validateLogins(email, password) && isAlwaysConnectEnabled()) {
             synchronized (AbstractConsole.LOCK) {
                 final ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
                 cd.start();
@@ -107,7 +115,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                         while (true) {
                             cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
                             email = cd.ask("Please Enter your MyJDownloader Email:");
-                            password = cd.askHidden("Please Enter your MyJDownloader Password:");
+                            password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
                             if (validateLogins(email, password)) {
                                 CFG_MYJD.EMAIL.setValue(email);
                                 CFG_MYJD.PASSWORD.setValue(password);
@@ -139,34 +147,40 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     public String getCurrentDeviceName() {
         if (!isConnected()) {
             return null;
+        } else {
+            final MyJDownloaderConnectThread th = thread.get();
+            if (th == null || !th.isAlive()) {
+                return null;
+            } else {
+                return th.getDeviceName();
+            }
         }
-        final MyJDownloaderConnectThread th = thread.get();
-        if (th == null) {
-            return null;
-        }
-        return th.getDeviceName();
     }
 
     public String getCurrentEmail() {
         if (!isConnected()) {
             return null;
+        } else {
+            final MyJDownloaderConnectThread th = thread.get();
+            if (th == null || !th.isAlive()) {
+                return null;
+            } else {
+                return th.getEmail();
+            }
         }
-        final MyJDownloaderConnectThread th = thread.get();
-        if (th == null) {
-            return null;
-        }
-        return th.getEmail();
     }
 
     public String getCurrentPassword() {
         if (!isConnected()) {
             return null;
+        } else {
+            final MyJDownloaderConnectThread th = thread.get();
+            if (th == null || !th.isAlive()) {
+                return null;
+            } else {
+                return th.getPassword();
+            }
         }
-        final MyJDownloaderConnectThread th = thread.get();
-        if (th == null) {
-            return null;
-        }
-        return th.getPassword();
     }
 
     public MyJDownloaderConnectThread getConnectThread() {
@@ -204,7 +218,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
+        if (isAlwaysConnectEnabled() || CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
             start();
         }
     }

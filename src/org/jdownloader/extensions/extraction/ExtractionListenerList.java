@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.awt.Color;
@@ -63,7 +62,6 @@ import org.jdownloader.images.NewTheme;
  *
  */
 public class ExtractionListenerList implements ExtractionListener {
-
     public static final class ExtractPasswordDialog extends InputDialog implements ExtractPasswordDialogInterface {
         private final ExtractionController controller;
 
@@ -76,6 +74,11 @@ public class ExtractionListenerList implements ExtractionListener {
         @Override
         protected String createReturnValue() {
             return super.createReturnValue();
+        }
+
+        @Override
+        public boolean isCountdownPausable() {
+            return false;
         }
 
         @Override
@@ -109,17 +112,14 @@ public class ExtractionListenerList implements ExtractionListener {
             try {
                 p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_archivename())), "split 2,sizegroup left,alignx left");
                 p.add(leftLabel(controller.getArchive().getName()));
-
                 p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_filename())), "split 2,sizegroup left,alignx left");
                 p.add(leftLabel(controller.getArchive().getArchiveFiles().get(0).getName()));
-
                 p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sizegroup left,alignx left");
                 long archiveSize = 0;
                 for (ArchiveFile af : controller.getArchive().getArchiveFiles()) {
                     archiveSize += Math.max(0, af.getFileSize());
                 }
                 p.add(leftLabel(SizeFormatter.formatBytes(archiveSize)));
-
                 for (final ArchiveFile archiveFile : controller.getArchive().getRootArchive().getArchiveFiles()) {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final FilePackage parentNode = ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0).getParentNode();
@@ -139,7 +139,6 @@ public class ExtractionListenerList implements ExtractionListener {
             p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
             p.add((JComponent) input, "w 450,pushx,growx");
             getDialog().addWindowFocusListener(new WindowFocusListener() {
-
                 @Override
                 public void windowLostFocus(WindowEvent e) {
                 }
@@ -147,7 +146,6 @@ public class ExtractionListenerList implements ExtractionListener {
                 @Override
                 public void windowGainedFocus(WindowEvent e) {
                     TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                         @Override
                         protected Void run() throws RuntimeException {
                             final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
@@ -162,7 +160,6 @@ public class ExtractionListenerList implements ExtractionListener {
                     });
                 }
             });
-
             return p;
         }
 
@@ -175,7 +172,6 @@ public class ExtractionListenerList implements ExtractionListener {
         @Override
         protected void packed() {
             super.packed();
-
         }
 
         @Override
@@ -207,11 +203,9 @@ public class ExtractionListenerList implements ExtractionListener {
             ret.setFirstFile(allFiles.get(0));
             return ret;
         }
-
     }
 
     private final ExtractionExtension ex;
-
     final private Color               green  = Color.GREEN.darker();
     final private Color               yellow = Color.YELLOW.darker();
 
@@ -248,7 +242,6 @@ public class ExtractionListenerList implements ExtractionListener {
         final LogSource logger = controller.getLogger();
         final Archive currentArchive = controller.getArchive();
         final Archive rootArchive = currentArchive.getRootArchive();
-
         switch (event.getType()) {
         case QUEUED:
             setStatus(controller, rootArchive, ExtractionStatus.IDLE);

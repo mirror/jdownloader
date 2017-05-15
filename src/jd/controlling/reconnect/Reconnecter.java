@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.reconnect;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +25,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
 public final class Reconnecter {
-
     public static enum ReconnectResult {
         VALIDIP,
         FAILED,
@@ -124,7 +122,7 @@ public final class Reconnecter {
                 }
                 // reconnect takes at least 1000ms
                 try {
-                    Thread.sleep((Math.max(0, 1000 - System.currentTimeMillis() + startTime)));
+                    Thread.sleep((Math.max(10, 1000 - (System.currentTimeMillis() - startTime))));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -156,5 +154,4 @@ public final class Reconnecter {
     public ReconnectEventSender getEventSender() {
         return this.eventSender;
     }
-
 }
