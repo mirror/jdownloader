@@ -67,21 +67,21 @@ public class WindowsShutdownInterface extends ShutdownInterface {
                 } catch (Throwable e) {
                     logger.log(e);
                 }
-            }
-            if (CrossSystem.OS == OperatingSystem.WINDOWS_2000 || CrossSystem.OS == OperatingSystem.WINDOWS_NT) {
-                /* also try extra methods for windows2000 and nt */
-                try {
-                    final File f = Application.getTempResource("shutdown.vbs");
+                if (CrossSystem.OS == OperatingSystem.WINDOWS_2000 || CrossSystem.OS == OperatingSystem.WINDOWS_NT) {
+                    /* also try extra methods for windows2000 and nt */
                     try {
-                        IO.writeStringToFile(f, "set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
-                        JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", f.getAbsolutePath() }, null, 0);
-                    } finally {
-                        if (!f.delete()) {
-                            f.deleteOnExit();
+                        final File f = Application.getTempResource("shutdown.vbs");
+                        try {
+                            IO.writeStringToFile(f, "set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
+                            JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", f.getAbsolutePath() }, null, 0);
+                        } finally {
+                            if (!f.delete()) {
+                                f.deleteOnExit();
+                            }
                         }
+                    } catch (Throwable e) {
+                        logger.log(e);
                     }
-                } catch (Throwable e) {
-                    logger.log(e);
                 }
             }
             RestartController.getInstance().exitAsynch(new ForcedShutdown());
@@ -95,19 +95,9 @@ public class WindowsShutdownInterface extends ShutdownInterface {
                 } catch (Throwable e) {
                     logger.log(e);
                 }
-                try {
-                    JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", cmdLine, null, 0);
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
                 final String runDll[] = new String[] { "powrprof.dll,SetSuspendState", "1,1,0" };
                 try {
                     JDUtilities.runCommand("rundll32.exe", runDll, null, 0);
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-                try {
-                    JDUtilities.runCommand("%windir%\\system32\\rundll32.exe", runDll, null, 0);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -122,19 +112,9 @@ public class WindowsShutdownInterface extends ShutdownInterface {
                 } catch (Throwable e) {
                     logger.log(e);
                 }
-                try {
-                    JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", cmdLine, null, 0);
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
                 final String runDll[] = new String[] { "powrprof.dll,SetSuspendState", "0,1,0" };
                 try {
                     JDUtilities.runCommand("rundll32.exe", runDll, null, 0);
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-                try {
-                    JDUtilities.runCommand("%windir%\\system32\\rundll32.exe", runDll, null, 0);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
