@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
-
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,10 +44,16 @@ public class HighpornNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = getTitle(this.br, parameter);
-        final String[] videoIDs = br.getRegex("data\\-src=\"(\\d+)\"").getColumn(0);
+        final String videoLink = br.getRegex("data\\-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        String[] videoIDs = br.getRegex("data\\-src=\"(\\d+)\"").getColumn(0);
         if (videoIDs == null || videoIDs.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (videoLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            } else {
+                videoIDs = new String[1];
+                videoIDs[0] = (Long.toString(System.currentTimeMillis())); // dummy videoID
+            }
         }
         final int padLength = getPadLength(videoIDs.length);
         int counter = 0;
@@ -61,16 +65,15 @@ public class HighpornNet extends PluginForDecrypt {
             dl.setName(filename);
             dl.setProperty("decryptername", filename);
             dl.setProperty("mainlink", parameter);
+            dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
