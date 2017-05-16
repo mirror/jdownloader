@@ -853,30 +853,20 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     private void disconnectSession(MyJDownloaderAPI api, SessionInfoWrapper session) {
-        if (api == null) {
-            return;
-        }
-        try {
-            if (session == null) {
-                session = (SessionInfoWrapper) api.getSessionInfo();
-            }
-            session.setState(SessionInfoWrapper.STATE.INVALID);
-            if (api.getSessionInfo() != session) {
-                return;
-            }
-        } catch (UnconnectedException e) {
-            return;
-        }
-        try {
+        if (api != null) {
             try {
-                api.disconnect(false);
+                if (session == null) {
+                    session = (SessionInfoWrapper) api.getSessionInfo();
+                }
+                session.setState(SessionInfoWrapper.STATE.INVALID);
+                if (api.getSessionInfo() == session) {
+                    killSession(session);
+                }
             } catch (UnconnectedException e) {
-            } catch (TokenException e) {
-                api.reconnect();
-                api.disconnect(true);
+                return;
+            } catch (MyJDownloaderException e1) {
+                log(e1);
             }
-        } catch (MyJDownloaderException e1) {
-            log(e1);
         }
     }
 
@@ -924,13 +914,13 @@ public class MyJDownloaderConnectThread extends Thread {
         }
         synchronized (waitingConnections) {
             for (int index = waitingConnections.size() - 1; index >= 0; index--) {
-                MyJDownloaderWaitingConnectionThread thread = waitingConnections.get(index);
+                final MyJDownloaderWaitingConnectionThread thread = waitingConnections.get(index);
                 if (!thread.isRunning()) {
                     waitingConnections.remove(index);
                 }
             }
             for (int index = waitingConnections.size(); index < max; index++) {
-                MyJDownloaderWaitingConnectionThread thread = new MyJDownloaderWaitingConnectionThread(this);
+                final MyJDownloaderWaitingConnectionThread thread = new MyJDownloaderWaitingConnectionThread(this);
                 waitingConnections.add(thread);
                 thread.start();
             }
@@ -1191,12 +1181,16 @@ public class MyJDownloaderConnectThread extends Thread {
         return false;
     }
 
-    public void killSession(String connectToken) throws MyJDownloaderException {
+    public void killSession(final SessionInfo session) throws MyJDownloaderException {
+        killSession(session.getSessionToken());
+    }
+
+    public void killSession(final String sessionToken) throws MyJDownloaderException {
         final MyJDownloaderAPI api = getApi();
-        if (api != null && connectToken != null) {
-            api.kill(getEmail(), getPassword(), connectToken);
+        if (api != null && sessionToken != null) {
+            api.kill(getEmail(), getPassword(), sessionToken);
             synchronized (KILLEDSESSIONS) {
-                KILLEDSESSIONS.add(connectToken);
+                KILLEDSESSIONS.add(sessionToken);
             }
         }
     }

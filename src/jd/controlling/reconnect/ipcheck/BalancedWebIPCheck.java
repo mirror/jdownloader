@@ -24,7 +24,6 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
  *
  */
 public class BalancedWebIPCheck implements IPCheckProvider {
-
     private static final java.util.List<String> SERVICES = new ArrayList<String>();
     static {
         SERVICES.add("http://ipcheck4.jdownloader.org");
@@ -37,11 +36,8 @@ public class BalancedWebIPCheck implements IPCheckProvider {
     /**
      * All registered ip check urls
      */
-
-    private final Browser                       br;
-
+    protected final Browser                     br;
     private final Pattern                       pattern;
-
     private final Object                        LOCK     = new Object();
 
     public BalancedWebIPCheck() {
@@ -103,5 +99,4 @@ public class BalancedWebIPCheck implements IPCheckProvider {
     public int getIpCheckInterval() {
         return 5;
     }
-
 }
