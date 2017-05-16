@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.myjd;
 
 import java.awt.AlphaComposite;
@@ -43,7 +42,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
@@ -59,13 +57,9 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener, MyJDownloaderListener {
-
     private static final long serialVersionUID = 6456662020047832983L;
-
     private JList             list;
-
     private Point             mouse;
-
     private SidebarModel      treemodel        = null;
 
     public MyJDSidebar(SidebarModel model) {
@@ -82,35 +76,25 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
                 Point lmouse = mouse;
                 if (lmouse != null) {
                     final Graphics2D g2 = (Graphics2D) g;
-
                     final AlphaComposite ac5 = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f);
                     g2.setComposite(ac5);
                     int index = locationToIndex(lmouse);
-
                     Point p = indexToLocation(index);
                     if (p != null) {
                         g2.fillRect(0, p.y, getWidth(), TreeRenderer.DIMENSION.height);
-
                         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     }
-
                 }
                 MyJDSidebar.this.revalidate();
             }
-
         };
-
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
         list.setModel(treemodel = model);
-
         list.setCellRenderer(new TreeRenderer());
-
         list.setOpaque(false);
         list.setBackground(null);
-
         list.addMouseMotionListener(new MouseAdapter() {
-
             @Override
             public void mouseMoved(MouseEvent e) {
                 int index = list.locationToIndex(e.getPoint());
@@ -124,14 +108,12 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
                             y = e.getPoint().y - point.y;
                         }
                         if (x > 3 && x < 18 && y > 3 && y < 18) {
-
                             list.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                             list.setToolTipText(_JDT.T.settings_sidebar_tooltip_enable_extension());
                         } else {
                             list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                             if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
                                 list.setToolTipText(((CheckBoxedEntry) list.getModel().getElementAt(index)).getDescription());
-
                             } else {
                                 list.setToolTipText(null);
                             }
@@ -144,9 +126,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
         setBackground(null);
         setOpaque(false);
         JScrollPane sp;
-
         this.add(sp = new JScrollPane(list) {
-
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
                 ret.width = Math.max(TreeRenderer.DIMENSION.width, TreeRenderer.SMALL_DIMENSION.width) + getVerticalScrollBar().getPreferredSize().width;
@@ -163,35 +143,26 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
                 super.setMinimumSize(pref);
                 return pref;
             }
-
         });
-
         LAFOptions.getInstance().applyBackground(LAFOptions.getInstance().getColorForPanelBackground(), list);
         sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, (LAFOptions.getInstance().getColorForPanelBorders())));
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
             private String lastE;
 
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting()) {
                     return;
                 }
-
                 if (lastE != null) {
-
                     if (lastE.equals(e.toString())) {
-
                         return;
                     }
                 }
-
                 lastE = e.toString();
-
             }
         });
         MyJDownloaderController.getInstance().getEventSender().addListener(this, true);
-
     }
 
     public void addListener(ListSelectionListener x) {
@@ -201,27 +172,22 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
     public <T> T getTreeEntry(Class<T> class1) {
         for (int i = 0; i < list.getModel().getSize(); i++) {
             Object el = list.getModel().getElementAt(i);
-
             Class<? extends Object> cl = el.getClass();
             if (class1 == cl) {
                 return (T) list.getModel().getElementAt(i);
             }
-
         }
         return null;
-
     }
 
     public void setSelectedTreeEntry(Class<?> class1) {
         for (int i = 0; i < list.getModel().getSize(); i++) {
             Object el = list.getModel().getElementAt(i);
-
             Class<? extends Object> cl = el.getClass();
             if (class1 == cl) {
                 list.setSelectedIndex(i);
                 return;
             }
-
         }
         list.setSelectedIndex(0);
     }
@@ -233,7 +199,6 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
     public void mouseDragged(MouseEvent e) {
         mouse = e.getPoint();
         list.repaint();
-
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -247,7 +212,6 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
     }
 
     public void mousePressed(MouseEvent e) {
-
         int index = list.locationToIndex(e.getPoint());
         if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {
             Point point = list.indexToLocation(index);
@@ -255,7 +219,6 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
             int y = e.getPoint().y - point.y;
             if (x > 3 && x < 18) {
                 if (y > 3 && y < 18) {
-
                     CheckBoxedEntry object = ((CheckBoxedEntry) list.getModel().getElementAt(index));
                     boolean value = !((CheckBoxedEntry) list.getModel().getElementAt(index))._isEnabled();
                     if (value == object._isEnabled()) {
@@ -277,12 +240,9 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
                     /*
                      * we save enabled/disabled status here, plugin must be running when enabled
                      */
-
                     // AddonsMenu.getInstance().onUpdated();
-
                     // ConfigSidebar.getInstance(null).updateAddons();
                     // addons.updateShowcase();
-
                     list.repaint();
                 }
             }
@@ -309,11 +269,9 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
             AbstractExtension<?, ?> ext = ((AbstractExtension) list.getSelectedValue());
             if (ext.hasConfigPanel()) {
                 return ext.getConfigPanel();
-
             } else {
                 return new EmptyExtensionConfigPanel(ext);
             }
-
         } else if (list.getSelectedValue() instanceof LazyExtension) {
             AbstractExtension<?, ?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
             if (ext == null) {
@@ -325,26 +283,21 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
                     Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
                     return null;
                 }
-
             }
             if (ext.hasConfigPanel()) {
                 return ext.getConfigPanel();
-
             } else {
                 return new EmptyExtensionConfigPanel(ext);
             }
-
         } else if (list.getSelectedValue() instanceof SwitchPanel) {
             return (SwitchPanel) list.getSelectedValue();
         } else {
             return null;
         }
-
     }
 
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 repaint();
@@ -357,9 +310,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
 
     @Override
     public void onMyJDownloaderConnectionStatusChanged(MyJDownloaderConnectionStatus status, int connections) {
-
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 repaint();

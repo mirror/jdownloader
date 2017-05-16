@@ -50,17 +50,14 @@ public class MyJDownloaderStatusAction extends AbstractToolBarAction {
         }
 
         protected void idIconCheck(final Entry entry) {
-
         }
     }
 
     public class Button extends ExtButton implements MyJDownloaderListener {
-
         /**
          *
          */
         private static final long     serialVersionUID = 1L;
-
         private final DelayedRunnable iconDelayer;
 
         public Button() {
@@ -68,11 +65,9 @@ public class MyJDownloaderStatusAction extends AbstractToolBarAction {
             setIcon(new AbstractIcon(getIconKey(), 22));
             setHideActionText(true);
             iconDelayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 2000) {
-
                 @Override
                 public void delayedrun() {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             final MyJDownloaderConnectionStatus connectionStatus = MyJDownloaderController.getInstance().getConnectionStatus();
@@ -143,7 +138,6 @@ public class MyJDownloaderStatusAction extends AbstractToolBarAction {
                 }
             }
             return _GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_();
-
         }
 
         @Override
