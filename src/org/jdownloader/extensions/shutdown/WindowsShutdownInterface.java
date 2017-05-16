@@ -46,26 +46,13 @@ public class WindowsShutdownInterface extends ShutdownInterface {
             stopActivity();
             if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_NT)) {
                 final String[] cmdLine;
-                if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_VISTA)) {
-                    if (force) {
-                        cmdLine = new String[] { "/s", "/f", "/t", "01" };
-                    } else {
-                        cmdLine = new String[] { "/s", "/t", "01" };
-                    }
+                if (force) {
+                    cmdLine = new String[] { "-s", "-f", "-t", "01" };
                 } else {
-                    if (force) {
-                        cmdLine = new String[] { "-s", "-f", "-t", "01" };
-                    } else {
-                        cmdLine = new String[] { "-s", "-t", "01" };
-                    }
+                    cmdLine = new String[] { "-s", "-t", "01" };
                 }
                 try {
                     JDUtilities.runCommand("shutdown.exe", cmdLine, null, 0);
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-                try {
-                    JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", cmdLine, null, 0);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -158,26 +145,13 @@ public class WindowsShutdownInterface extends ShutdownInterface {
             if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_NT)) {
                 // https://www.computerhope.com/shutdown.htm
                 final String[] cmdLine;
-                if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_VISTA)) {
-                    if (force) {
-                        cmdLine = new String[] { "/l", "/f", "/t", "01" };
-                    } else {
-                        cmdLine = new String[] { "/l", "/t", "01" };
-                    }
+                if (force) {
+                    cmdLine = new String[] { "-l", "-f" };
                 } else {
-                    if (force) {
-                        cmdLine = new String[] { "-l", "-f", "-t", "01" };
-                    } else {
-                        cmdLine = new String[] { "-l", "-t", "01" };
-                    }
+                    cmdLine = new String[] { "-l" };
                 }
                 try {
                     JDUtilities.runCommand("shutdown.exe", cmdLine, null, 0);
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-                try {
-                    JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", cmdLine, null, 0);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
