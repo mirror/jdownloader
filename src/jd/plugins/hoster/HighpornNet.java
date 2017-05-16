@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
-
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,14 +38,12 @@ public class HighpornNet extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 1;
-
     private String               dllink            = null;
     private String               fid               = null;
     private boolean              server_issues     = false;
@@ -60,7 +56,7 @@ public class HighpornNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
+        // dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -70,6 +66,7 @@ public class HighpornNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(url_source);
+        dllink = br.getRegex("data\\-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         if (jd.plugins.decrypter.HighpornNet.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -123,12 +120,13 @@ public class HighpornNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.br.postPage("http://highporn.net/play.php", "v=" + fid);
-        dllink = this.br.toString();
-        if (this.br.toString().equals("fail")) {
-            server_issues = true;
+        if (dllink == null) {
+            this.br.postPage("http://highporn.net/play.php", "v=" + fid);
+            dllink = this.br.toString();
+            if (this.br.toString().equals("fail")) {
+                server_issues = true;
+            }
         }
-
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null || !dllink.startsWith("http")) {
