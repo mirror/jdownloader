@@ -23,7 +23,6 @@ import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
 public class DeviceAPIImpl implements DeviceAPI {
-
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
         final DirectConnectionInfos ret = new DirectConnectionInfos();
@@ -40,7 +39,7 @@ public class DeviceAPIImpl implements DeviceAPI {
         final List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
         final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
         if (localIPs != null) {
-            for (InetAddress localIP : localIPs) {
+            for (final InetAddress localIP : localIPs) {
                 final DirectConnectionInfo info = new DirectConnectionInfo();
                 info.setPort(directServer.getLocalPort());
                 info.setIp(localIP.getHostAddress());
@@ -60,7 +59,13 @@ public class DeviceAPIImpl implements DeviceAPI {
         }
         if (directServer.getRemotePort() > 0) {
             try {
-                final IP externalIP = new BalancedWebIPCheck().getExternalIP();
+                final BalancedWebIPCheck ipCheck = new BalancedWebIPCheck() {
+                    {
+                        br.setConnectTimeout(5000);
+                        br.setReadTimeout(5000);
+                    }
+                };
+                final IP externalIP = ipCheck.getExternalIP();
                 if (externalIP.getIP() != null) {
                     final DirectConnectionInfo info = new DirectConnectionInfo();
                     info.setPort(directServer.getRemotePort());
@@ -101,5 +106,4 @@ public class DeviceAPIImpl implements DeviceAPI {
         }
         return null;
     }
-
 }
