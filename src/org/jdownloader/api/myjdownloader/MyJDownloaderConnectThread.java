@@ -233,7 +233,7 @@ public class MyJDownloaderConnectThread extends Thread {
         return directServer;
     }
 
-    public boolean isSessionTokenKilled(final String sessionToken) {
+    public boolean isSessionTerminated(final String sessionToken) {
         synchronized (KILLEDSESSIONS) {
             return KILLEDSESSIONS.contains(sessionToken);
         }
@@ -860,7 +860,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
                 session.setState(SessionInfoWrapper.STATE.INVALID);
                 if (api.getSessionInfo() == session) {
-                    killSession(session);
+                    terminateSession(session);
                 }
             } catch (UnconnectedException e) {
                 return;
@@ -1181,16 +1181,19 @@ public class MyJDownloaderConnectThread extends Thread {
         return false;
     }
 
-    public void killSession(final SessionInfo session) throws MyJDownloaderException {
-        killSession(session.getSessionToken());
+    public void terminateSession(final SessionInfo session) throws MyJDownloaderException {
+        terminateSession(session.getSessionToken());
     }
 
-    public void killSession(final String sessionToken) throws MyJDownloaderException {
+    public void terminateSession(final String sessionToken) throws MyJDownloaderException {
         final MyJDownloaderAPI api = getApi();
         if (api != null && sessionToken != null) {
-            api.kill(getEmail(), getPassword(), sessionToken);
-            synchronized (KILLEDSESSIONS) {
-                KILLEDSESSIONS.add(sessionToken);
+            try {
+                api.kill(getEmail(), getPassword(), sessionToken);
+            } finally {
+                synchronized (KILLEDSESSIONS) {
+                    KILLEDSESSIONS.add(sessionToken);
+                }
             }
         }
     }

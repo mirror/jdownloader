@@ -67,26 +67,20 @@ public class UserAgentController {
                         }
                         final DelayedRunnable delayed;
                         timeoutcheck.put(fua, delayed = new DelayedRunnable(fua.getTimeout()) {
-
                             @Override
                             public void delayedrun() {
                                 onTimeout(fua);
-
                             }
                         });
                         delayed.resetAndStart();
                         eventSender.fireEvent(new UserAgentEvent() {
-
                             @Override
                             public void fireTo(UserAgentListener listener) {
                                 listener.onNewAPIUserAgent(fua);
                             }
-
                         });
-
                     };
                 }.start();
-
             }
             final DelayedRunnable delayed = timeoutcheck.get(ua);
             if (delayed != null) {
@@ -101,7 +95,6 @@ public class UserAgentController {
                     public void fireTo(UserAgentListener listener) {
                         listener.onAPIUserAgentUpdate(fua);
                     }
-
                 });
             }
         }
@@ -133,15 +126,14 @@ public class UserAgentController {
     }
 
     public List<ConnectedDevice> list() {
-        ArrayList<ConnectedDevice> ret = new ArrayList<ConnectedDevice>();
-        for (Entry<String, ConnectedDevice> es : map.entrySet()) {
-            ConnectedDevice ua = es.getValue();
+        final ArrayList<ConnectedDevice> ret = new ArrayList<ConnectedDevice>();
+        for (final Entry<String, ConnectedDevice> es : map.entrySet()) {
+            final ConnectedDevice ua = es.getValue();
             if (ua != null) {
                 ret.add(ua);
             }
         }
         return ret;
-
     }
 
     private ConnectedDevice createNewUserAgent(RemoteAPIRequest request, String nuaID) {
@@ -166,5 +158,4 @@ public class UserAgentController {
         });
         onTimeout(device);
     }
-
 }
