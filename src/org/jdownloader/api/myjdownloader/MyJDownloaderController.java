@@ -395,6 +395,11 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         }
     }
 
+    public boolean isSessionTerminated(final String sessionToken) {
+        final MyJDownloaderConnectThread ct = getConnectThread();
+        return ct != null && ct.isSessionTerminated(sessionToken);
+    }
+
     public boolean sendChallengeFeedback(String id, RESULT correct) throws MyJDownloaderException {
         final MyJDownloaderConnectThread th = getConnectThread();
         if (th == null) {
@@ -417,7 +422,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     public void terminateSession(String connectToken) throws MyJDownloaderException {
         final MyJDownloaderConnectThread ct = getConnectThread();
         if (ct != null) {
-            ct.killSession(connectToken);
+            ct.terminateSession(connectToken);
         }
     }
 }

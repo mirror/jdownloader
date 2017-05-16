@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpserver.HttpConnection;
+import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
@@ -75,7 +76,10 @@ public class ConnectedDevice {
 
     private String _getFrontendName() {
         final String origin = latestRequest.getRequestHeaders().getValue("Origin");
-        if (StringUtils.equals(origin, "http://my.jdownloader.org") || StringUtils.equals(origin, "https://my.jdownloader.org")) {
+        final String referer = latestRequest.getRequestHeaders().getValue("Referer");
+        if (StringUtils.startsWithCaseInsensitive(origin, "http://my.jdownloader.org") || StringUtils.startsWithCaseInsensitive(origin, "https://my.jdownloader.org")) {
+            return FRONTEND_WEBINTERFACE;
+        } else if (StringUtils.startsWithCaseInsensitive(referer, "http://my.jdownloader.org") || StringUtils.startsWithCaseInsensitive(referer, "https://my.jdownloader.org")) {
             return FRONTEND_WEBINTERFACE;
         } else if (StringUtils.startsWithCaseInsensitive(origin, "chrome-extension://")) {
             return FRONTEND_CHROME_EXTENSION;
@@ -171,7 +175,11 @@ public class ConnectedDevice {
         final List<MyJDownloaderHttpConnection> list = MyJDownloaderHttpConnection.getConnectionsByToken(getConnectToken());
         final int num;
         if (list == null) {
-            return "0 Connections";
+            if (MyJDownloaderController.getInstance().isSessionTerminated(getConnectToken())) {
+                return "terminated";
+            } else {
+                return "0 Connections";
+            }
         } else {
             num = list.size();
         }

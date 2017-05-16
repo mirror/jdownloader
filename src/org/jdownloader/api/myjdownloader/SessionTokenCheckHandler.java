@@ -11,7 +11,6 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.myjdownloader.client.json.ServerErrorType;
 
 public class SessionTokenCheckHandler implements HttpRequestHandler {
-
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
         checkToken(request, response);
@@ -29,11 +28,8 @@ public class SessionTokenCheckHandler implements HttpRequestHandler {
         if (connection instanceof MyJDownloaderHttpConnection) {
             final MyJDownloaderHttpConnection myConnection = (MyJDownloaderHttpConnection) connection;
             final String sessionToken = myConnection.getRequestConnectToken();
-            final MyJDownloaderConnectThread th = MyJDownloaderController.getInstance().getConnectThread();
-            if (th != null) {
-                if (th.isSessionTokenKilled(sessionToken)) {
-                    writeTokenInvalid(response);
-                }
+            if (MyJDownloaderController.getInstance().isSessionTerminated(sessionToken)) {
+                writeTokenInvalid(response);
             }
         }
     }
