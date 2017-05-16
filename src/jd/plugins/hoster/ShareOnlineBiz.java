@@ -89,7 +89,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
-    private static AtomicInteger                                    maxPrem                                 = new AtomicInteger(1);
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -446,23 +445,20 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         setBrowserExclusive();
         final HashMap<String, String> infos = loginAPI(account, true);
         if (isFree(account)) {
-            maxPrem.set(free_maxdownloads);
             try {
                 account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(free_maxdownloads);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
             }
         } else {
-            maxPrem.set(account_premium_maxdownloads);
             try {
                 account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(account_premium_maxdownloads);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
@@ -612,12 +608,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     private final long THREADFAILURESTIMEOUT = 5 * 60 * 1000l;
