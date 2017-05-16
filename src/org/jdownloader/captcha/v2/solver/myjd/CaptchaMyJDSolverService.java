@@ -47,7 +47,6 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
         AdvancedConfigManager.getInstance().register(config);
         if (!Application.isHeadless()) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
                 public void run() {
                     ServicePanel.getInstance().addExtender(CaptchaMyJDSolverService.this);
                     initServicePanel(config._getStorageHandler().getKeyHandler("Enabled"));
@@ -61,9 +60,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
     @Override
     public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (solver.isMyJDownloaderAccountValid()) {
-
             services.add(new ServiceCollection<CaptchaMyJDSolver>() {
-
                 /**
                  *
                  */
@@ -93,7 +90,6 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
                 public boolean isEnabled() {
                     return config.isEnabled();
                 }
-
             });
         }
     }
@@ -106,18 +102,15 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
-
             // public Icon getIcon(int i) {
             // return new AbstractIcon(IconKey.ICON_myjdownloader", i);
             // }
-
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
                 addDescription(_GUI.T.MyJDownloaderService_createPanel_description_2());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {
                         setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
-
                     }
 
                     @Override
@@ -125,13 +118,10 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
                         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
                         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
                         ConfigurationView.getInstance().setSelectedSubPanel(MyJDownloaderSettingsPanel.class);
-
                     }
                 });
                 add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
-
                 addBlackWhiteList(config);
-
             }
 
             public String getDescription() {
@@ -160,7 +150,6 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
             @Override
             public void updateContents() {
             }
-
         };
         return ret;
     }
@@ -188,7 +177,6 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-
         // ret.put(DialogClickCaptchaSolver.ID, 60000);
         // ret.put(DialogBasicCaptchaSolver.ID, 60000);
         // ret.put(CaptchaAPISolver.ID, 60000);
@@ -199,7 +187,6 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
         ret.put(CheapCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
         ret.put(EndCaptchaSolverService.ID, 60000);
-
         return ret;
     }
 

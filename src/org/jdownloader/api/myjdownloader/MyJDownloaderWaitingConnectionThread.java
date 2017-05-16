@@ -25,9 +25,7 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoW
 import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
 
 public class MyJDownloaderWaitingConnectionThread extends Thread {
-
     protected static class MyJDownloaderConnectionRequest {
-
         public final SessionInfoWrapper getSession() {
             return session;
         }
@@ -46,7 +44,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     }
 
     protected static class MyJDownloaderConnectionResponse {
-
         public final DeviceConnectionStatus getStatus() {
             return status;
         }
@@ -83,7 +80,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         public final MyJDownloaderWaitingConnectionThread getThread() {
             return thread;
         }
-
     }
 
     protected final AtomicBoolean                                           running           = new AtomicBoolean(true);
@@ -99,7 +95,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
 
     @Override
     public void run() {
-
         try {
             while (running.get()) {
                 MyJDownloaderConnectionRequest request = null;
@@ -121,6 +116,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     final URL url = new URL(null, "socket://" + SocketConnection.getHostName(addr) + ":" + addr.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
                     Socket socket = null;
                     SocketStreamInterface socketStream = null;
+                    request.getConnectionHelper().mark();
                     try {
                         connectThread.log("Connect " + addr);
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURL(url, false, false);
@@ -133,7 +129,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             socket.connect(addr, 30000);
                             final Socket finalSocket = socket;
                             socketStream = new SocketStreamInterface() {
-
                                 @Override
                                 public Socket getSocket() {
                                     return finalSocket;
@@ -186,6 +181,8 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             } catch (final Throwable ignore) {
                             }
                         }
+                    } finally {
+                        request.getConnectionHelper().unmark();
                     }
                     final MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, status, socketStream, e);
                     if (connectThread.putResponse(response) == false) {

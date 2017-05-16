@@ -172,7 +172,6 @@ public class MyJDownloaderDirectServer extends Thread {
                         final PortMapping desiredMapping = new PortMapping(upnpPort, localIP.getHostAddress(), PortMapping.Protocol.TCP, "MyJDownloader");
                         desiredMapping.setInternalPort(new UnsignedIntegerTwoBytes(CFG_MYJD.CFG.getLastLocalPort()));
                         Future result = upnpService.getControlPoint().execute(new PortMappingAdd(service, desiredMapping) {
-
                             @Override
                             public void success(ActionInvocation invocation) {
                                 upnpPortMapped.set(true);
@@ -298,9 +297,7 @@ public class MyJDownloaderDirectServer extends Thread {
             @Override
             public void run() {
                 try {
-                    System.out.println("Handle a direct MyJDownloader connection:" + requestNumber);
                     final HttpConnection httpConnection = DeprecatedAPIServer.autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
-
                         @Override
                         public MyJDownloaderDirectHttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
                             return new MyJDownloaderDirectHttpConnection(clientSocket, is, os, api);
@@ -325,7 +322,6 @@ public class MyJDownloaderDirectServer extends Thread {
         };
         synchronized (MyJDownloaderConnectThread.getOpenconnections()) {
             MyJDownloaderConnectThread.getOpenconnections().put(connectionThread, new SocketStreamInterface() {
-
                 @Override
                 public Socket getSocket() {
                     return clientSocket;

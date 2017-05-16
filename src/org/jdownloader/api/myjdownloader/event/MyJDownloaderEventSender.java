@@ -4,7 +4,6 @@ import org.appwork.utils.event.Eventsender;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
 
 public class MyJDownloaderEventSender extends Eventsender<MyJDownloaderListener, MyJDownloaderEvent> {
-
     @Override
     protected void fireEvent(MyJDownloaderListener listener, MyJDownloaderEvent event) {
         switch (event.getType()) {

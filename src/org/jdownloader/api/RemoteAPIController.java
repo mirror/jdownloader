@@ -2,9 +2,12 @@ package org.jdownloader.api;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,7 +15,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
+
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.DefaultDocsPageFactory;
 import org.appwork.remoteapi.InterfaceHandler;
@@ -24,13 +32,17 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.EventsAPIInterface;
+import org.appwork.remoteapi.events.Subscriber;
 import org.appwork.remoteapi.events.json.EventObjectStorable;
+import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
 import org.appwork.remoteapi.exceptions.ApiCommandNotAvailable;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
@@ -40,11 +52,19 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.net.websocket.ReadWebSocketFrame;
+import org.appwork.utils.net.websocket.WebSocketEndPoint;
+import org.appwork.utils.net.websocket.WebSocketFrame;
+import org.appwork.utils.net.websocket.WebSocketFrameHeader;
+import org.appwork.utils.net.websocket.WebSocketFrameHeader.OP_CODE;
+import org.appwork.utils.net.websocket.WriteWebSocketFrame;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.accounts.AccountAPIImpl;
@@ -89,10 +109,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
-
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
 
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
@@ -303,7 +319,86 @@ public class RemoteAPIController {
         } catch (Throwable e) {
             logger.log(e);
         }
-        register(eventsapi = new EventsAPI());
+        register(eventsapi = new EventsAPI() {
+            @Override
+            public void listen(RemoteAPIRequest request, RemoteAPIResponse response, long subscriptionid) throws APIFileNotFoundException, InternalApiException {
+                final Subscriber subscriber = getSubscriber(subscriptionid);
+                if (subscriber == null) {
+                    throw new APIFileNotFoundException();
+                }
+                if (!wrapWebSocket(request, response, subscriber)) {
+                    super.listen(request, response, subscriptionid);
+                }
+            }
+
+            private boolean wrapWebSocket(RemoteAPIRequest request, RemoteAPIResponse response, Subscriber subscriber) throws InternalApiException {
+                final String upgradeHeader = request.getRequestHeaders().getValue("Upgrade");
+                final String connectionHeader = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_CONNECTION);
+                final String secWebSocketKey = request.getRequestHeaders().getValue("Sec-WebSocket-Key");
+                if (StringUtils.isNotEmpty(secWebSocketKey) && StringUtils.equalsIgnoreCase(upgradeHeader, "websocket") && StringUtils.containsIgnoreCase(connectionHeader, "upgrade")) {
+                    response.setResponseCode(ResponseCode.SWITCHING_PROTOCOLS);
+                    response.getResponseHeaders().add(new HTTPHeader("Connection", "Upgrade"));
+                    response.getResponseHeaders().add(new HTTPHeader("Upgrade", "websocket"));
+                    try {
+                        final MessageDigest md = MessageDigest.getInstance("SHA1");
+                        final byte[] digest = md.digest((secWebSocketKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes("UTF-8"));
+                        response.getResponseHeaders().add(new HTTPHeader("Sec-WebSocket-Accept", Base64.encodeToString(digest, false)));
+                        final OutputStream outputStream = response.getOutputStream(true);
+                        final InputStream is = request.getHttpRequest().getConnection().getInputStream();
+                        final WebSocketEndPoint wsc = new WebSocketEndPoint() {
+                            @Override
+                            public ReadWebSocketFrame readWebSocketFrame(InputStream is) throws IOException {
+                                if (is.available() > 0) {
+                                    return super.readWebSocketFrame(is);
+                                } else {
+                                    return null;
+                                }
+                            };
+
+                            @Override
+                            protected void log(WebSocketFrame webSocketFrame) {
+                            }
+
+                            @Override
+                            protected OutputStream getOutputStream() throws IOException {
+                                return outputStream;
+                            }
+
+                            @Override
+                            protected InputStream getInputStream() throws IOException {
+                                return is;
+                            }
+                        };
+                        eventLoop: while (true) {
+                            final EventObject event = pollEvent(subscriber, 0);
+                            if (event != null) {
+                                final byte[] jsonBytes = JSonStorage.getMapper().objectToByteArray(new EventObjectStorable(event));
+                                wsc.writeFrame(new WriteWebSocketFrame(new WebSocketFrameHeader(true, OP_CODE.UTF8_TEXT, jsonBytes.length, null), jsonBytes));
+                            }
+                            final ReadWebSocketFrame frame = wsc.readNextFrame();
+                            if (frame != null) {
+                                System.out.println(frame);
+                                switch (frame.getFrameHeader().getOpcode()) {
+                                case PING:
+                                    wsc.writeFrame(wsc.buildPongFrame(frame));
+                                    break;
+                                case CLOSE:
+                                    break eventLoop;
+                                default:
+                                    break;
+                                }
+                            } else if (event == null) {
+                                Thread.sleep(50);
+                            }
+                        }
+                    } catch (Exception e) {
+                        throw new InternalApiException(e);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
         validateInterfaces(EventsAPIInterface.class, EventsInterface.class);
         register(CaptchaAPISolver.getInstance());
         register(CaptchaForwarder.getInstance());

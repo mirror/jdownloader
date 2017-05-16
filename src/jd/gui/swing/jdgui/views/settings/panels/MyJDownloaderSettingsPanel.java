@@ -17,11 +17,13 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
+import javax.swing.Timer;
 
 import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.JDGui;
@@ -38,6 +40,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -58,8 +61,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     private final SettingsButton openMyJDownloader;
     private final TextInput      email;
     private final PasswordInput  passWord;
-    private final JTextArea      error;
-    private final JTextArea      status;
+    private final JTextArea      timerText;
+    private final JTextArea      errorText;
+    private final JTextArea      statusText;
     private final JButton        connectButton;
     private final AppAction      connectAction;
     private final AppAction      disconnectAction;
@@ -114,21 +118,29 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         CFG_MYJD.EMAIL.getEventSender().addListener(loginsChangeListener);
         CFG_MYJD.PASSWORD.getEventSender().addListener(loginsChangeListener);
         CFG_MYJD.DEVICE_NAME.getEventSender().addListener(loginsChangeListener);
-        error = new JTextArea();
-        SwingUtils.setOpaque(error, false);
-        error.setEditable(false);
-        error.setLineWrap(true);
-        error.setWrapStyleWord(true);
-        error.setFocusable(false);
-        error.setForeground(Color.RED);
-        SwingUtils.toBold(error);
-        status = new JTextArea();
-        SwingUtils.setOpaque(status, false);
-        status.setEditable(false);
-        status.setLineWrap(true);
-        status.setWrapStyleWord(true);
-        status.setFocusable(false);
-        SwingUtils.toBold(error);
+        errorText = new JTextArea();
+        SwingUtils.setOpaque(errorText, false);
+        errorText.setEditable(false);
+        errorText.setLineWrap(true);
+        errorText.setWrapStyleWord(true);
+        errorText.setFocusable(false);
+        errorText.setForeground(Color.RED);
+        SwingUtils.toBold(errorText);
+        statusText = new JTextArea();
+        SwingUtils.setOpaque(statusText, false);
+        statusText.setEditable(false);
+        statusText.setLineWrap(true);
+        statusText.setWrapStyleWord(true);
+        statusText.setFocusable(false);
+        SwingUtils.toBold(statusText);
+        timerText = new JTextArea();
+        SwingUtils.setOpaque(timerText, false);
+        timerText.setEditable(false);
+        timerText.setLineWrap(true);
+        timerText.setWrapStyleWord(true);
+        timerText.setFocusable(false);
+        timerText.setForeground(Color.YELLOW.darker());
+        SwingUtils.toBold(timerText);
         connectAction = new AppAction() {
             {
                 setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_connect_());
@@ -185,7 +197,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         connectButton = new ExtButton(connectAction);
         disconnectButton = new ExtButton(disconnectAction);
         MyJDownloaderController.getInstance().getEventSender().addListener(this, true);
-        SwingUtils.toBold(status);
         CFG_MYJD.LATEST_ERROR.getEventSender().addListener(this, true);
         this.addHeader(getTitle(), getIcon());
         this.addDescription(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
@@ -202,7 +213,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_(), null, deviceName);
         MigPanel p = new MigPanel("ins 0 0 0 0", "[grow,fill][][]", "[]");
         p.setOpaque(false);
-        p.add(status, "wmin 10");
+        p.add(statusText, "wmin 10");
         // add(status, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
         // p.add(Box.createHorizontalGlue());
         p.add(connectButton);
@@ -210,7 +221,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
-        add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
+        add(errorText, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
+        add(Box.createHorizontalGlue(), "gapleft 37");
+        add(timerText, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
     }
 
     @Override
@@ -222,6 +235,38 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     public void save() {
     }
 
+    private volatile Timer timer = null;
+
+    @Override
+    protected void onHide() {
+        super.onHide();
+        timer = null;
+    }
+
+    @Override
+    protected void onShow() {
+        super.onShow();
+        timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getSource() == timer) {
+                    final long retryTimeStamp = MyJDownloaderController.getInstance().getRetryTimeStamp();
+                    final long wait = retryTimeStamp - System.currentTimeMillis();
+                    if (retryTimeStamp > 0 && wait > 0) {
+                        timerText.setVisible(true);
+                        timerText.setText("Retry in: " + TimeFormatter.formatMilliSeconds(wait, 0));
+                    } else {
+                        timerText.setVisible(false);
+                    }
+                } else {
+                    ((Timer) e.getSource()).stop();
+                }
+            }
+        }) {
+        };
+        timer.start();
+    }
+
     @Override
     public void updateContents() {
         onMyJDownloaderConnectionStatusChanged(MyJDownloaderController.getInstance().getConnectionStatus(), MyJDownloaderController.getInstance().getEstablishedConnections());
@@ -231,33 +276,33 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
             protected void runInEDT() {
                 switch (latestError) {
                 case NONE:
-                    error.setVisible(false);
+                    errorText.setVisible(false);
                     break;
                 case ACCOUNT_UNCONFIRMED:
-                    error.setVisible(true);
-                    error.setForeground(Color.RED);
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_());
+                    errorText.setVisible(true);
+                    errorText.setForeground(Color.RED);
+                    errorText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_());
                     break;
                 case BAD_LOGINS:
                 case EMAIL_INVALID:
-                    error.setVisible(true);
-                    error.setForeground(Color.RED);
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
+                    errorText.setVisible(true);
+                    errorText.setForeground(Color.RED);
+                    errorText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
                     break;
                 case SERVER_MAINTENANCE:
-                    error.setVisible(true);
-                    error.setForeground(Color.YELLOW.darker());
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_maintenance_());
+                    errorText.setVisible(true);
+                    errorText.setForeground(Color.YELLOW.darker());
+                    errorText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_maintenance_());
                     break;
                 case SERVER_OVERLOAD:
-                    error.setVisible(true);
-                    error.setForeground(Color.YELLOW.darker());
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
+                    errorText.setVisible(true);
+                    errorText.setForeground(Color.YELLOW.darker());
+                    errorText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
                     break;
                 default:
-                    error.setVisible(true);
-                    error.setForeground(Color.RED);
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
+                    errorText.setVisible(true);
+                    errorText.setForeground(Color.RED);
+                    errorText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
                     break;
                 }
             }
@@ -283,6 +328,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                 }
                 final String cUser = MyJDownloaderController.getInstance().getCurrentEmail();
                 final String cPass = MyJDownloaderController.getInstance().getCurrentPassword();
+                final long retryTimeStamp = MyJDownloaderController.getInstance().getRetryTimeStamp();
                 final boolean connected = connectionStatus != MyJDownloaderConnectionStatus.UNCONNECTED;
                 disconnectAction.setEnabled(connected);
                 connectAction.setEnabled(!connected);
@@ -302,29 +348,29 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                         switch (latestError) {
                         case SERVER_MAINTENANCE:
                         case SERVER_OVERLOAD:
-                            status.setForeground(Color.YELLOW.darker());
-                            status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                            statusText.setForeground(Color.YELLOW.darker());
+                            statusText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                             break;
                         case IO:
                         case SERVER_DOWN:
                         case NO_INTERNET_CONNECTION:
-                            status.setForeground(Color.RED);
-                            status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                            statusText.setForeground(Color.RED);
+                            statusText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                             break;
                         default:
-                            status.setForeground(Color.GREEN.darker());
-                            status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                            statusText.setForeground(Color.GREEN.darker());
+                            statusText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                             break;
                         }
                         break;
                     case CONNECTED:
-                        status.setForeground(Color.GREEN);
-                        status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                        statusText.setForeground(Color.GREEN);
+                        statusText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                         break;
                     }
                 } else {
-                    status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_());
-                    status.setForeground(Color.RED);
+                    statusText.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_());
+                    statusText.setForeground(Color.RED);
                     connectButton.setAction(connectAction);
                 }
             }
