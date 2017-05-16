@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.shutdown;
 
-import java.util.Arrays;
-
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.ExtensionController;
@@ -27,7 +25,7 @@ public class ShutdownThread extends Thread {
             return;
         }
         final Mode mode = settings.getShutdownMode();
-        if (!Arrays.asList(shutdownInterface.getSupportedModes()).contains(mode)) {
+        if (!shutdownInterface.isSupported(mode)) {
             logger.warning("Mode '" + mode + "' is not supported!");
             return;
         }
