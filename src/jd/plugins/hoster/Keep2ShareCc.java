@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -53,7 +52,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
-
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/premium.html");
@@ -70,7 +68,6 @@ public class Keep2ShareCc extends K2SApi {
     private final String DOMAINS_PLAIN = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
     // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
-
     @Override
     public String[] siteSupportedNames() {
         // keep2.cc no dns
@@ -100,7 +97,6 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /* abstract K2SApi class setters */
-
     /**
      * sets domain the API will use!
      */
@@ -153,7 +149,6 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /* end of abstract class setters */
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -201,7 +196,6 @@ public class Keep2ShareCc extends K2SApi {
         }
         final String filename = getFileName();
         final String filesize = getFileSize();
-
         if (filename != null) {
             if (filename.contains("...")) {
                 super.checkLinks(new DownloadLink[] { link });
@@ -246,7 +240,6 @@ public class Keep2ShareCc extends K2SApi {
         }
         final String filename = getFileName();
         final String filesize = getFileSize();
-
         if (filename != null) {
             if (filename.contains("...")) {
                 super.checkLinks(new DownloadLink[] { link });
@@ -490,7 +483,6 @@ public class Keep2ShareCc extends K2SApi {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalwait + 10000l);
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-
         }
     }
 
@@ -659,10 +651,10 @@ public class Keep2ShareCc extends K2SApi {
                 ai.setStatus("Free Account");
             } else {
                 account.setType(AccountType.PREMIUM);
-                final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
-                String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
-                if (availableTraffic == null) {
-                    availableTraffic = br.getRegex("Traffic left(.*?\\(today\\))?.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?.*?<a[^/>]*href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?.*?<a[^/>]*href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                if (StringUtils.isEmpty(availableTraffic)) {
+                    availableTraffic = br.getRegex("Traffic left(.*?\\(today\\))?.*?<a[^/>]*href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
                 }
                 if (availableTraffic != null && usedTraffic != null) {
                     final long used = SizeFormatter.getSize(usedTraffic);
@@ -798,7 +790,6 @@ public class Keep2ShareCc extends K2SApi {
                         }
                         currentDomain = newDomain;
                     }
-
                     if (inValidate(dllink)) {
                         if (br.containsHTML("Traffic limit exceed!<")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -960,5 +951,4 @@ public class Keep2ShareCc extends K2SApi {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
-
 }

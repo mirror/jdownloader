@@ -40,6 +40,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
@@ -63,7 +64,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  *
  */
 public abstract class K2SApi extends PluginForHost {
-
     private String                         authToken;
     protected String                       directlinkproperty;
     protected int                          chunks;
@@ -73,7 +73,6 @@ public abstract class K2SApi extends PluginForHost {
     private final String                   AUTHTOKEN              = "auth_token";
     private int                            authTokenFail          = 0;
     private int                            loginCaptchaFail       = -1;
-
     /* Reconnect workaround settings */
     protected final String                 EXPERIMENTALHANDLING   = "EXPERIMENTALHANDLING";
     protected final boolean                default_eh             = false;
@@ -85,7 +84,6 @@ public abstract class K2SApi extends PluginForHost {
     private final String                   PROPERTY_LASTDOWNLOAD  = "_lastdownload_timestamp";
     private final long                     FREE_RECONNECTWAIT     = 1 * 60 * 60 * 1000L;
     private static String[]                IPCHECK                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-
     // plugin config definition
     protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
     protected final String                 CUSTOM_REFERER         = "CUSTOM_REFERER";
@@ -509,7 +507,6 @@ public abstract class K2SApi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("dllink = " + dllink);
-
             /*
              * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
              */
@@ -522,7 +519,6 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 setIP(downloadLink, account);
             }
-
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -561,7 +557,6 @@ public abstract class K2SApi extends PluginForHost {
      */
     protected Browser newBrowser() {
         Browser nbr = new Browser() {
-
             /**
              * overrides openPostConnection and turns it into openPostRawConnection
              *
@@ -584,7 +579,6 @@ public abstract class K2SApi extends PluginForHost {
             public Request createPostRawRequest(final String url, final String post) throws IOException {
                 final PostRequest request = new PostRequest(this.getURL(url));
                 request.setPostDataString(post);
-
                 String requestContentType = null;
                 final RequestHeader lHeaders = this.getHeaders();
                 if (lHeaders != null) {
@@ -599,7 +593,6 @@ public abstract class K2SApi extends PluginForHost {
                 request.setContentType(requestContentType);
                 return request;
             }
-
         };
         return nbr;
     }
@@ -630,7 +623,6 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     // we can assume that the previous user:pass is wrong, prompt user for new one!
-
                     Browser cbr = new Browser();
                     postPageRaw(cbr, "/requestcaptcha", "", account);
                     final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
@@ -1196,6 +1188,9 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected void handleGeneralServerErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
+        if (br.containsHTML("You exceeded your Premium (20|50) GB daily limit, try to download tomorrow")) {
+            throw new AccountUnavailableException("You exceeded your Premium daily limit, try to download tomorrow", 60 * 60 * 1000l);
+        }
         final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
         if ((account == null || account.getType() == AccountType.FREE) && br.containsHTML(alreadyDownloading)) {
             // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
@@ -1283,14 +1278,12 @@ public abstract class K2SApi extends PluginForHost {
     private static Object                CTRLLOCK                     = new Object();
     protected static AtomicInteger       maxPrem                      = new AtomicInteger(1);
     protected static AtomicInteger       maxFree                      = new AtomicInteger(1);
-
     /**
      * Connection Management<br />
      * <b>NOTE:</b> CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]<br />
      * <b>@Override</b> when incorrect
      **/
     protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -1370,7 +1363,6 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected static WeakHashMap<AbstractProxySelectorImpl, AtomicLong[]> freeDownloadHandling         = new WeakHashMap<AbstractProxySelectorImpl, AtomicLong[]>();
-
     private final long                                                    nextFreeDownloadSlotInterval = 2 * 60 * 60 * 1000l;
 
     @Override
@@ -1498,7 +1490,6 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     // cloudflare
-
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
@@ -1664,7 +1655,6 @@ public abstract class K2SApi extends PluginForHost {
                         this.setDownloadLink(dllink);
                         final Form cf = cloudflare;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-
                             @Override
                             public String getSiteKey() {
                                 return getSiteKey(cf.getHtmlCode());
@@ -1674,7 +1664,6 @@ public abstract class K2SApi extends PluginForHost {
                             public String getSecureToken() {
                                 return getSecureToken(cf.getHtmlCode());
                             }
-
                         }.getToken();
                         cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     } else {
@@ -1759,7 +1748,6 @@ public abstract class K2SApi extends PluginForHost {
                     sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
-
                     ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
                     ScriptEngine engine = mgr.getEngineByName("JavaScript");
                     long answer = ((Number) engine.eval(sb.toString())).longValue();
@@ -1812,7 +1800,6 @@ public abstract class K2SApi extends PluginForHost {
                         // set ckies as current cookies
                         ibr.getHttpConnection().getRequest().setCookies(ckies);
                     }
-
                     Thread.sleep(2500);
                     // effectively refresh page!
                     try {
@@ -1846,7 +1833,6 @@ public abstract class K2SApi extends PluginForHost {
                     }
                     // new sendRequest saves cookie session
                     return;
-
                     // new code here...
                     // <script type="text/javascript">
                     // //<![CDATA[
@@ -1854,7 +1840,6 @@ public abstract class K2SApi extends PluginForHost {
                     // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
                     // //]]>
                     // </script>
-
                 } else if (responseCode == 200 && ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
                     final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
                     if (phishing == null) {
@@ -1866,7 +1851,6 @@ public abstract class K2SApi extends PluginForHost {
                     // commenting out return prevents caching of cookies per request
                     // return;
                 }
-
                 // get cookies we want/need.
                 // refresh these with every getPage/postPage/submitForm?
                 final Cookies add = ibr.getCookies(ibr.getHost());
@@ -1883,7 +1867,6 @@ public abstract class K2SApi extends PluginForHost {
                 antiDDoSCookies.putAll(cookies);
             }
         }
-
     }
 
     private Form getCloudflareChallengeForm(final Browser ibr) {
@@ -1945,5 +1928,4 @@ public abstract class K2SApi extends PluginForHost {
         }
         return false;
     }
-
 }
