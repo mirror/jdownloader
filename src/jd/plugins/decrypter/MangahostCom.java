@@ -16,7 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
+import java.util.regex.Pattern;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -25,13 +27,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?mangahost\\.(com|net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost\\.(com|net|me)|yesmangas\\.net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
 public class MangahostCom extends antiDDoSForDecrypt {
+
     public MangahostCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "mangahost.com", "mangahost.net", "mangahost.me", "yesmangas.net" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -47,13 +52,14 @@ public class MangahostCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>(.*?)(?:\\s*\\|\\s*[^<]*)?</title>").getMatch(0);
+        final String host = br.getHost();
+        final String fpName = br.getRegex("<title>(.*?)(?:\\s*\\|\\s*[^<]*)?</title>").getMatch(0);
         String[] links = null;
         if (br.containsHTML("var images")) {
             if (br.containsHTML("(jpe?g|png)\\.webp")) {
-                links = br.getRegex("(https?://img\\.mangahost.net/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
+                links = br.getRegex("(https?://img\\." + Pattern.quote(host) + "/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
             } else {
-                links = br.getRegex("(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpe?g|png))").getColumn(0);
+                links = br.getRegex("(https?://img\\." + Pattern.quote(host) + "/br/mangas_files/[^<>\"\\']+(jpe?g|png))").getColumn(0);
             }
         } else {
             // this is JSON, DO NOT universally unescape it.
