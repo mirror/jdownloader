@@ -25,10 +25,10 @@ public class SessionTokenCheckHandler implements HttpRequestHandler {
 
     private void checkToken(HttpRequest request, HttpResponse response) throws BasicRemoteAPIException {
         final HttpConnection connection = request.getConnection();
-        if (connection instanceof MyJDownloaderHttpConnection) {
-            final MyJDownloaderHttpConnection myConnection = (MyJDownloaderHttpConnection) connection;
+        if (connection instanceof MyJDownloaderDirectHttpConnection) {
+            final MyJDownloaderDirectHttpConnection myConnection = (MyJDownloaderDirectHttpConnection) connection;
             final String sessionToken = myConnection.getRequestConnectToken();
-            if (MyJDownloaderController.getInstance().isSessionTerminated(sessionToken)) {
+            if (!MyJDownloaderController.getInstance().isSessionValid(sessionToken)) {
                 writeTokenInvalid(response);
             }
         }

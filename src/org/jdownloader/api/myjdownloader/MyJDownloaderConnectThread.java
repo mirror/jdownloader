@@ -219,7 +219,7 @@ public class MyJDownloaderConnectThread extends Thread {
     private String                                                       deviceName;
     private final Set<TYPE>                                              notifyInterests           = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
     private final static HashMap<Thread, SocketStreamInterface>          openConnections           = new HashMap<Thread, SocketStreamInterface>();
-    private final static HashSet<String>                                 KILLEDSESSIONS            = new HashSet<String>();
+    private final static HashMap<String, AtomicLong>                     KNOWNSESSIONS             = new HashMap<String, AtomicLong>();
     private final ArrayDeque<MyJDownloaderConnectionResponse>            responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
     private final ArrayList<MyJDownloaderWaitingConnectionThread>        waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
     private final int                                                    minimumWaitingConnections = 1;
@@ -233,9 +233,23 @@ public class MyJDownloaderConnectThread extends Thread {
         return directServer;
     }
 
-    public boolean isSessionTerminated(final String sessionToken) {
-        synchronized (KILLEDSESSIONS) {
-            return KILLEDSESSIONS.contains(sessionToken);
+    private final static long SESSION_REVALIDATE_TIMEOUT = 15 * 60 * 1000l;
+
+    public boolean isSessionValid(final String sessionToken) {
+        synchronized (KNOWNSESSIONS) {
+            AtomicLong validUntil = KNOWNSESSIONS.get(sessionToken);
+            if (validUntil == null || (validUntil.get() > 0 && System.currentTimeMillis() > validUntil.get())) {
+                final Boolean valid = validateSession(sessionToken);
+                if (valid == null) {
+                    validUntil = new AtomicLong(System.currentTimeMillis() + 1 * 60 * 1000l);
+                } else if (Boolean.TRUE.equals(valid)) {
+                    validUntil = new AtomicLong(System.currentTimeMillis() + SESSION_REVALIDATE_TIMEOUT);
+                } else {
+                    validUntil = new AtomicLong(-1);
+                }
+                KNOWNSESSIONS.put(sessionToken, validUntil);
+            }
+            return validUntil.get() > System.currentTimeMillis();
         }
     }
 
@@ -1162,6 +1176,26 @@ public class MyJDownloaderConnectThread extends Thread {
         return null;
     }
 
+    public Boolean validateSession(String validateToken) {
+        final MyJDownloaderAPI lapi = getApi();
+        if (lapi != null) {
+            SessionInfoWrapper session = null;
+            try {
+                session = (SessionInfoWrapper) lapi.getSessionInfo();
+                if (SessionInfoWrapper.STATE.VALID.equals(session.getState())) {
+                    return lapi.isSessionValid(validateToken);
+                }
+            } catch (final TokenException e) {
+                if (session != null) {
+                    session.compareAndSetState(SessionInfoWrapper.STATE.VALID, SessionInfoWrapper.STATE.RECONNECT);
+                }
+            } catch (final MyJDownloaderException e) {
+                log(e);
+            }
+        }
+        return null;
+    }
+
     public boolean sendChallengeFeedback(String id, RESULT correct) throws MyJDownloaderException {
         final MyJDownloaderAPI lapi = getApi();
         if (lapi != null) {
@@ -1191,8 +1225,8 @@ public class MyJDownloaderConnectThread extends Thread {
             try {
                 api.kill(getEmail(), getPassword(), sessionToken);
             } finally {
-                synchronized (KILLEDSESSIONS) {
-                    KILLEDSESSIONS.add(sessionToken);
+                synchronized (KNOWNSESSIONS) {
+                    KNOWNSESSIONS.put(sessionToken, new AtomicLong(-1));
                 }
             }
         }

@@ -22,7 +22,6 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.useragent.ConnectedDevice;
 import org.jdownloader.api.useragent.UserAgentListener;
 import org.jdownloader.gui.IconKey;
@@ -172,14 +171,12 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
 
             @Override
             public void configureRendererComponent(ConnectedDevice value, boolean isSelected, boolean hasFocus, int row, int column) {
-                rendererBtn.setEnabled(!MyJDownloaderController.getInstance().isSessionTerminated(value.getConnectToken()));
                 rendererBtn.setText(_GUI.T.lit_disconnect());
             }
 
             @Override
             public void configureEditorComponent(ConnectedDevice value, boolean isSelected, int row, int column) {
                 device = value;
-                editorBtn.setEnabled(!MyJDownloaderController.getInstance().isSessionTerminated(value.getConnectToken()));
                 editorBtn.setText(_GUI.T.lit_disconnect());
             }
 
