@@ -16,17 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -34,6 +32,7 @@ import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iframe-secure.com", "protect-iframe.com" }, urls = { "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+" })
 public class IframeSecureCom extends antiDDoSForDecrypt {
+
     public IframeSecureCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,7 +43,12 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         getPage(parameter);
         if ("iframe-secure.com".equals(getHost())) {
-            getPage("/embed/iframe.php?u=" + fid);
+            getPage("iframe.php?u=" + fid);
+            // some form
+            final Form f = br.getForm(0);
+            if (f != null) {
+                submitForm(f);
+            }
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
