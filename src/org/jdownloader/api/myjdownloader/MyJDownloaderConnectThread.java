@@ -239,14 +239,17 @@ public class MyJDownloaderConnectThread extends Thread {
     public boolean isSessionValid(final String sessionToken) {
         synchronized (KNOWNSESSIONS) {
             AtomicLong validUntil = KNOWNSESSIONS.get(sessionToken);
-            if (validUntil == null || (validUntil.get() > 0 && System.currentTimeMillis() > validUntil.get())) {
+            if (validUntil == null || System.currentTimeMillis() > Math.abs(validUntil.get())) {
                 final Boolean valid = validateSession(sessionToken);
                 if (valid == null) {
+                    // valid for 1 min
                     validUntil = new AtomicLong(System.currentTimeMillis() + 1 * 60 * 1000l);
                 } else if (Boolean.TRUE.equals(valid)) {
+                    // valid until SESSION_REVALIDATE_TIMEOUT
                     validUntil = new AtomicLong(System.currentTimeMillis() + SESSION_REVALIDATE_TIMEOUT);
                 } else {
-                    validUntil = new AtomicLong(-1);
+                    // not valid for 1 min
+                    validUntil = new AtomicLong(-(System.currentTimeMillis() + 1 * 60 * 1000l));
                 }
                 KNOWNSESSIONS.put(sessionToken, validUntil);
             }
@@ -1228,7 +1231,8 @@ public class MyJDownloaderConnectThread extends Thread {
                 api.kill(getEmail(), getPassword(), sessionToken);
             } finally {
                 synchronized (KNOWNSESSIONS) {
-                    KNOWNSESSIONS.put(sessionToken, new AtomicLong(-1));
+                    // not valid for SESSION_REVALIDATE_TIMEOUT
+                    KNOWNSESSIONS.put(sessionToken, new AtomicLong(-(System.currentTimeMillis() + SESSION_REVALIDATE_TIMEOUT)));
                 }
             }
         }
