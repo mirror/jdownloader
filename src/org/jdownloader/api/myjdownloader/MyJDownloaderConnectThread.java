@@ -63,6 +63,7 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution.RESULT;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
+import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 import org.jdownloader.statistics.StatsManager;
 
@@ -1176,14 +1177,15 @@ public class MyJDownloaderConnectThread extends Thread {
         return null;
     }
 
-    public Boolean validateSession(String validateToken) {
+    public Boolean validateSession(String queryToken) {
         final MyJDownloaderAPI lapi = getApi();
         if (lapi != null) {
             SessionInfoWrapper session = null;
             try {
                 session = (SessionInfoWrapper) lapi.getSessionInfo();
                 if (SessionInfoWrapper.STATE.VALID.equals(session.getState())) {
-                    return lapi.isSessionValid(validateToken);
+                    final SessionInfoResponse ret = lapi.getSessionInfo(queryToken);
+                    return ret != null && ret.isAlive();
                 }
             } catch (final TokenException e) {
                 if (session != null) {
