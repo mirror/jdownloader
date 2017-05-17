@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpserver.HttpConnection;
-import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
@@ -175,11 +174,7 @@ public class ConnectedDevice {
         final List<MyJDownloaderHttpConnection> list = MyJDownloaderHttpConnection.getConnectionsByToken(getConnectToken());
         final int num;
         if (list == null) {
-            if (MyJDownloaderController.getInstance().isSessionTerminated(getConnectToken())) {
-                return "terminated";
-            } else {
-                return "0 Connections";
-            }
+            return "0 Connections";
         } else {
             num = list.size();
         }

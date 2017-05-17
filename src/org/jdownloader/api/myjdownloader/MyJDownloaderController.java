@@ -395,9 +395,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         }
     }
 
-    public boolean isSessionTerminated(final String sessionToken) {
+    public boolean isSessionValid(final String sessionToken) {
         final MyJDownloaderConnectThread ct = getConnectThread();
-        return ct != null && ct.isSessionTerminated(sessionToken);
+        return ct != null && ct.isSessionValid(sessionToken);
     }
 
     public boolean sendChallengeFeedback(String id, RESULT correct) throws MyJDownloaderException {
