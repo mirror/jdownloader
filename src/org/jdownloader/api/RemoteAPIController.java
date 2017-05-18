@@ -39,7 +39,6 @@ import org.appwork.remoteapi.events.EventsAPIInterface;
 import org.appwork.remoteapi.events.Subscriber;
 import org.appwork.remoteapi.events.json.EventObjectStorable;
 import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
-import org.appwork.remoteapi.exceptions.ApiCommandNotAvailable;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
@@ -257,7 +256,7 @@ public class RemoteAPIController {
             }
 
             @Override
-            protected RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, Object extractedData, final String methodName, InterfaceHandler<?> interfaceHandler, List<String> parameters, String jqueryCallback) throws IOException, ApiCommandNotAvailable {
+            protected RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, Object extractedData, final String methodName, InterfaceHandler<?> interfaceHandler, List<String> parameters, String jqueryCallback) throws IOException, BasicRemoteAPIException {
                 if (request instanceof DeprecatedAPIRequestInterface) {
                     return new DeprecatedRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, jqueryCallback);
                     //
