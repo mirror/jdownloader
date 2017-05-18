@@ -13,7 +13,9 @@
 <meta name="description" content="">
 
 <link rel="stylesheet" href="/resource?style.css" type="text/css" />
-<link href='https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700' rel='stylesheet' type='text/css' />
+<link
+	href='https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700'
+	rel='stylesheet' type='text/css' />
 <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro'
 	rel='stylesheet' type='text/css' />
 <link rel="shortcut icon" href="/resource?favicon.ico"
@@ -27,366 +29,691 @@ iframe {
 </style>
 
 <style type='text/css'>
-
 [draggable] {
-  -moz-user-select: none;
-  -khtml-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -khtml-user-drag: element;
-  -webkit-user-drag: element
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	user-select: none;
+	-khtml-user-drag: element;
+	-webkit-user-drag: element
 }
 
-div.sweetcaptcha,
-div.sweetcaptcha * {
-  margin: 0;
-  padding: 0;
-  font-size: 12px;
-  font-family: arial, helvetica, sans-serif;
-  line-height: normal
+div.sweetcaptcha, div.sweetcaptcha * {
+	margin: 0;
+	padding: 0;
+	font-size: 12px;
+	font-family: arial, helvetica, sans-serif;
+	line-height: normal
 }
 
 div.sweetcaptcha {
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border-radius: 5px;
-  background: #f5f5f5;
-  color: #000;
-  padding: 10px;
-  margin-bottom: 10px;
-  overflow: hidden;
-  min-height: 120px;
-  max-width: 350px;
-  position: relative;
-  font-weight: 400
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	background: #f5f5f5;
+	color: #000;
+	padding: 10px;
+	margin-bottom: 10px;
+	overflow: hidden;
+	min-height: 120px;
+	max-width: 350px;
+	position: relative;
+	font-weight: 400
 }
 
 div.sweetcaptcha ul {
-  list-style-type: none !important;
-  margin: 0 !important;
-  padding: 0 !important
+	list-style-type: none !important;
+	margin: 0 !important;
+	padding: 0 !important
 }
 
 div.sweetcaptcha ul li {
-  clear: none !important;
-  background: #cad9e8;
-  display: inline-block;
-  border-radius: 5px;
-  margin: 0 4px 4px 0 !important;
-  z-index: 2;
-  float: left;
-  list-style-type: none !important;
-  width: 42px;
-  height: 42px
+	clear: none !important;
+	background: #cad9e8;
+	display: inline-block;
+	border-radius: 5px;
+	margin: 0 4px 4px 0 !important;
+	z-index: 2;
+	float: left;
+	list-style-type: none !important;
+	width: 42px;
+	height: 42px
 }
 
 div.sweetcaptcha.rtl ul li {
-  padding: 0 0 0 4px !important;
-  float: right
+	padding: 0 0 0 4px !important;
+	float: right
 }
 
 div.sweetcaptcha ul li.selected {
-  background: none;
-  position: absolute;
-  top: 5px;
-  text-align: right;
-  right: 0;
-  -webkit-animation: selected 500ms linear forwards;
-  -moz-animation: selected 500ms linear forwards;
-  -ms-animation: selected 500ms linear forwards;
-  -o-animation: selected 500ms linear forwards;
-  animation: selected 500ms linear forwards
+	background: none;
+	position: absolute;
+	top: 5px;
+	text-align: right;
+	right: 0;
+	-webkit-animation: selected 500ms linear forwards;
+	-moz-animation: selected 500ms linear forwards;
+	-ms-animation: selected 500ms linear forwards;
+	-o-animation: selected 500ms linear forwards;
+	animation: selected 500ms linear forwards
 }
 
 div.sweetcaptcha.rtl ul li.selected {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  text-align: left;
-  -webkit-animation: selected_rtl 500ms linear forwards;
-  -moz-animation: selected_rtl 500ms linear forwards;
-  -ms-animation: selected_rtl 500ms linear forwards;
-  -o-animation: selected_rtl 500ms linear forwards;
-  animation: selected_rtl 500ms linear forwards
+	position: absolute;
+	top: 5px;
+	left: 5px;
+	text-align: left;
+	-webkit-animation: selected_rtl 500ms linear forwards;
+	-moz-animation: selected_rtl 500ms linear forwards;
+	-ms-animation: selected_rtl 500ms linear forwards;
+	-o-animation: selected_rtl 500ms linear forwards;
+	animation: selected_rtl 500ms linear forwards
 }
 
 div.sweetcaptcha ul li.static_selected {
-  background: none;
-  position: absolute;
-  right: 0;
-  text-align: right;
-  top: 5px
+	background: none;
+	position: absolute;
+	right: 0;
+	text-align: right;
+	top: 5px
 }
 
 div.sweetcaptcha.rtl ul li.static_selected {
-  position: absolute;
-  left: 5px;
-  top: 5px
+	position: absolute;
+	left: 5px;
+	top: 5px
 }
 
 div.sweetcaptcha ul li.static_selected img {
-  width: 25px;
-  height: 25px
+	width: 25px;
+	height: 25px
 }
 
 div.sweetcaptcha img {
-  margin: 0;
-  padding: 0;
-  background: 0 0
+	margin: 0;
+	padding: 0;
+	background: 0 0
 }
 
-div.sweetcaptcha ol li img,
-div.sweetcaptcha ul li img {
-  display: inline
+div.sweetcaptcha ol li img, div.sweetcaptcha ul li img {
+	display: inline
 }
 
 div.sweetcaptcha p {
-  padding-bottom: 10px;
-  color: #000
+	padding-bottom: 10px;
+	color: #000
 }
 
 div.sweetcaptcha .reset {
-  color: #a00;
-  font-size: 10px;
-  clear: both;
-  cursor: pointer;
-  padding-top: 3px;
-  float: left
+	color: #a00;
+	font-size: 10px;
+	clear: both;
+	cursor: pointer;
+	padding-top: 3px;
+	float: left
 }
 
 div.sweetcaptcha #sc2powered {
-  position: absolute;
-  bottom: 2px;
-  right: 4px;
-  padding: 2px 4px;
-  z-index: 2;
-  background: url(//sweetcaptcha.s3.amazonaws.com/widget/v2/strip.png?1) no-repeat right top;
-  padding-right: 14px;
-  text-align: right;
-  white-space: nowrap;
-  margin-right: 1px
+	position: absolute;
+	bottom: 2px;
+	right: 4px;
+	padding: 2px 4px;
+	z-index: 2;
+	background: url(//sweetcaptcha.s3.amazonaws.com/widget/v2/strip.png?1)
+		no-repeat right top;
+	padding-right: 14px;
+	text-align: right;
+	white-space: nowrap;
+	margin-right: 1px
 }
 
 div.sweetcaptcha #sc2powered #scwpowered {
-  display: none
+	display: none
 }
 
-div.sweetcaptcha #sc2powered,
-div.sweetcaptcha #sc2powered * {
-  font-size: 9px;
-  color: #111;
-  text-decoration: none
+div.sweetcaptcha #sc2powered, div.sweetcaptcha #sc2powered * {
+	font-size: 9px;
+	color: #111;
+	text-decoration: none
 }
 
 div.sweetcaptcha span.holder {
-  background-repeat: no-repeat;
-  background-position: center right;
-  display: block;
-  width: 90px;
-  height: 100px;
-  float: right;
-  z-index: 1;
-  margin: 2px
+	background-repeat: no-repeat;
+	background-position: center right;
+	display: block;
+	width: 90px;
+	height: 100px;
+	float: right;
+	z-index: 1;
+	margin: 2px
 }
 
 div.sweetcaptcha p {
-  direction: ltr;
-  text-align: left
+	direction: ltr;
+	text-align: left
 }
 
 div.sweetcaptcha ul {
-  text-align: left;
-  display: block !important
+	text-align: left;
+	display: block !important
 }
 
 div.sweetcaptcha.rtl p {
-  direction: rtl;
-  text-align: right
+	direction: rtl;
+	text-align: right
 }
 
 div.sweetcaptcha.rtl span.holder {
-  right: auto;
-  left: 10px;
-  background-position: bottom left
+	right: auto;
+	left: 10px;
+	background-position: bottom left
 }
 
 div.sweetcaptcha.rtl ul {
-  text-align: right
+	text-align: right
 }
 
 div.sweetcaptcha.rtl #sc2powered {
-  right: auto;
-  left: 0
+	right: auto;
+	left: 0
 }
 
 div.sweetcaptcha.rtl .reset {
-  float: right
+	float: right
 }
 
 div.sweetcaptcha #sc2powered span {
-  position: relative;
-  margin-left: -2px;
-  font-weight: 700
+	position: relative;
+	margin-left: -2px;
+	font-weight: 700
 }
 
-@ -moz-keyframes selected {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    right: 0;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    right: 0;
-    opacity: 1
-  }
+@
+-moz-keyframes selected { 0% {
+	opacity: 0
 }
 
-@ -ms-keyframes selected {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    right: 0;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    right: 0;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+1
+}
+}
+@
+-ms-keyframes selected { 0% {
+	opacity: 0
 }
 
-@ -o-keyframes selected {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    right: 0;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    right: 0;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+1
+}
+}
+@
+-o-keyframes selected { 0% {
+	opacity: 0
 }
 
-@ -webkit-keyframes selected {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    right: 0;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    right: 0;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+1
+}
+}
+@
+-webkit-keyframes selected { 0% {
+	opacity: 0
 }
 
-@ keyframes selected {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    left: 5px;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    left: 5px;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+right
+:
+ 
+0;
+opacity
+:
+ 
+1
+}
+}
+@
+keyframes selected { 0% {
+	opacity: 0
 }
 
-@ -moz-keyframes selected_rtl {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    left: 5px;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    left: 5px;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+1
+}
+}
+@
+-moz-keyframes selected_rtl { 0% {
+	opacity: 0
 }
 
-@ -ms-keyframes selected_rtl {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    left: 5px;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    left: 5px;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+1
+}
+}
+@
+-ms-keyframes selected_rtl { 0% {
+	opacity: 0
 }
 
-@ -o-keyframes selected_rtl {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    left: 5px;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    left: 5px;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+1
+}
+}
+@
+-o-keyframes selected_rtl { 0% {
+	opacity: 0
 }
 
-@ -webkit-keyframes selected_rtl {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    left: 5px;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    left: 5px;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+1
+}
+}
+@
+-webkit-keyframes selected_rtl { 0% {
+	opacity: 0
 }
 
-@ keyframes selected_rtl {
-  0% {
-    opacity: 0
-  }
-  25% {
-    top: -50px;
-    left: 5px;
-    opacity: 0
-  }
-  100% {
-    top: 5px;
-    left: 5px;
-    opacity: 1
-  }
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+1
+}
+}
+@
+keyframes selected_rtl { 0% {
+	opacity: 0
+}
+25%
+{
+top
+:
+ 
+-50
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+0
+}
+100%
+{
+top
+:
+ 
+5
+px
+;
+
+    
+left
+:
+ 
+5
+px
+;
+
+    
+opacity
+:
+ 
+1
+}
 }
 </style>
 
@@ -417,7 +744,8 @@ div.sweetcaptcha #sc2powered span {
 
 			<nav id="mainnav">
 				<ul>
-					<li><a href="https://support.jdownloader.org/index.php?/Knowledgebase/Article/View/42/0/JD-opens-my-browser-to-display-captchas">Help</a>
+					<li><a
+						href="https://support.jdownloader.org/index.php?/Knowledgebase/Article/View/42/0/JD-opens-my-browser-to-display-captchas">Help</a>
 				</ul>
 			</nav>
 			<div class="clearfix"></div>
@@ -431,15 +759,15 @@ div.sweetcaptcha #sc2powered span {
 				<h2>Please solve this Captcha challenge:</h2>
 				<div class="sample-form"">
 
-				<form name="send" method="POST">
-    
-            <div class='sweetcaptcha' id='%%%sitekey%%%'>
-                <div id='%%%sitekey%%%_widget' ondragover='false' ondrop='false'
-                    draggable></div>
-            </div>
-            <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-            <script>var sc_jQuery = jQuery.noConflict(true)</script>
-            <script type='text/javascript'>
+					<form name="send" method="POST">
+
+						<div class='sweetcaptcha' id='%%%sitekey%%%'>
+							<div id='%%%sitekey%%%_widget' ondragover='false' ondrop='false'
+								draggable></div>
+						</div>
+						<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+						<script>var sc_jQuery = jQuery.noConflict(true)</script>
+						<script type='text/javascript'>
             ! function(e) {
                 function n(e, n) {
                     var t, a = "";
@@ -454,7 +782,27 @@ div.sweetcaptcha #sc2powered span {
                     SWEETCAPTCHA = function(i, o) {
                         function s(t) {
                             function o(e) {
-                                d || (d = !0, e[0].className = a ? "selected" : "static_selected", e[0].childNodes[0].width = 25, e[0].childNodes[0].height = 25, m.val(e.attr("data-hash").substr(5, 10)), t.auto_submit && u.closest("form").trigger("submit"))
+                              // d ||
+                                
+                                d = !0;
+                              e[0].className = a ? "selected" : "static_selected";
+                              e[0].childNodes[0].width = 25;
+                              e[0].childNodes[0].height = 25;
+                              m.val(e.attr("data-hash").substr(5, 10));
+                              //t.auto_submit && u.closest("form").trigger("submit")
+                              
+                     
+                            var xhr = new XMLHttpRequest();
+                            xhr.open('POST', '', true);
+                            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                            xhr.onload = function () {
+                                // do something to response
+                                debugger;
+                                console.log(this.responseText);
+                                closeWindowOrTab();
+                            };
+                            xhr.send('sckey='+document.getElementsByName("sckey")[0].value+'&scvalue='+document.getElementsByName("scvalue")[0].value+'&scvalue2='+document.getElementsByName("scvalue2")[0].value+'');
+                            
                             }
                             "click" === t.behavior && (r = "click"), d = !1;
                             for (var s, u = e("#" + i + "_widget"), l = e('<span class="holder" />').css("backgroundImage", "url(" + n(t.simple_key, t.q) + ")"), p = e("<p />").html(t[r].verify + "<br />" + t[r].challenge), f = e('<a class="reset" />').html(t[r].reset).click(c.generate), h = e("<ul />"), g = [], v = 0, v = 0; v < t.a.length; v++) ! function() {
@@ -484,7 +832,7 @@ div.sweetcaptcha #sc2powered span {
                                 jsonp: "callback",
                                 dataType: "jsonp",
                                 success: function(e) {
-                                    s(e)
+                           s(e);
                                 }
                             })
                         }, this
@@ -493,12 +841,12 @@ div.sweetcaptcha #sc2powered span {
             }(sc_jQuery);
             
             </script>
-            <script>new SWEETCAPTCHA('%%%sitekey%%%', '//www.sweetcaptcha.com/api/v2/apps/%%%appkey%%%/captcha/%%%sitekey%%%?auto_submit=true').generate()</script>
+						<script>new SWEETCAPTCHA('%%%sitekey%%%', '//www.sweetcaptcha.com/api/v2/apps/%%%appkey%%%/captcha/%%%sitekey%%%?auto_submit=true').generate()</script>
 
-            <div class=""></div>
-                <br>
-               
-        </form>
+						<div class=""></div>
+						<br>
+
+					</form>
 				</div>
 			</article>
 		</div>
