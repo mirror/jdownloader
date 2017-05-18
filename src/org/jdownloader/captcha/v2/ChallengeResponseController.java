@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
@@ -35,6 +34,7 @@ import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.gui.DialogMultiClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.RecaptchaChooseFrom3x3Solver;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
@@ -49,11 +49,11 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 
 public class ChallengeResponseController {
+
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
 
     /**
@@ -143,6 +143,7 @@ public class ChallengeResponseController {
             }
             if (!Application.isHeadless()) {
                 addSolver(DialogClickCaptchaSolver.getInstance());
+                addSolver(DialogMultiClickCaptchaSolver.getInstance());
             }
             if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
