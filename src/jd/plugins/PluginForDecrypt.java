@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.io.File;
@@ -21,22 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.ProgressController;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDistributer;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
 import org.appwork.utils.Application;
@@ -56,6 +39,8 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMediaCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
@@ -64,6 +49,20 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDistributer;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -73,13 +72,9 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 public abstract class PluginForDecrypt extends Plugin {
 
     private volatile LinkCrawlerDistributer distributer             = null;
-
     private volatile LazyCrawlerPlugin      lazyC                   = null;
-
     private volatile LinkCrawlerGeneration  generation;
-
     private volatile LinkCrawler            crawler;
-
     private final static ProgressController dummyProgressController = new ProgressController();
 
     /**
@@ -302,6 +297,10 @@ public abstract class PluginForDecrypt extends Plugin {
             /*
              * we now lets log into plugin specific loggers with all verbose/debug on
              */
+            // prevent NPE when breakpointing
+            if (br == null) {
+                br = new Browser();
+            }
             br.setLogger(logger);
             br.setVerbose(true);
             br.setDebug(true);
@@ -322,8 +321,10 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* User entered password captcha (too many times) */
                 throwable = null;
                 pwfailed = true;
-            } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
+            } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
                 throwable = null;
+                final String reason = e.getMessage();
+                tmpLinks = createOfflineLink(link, tmpLinks, reason);
             } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                 throwable = null;
             } else if (e instanceof PluginException) {
@@ -331,10 +332,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (((PluginException) e).getLinkStatus() == 32) {
                     throwable = null;
                     linkstatusOffline = true;
-                    if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
-                        tmpLinks = new ArrayList<DownloadLink>();
-                        tmpLinks.add(createOfflinelink(link.getURL()));
-                    }
+                    tmpLinks = createOfflineLink(link, tmpLinks, null);
                 }
             }
             if (throwable == null && logger instanceof LogSource) {
@@ -357,15 +355,7 @@ public abstract class PluginForDecrypt extends Plugin {
             errLog(throwable, br, link);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + link.getURL());
-            /*
-             * we can effectively create generic offline link here. For custom message/comments this must be done within the plugin.
-             * -raztoki
-             */
-            if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
-                tmpLinks = new ArrayList<DownloadLink>();
-                tmpLinks.add(createOfflinelink(link.getURL()));
-            }
-
+            tmpLinks = createOfflineLink(link, tmpLinks, null);
             /* lets forward the log */
             if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
@@ -375,6 +365,21 @@ public abstract class PluginForDecrypt extends Plugin {
         if (logger instanceof LogSource) {
             /* make sure we use the right logger */
             ((LogSource) logger).clear();
+        }
+        return tmpLinks;
+    }
+
+    /**
+     * we can effectively create generic offline link here. For custom message/comments this must be done within the plugin, else we can use
+     * the exception message
+     *
+     * @author raztoki
+     * @return
+     */
+    private ArrayList<DownloadLink> createOfflineLink(final CrawledLink link, ArrayList<DownloadLink> tmpLinks, final String message) {
+        if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
+            tmpLinks = new ArrayList<DownloadLink>();
+            tmpLinks.add(createOfflinelink(link.getURL(), message));
         }
         return tmpLinks;
     }
@@ -474,6 +479,12 @@ public abstract class PluginForDecrypt extends Plugin {
     protected ClickedPoint getCaptchaClickedPoint(String method, File file, final CryptedLink link, String defaultValue, String explain) throws Exception {
         final File copy = copyCaptcha(method, file);
         final ClickCaptchaChallenge c = new ClickCaptchaChallenge(copy, explain, this);
+        return handleCaptchaChallenge(c);
+    }
+
+    protected MultiClickedPoint getMultiCaptchaClickedPoint(String method, File file, final CryptedLink link, String defaultValue, String explain) throws Exception {
+        final File copy = copyCaptcha(method, file);
+        final MultiClickCaptchaChallenge c = new MultiClickCaptchaChallenge(copy, explain, this);
         return handleCaptchaChallenge(c);
     }
 
@@ -634,6 +645,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public void runCaptchaDDosProtection(String id) throws InterruptedException {
         final TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
         final TrackerJob trackerJob = new TrackerJob(1) {
+
             @Override
             public void waitForNextSlot(long waitFor) throws InterruptedException {
                 while (waitFor > 0 && !isAbort()) {
