@@ -42,6 +42,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
@@ -63,9 +64,7 @@ public class HighWayMe extends UseNet {
     private static final String                            NORESUME                            = NICE_HOSTproperty + "NORESUME";
     private static final int                               ERRORHANDLING_MAXLOGINS             = 2;
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
-
     private static final long                              trust_cookie_age                    = 300000l;
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><Boolean resume possible|impossible> */
     private static HashMap<String, Boolean>                hostResumeMap                       = new HashMap<String, Boolean>();
@@ -159,7 +158,7 @@ public class HighWayMe extends UseNet {
                     } else if (!"0".equals(code)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    if (filename == null || filename.equals("") || filesize_str == null || !filesize_str.matches("\\d+")) {
+                    if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(filesize_str) || !filesize_str.matches("\\d+")) {
                         /* This should never happen at this stage! */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -187,9 +186,10 @@ public class HighWayMe extends UseNet {
             if (filesize > -1) {
                 link.setDownloadSize(filesize);
             }
+            /* 2017-05-18: Even via json API, filenames are often html encoded --> Fix that */
+            filename = Encoding.htmlDecode(filename);
             link.setFinalFileName(filename);
             return AvailableStatus.TRUE;
-
         }
     }
 

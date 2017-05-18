@@ -37,7 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
@@ -45,9 +44,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbits.com" }, urls = { "https?://(?:www\\.)?uploadbits\\.(?:com|net)/[A-Za-z0-9]+" })
-public class UploadbitsCom extends PluginForHost {
+public class UploadbitsCom extends antiDDoSForHost {
     public UploadbitsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -488,22 +488,6 @@ public class UploadbitsCom extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
             return "https://";
@@ -635,24 +619,28 @@ public class UploadbitsCom extends PluginForHost {
         }
     }
 
-    private void getPage(String page) throws Exception {
+    @Override
+    protected void getPage(String page) throws Exception {
         page = correctProtocol(page);
         getPage(br, page);
     }
 
-    private void getPage(final Browser br, String page) throws Exception {
+    @Override
+    protected void getPage(final Browser br, String page) throws Exception {
         page = correctProtocol(page);
-        getPage(br, page);
+        super.getPage(br, page);
     }
 
-    private void postPage(String page, final String postdata) throws Exception {
+    @Override
+    protected void postPage(String page, final String postdata) throws Exception {
         page = correctProtocol(page);
         postPage(br, page, postdata);
     }
 
-    private void postPage(final Browser br, String page, final String postdata) throws Exception {
+    @Override
+    protected void postPage(final Browser br, String page, final String postdata) throws Exception {
         page = correctProtocol(page);
-        postPage(br, page, postdata);
+        super.postPage(br, page, postdata);
     }
 
     private String correctProtocol(String url) {
