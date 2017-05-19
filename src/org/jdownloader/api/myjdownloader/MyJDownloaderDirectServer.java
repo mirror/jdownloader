@@ -15,9 +15,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.StreamClientImpl;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
@@ -41,6 +38,9 @@ import org.jdownloader.api.DeprecatedAPIServer.AutoSSLHttpConnectionFactory;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.StreamClientImpl;
 
 public class MyJDownloaderDirectServer extends Thread {
     private ServerSocket                     currentServerSocket = null;
@@ -304,6 +304,7 @@ public class MyJDownloaderDirectServer extends Thread {
                         }
                     });
                     if (httpConnection != null) {
+                        httpConnection.setHook(connectThread.getMyJDownloaderController());
                         httpConnection.run();
                     }
                 } catch (final Throwable e) {

@@ -35,18 +35,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpConnection;
+import org.appwork.utils.net.httpserver.HttpConnection.ConnectionHook;
 import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
+import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.net.httpserver.HttpServer;
+import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HeadRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -67,7 +76,7 @@ import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jdownloader.logging.LogController;
 
-public class DeprecatedAPIServer extends HttpServer {
+public class DeprecatedAPIServer extends HttpServer implements ConnectionHook {
     protected static class APICert {
         private final KeyPair keyPair;
 
@@ -157,6 +166,11 @@ public class DeprecatedAPIServer extends HttpServer {
 
     public DeprecatedAPIServer(int port) {
         super(port);
+    }
+
+    @Override
+    public HttpHandlerInfo registerRequestHandler(HttpRequestHandler handler) {
+        return super.registerRequestHandler(handler);
     }
 
     public class CustomHttpConnection extends HttpConnection {
@@ -449,6 +463,7 @@ public class DeprecatedAPIServer extends HttpServer {
                         }
                     });
                     if (httpConnection != null) {
+                        httpConnection.setHook(DeprecatedAPIServer.this);
                         httpConnection.run();
                     }
                 } catch (Throwable e) {
@@ -456,5 +471,62 @@ public class DeprecatedAPIServer extends HttpServer {
                 }
             }
         };
+    }
+
+    @Override
+    public void onBeforeSendHeaders(HttpResponse response) {
+        if (9666 == getWishedPort()) {
+            // Flashgot api Extern Interface!
+            // free access even from the browser
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+        } else {
+            // https://scotthelme.co.uk/hardening-your-http-response-headers/#x-content-type-options
+            if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN) == null) {
+                String value = JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderAccessControllAllowOrigin();
+                if (StringUtils.isNotEmpty(value)) {
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, value));
+                }
+            }
+            if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY) == null) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderContentSecurityPolicy()));
+            }
+            if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS) == null) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXFrameOptions()));
+            }
+            if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION) == null) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXXssProtection()));
+            }
+            if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_REFERRER_POLICY) == null) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_REFERRER_POLICY, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderReferrerPolicy()));
+            }
+            if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS) == null) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS, JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderXContentTypeOptions()));
+            }
+        }
+    }
+
+    @Override
+    public void onAfterSendHeaders(HttpResponse httpConnection) {
+    }
+
+    @Override
+    public void onFinalizeConnection(boolean closeConnection, HttpRequest request, HttpResponse response) {
+    }
+
+    @Override
+    public void onStartHandleConnection(HttpRequest request, HttpResponse response) throws org.appwork.remoteapi.exceptions.AuthException {
+        if (9666 != getWishedPort()) {
+            // local API.
+            HTTPHeader originHeader = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_ORIGIN);
+            if (originHeader != null) {
+                String origin = originHeader.getValue().replaceAll("^https?://", "");
+                String value = JsonConfig.create(RemoteAPIConfig.class).getLocalAPIServerHeaderAccessControllAllowOrigin();
+                if (StringUtils.isNotEmpty(origin) && !"*".equals(value)) {
+                    throw new org.appwork.remoteapi.exceptions.AuthException("Bad Origin");
+                }
+                // TODO Validate origin
+            }
+        }
+        System.out.println(1);
     }
 }

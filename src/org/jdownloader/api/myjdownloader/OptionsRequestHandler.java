@@ -10,6 +10,8 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 
 public class OptionsRequestHandler implements HttpRequestHandler {
+    public OptionsRequestHandler() {
+    }
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) {
@@ -33,5 +35,4 @@ public class OptionsRequestHandler implements HttpRequestHandler {
             return false;
         }
     }
-
 }

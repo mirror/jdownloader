@@ -20,10 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -66,6 +62,10 @@ import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE
 import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 import org.jdownloader.statistics.StatsManager;
+
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
 
 public class MyJDownloaderConnectThread extends Thread {
     public static class SessionInfoWrapper extends SessionInfo {
@@ -326,6 +326,10 @@ public class MyJDownloaderConnectThread extends Thread {
             directServer = null;
             break;
         }
+    }
+
+    public MyJDownloaderController getMyJDownloaderController() {
+        return myJDownloaderController;
     }
 
     protected MyJDownloaderAPI getApi() {
@@ -823,6 +827,7 @@ public class MyJDownloaderConnectThread extends Thread {
             public void run() {
                 try {
                     final MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, getApi());
+                    httpConnection.setHook(myJDownloaderController);
                     httpConnection.run();
                 } catch (final Throwable e) {
                     log(e);

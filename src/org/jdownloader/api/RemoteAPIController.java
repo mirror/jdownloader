@@ -16,10 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -109,6 +105,10 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
+
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
 
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
@@ -254,7 +254,6 @@ public class RemoteAPIController {
             @Override
             protected RemoteAPIResponse createRemoteAPIResponseObject(RemoteAPIRequest request, HttpResponse response) {
                 final RemoteAPIResponse ret = new MyJDRmoteAPIResponse(response, this);
-                ret.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
                 return ret;
             }
 
