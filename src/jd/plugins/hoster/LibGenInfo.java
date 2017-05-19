@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
 import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +30,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
+
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
@@ -107,6 +106,16 @@ public class LibGenInfo extends PluginForHost {
         } else {
             filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
             filesize = br.getRegex(">size\\(bytes\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
+            if (filename == null) {
+                // construct
+                final String author = br.getRegex(">author\\(s\\)</td>\\s*<td>\\s*(.*?)\\s*</td>").getMatch(0);
+                final String title = br.getRegex(">title</td>\\s*<td>\\s*(.*?)\\s*</td>").getMatch(0);
+                final String type = br.getRegex(">file type</td>\\s*<td>(.*?)</td>").getMatch(0);
+                if (author == null || title == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                filename = author + " - " + title + "." + type;
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -134,6 +143,10 @@ public class LibGenInfo extends PluginForHost {
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             } else {
+                final String dlUrl = br.getRegex("href=(\"|')(/download\\.php.*?)\\1").getMatch(1);
+                if (dlUrl != null) {
+                    br.getPage(dlUrl);
+                }
                 Form download = br.getFormbyProperty("name", "receive");
                 if (download == null) {
                     download = br.getForm(1);
