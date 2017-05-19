@@ -70,7 +70,7 @@ public class QtyFilesCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
-    // mods:many, do NOT update xfilesharing version!!, needs a login for free !!
+    // mods:many, do NOT update xfilesharing version!!, needs a login for free !!, 2017-05-19: added special RegEx for premiumonly handling
     // non account: 1(no resume) * ? with waits after captcha
     // free account: same as above
     // premium account: 10 * 1
