@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -52,9 +51,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qtyfiles.com" }, urls = { "https?://(www\\.)?qtyfiles\\.com/([a-z0-9]{12}(/[^<>\"/]*?\\.html)?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qtyfiles.com" }, urls = { "https?://(www\\.)?qtyfiles\\.com/([a-z0-9]{12}(/[^<>\"/]*?\\.html)?)" })
 public class QtyFilesCom extends PluginForHost {
-
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://qtyfiles.com";
@@ -79,7 +77,6 @@ public class QtyFilesCom extends PluginForHost {
     // protocol: no https
     // captchatype: recaptcha
     // other: no redirects
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -138,12 +135,15 @@ public class QtyFilesCom extends PluginForHost {
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                }
-            }
+        }
+        if (filename == null) {
+            filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+        }
+        if (filename == null) {
+            filename = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
@@ -525,7 +525,7 @@ public class QtyFilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -578,26 +578,21 @@ public class QtyFilesCom extends PluginForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -842,5 +837,4 @@ public class QtyFilesCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

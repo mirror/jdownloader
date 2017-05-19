@@ -166,6 +166,11 @@ public class LittlebyteNet extends PluginForHost {
         if (wait_minutes != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait_minutes) * 60 * 1001l);
         }
+        if (this.br.containsHTML("Sorry, you can not download more than")) {
+            /* Daily limit reached */
+            /* E.g. "> Sorry, you can not download more than 5 files with 1 IP per day.<" */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1001l);
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

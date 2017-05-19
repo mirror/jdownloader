@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -49,12 +48,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "https?://(www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)(embed/)?[^/]+/[^/]+/([^/]+/)?[0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "https?://(?:www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)(embed/)?[^/]+/[^/]+/([^/]+/)?[0-9]+" })
 public class Tube8Com extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
     private boolean              setEx                           = true;
     private String               dllink                          = null;
     private static final String  mobile                          = "mobile";
@@ -69,12 +66,25 @@ public class Tube8Com extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed", ""));
+        final String url_added = link.getDownloadURL().replace("/embed", "");
+        String url_new = null;
+        if (url_added.contains("/embed")) {
+            url_new = url_added.replace("/embed", "");
+        } else {
+            url_new = url_added;
+        }
+        url_new = url_new.replace("http://", "https://");
+        /* 2017-05-19: We will get a 404 response without slash at the end */
+        if (!url_new.endsWith("/")) {
+            url_new += "/";
+        }
+        link.setUrlDownload(url_new);
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        correctDownloadLink(downloadLink);
         dllink = null;
         this.br.setAllowedResponseCodes(500);
         if (setEx) {
@@ -102,11 +112,9 @@ public class Tube8Com extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         boolean failed = true;
         boolean preferMobile = getPluginConfig().getBooleanProperty(mobile, false);
         String videoDownloadUrls = "";
-
         /* streaming link */
         findStreamingLink();
         if (dllink != null && requestVideo(downloadLink)) {
@@ -130,11 +138,9 @@ public class Tube8Com extends PluginForHost {
         if ((failed || preferMobile) && dllink != null && requestVideo(downloadLink)) {
             failed = false;
         }
-
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         filename = filename.trim();
         if (dllink.contains(".3gp")) {
             downloadLink.setFinalFileName((filename + ".3gp"));
@@ -208,14 +214,12 @@ public class Tube8Com extends PluginForHost {
         }
         flashVars = flashVars.replaceAll("\"", "");
         Map<String, String> values = new HashMap<String, String>();
-
         for (String s : flashVars.split(",")) {
             if (!s.matches(".+:.+")) {
                 continue;
             }
             values.put(s.split(":")[0], s.split(":", 2)[1]);
         }
-
         String isEncrypted = values.get("encrypted");
         dllink = values.get("video_url");
         if (dllink != null) {
@@ -359,7 +363,6 @@ public class Tube8Com extends PluginForHost {
         byte[] data = Base64.decode(cipherText.toCharArray());
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] k = Arrays.copyOf(key.getBytes(), nBits);
-
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         SecretKey secretKey = generateSecretKey(k, nBits);
         byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
@@ -467,5 +470,4 @@ public class Tube8Com extends PluginForHost {
             return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
         }
     }
-
 }

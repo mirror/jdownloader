@@ -274,6 +274,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 /* 2017-02-23: New */
                 date = this.br.getRegex("data\\-titolo=\"[^\"]+del (\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
             }
+            if (date == null) {
+                /* 2017-02-23: New */
+                date = this.br.getRegex("itemprop=\"datePublished\" content=\"(\\d{2}\\-\\d{2}\\-\\d{4})\"").getMatch(0);
+            }
         } else {
             LinkedHashMap<String, Object> entries = null;
             if (content_id_from_html != null) {
