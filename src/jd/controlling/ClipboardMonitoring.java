@@ -288,7 +288,7 @@ public class ClipboardMonitoring {
             URILISTFLAVOR = ret;
         }
     }
-    private final AtomicReference<Thread>                                                    monitoringThread    = new AtomicReference<Thread>(null);
+    private final AtomicReference<Object>                                                    monitoringThread    = new AtomicReference<Object>(null);
     private final Clipboard                                                                  clipboard;
     private static final AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE> CLIPBOARD_SKIP_MODE = new AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE>(GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP);
     private final WindowsClipboardHack                                                       windowsClipboardHack;
@@ -350,7 +350,7 @@ public class ClipboardMonitoring {
     public synchronized void startMonitoring() {
         if (clipboard != null) {
             if (!isMonitoring()) {
-                final boolean skipFirstRound = (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP.equals(CLIPBOARD_SKIP_MODE.get()) && monitoringThread == null) || (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_ENABLE.equals(CLIPBOARD_SKIP_MODE.get()));
+                final boolean skipFirstRound = (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP.equals(CLIPBOARD_SKIP_MODE.get()) && monitoringThread.get() == null) || (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_ENABLE.equals(CLIPBOARD_SKIP_MODE.get()));
                 final Thread newMonitoringThread = new Thread() {
                     private final AtomicLong roundIndex       = new AtomicLong(0);
                     private ClipboardHash    oldStringContent = new ClipboardHash(0, -1);
@@ -500,16 +500,16 @@ public class ClipboardMonitoring {
                             oldStringContent = null;
                             oldHTMLFragment = null;
                             oldListContent = null;
-                            ClipboardMonitoring.this.monitoringThread.compareAndSet(Thread.currentThread(), null);
+                            ClipboardMonitoring.this.monitoringThread.compareAndSet(Thread.currentThread(), ClipboardMonitoring.this);
                         }
                     }
                 };
                 newMonitoringThread.setName("ClipboardMonitor");
                 newMonitoringThread.setDaemon(true);
-                final Thread oldMonitoringThread = ClipboardMonitoring.this.monitoringThread.getAndSet(newMonitoringThread);
+                final Object oldMonitoringThread = ClipboardMonitoring.this.monitoringThread.getAndSet(newMonitoringThread);
                 newMonitoringThread.start();
-                if (oldMonitoringThread != null) {
-                    oldMonitoringThread.interrupt();
+                if (oldMonitoringThread != null && oldMonitoringThread instanceof Thread) {
+                    ((Thread) oldMonitoringThread).interrupt();
                 }
             }
         }
@@ -604,15 +604,15 @@ public class ClipboardMonitoring {
     }
 
     public synchronized void stopMonitoring() {
-        final Thread thread = monitoringThread.getAndSet(null);
-        if (thread != null) {
-            thread.interrupt();
+        final Object thread = monitoringThread.getAndSet(this);
+        if (thread != null && thread instanceof Thread) {
+            ((Thread) thread).interrupt();
         }
     }
 
     public boolean isMonitoring() {
-        final Thread thread = monitoringThread.get();
-        return thread != null && thread.isAlive();
+        final Object thread = monitoringThread.get();
+        return thread != null && thread instanceof Thread && ((Thread) thread).isAlive();
     }
 
     public ClipboardMonitoring() {
