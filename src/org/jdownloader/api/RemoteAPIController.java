@@ -253,7 +253,9 @@ public class RemoteAPIController {
 
             @Override
             protected RemoteAPIResponse createRemoteAPIResponseObject(RemoteAPIRequest request, HttpResponse response) {
-                return new MyJDRmoteAPIResponse(response, this);
+                final RemoteAPIResponse ret = new MyJDRmoteAPIResponse(response, this);
+                ret.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+                return ret;
             }
 
             @Override
