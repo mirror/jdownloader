@@ -475,7 +475,7 @@ public class DeprecatedAPIServer extends HttpServer implements ConnectionHook {
 
     @Override
     public void onBeforeSendHeaders(HttpResponse response) {
-        if (9666 == getWishedPort()) {
+        if (9666 == getWishedPort() || true) {
             // Flashgot api Extern Interface!
             // free access even from the browser
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
@@ -515,7 +515,7 @@ public class DeprecatedAPIServer extends HttpServer implements ConnectionHook {
 
     @Override
     public void onStartHandleConnection(HttpRequest request, HttpResponse response) throws org.appwork.remoteapi.exceptions.AuthException {
-        if (9666 != getWishedPort()) {
+        if (9666 != getWishedPort() && false) {
             // local API.
             HTTPHeader originHeader = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_ORIGIN);
             if (originHeader != null) {
