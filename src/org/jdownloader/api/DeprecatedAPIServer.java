@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -59,6 +60,7 @@ import org.bouncycastle.crypto.tls.HashAlgorithm;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.SignatureAlgorithm;
 import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
@@ -66,7 +68,6 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jdownloader.logging.LogController;
 
 public class DeprecatedAPIServer extends HttpServer {
-
     protected static class APICert {
         private final KeyPair keyPair;
 
@@ -269,7 +270,6 @@ public class DeprecatedAPIServer extends HttpServer {
                 }
                 final byte[] json = JSonStorage.getMapper().objectToByteArray(certStorables);
                 final Runnable run = new Runnable() {
-
                     @Override
                     public void run() {
                         JSonStorage.saveTo(APICERTSFILE, false, JSonStorage.KEY, json);
@@ -314,9 +314,56 @@ public class DeprecatedAPIServer extends HttpServer {
                 httpOS = clientSocket.getOutputStream();
             } else {
                 // https
-                final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom());
-                tlsServerProtocol.accept(new DefaultTlsServer() {
+                final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom()) {
+                    @Override
+                    protected void failWithError(short arg0, short arg1, String arg2, Throwable arg3) throws IOException {
+                        if (true) {
+                            super.failWithError(arg0, arg1, arg2, arg3);
+                        } else {
+                            // see modified getInputStream
+                            if (arg3 instanceof TlsFatalAlert || !(arg3 instanceof IOException)) {
+                                super.failWithError(arg0, arg1, arg2, arg3);
+                            } else if (arg3 instanceof IOException) {
+                                if ("Failed to read record".equals(arg2)) {
+                                    // ignore
+                                } else {
+                                    super.failWithError(arg0, arg1, arg2, arg3);
+                                }
+                            }
+                        }
+                    }
 
+                    InputStream modifiedTlsInputStream = null;
+
+                    @Override
+                    public InputStream getInputStream() {
+                        if (modifiedTlsInputStream == null && super.getInputStream() != null) {
+                            /*
+                             * customized InputStream with optimized implementation of available to provide support for non blocking read
+                             */
+                            modifiedTlsInputStream = new FilterInputStream(super.getInputStream()) {
+                                public int available() throws IOException {
+                                    final int dataAvailable = applicationDataAvailable();
+                                    if (dataAvailable > 0) {
+                                        return dataAvailable;
+                                    } else {
+                                        final int socketAvailable = clientSocketIS.available();
+                                        if (socketAvailable >= 5) {
+                                            // recordHeader must be minimum 5 long
+                                            // TlsProtocol.readApplicationData -> safeReadRecord -> recordStream.readRecord() -> byte[]
+                                            // recordHeader = TlsUtils.readAllOrNothing(5, input);
+                                            return socketAvailable;
+                                        } else {
+                                            return 0;
+                                        }
+                                    }
+                                };
+                            };
+                        }
+                        return modifiedTlsInputStream;
+                    }
+                };
+                tlsServerProtocol.accept(new DefaultTlsServer() {
                     private Certificate            cert     = null;
                     private AsymmetricKeyParameter keyParam = null;
 
@@ -373,7 +420,6 @@ public class DeprecatedAPIServer extends HttpServer {
                         // signal TLS1.2 support
                         return ProtocolVersion.TLSv12;
                     };
-
                 });
                 httpIS = tlsServerProtocol.getInputStream();
                 httpOS = tlsServerProtocol.getOutputStream();
@@ -393,12 +439,10 @@ public class DeprecatedAPIServer extends HttpServer {
     @Override
     protected Runnable createConnectionHandler(final Socket clientSocket) throws IOException {
         return new Runnable() {
-
             @Override
             public void run() {
                 try {
                     final HttpConnection httpConnection = autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
-
                         @Override
                         public HttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
                             return new CustomHttpConnection(DeprecatedAPIServer.this, clientSocket, is, os);
