@@ -1,9 +1,11 @@
 package org.jdownloader.api;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -352,7 +354,26 @@ public class RemoteAPIController {
                                 if (is.available() > 0) {
                                     return super.readWebSocketFrame(is);
                                 } else {
-                                    return null;
+                                    if (true) {
+                                        return null;
+                                    } else {
+                                        final byte[] temp = new byte[1];
+                                        final int read;
+                                        try {
+                                            read = is.read(temp, 0, 1);
+                                        } catch (IOException e) {
+                                            return null;
+                                        }
+                                        if (read == 1) {
+                                            final PushbackInputStream pbis = new PushbackInputStream(is);
+                                            pbis.unread(temp, 0, 1);
+                                            return super.readWebSocketFrame(pbis);
+                                        } else if (read == 0) {
+                                            return null;
+                                        } else {
+                                            throw new EOFException();
+                                        }
+                                    }
                                 }
                             };
 

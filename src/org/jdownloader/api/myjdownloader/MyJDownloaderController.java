@@ -433,7 +433,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     @Override
     public void onBeforeSendHeaders(HttpResponse response) {
-        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+        if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN) == null) {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+        }
         if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY) == null) {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY, "default-src 'self'"));
         }

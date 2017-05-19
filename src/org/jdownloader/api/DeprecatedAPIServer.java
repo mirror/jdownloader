@@ -527,6 +527,5 @@ public class DeprecatedAPIServer extends HttpServer implements ConnectionHook {
                 // TODO Validate origin
             }
         }
-        System.out.println(1);
     }
 }
