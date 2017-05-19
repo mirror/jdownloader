@@ -275,7 +275,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 date = this.br.getRegex("data\\-titolo=\"[^\"]+del (\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
             }
             if (date == null) {
-                /* 2017-02-23: New */
+                /* 2017-05-19: New */
                 date = this.br.getRegex("itemprop=\"datePublished\" content=\"(\\d{2}\\-\\d{2}\\-\\d{4})\"").getMatch(0);
             }
         } else {
