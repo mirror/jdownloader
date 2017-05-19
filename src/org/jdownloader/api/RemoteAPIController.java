@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -368,14 +369,32 @@ public class RemoteAPIController {
                                 return is;
                             }
                         };
+                        long lastActivity = System.currentTimeMillis();
+                        boolean waitForPong = false;
                         eventLoop: while (true) {
-                            final EventObject event = pollEvent(subscriber, 0);
-                            if (event != null) {
-                                final byte[] jsonBytes = JSonStorage.getMapper().objectToByteArray(new EventObjectStorable(event));
-                                wsc.writeFrame(new WriteWebSocketFrame(new WebSocketFrameHeader(true, OP_CODE.UTF8_TEXT, jsonBytes.length, null), jsonBytes));
+                            if (!subscriber.isAlive()) {
+                                wsc.writeFrame(wsc.buildCloseFrame());
+                                break eventLoop;
+                            }
+                            final EventObject event;
+                            if (!waitForPong) {
+                                event = pollEvent(subscriber, 0);
+                                if (event != null) {
+                                    final byte[] jsonBytes = JSonStorage.getMapper().objectToByteArray(new EventObjectStorable(event));
+                                    try {
+                                        wsc.writeFrame(new WriteWebSocketFrame(new WebSocketFrameHeader(true, OP_CODE.UTF8_TEXT, jsonBytes.length, null), jsonBytes));
+                                    } catch (IOException e) {
+                                        pushBackEvent(subscriber, Arrays.asList(new EventObject[] { event }));
+                                        throw e;
+                                    }
+                                }
+                            } else {
+                                event = null;
                             }
                             final ReadWebSocketFrame frame = wsc.readNextFrame();
                             if (frame != null) {
+                                waitForPong = false;
+                                lastActivity = System.currentTimeMillis();
                                 System.out.println(frame);
                                 switch (frame.getFrameHeader().getOpcode()) {
                                 case PING:
@@ -387,6 +406,10 @@ public class RemoteAPIController {
                                     break;
                                 }
                             } else if (event == null) {
+                                if (System.currentTimeMillis() - lastActivity > 15 * 1000) {
+                                    waitForPong = true;
+                                    wsc.writeFrame(wsc.buildPingFrame());
+                                }
                                 Thread.sleep(50);
                             }
                         }
