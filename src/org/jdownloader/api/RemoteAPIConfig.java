@@ -6,11 +6,11 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface RemoteAPIConfig extends ConfigInterface {
-
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
@@ -51,4 +51,31 @@ public interface RemoteAPIConfig extends ConfigInterface {
     boolean isJDAnywhereApiEnabled();
 
     void setJDAnywhereApiEnabled(boolean b);
+
+    @DescriptionForConfigEntry("Control Allowed origins and CORS")
+    @DefaultStringValue("")
+    /**
+     * Default: do not allow CrossSiteSCripting
+     *
+     * @return
+     */
+    String getLocalAPIServerHeaderAccessControllAllowOrigin();
+
+    @DescriptionForConfigEntry("https://content-security-policy.com/")
+    @DefaultStringValue("default-src 'self'")
+    String getLocalAPIServerHeaderContentSecurityPolicy();
+
+    @DescriptionForConfigEntry("Allow or deny framing")
+    @DefaultStringValue("DENY")
+    String getLocalAPIServerHeaderXFrameOptions();
+
+    @DescriptionForConfigEntry("Enable/Disable integrated XSS Protection")
+    @DefaultStringValue("1; mode=block")
+    String getLocalAPIServerHeaderXXssProtection();
+
+    @DefaultStringValue("no-referrer")
+    String getLocalAPIServerHeaderReferrerPolicy();
+
+    @DefaultStringValue("nosniff")
+    String getLocalAPIServerHeaderXContentTypeOptions();
 }

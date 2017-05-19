@@ -2,6 +2,7 @@ package org.jdownloader.api.myjdownloader;
 
 import org.appwork.console.AbstractConsole;
 import org.appwork.console.ConsoleDialog;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -15,6 +16,10 @@ import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.HttpConnection.ConnectionHook;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
@@ -29,7 +34,7 @@ import org.jdownloader.settings.staticreferences.CFG_MYJD;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
-public class MyJDownloaderController implements ShutdownVetoListener, GenericConfigEventListener<Boolean> {
+public class MyJDownloaderController implements ShutdownVetoListener, GenericConfigEventListener<Boolean>, ConnectionHook {
     private static final MyJDownloaderController INSTANCE = new MyJDownloaderController();
 
     public static MyJDownloaderController getInstance() {
@@ -424,5 +429,34 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         if (ct != null) {
             ct.terminateSession(connectToken);
         }
+    }
+
+    @Override
+    public void onBeforeSendHeaders(HttpResponse response) {
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+        if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY) == null) {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY, "default-src 'self'"));
+        }
+        if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS) == null) {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS, "DENY"));
+        }
+        if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION) == null) {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION, "1; mode=block"));
+        }
+        if (response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS) == null) {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS, "nosniff"));
+        }
+    }
+
+    @Override
+    public void onAfterSendHeaders(HttpResponse httpConnection) {
+    }
+
+    @Override
+    public void onFinalizeConnection(boolean closeConnection, HttpRequest request, HttpResponse response) {
+    }
+
+    @Override
+    public void onStartHandleConnection(HttpRequest request, HttpResponse response) {
     }
 }
