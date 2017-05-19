@@ -2,15 +2,19 @@ package org.jdownloader.api.cnl2;
 
 import java.io.IOException;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
+import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.myjdownloader.OptionsRequestHandler;
 
 public class ExternInterface {
-
     private static ExternInterface INSTANCE = new ExternInterface();
 
     private ExternInterface() {
@@ -19,7 +23,14 @@ public class ExternInterface {
             final Thread serverInit = new Thread() {
                 @Override
                 public void run() {
-                    final RemoteAPI remoteAPI = new RemoteAPI();
+                    final RemoteAPI remoteAPI = new RemoteAPI() {
+                        @Override
+                        protected RemoteAPIResponse createRemoteAPIResponseObject(RemoteAPIRequest request, HttpResponse response) throws IOException {
+                            final RemoteAPIResponse ret = super.createRemoteAPIResponseObject(request, response);
+                            ret.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+                            return ret;
+                        }
+                    };
                     try {
                         remoteAPI.register(new ExternInterfaceImpl());
                         while (config.isExternInterfaceEnabled() && !Thread.currentThread().isInterrupted()) {
@@ -88,5 +99,4 @@ public class ExternInterface {
     public static ExternInterface getINSTANCE() {
         return INSTANCE;
     }
-
 }
