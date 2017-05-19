@@ -16,8 +16,9 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" })
 public class DataFileComFolder extends PluginForDecrypt {
 
@@ -37,12 +36,14 @@ public class DataFileComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private int page = 1;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setAllowedResponseCodes(502);
-
-        br.getPage(parameter);
+        page = 1;
+        br.getPage(buildPageNumber(parameter));
         jd.plugins.hoster.DataFileCom.redirectAntiDDos(br, this);
         if (br.getHttpConnection().getResponseCode() == 502) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -52,26 +53,14 @@ public class DataFileComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("<tr class=\"\">(.*?)</tr>").getColumn(0);
-        if (links == null || links.length == 0) {
-            /* Check for empty folder */
-            if (br.containsHTML("class=\"file-size\"")) {
-                decryptedLinks.add(createOfflinelink(parameter, "Empty Folder"));
-                return decryptedLinks;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        FilePackage fp = FilePackage.getInstance();
-        String fpName = br.getRegex("file-name\">([^<>]+)<").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        final String fpName = br.getRegex("file-name\">([^<>]+)<").getMatch(0);
         if (fpName != null) {
             fp.setName(fpName);
         }
-        for (final String linkinfo : links) {
-            final String finallink = new Regex(linkinfo, "\"(https?://(www\\.)datafile\\.com/d/[A-Za-z0-9]+)\"").getMatch(0);
-            String filename = new Regex(linkinfo, ">([^<>\"]*?)</a>").getMatch(0);
-            final String filesize = new Regex(linkinfo, "class=\"row-size\">([^<>\"]*?)</td>").getMatch(0);
-            if (finallink == null || filename == null || filesize == null) {
+        do {
+            final String[] links = br.getRegex("<tr class=\"\">(.*?)</tr>").getColumn(0);
+            if (links == null || links.length == 0) {
                 /* Check for empty folder */
                 if (br.containsHTML("class=\"file-size\"")) {
                     decryptedLinks.add(createOfflinelink(parameter, "Empty Folder"));
@@ -80,17 +69,42 @@ public class DataFileComFolder extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            filename = Encoding.htmlDecode(filename.trim());
-            final DownloadLink dl = createDownloadlink(finallink);
-            dl.setFinalFileName(filename);
-            dl.setProperty("decrypterfilename", filename);
-            dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            fp.addLinks(decryptedLinks);
-        }
-
+            for (final String linkinfo : links) {
+                final String finallink = new Regex(linkinfo, "\"(https?://(www\\.)datafile\\.com/d/[A-Za-z0-9]+)\"").getMatch(0);
+                String filename = new Regex(linkinfo, ">([^<>\"]*?)</a>").getMatch(0);
+                final String filesize = new Regex(linkinfo, "class=\"row-size\">([^<>\"]*?)</td>").getMatch(0);
+                if (finallink == null || filename == null || filesize == null) {
+                    /* Check for empty folder */
+                    if (br.containsHTML("class=\"file-size\"")) {
+                        decryptedLinks.add(createOfflinelink(parameter, "Empty Folder"));
+                        return decryptedLinks;
+                    }
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                filename = Encoding.htmlDecode(filename.trim());
+                final DownloadLink dl = createDownloadlink(finallink);
+                dl.setFinalFileName(filename);
+                dl.setProperty("decrypterfilename", filename);
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                fp.addLinks(decryptedLinks);
+            }
+        } while (hasNextPage(parameter));
         return decryptedLinks;
+    }
+
+    private String buildPageNumber(String parameter) {
+        return parameter + "?page=" + page + "&ipp=1000";
+    }
+
+    private boolean hasNextPage(final String parameter) throws IOException {
+        if (br.containsHTML("href=\"\\?page=" + (++page))) {
+            br.getPage(buildPageNumber(parameter));
+            return true;
+        }
+        return false;
     }
 
 }
