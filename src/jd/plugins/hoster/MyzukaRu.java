@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,9 +35,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org)/Song/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org|fm)/Song/\\d+" })
 public class MyzukaRu extends PluginForHost {
-
     public MyzukaRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +49,7 @@ public class MyzukaRu extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Florced https */
-        link.setUrlDownload("https://myzuka.org/Song/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("https://myzuka.fm/Song/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @SuppressWarnings("deprecation")
@@ -96,7 +94,7 @@ public class MyzukaRu extends PluginForHost {
             if (dllink == null) {
                 logger.info("Could not find downloadurl, trying to get streamurl");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://myzuka.org/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+                br.getPage("http://myzuka.fm/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
                 }
@@ -169,5 +167,4 @@ public class MyzukaRu extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
