@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
@@ -25,6 +24,11 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -38,16 +42,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
-
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
-
     private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr)/.+";
     private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
@@ -55,17 +52,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/.+";
     private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/.+";
     private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/.+";
-
     private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
     private static final String     API_TYPE_CINEMA                             = "^https?://api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)\\?vector=.+";
     private static final String     API_TYPE_OEMBED                             = "https://api.arte.tv/api/player/v1/oembed/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?platform=.+)";
     private static final String     API_TYPE_OTHER                              = "https://api.arte.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?.+)";
-
-    private static final String     API_HYBRID_URL_1                            = "https://api.arte.tv/api/player/v1/config/%s/%s";
-    private static final String     API_HYBRID_URL_2                            = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
     /* ?autostart=0&lifeCycle=1 = get lower qualities too. */
+    private static final String     API_HYBRID_URL_1                            = "https://api.arte.tv/api/player/v1/config/%s/%s?autostart=0&lifeCycle=1";
+    private static final String     API_HYBRID_URL_2                            = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
     private static final String     API_HYBRID_URL_3                            = "https://api-preprod.arte.tv/api/player/v1/config/%s/%s?autostart=0&lifeCycle=1";
-
     private static final String     V_NORMAL                                    = "V_NORMAL";
     private static final String     V_SUBTITLED                                 = "V_SUBTITLED";
     private static final String     V_SUBTITLE_DISABLED_PEOPLE                  = "V_SUBTITLE_DISABLED_PEOPLE";
@@ -79,19 +73,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     LOAD_LANGUAGE_FRENCH                        = "LOAD_LANGUAGE_FRENCH";
     private static final String     THUMBNAIL                                   = "THUMBNAIL";
     private static final String     FAST_LINKCHECK                              = "FAST_LINKCHECK";
-
     private static final short      format_intern_german                        = 1;
     private static final short      format_intern_french                        = 2;
     private static final short      format_intern_subtitled                     = 3;
     private static final short      format_intern_subtitled_for_disabled_people = 4;
     private static final short      format_intern_audio_description             = 5;
     private static final short      format_intern_unknown                       = 6;
-
     final String[]                  formats                                     = { http_300, http_800, http_1500, http_2200 };
-
     private static final String     LANG_DE                                     = "de";
     private static final String     LANG_FR                                     = "fr";
-
     private String                  parameter;
     private ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
     private String                  example_arte_vp_url                         = null;
@@ -124,7 +114,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String hybridAPIUrl = null;
         String date_formatted = "-";
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-
         setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(new int[] { 410, 503 });
@@ -137,7 +126,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             if (this.br.getHttpConnection().getResponseCode() != 200 && this.br.getHttpConnection().getResponseCode() != 301) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-
             /* First we need to have some basic data - this part is link-specific. */
             if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
                 videoid_base = new Regex(this.parameter, "/guide/[A-Za-z]{2}/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
@@ -164,7 +152,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             } else {
                 /* TODO: Find out when we can actually do this. */
                 videoid_base = new Regex(this.parameter, "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
-
                 video_section = this.br.toString();
                 scanForExternalUrls();
                 if (decryptedLinks.size() > 0) {
@@ -192,7 +179,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-
             if (this.example_arte_vp_url != null || fid == null) {
                 if (this.example_arte_vp_url.matches(API_TYPE_OTHER)) {
                     fid = videoid_base;
@@ -338,7 +324,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 /* One packagename for every language */
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(title);
-
                 for (final Object o : vsr_quals) {
                     foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
@@ -358,20 +343,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         height = ((Number) qualitymap.get("height")).toString();
                         videoresolution = width + "x" + height;
                     }
-
                     final String quality_intern = "http_" + videoBitrate;
                     if (!cfg.getBooleanProperty(quality_intern, true)) {
                         /* User does not want this bitrate --> Skip it */
                         logger.info("Skipping " + quality_intern);
                         continue;
                     }
-
                     final String versionCode = (String) qualitymap.get("versionCode");
                     final String versionLibelle = (String) qualitymap.get("versionLibelle");
                     final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
-
                     final VersionInfo versionInfo = parseVersionInfo(versionCode);
-
                     if (!cfg.getBooleanProperty(V_NORMAL, true) && !(SubtitleType.FULL.equals(versionInfo.getSubtitleType()) || SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType()))) {
                         /* User does not want the non-subtitled version */
                         continue;
@@ -423,13 +404,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-
             /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
             if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
                 title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-
             /* Check if user wants to download the thumbnail as well. */
             if (cfg.getBooleanProperty(THUMBNAIL, true) && thumbnailUrl != null) {
                 final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
@@ -450,7 +429,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             throw e;
         }
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
@@ -503,7 +481,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FRANCAIS,
         GERMAN,
         OTHER;
-
         private static VideoLanguage parse(final String apiosCode) {
             final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
             if (originalVersion != null) {
@@ -535,7 +512,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FRANCAIS,
         GERMAN,
         OTHER;
-
         private static SubtitleLanguage parse(final String apiosCode) {
             final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
             if (subtitleLanguage != null) {
@@ -556,7 +532,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
-
         private static SubtitleType parse(final String apiosCode) {
             if (StringUtils.equalsIgnoreCase(apiosCode, "VF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VA-STA") || StringUtils.equalsIgnoreCase(apiosCode, "VOF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VOA-STA")) {
                 return PARTIAL;
@@ -577,7 +552,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
-
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;
@@ -596,7 +570,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private static interface VersionInfo {
-
         VersionType getVersionType();
 
         VideoLanguage getVideoLanguage();
@@ -606,7 +579,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         SubtitleType getSubtitleType();
 
         boolean hasSubtitle();
-
     }
 
     private VersionInfo parseVersionInfo(final String apiosCode) {
@@ -615,7 +587,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final SubtitleLanguage subtitleLanguage = SubtitleLanguage.parse(apiosCode);
         final VersionType versionType = VersionType.parse(apiosCode);
         return new VersionInfo() {
-
             @Override
             public SubtitleType getSubtitleType() {
                 return subtitleType;
@@ -655,7 +626,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             public boolean hasSubtitle() {
                 return !SubtitleType.NONE.equals(getSubtitleType());
             }
-
         };
     }
 
@@ -774,5 +744,4 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

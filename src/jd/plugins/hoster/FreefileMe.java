@@ -20,6 +20,12 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,12 +45,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freefile.me" }, urls = { "https?://(?:www\\.)?freefile\\.me/[A-Za-z0-9]+" })
 public class FreefileMe extends antiDDoSForHost {
@@ -102,8 +102,8 @@ public class FreefileMe extends antiDDoSForHost {
     private static final int               account_FREE_MAXCHUNKS                       = -4;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 5;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")

@@ -16,16 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -43,9 +43,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" })
@@ -76,13 +73,13 @@ public class MinhatecaComBr extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -242,30 +239,17 @@ public class MinhatecaComBr extends PluginForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://minhateca.com.br";
+    private static final String MAINPAGE = "https://minhateca.com.br";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 br.getPage(MAINPAGE + "/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -273,7 +257,8 @@ public class MinhatecaComBr extends PluginForHost {
                 if (req_token == null) {
                     req_token = "undefined";
                 }
-                br.postPage("http://minhateca.com.br/action/login/loginWindow", "Redirect=true&__RequestVerificationToken=" + req_token);
+                // br.postPage("https://minhateca.com.br/action/login/loginWindow", "Redirect=true&__RequestVerificationToken=" +
+                // req_token);
                 br.postPageRaw("/action/login/login", "RememberMe=true&RememberMe=false&__RequestVerificationToken=" + req_token + "&RedirectUrl=&Redirect=True&FileId=0&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "RememberMe") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -283,18 +268,10 @@ public class MinhatecaComBr extends PluginForHost {
                     }
                 }
                 /* Only premium accounts are supported so far */
-                account.setProperty("free", false);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setType(AccountType.PREMIUM);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -313,10 +290,11 @@ public class MinhatecaComBr extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        this.br.getPage("/action/payments");
-        /* Only premium accounts are supported so far */
-        /* Browser contains message like "If you want to download files bigger than X MB buy premium" --> We have a free account */
-        if (this.br.containsHTML("você vai precisar de créditos de download")) {
+        /*
+         * 2017-05-22: Only premium accounts are supported so far, all accounts are treated as premium as there seems to be no indication
+         * regarding the account type inside their html code.
+         */
+        if (!true) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(maxPrem.get());
@@ -413,11 +391,7 @@ public class MinhatecaComBr extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
