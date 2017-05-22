@@ -13,6 +13,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
@@ -20,11 +22,8 @@ import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-import jd.controlling.captcha.SkipException;
-
 public abstract class ChallengeSolver<T> {
     public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
-
         @Override
         public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
             throw new WTFException("Not Implemented");
@@ -64,7 +63,6 @@ public abstract class ChallengeSolver<T> {
         service.addSolver(this);
         initThreadPool(i);
         Class<?> cls = this.getClass();
-
         while (true) {
             Type superClass = cls.getGenericSuperclass();
             if (superClass == null) {
@@ -79,7 +77,6 @@ public abstract class ChallengeSolver<T> {
                 throw new IllegalArgumentException("Wrong Construct");
             }
         }
-
     }
 
     public ChallengeSolver(int i) {
@@ -99,12 +96,10 @@ public abstract class ChallengeSolver<T> {
     // public void setEnabled(boolean b) {
     // getService().getConfig().setEnabled(b);
     // }
-
     public List<SolverJob<T>> listJobs() {
         synchronized (map) {
             return new ArrayList<SolverJob<T>>(map.keySet());
         }
-
     }
 
     public boolean isJobDone(SolverJob<?> job) {
@@ -114,8 +109,7 @@ public abstract class ChallengeSolver<T> {
     }
 
     public void enqueue(SolverJob<T> job) {
-        JobRunnable<T> jr;
-        jr = new JobRunnable<T>(this, job);
+        final JobRunnable<T> jr = new JobRunnable<T>(this, job);
         synchronized (map) {
             map.put(job, jr);
             if (threadPool == null) {
@@ -154,47 +148,11 @@ public abstract class ChallengeSolver<T> {
         if (i <= 0) {
             return;
         }
-        threadPool = new ThreadPoolExecutor(0, i, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
-
+        threadPool = new ThreadPoolExecutor(i, i, 5000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
             public Thread newThread(final Runnable r) {
                 return new Thread(r, "SolverThread:" + ChallengeSolver.this.toString());
             }
-
-        }, new ThreadPoolExecutor.AbortPolicy()) {
-            protected void afterExecute(Runnable r, Throwable t) {
-                try {
-                    super.afterExecute(r, t);
-                } finally {
-                    if (r instanceof JobRunnable) {
-                        synchronized (map) {
-                            SolverJob<?> job = ((JobRunnable<?>) r).getJob();
-                            map.remove(job);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            protected void beforeExecute(Thread t, Runnable r) {
-                super.beforeExecute(t, r);
-
-                /*
-                 * WORKAROUND for stupid SUN /ORACLE way of "how a threadpool should work" !
-                 */
-                int working = threadPool.getActiveCount();
-                int active = threadPool.getPoolSize();
-                int max = threadPool.getMaximumPoolSize();
-                if (active < max) {
-                    if (working == active) {
-                        /*
-                         * we can increase max pool size so new threads get started
-                         */
-                        threadPool.setCorePoolSize(Math.min(max, active + 1));
-                    }
-                }
-            }
-
-        };
+        }, new ThreadPoolExecutor.AbortPolicy());
         threadPool.allowCoreThreadTimeOut(true);
     }
 
@@ -236,25 +194,20 @@ public abstract class ChallengeSolver<T> {
                                 return true;
                             }
                         }
-
                         if (pattern.matcher(c.getTypeID()).matches()) {
                             return true;
                         }
-
                     } catch (Throwable e) {
                         e.printStackTrace();
                     }
                 }
             }
-
             ArrayList<String> blacklist = getService().getConfig().getBlacklistEntries();
             if (blacklist != null) {
                 for (String s : blacklist) {
                     try {
                         Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
-
                         if (!StringUtils.equalsIgnoreCase(host, c.getTypeID())) {
-
                             if (pattern.matcher(host + "-" + c.getTypeID()).matches()) {
                                 return false;
                             }
@@ -265,7 +218,6 @@ public abstract class ChallengeSolver<T> {
                         if (pattern.matcher(c.getTypeID()).matches()) {
                             return false;
                         }
-
                     } catch (Throwable e) {
                         e.printStackTrace();
                     }
@@ -298,5 +250,4 @@ public abstract class ChallengeSolver<T> {
         waitForMap = Collections.synchronizedMap(map);
         return waitForMap;
     }
-
 }

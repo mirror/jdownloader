@@ -236,7 +236,7 @@ public class LinkCrawler {
          *
          * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
          */
-        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
+        threadPool = new ThreadPoolExecutor(maxThreads, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
             public int compare(Runnable o1, Runnable o2) {
                 if (o1 == o2) {
                     return 0;
@@ -252,26 +252,7 @@ public class LinkCrawler {
                  */
                 return new LinkCrawlerThread(r);
             }
-        }, new ThreadPoolExecutor.AbortPolicy()) {
-            @Override
-            protected void beforeExecute(Thread t, Runnable r) {
-                super.beforeExecute(t, r);
-                /*
-                 * WORKAROUND for stupid SUN /ORACLE way of "how a threadpool should work" !
-                 */
-                int working = threadPool.getActiveCount();
-                int active = threadPool.getPoolSize();
-                int max = threadPool.getMaximumPoolSize();
-                if (active < max) {
-                    if (working == active) {
-                        /*
-                         * we can increase max pool size so new threads get started
-                         */
-                        threadPool.setCorePoolSize(Math.min(max, active + 1));
-                    }
-                }
-            }
-        };
+        }, new ThreadPoolExecutor.AbortPolicy());
         threadPool.allowCoreThreadTimeOut(true);
     }
     private final static LinkCrawlerEventSender EVENTSENDER = new LinkCrawlerEventSender();
