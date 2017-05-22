@@ -13,14 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,9 +39,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "https?://(?:www\\.)?tenlua\\.vn/[^/]+/[a-f0-9]{18}/[^<>\"]+" })
 public class TenluaVn extends PluginForHost {
-
     public TenluaVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://tenlua.vn/#payment");
@@ -110,7 +110,6 @@ public class TenluaVn extends PluginForHost {
             }
             this.sleep(wait * 1001l, downloadLink);
         }
-
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -274,7 +273,12 @@ public class TenluaVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            // disabled because of wrong server response, 22.05.17
+            // Range: bytes=781484910-
+            //
+            // Content-Range: bytes 781484910--1/1172227366
+            // Content-Length: -781484910
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("Finallink does not lead to a file...");
                 br.followConnection();
@@ -313,5 +317,4 @@ public class TenluaVn extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
