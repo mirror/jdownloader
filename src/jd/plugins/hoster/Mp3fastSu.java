@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -26,12 +24,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3fast.su" }, urls = { "https?://(?:www\\.)?mp3fast\\.su/[a-z0-9\\-]+\\-\\d+\\.htm" })
-public class Mp3fastSu extends PluginForHost {
+public class Mp3fastSu extends antiDDoSForHost {
     public Mp3fastSu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,12 +54,12 @@ public class Mp3fastSu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -94,7 +92,7 @@ public class Mp3fastSu extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br, br.createGetRequest(dllink));
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
