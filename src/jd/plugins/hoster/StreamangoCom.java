@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,13 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamango.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/embed/[a-z0-9]+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamango.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/embed/[a-z0-9]+(?:/[^/]+)?" })
 public class StreamangoCom extends PluginForHost {
-
     public StreamangoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +44,6 @@ public class StreamangoCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
