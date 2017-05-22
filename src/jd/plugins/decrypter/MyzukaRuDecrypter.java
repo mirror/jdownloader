@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(ru|org)/Album/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(ru|org|fm)/Album/\\d+" })
 public class MyzukaRuDecrypter extends PluginForDecrypt {
-
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +38,7 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced https */
-        final String parameter = "https://myzuka.org/Album/" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
+        final String parameter = "https://myzuka.fm/Album/" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* offline|abused */
@@ -60,7 +58,7 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
             fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         if (fpName == null) {
-            fpName = new Regex(br.getURL(), "myzuka\\.ru/Album/\\d+/(.+)").getMatch(0);
+            fpName = new Regex(br.getURL(), "myzuka\\.(?:ru|org|fm)/Album/\\d+/(.+)").getMatch(0);
         }
         for (final String singleLink : info) {
             final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[^<>\"/]+)\"").getMatch(0);
@@ -78,14 +76,11 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
             fina.setAvailable(true);
             decryptedLinks.add(fina);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
