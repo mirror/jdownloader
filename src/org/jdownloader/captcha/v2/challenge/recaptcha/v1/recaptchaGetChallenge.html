@@ -105,9 +105,10 @@ JDownloader Captcha Helper. This window should close itself after several second
 
 
 	<script type="text/javascript">
+
         window.onload = function() {
 
-            
+         
            var elem=document.getElementById("recaptcha_challenge_image");
            if(elem!=null){
             var xhr = new XMLHttpRequest();
@@ -117,6 +118,7 @@ JDownloader Captcha Helper. This window should close itself after several second
             }
         xhr.onLoad = function() {
                     if (xhr.responseText == "true") {
+                   
                         closeWindowOrTab();
 
                         return;
