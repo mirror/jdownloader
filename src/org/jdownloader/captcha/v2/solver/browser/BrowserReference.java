@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.ContentSecurityHeader;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
@@ -18,9 +19,12 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.HttpConnection.ConnectionHook;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
+import org.appwork.utils.net.httpserver.handler.ExtendedHttpRequestHandler;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
@@ -34,7 +38,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import jd.controlling.TaskQueue;
 import jd.parser.Regex;
 
-public abstract class BrowserReference implements HttpRequestHandler {
+public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     private final AbstractBrowserChallenge         challenge;
     private final UniqueAlltimeID                  id          = new UniqueAlltimeID();
@@ -206,8 +210,44 @@ public abstract class BrowserReference implements HttpRequestHandler {
     }
 
     @Override
+    public void onBeforeRequest(HttpRequest request, HttpResponse response) {
+        response.setHook(this);
+    }
+
+    @Override
+    public void onBeforeSendHeaders(HttpResponse response) {
+        HttpRequest request = response.getConnection().getRequest();
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "http://" + getBaseHost() + ":" + getBasePort()));
+        ContentSecurityHeader csp = new ContentSecurityHeader();
+        csp.addDefaultSrc("'self'");
+        csp.addDefaultSrc("'unsafe-inline'");
+        csp.addDefaultSrc("https://fonts.googleapis.com");
+        csp.addDefaultSrc("https://fonts.gstatic.com");
+        csp.addDefaultSrc("http://www.sweetcaptcha.com");
+        csp.addDefaultSrc("http://code.jquery.com/jquery-1.10.2.min.js");
+        csp.addDefaultSrc("http://sweetcaptcha.s3.amazonaws.com");
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY, csp.toHeaderString()));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS, "DENY"));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION, "1; mode=block"));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS, "nosniff"));
+    }
+
+    @Override
+    public void onAfterRequest(HttpRequest request, HttpResponse response, boolean handled) {
+        if (!handled) {
+            response.setHook(null);
+        }
+    }
+
+    @Override
+    public void onAfterRequestException(HttpRequest request, HttpResponse response, Throwable e) {
+    }
+
+    @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
         try {
+            HTTPHeader originHeader = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_ORIGIN);
+            // todo: origin check
             latestRequest = System.currentTimeMillis();
             if ("/resource".equals(request.getRequestedPath())) {
                 String resourceID = new Regex(request.getRequestedURLParameters().get(0).value, "([^\\?]+)").getMatch(0);

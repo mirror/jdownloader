@@ -304,7 +304,6 @@ public class MyJDownloaderDirectServer extends Thread {
                         }
                     });
                     if (httpConnection != null) {
-                        httpConnection.setHook(connectThread.getMyJDownloaderController());
                         httpConnection.run();
                     }
                 } catch (final Throwable e) {

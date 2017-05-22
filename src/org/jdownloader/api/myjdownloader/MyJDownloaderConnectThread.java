@@ -35,6 +35,9 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
+import org.appwork.utils.net.httpserver.requests.HTTPBridge;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
@@ -67,7 +70,7 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
 
-public class MyJDownloaderConnectThread extends Thread {
+public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
     public static class SessionInfoWrapper extends SessionInfo {
         public static enum STATE {
             VALID,
@@ -827,7 +830,6 @@ public class MyJDownloaderConnectThread extends Thread {
             public void run() {
                 try {
                     final MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, getApi());
-                    httpConnection.setHook(myJDownloaderController);
                     httpConnection.run();
                 } catch (final Throwable e) {
                     log(e);
@@ -1241,5 +1243,10 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean canHandleChunkedEncoding(HttpRequest request, HttpResponse response) {
+        return true;
     }
 }
