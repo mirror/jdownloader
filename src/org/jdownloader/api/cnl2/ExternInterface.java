@@ -2,14 +2,67 @@ package org.jdownloader.api.cnl2;
 
 import java.io.IOException;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPI;
+import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.HttpConnection.ConnectionHook;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
+import org.appwork.utils.net.httpserver.handler.ExtendedHttpRequestHandler;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.requests.OptionsRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.api.RemoteAPIConfig;
-import org.jdownloader.api.myjdownloader.OptionsRequestHandler;
 
 public class ExternInterface {
+    private class ExternInterfaceRemoteAPI extends RemoteAPI implements ExtendedHttpRequestHandler, ConnectionHook {
+        @Override
+        public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
+            if (request instanceof OptionsRequest) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "0"));
+                response.setResponseCode(ResponseCode.SUCCESS_OK);
+                return true;
+            }
+            return super.onGetRequest(request, response);
+        }
+
+        @Override
+        public void onBeforeSendHeaders(HttpResponse response) {
+            // https://scotthelme.co.uk/hardening-your-http-response-headers/#x-content-type-options
+            HttpRequest request = response.getConnection().getRequest();
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "1800"));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST"));
+            final String headers = request.getRequestHeaders().getValue("Access-Control-Request-Headers");
+            if (headers != null) {
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, headers));
+            }
+            response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_CONTENT_SECURITY_POLICY);
+            response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_X_FRAME_OPTIONS);
+            response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_X_XSS_PROTECTION);
+            response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_REFERRER_POLICY);
+            response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_X_CONTENT_TYPE_OPTIONS);
+        }
+
+        @Override
+        public void onBeforeRequest(HttpRequest request, HttpResponse response) {
+            // do not do any origin filter. All origins are allowed
+            response.setHook(this);
+        }
+
+        @Override
+        public void onAfterRequest(HttpRequest request, HttpResponse response, boolean handled) {
+        }
+
+        @Override
+        public void onAfterRequestException(HttpRequest request, HttpResponse response, Throwable e) {
+        }
+    }
+
     private static ExternInterface INSTANCE = new ExternInterface();
 
     private ExternInterface() {
@@ -18,13 +71,13 @@ public class ExternInterface {
             final Thread serverInit = new Thread() {
                 @Override
                 public void run() {
-                    final RemoteAPI remoteAPI = new RemoteAPI();
+                    final RemoteAPI remoteAPI = new ExternInterfaceRemoteAPI();
                     try {
                         remoteAPI.register(new ExternInterfaceImpl());
                         while (config.isExternInterfaceEnabled() && !Thread.currentThread().isInterrupted()) {
                             try {
-                                final HttpHandlerInfo handler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(9666, config.isExternInterfaceLocalhostOnly(), new OptionsRequestHandler());
-                                handler.getHttpServer().registerRequestHandler(remoteAPI);
+                                final HttpHandlerInfo handler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(9666, config.isExternInterfaceLocalhostOnly(), remoteAPI);
+                                // handler.getHttpServer().registerRequestHandler(remoteAPI);
                                 // handler.getHttpServer().registerRequestHandler(new HttpRequestHandler() {
                                 //
                                 // @Override

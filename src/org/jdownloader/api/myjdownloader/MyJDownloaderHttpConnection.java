@@ -47,21 +47,15 @@ import org.jdownloader.myjdownloader.client.SessionInfo;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
-
-    protected final static ArrayList<HttpRequestHandler>                    requestHandler = new ArrayList<HttpRequestHandler>();
+    protected final static ArrayList<HttpRequestHandler> requestHandler = new ArrayList<HttpRequestHandler>();
     static {
-        requestHandler.add(new OptionsRequestHandler());
-        requestHandler.add(new SessionTokenCheckHandler());
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
     }
     protected final MyJDownloaderAPI                                        api;
-
     private final LogSource                                                 logger;
-
     private final SocketStreamInterface                                     socketStream;
-
-    private static final HashMap<String, List<MyJDownloaderHttpConnection>> CONNECTIONS    = new HashMap<String, List<MyJDownloaderHttpConnection>>();
-    private static final HashMap<String, KeyPair>                           RSAKEYPAIRS    = new HashMap<String, KeyPair>();
+    private static final HashMap<String, List<MyJDownloaderHttpConnection>> CONNECTIONS = new HashMap<String, List<MyJDownloaderHttpConnection>>();
+    private static final HashMap<String, KeyPair>                           RSAKEYPAIRS = new HashMap<String, KeyPair>();
 
     public KeyPair getRSAKeyPair() {
         final String token = getRequestConnectToken();
@@ -195,6 +189,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     protected HttpRequest buildRequest() throws IOException {
         HttpRequest ret = super.buildRequest();
+        ret.setBridge(MyJDownloaderController.getInstance().getConnectThread());
         /* we do not allow gzip output */
         final HTTPHeader xAcceptEncoding = ret.getRequestHeaders().get("X-Accept-Encoding");
         if (xAcceptEncoding != null && (StringUtils.containsIgnoreCase(xAcceptEncoding.getValue(), "gazeisp") || StringUtils.containsIgnoreCase(xAcceptEncoding.getValue(), "gzip_aes"))) {
@@ -322,12 +317,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                            // public void close() throws IOException {
-                            // };
-
-                        };
+                                                                  // public void close() throws IOException {
+                                                                  // };
+                                                              };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
-
                         {
                             if (useDeChunkingOutputStream) {
                                 outos = new DeChunkingOutputStream(outos);
@@ -354,7 +347,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                         public void write(byte[] b, int off, int len) throws IOException {
                             outos.write(b, off, len);
                         };
-
                     };
                 }
             } catch (final Throwable e) {
