@@ -614,6 +614,7 @@ public class ImgmazeCom extends PluginForHost {
     }
 
     public static Form fixImghost_next_form(final Browser br, final Form imghost_next_form) {
+        final String[] values = br.getRegex("name=\"([a-f0-9]+)\" value=\"1\"").getColumn(0);
         /* 2017-02-22 */
         String special_key = br.getRegex("</Form>\\'\\)\\.attr\\(\\'cl.*?name=\"([a-f0-9]+)\"").getMatch(0);
         if (special_key == null) {
@@ -643,6 +644,10 @@ public class ImgmazeCom extends PluginForHost {
         if (special_key == null) {
             /* 2017-01-06 */
             special_key = br.getRegex("name=\"([a-f0-9]{32})\" value=\"1\"").getMatch(0);
+        }
+        if (values.length > 1) {
+            /* 2017-05-23 */
+            special_key = values[values.length - 2];
         }
         if (special_key != null && !imghost_next_form.hasInputFieldByName(special_key)) {
             imghost_next_form.put(special_key, "1");
