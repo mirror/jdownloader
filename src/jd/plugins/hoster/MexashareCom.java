@@ -128,7 +128,8 @@ public class MexashareCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.2.9<br />
-     * mods: handleFree[2017-03-30: Added secondary RegEx for plaintext captcha recognization] <br />
+     * mods: handleFree[2017-03-30: Added secondary RegEx for plaintext captcha recognization], handleFree[2017-05-23: Added workaround for
+     * reCaptchaV2 waittime timeout bug] <br />
      * limit-info:<br />
      * protocol: no https<br />
      * captchatype: null<br />
@@ -605,8 +606,12 @@ public class MexashareCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    /* Special: First wait, then request the captcha answer as it cam time out! */
+                    waitTime(downloadLink, timeBefore);
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    /* Workaround for reCaptchaV2 timeout issue */
+                    skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);

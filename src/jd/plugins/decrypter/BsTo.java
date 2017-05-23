@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(www\\.)?bs\\.to/(serie/[^/]+/\\d+/[^/]+(/[^/]+)?|out/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?bs\\.to/(serie/[^/]+/\\d+/[^/]+(/[^/]+)?|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
-
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("bs.to", 200);
@@ -102,7 +100,6 @@ public class BsTo extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://bs.to/" + singleLink));
             }
         }
-
         return decryptedLinks;
     }
 
