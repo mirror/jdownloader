@@ -20,9 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,9 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|au|com|com\\.au|co\\.uk|fr|ca)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com\\.au|com|co\\.uk|fr|ca)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" })
 public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     public AmazonCloudDecrypter(PluginWrapper wrapper) {
@@ -51,7 +50,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
         parameter = param.toString();
 
         plain_folder_id = new Regex(parameter, "[\\?\\&]s=([A-Za-z0-9\\-_^&]+)").getMatch(0);
-        plain_domain = new Regex(parameter, "(amazon\\.(de|es|au|com|com\\.au|co\\.uk|fr|ca))").getMatch(0);
+        plain_domain = Browser.getHost(parameter);
         if (plain_folder_id == null) {
 
             // there are dummy ?md5=..&name=... links. see below
