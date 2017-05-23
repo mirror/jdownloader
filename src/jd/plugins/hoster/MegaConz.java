@@ -73,9 +73,8 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-]{16,}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
-
     private final String USE_SSL        = "USE_SSL_V2";
     private final String CHECK_RESERVED = "CHECK_RESERVED";
     private final String USE_TMP        = "USE_TMP_V2";
@@ -213,7 +212,6 @@ public class MegaConz extends PluginForHost {
     // apiRequest(account, getSID(account), null, "qbq"/* queryBandwidthQuota */, new Object[] { "s", fileSize });
     // return true;
     // }
-
     private String apiLogin(Account account) throws Exception {
         synchronized (account) {
             try {
@@ -370,7 +368,6 @@ public class MegaConz extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You have exceeded your command weight per time quota. Retry again later", 5 * 60 * 1000l);
                 }
-
             }
         }
         return null;
@@ -581,7 +578,6 @@ public class MegaConz extends PluginForHost {
                 } else {
                     response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
                 }
-
             } else {
                 response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
             }
@@ -640,7 +636,6 @@ public class MegaConz extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.TRUE;
-
     }
 
     @Override
@@ -689,7 +684,6 @@ public class MegaConz extends PluginForHost {
         final File src = new File(path);
         final AtomicLong encryptionDone = new AtomicLong(link.getVerifiedFileSize());
         final DiskSpaceReservation reservation = new DiskSpaceReservation() {
-
             @Override
             public long getSize() {
                 return Math.max(0, encryptionDone.get());
@@ -812,7 +806,6 @@ public class MegaConz extends PluginForHost {
             public boolean isHashCheckEnabled() {
                 return false;
             }
-
         };
     }
 
@@ -971,7 +964,6 @@ public class MegaConz extends PluginForHost {
                 long eta = ((total - current) * 10000) / speed;
                 this.setETA(eta);
             }
-
         };
         progress.setProgressSource(this);
         progress.setIcon(new AbstractIcon(IconKey.ICON_LOCK, 16));
@@ -1050,7 +1042,6 @@ public class MegaConz extends PluginForHost {
     }
 
     private class MegaHashCheck extends DownloadInterface {
-
         private final DownloadLinkDownloadable downloadable;
         private final File                     finalFile;
 
@@ -1131,7 +1122,6 @@ public class MegaConz extends PluginForHost {
         public boolean isResumedDownload() {
             return false;
         }
-
     }
 
     private String getPublicFileID(DownloadLink link) {
@@ -1139,7 +1129,11 @@ public class MegaConz extends PluginForHost {
     }
 
     private String getPublicFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-]+)").getMatch(2);
+        String ret = new Regex(link.getDownloadURL(), "#(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-%]+)").getMatch(2);
+        if (ret != null && ret.contains("%20")) {
+            ret = ret.replace("%20", "");
+        }
+        return ret;
     }
 
     private String getNodeFileID(DownloadLink link) {
@@ -1157,7 +1151,11 @@ public class MegaConz extends PluginForHost {
     }
 
     private String getNodeFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#N(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-]+)").getMatch(2);
+        String ret = new Regex(link.getDownloadURL(), "#N(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-%]+)").getMatch(2);
+        if (ret != null && ret.contains("%20")) {
+            ret = ret.replace("%20", "");
+        }
+        return ret;
     }
 
     public static byte[] b64decode(String data) {
@@ -1238,7 +1236,6 @@ public class MegaConz extends PluginForHost {
                 return null;
             }
         }
-
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -1262,5 +1259,4 @@ public class MegaConz extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("usedPlugin", Property.NULL);
     }
-
 }
