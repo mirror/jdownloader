@@ -20,6 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -65,10 +69,6 @@ import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE
 import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 import org.jdownloader.statistics.StatsManager;
-
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
 
 public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
     public static class SessionInfoWrapper extends SessionInfo {
@@ -1195,7 +1195,9 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                 session = (SessionInfoWrapper) lapi.getSessionInfo();
                 if (SessionInfoWrapper.STATE.VALID.equals(session.getState())) {
                     final SessionInfoResponse ret = lapi.getSessionInfo(queryToken);
-                    return ret != null && ret.isAlive();
+                    // TODO: keepAlive direct connection session to prevent session timeout
+                    // add new keepAlive method to server to keep alive specified session, keepAlive(final String keepAliveSession)
+                    return ret != null; // && ret.isAlive();
                 }
             } catch (final TokenException e) {
                 if (session != null) {
