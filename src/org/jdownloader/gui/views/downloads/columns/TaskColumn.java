@@ -46,7 +46,6 @@ import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
-
     public static class ColumnHelper {
         private Icon icon = null;
 
@@ -74,34 +73,20 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
      *
      */
     private static final long  serialVersionUID = 1L;
-
     private final Icon         trueIcon;
-
     private final Icon         trueIconExtracted;
-
     private final Icon         extracting;
-
     private final ColumnHelper columnHelper     = new ColumnHelper();
-
     private final String       finishedText     = _GUI.T.TaskColumn_getStringValue_finished_();
     private final String       runningText      = _GUI.T.TaskColumn_getStringValue_running_();
-
     private final String       startingString;
-
     private final Icon         startingIcon;
-
     private final Icon         okIconExtracted;
-
     private final Icon         trueOrangaIconExtracted;
-
     private final Icon         falseIconExtracted;
-
     private final Icon         trueIconExtractedFailed;
-
     private final Icon         okIconExtractedFailed;
-
     private final Icon         trueOrangaIconExtractedFailed;
-
     private final Icon         falseIconExtractedFailed;
 
     @Override
@@ -115,31 +100,24 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     public TaskColumn() {
         super(_GUI.T.StatusColumn_StatusColumn2());
-
         this.trueIcon = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 16);
         startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
-
         trueIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
         falseIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_FALSE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
         okIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_OK, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
         trueOrangaIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE_ORANGE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
-
         trueIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
         falseIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_FALSE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
         okIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_OK, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
         trueOrangaIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE_ORANGE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
-
         startingString = _GUI.T.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
-
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 fillColumnHelper(columnHelper, o1);
@@ -157,9 +135,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 } else {
                     return o2s.compareToIgnoreCase(o1s);
                 }
-
             }
-
         });
     }
 
@@ -169,23 +145,16 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-
         SwingUtilities.invokeLater(new Runnable() {
-
             public void run() {
-
                 if (obj instanceof DownloadLink) {
                     List<HistoryEntry> his = ((DownloadLink) obj).getHistory();
                     if (his != null) {
                         ToolTipController.getInstance().show(CandidateTooltip.create(e.getPoint(), obj));
                     }
-
                 }
-
             }
-
         });
-
         return true;
     }
 
@@ -229,7 +198,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                                         }
                                     }
                                 }.start();
-
                                 return true;
                             }
                         }
@@ -282,7 +250,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             }
             SkipReason skipReason = link.getSkipReason();
             if (skipReason != null) {
-
                 columnHelper.icon = skipReason.getIcon(this, 18);
                 columnHelper.string = skipReason.getExplanation(this);
                 columnHelper.tooltip = null;
@@ -316,7 +283,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         } else {
                             columnHelper.icon = trueIconExtractedFailed;
                         }
-                        columnHelper.string = extractionStatus.getExplanation() + "-" + finalLinkState.getExplanation(this, link);
+                        columnHelper.string = extractionStatus.getExplanation() + ": " + finalLinkState.getExplanation(this, link);
                         columnHelper.tooltip = null;
                         return;
                     case SUCCESSFUL:
@@ -331,7 +298,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         } else {
                             columnHelper.icon = trueIconExtracted;
                         }
-                        columnHelper.string = extractionStatus.getExplanation() + "-" + finalLinkState.getExplanation(this, link);
+                        columnHelper.string = extractionStatus.getExplanation() + ": " + finalLinkState.getExplanation(this, link);
                         columnHelper.tooltip = null;
                         return;
                     case RUNNING:
@@ -341,7 +308,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         return;
                     }
                 }
-
                 columnHelper.icon = finalLinkState.getIcon(16);
                 columnHelper.string = finalLinkState.getExplanation(this, link);
                 columnHelper.tooltip = null;
@@ -359,12 +325,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         } else {
             FilePackage fp = (FilePackage) value;
             FilePackageView view = fp.getView();
-
             PluginStateCollection ps = view.getPluginStates();
             if (ps.size() > 0) {
                 columnHelper.icon = ps.getMergedIcon();
                 columnHelper.string = ps.isMultiline() ? "" : ps.getText();
-
                 columnHelper.tooltip = ps.getText();
                 return;
             }
@@ -382,7 +346,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             columnHelper.tooltip = null;
             columnHelper.icon = null;
             columnHelper.string = "";
-
         }
     }
 
