@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -27,6 +26,8 @@ import java.util.List;
 import java.util.Set;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -53,9 +54,12 @@ import org.mozilla.javascript.ScriptableObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
+    private final String NO_DLC = "1";
+    private final String NO_CNL = "1";
 
     public ShrLnksBz(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -107,7 +111,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br = new Browser();
         String parameter = param.toString();
-
         if (parameter.contains("s2l.biz")) {
             br.setFollowRedirects(false);
             getPage(parameter);
@@ -115,10 +118,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         }
         setBrowserExclusive();
         br.setFollowRedirects(false);
-
         /* Prefer English */
         parameter += "?lng=en";
-
         getPage(parameter);
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
@@ -141,7 +142,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                     } catch (final Throwable e) {
                     }
                 }
-
             }
         }
         /* Check if a redirect was there before */
@@ -246,45 +246,51 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         }
         /* use cnl2 button if available */
         if (br.containsHTML("/cnl2/") || this.br.containsHTML("/cnl2_add\\.png")) {
-            String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
-            if (flashVars == null) {
-                flashVars = br.getRegex("file[\n\t\r ]*?=[\n\t\r ]*?\"([^<>\"]+)\"").getMatch(0);
-            }
-            if (flashVars != null) {
-                final Browser cnlbr = br.cloneBrowser();
-                getPage(cnlbr, "/get/cnl2/" + flashVars);
-                String test = cnlbr.toString();
-                String[] encVars = null;
-                if (test != null) {
-                    encVars = test.split("\\;\\;");
+            if (getPluginConfig().getBooleanProperty(NO_CNL, false) == false) {
+                String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
+                if (flashVars == null) {
+                    flashVars = br.getRegex("file[\n\t\r ]*?=[\n\t\r ]*?\"([^<>\"]+)\"").getMatch(0);
                 }
-                if (encVars == null || encVars.length < 3) {
-                    logger.warning("CNL code broken!");
-                } else {
-                    final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
-                    final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                    HashMap<String, String> infos = new HashMap<String, String>();
-                    infos.put("crypted", crypted);
-                    infos.put("jk", jk);
-                    infos.put("source", parameter.toString());
-                    String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
-                    if (pkgName != null && !"unnamed Folder".equals(pkgName) && pkgName.length() > 0) {
-                        infos.put("package", pkgName);
+                if (flashVars != null) {
+                    final Browser cnlbr = br.cloneBrowser();
+                    getPage(cnlbr, "/get/cnl2/" + flashVars);
+                    String test = cnlbr.toString();
+                    String[] encVars = null;
+                    if (test != null) {
+                        encVars = test.split("\\;\\;");
                     }
-                    String json = JSonStorage.toString(infos);
-                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
+                    if (encVars == null || encVars.length < 3) {
+                        logger.warning("CNL code broken!");
+                    } else {
+                        final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
+                        final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        infos.put("crypted", crypted);
+                        infos.put("jk", jk);
+                        infos.put("source", parameter.toString());
+                        String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
+                        if (pkgName != null && !"unnamed Folder".equals(pkgName) && pkgName.length() > 0) {
+                            infos.put("package", pkgName);
+                        }
+                        String json = JSonStorage.toString(infos);
+                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                        if (!decryptedLinks.isEmpty()) {
+                            return decryptedLinks;
+                        }
+                    }
                 }
             }
         }
         /* Load Contents. Container handling (DLC) */
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
-            decryptedLinks = loadcontainer(br, "/get/dlc/" + dlclink);
-            if (!decryptedLinks.isEmpty()) {
-                return decryptedLinks;
+            if (getPluginConfig().getBooleanProperty(NO_DLC, false) == false) {
+                decryptedLinks = loadcontainer(br, "/get/dlc/" + dlclink);
+                if (!decryptedLinks.isEmpty()) {
+                    return decryptedLinks;
+                }
             }
         }
         /* File package handling */
@@ -366,7 +372,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
     /** by jiaz */
     private ArrayList<DownloadLink> loadcontainer(final Browser br, final String dlclinks) throws IOException, PluginException {
         final Browser brc = br.cloneBrowser();
-
         if (dlclinks == null) {
             return new ArrayList<DownloadLink>();
         }
@@ -390,7 +395,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             if (file != null && file.exists() && file.length() > 100) {
                 final List<DownloadLink> decryptedLinks = loadContainerFile(file);
                 if (decryptedLinks.size() > 0) {
@@ -410,35 +414,27 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
 
     private String unpackJS(final String fun, final int value) throws Exception {
         Object result = new Object();
-
         try {
             logger.info(fun);
-
             Context cx = null;
             try {
                 cx = ContextFactory.getGlobal().enterContext();
                 ScriptableObject scope = cx.initStandardObjects();
-
                 if (value == 1) {
-
                     /*
                      * creating pseudo functions: document.location.protocol + document.write(value)
                      */
                     result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
                     result = "parent = 1;" + result.toString().replace(".frames.Main.location.href", "").replace("window", "\"window\"");
                     logger.info(result.toString());
-
                     result = cx.evaluateString(scope, result.toString(), "<cmd>", 1, null);
-
                 } else {
                     cx.evaluateString(scope, fun, "<cmd>", 1, null);
                     result = cx.evaluateString(scope, "f()", "<cmd>", 1, null);
                 }
-
             } finally {
                 Context.exit();
             }
-
         } catch (final Exception e) {
             logger.severe(e.getMessage());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -459,4 +455,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return true;
     }
 
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NO_CNL, JDL.L("plugins.decrypter.shrlinksbz.nocnl", "No cnl?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NO_DLC, JDL.L("plugins.decrypter.shrlinksbz.nodlc", "No dlc?")).setDefaultValue(false));
+    }
 }
