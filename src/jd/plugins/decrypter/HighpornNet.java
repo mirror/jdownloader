@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?(highporn\\.net|tanix\\.net)/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +37,7 @@ public class HighpornNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("www.", "");
+        final String parameter = param.toString().replace("www.", "").replace("tanix.net/", "highporn.net/");
         br.getPage(parameter);
         if (isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
