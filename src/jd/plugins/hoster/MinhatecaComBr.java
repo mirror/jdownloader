@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +40,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" })
@@ -291,8 +291,8 @@ public class MinhatecaComBr extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         /*
-         * 2017-05-22: Only premium accounts are supported so far, all accounts are treated as premium as there seems to be no indication
-         * regarding the account type inside their html code.
+         * 2017-05-24: According to users, they do not have premium/free accounts anymore - there is only one account type which basically
+         * are free premium accounts for all users.
          */
         if (!true) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
