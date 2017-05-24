@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,12 +28,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com)/[^<>\r\n\t]+" })
-public class ShorteSt extends antiDDoSForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "https?://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com|destyy\\.com)/[^<>\r\n\t]+" })
+public class ShorteSt extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com" };
+        return new String[] { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "destyy.com" };
     }
 
     public ShorteSt(PluginWrapper wrapper) {
@@ -83,7 +81,6 @@ public class ShorteSt extends antiDDoSForDecrypt {
             }
             return decryptedLinks;
         }
-
         final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
         final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
         final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");

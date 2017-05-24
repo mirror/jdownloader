@@ -16,7 +16,6 @@ import jd.utils.JDUtilities;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
-
     public PornEmbedParser(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,13 +44,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         final Browser brdecrypt = br.cloneBrowser();
         // use plugin regex where possible... this means less maintaince required.
         Plugin plugin = null;
-
         /* Cleanup/Improve title */
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             title = encodeUnicode(title);
         }
-
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         // xvideos.com 2
@@ -414,7 +411,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // pornstar
         plugin = JDUtilities.getPluginForHost("pornstarnetwork.com");
         externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
-
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -526,6 +522,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("(?:'|\")(https?://(?:www\\.)?borfos\\.com/embed/\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (title == null) {
             return decryptedLinks;
@@ -548,7 +549,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-
         }
         // youporn.com handling 2
         externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
@@ -587,9 +587,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             dl.setProperty("5ilthydirectfilename", title);
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
-
         /* RegExes for permanently offline websites go here */
         /* 2016-03-29: gasxxx.com --> xvid6.com */
         externID = br.getRegex("(http://(?:www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);

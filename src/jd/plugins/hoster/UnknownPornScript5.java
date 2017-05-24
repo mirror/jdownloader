@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,10 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com" }, urls = { "https?://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html",
-        "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com", "faptube.com" }, urls = { "https?://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html",
+        "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?faptube\\.com/videos/\\d+/[a-z0-9\\-]+/?" })
 public class UnknownPornScript5 extends PluginForHost {
-
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,15 +42,12 @@ public class UnknownPornScript5 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     // other: Should work for all (porn) sites that use the "jwplayer" with http URLs: http://www.jwplayer.com/
-
     private static final String  type_allow_title_as_filename = "https?://(?:www\\.)?ah\\-me\\.com/videos/\\d+";
-
     private static final String  default_Extension            = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume                  = true;
     private static final int     free_maxchunks               = 0;
     private static final int     free_maxdownloads            = -1;
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -94,7 +89,6 @@ public class UnknownPornScript5 extends PluginForHost {
             }
         }
         if (url_filename == null && url_id != null) {
-
         }
         if (url_filename == null && url_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -119,7 +113,6 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         /* Make it look nicer! */
         url_filename = url_filename.replace("-", " ");
-
         String filename = regexStandardTitleWithHost(host);
         if (filename == null) {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
@@ -190,13 +183,12 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             *
+             * 
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         String ext = default_Extension;
         if (!inValidateDllink()) {
             if (!downloadLink.getDownloadURL().contains("ashemaletube")) {
