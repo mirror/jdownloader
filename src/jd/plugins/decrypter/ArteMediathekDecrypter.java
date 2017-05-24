@@ -25,11 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -41,6 +36,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -266,8 +266,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 // final String sourceURL = (String) videoJsonPlayer.get("VTR");
                 /* Title is sometimes null e.g. for expired videos */
                 final String json_title = (String) videoJsonPlayer.get("VTI");
+                final String json_subtitle = (String) videoJsonPlayer.get("subtitle");
                 if (json_title != null) {
                     title = encodeUnicode(json_title);
+                    if (json_subtitle != null) {
+                        title += " - " + encodeUnicode(json_subtitle);
+                    }
                 }
                 String description = (String) videoJsonPlayer.get("VDE");
                 if (description == null) {

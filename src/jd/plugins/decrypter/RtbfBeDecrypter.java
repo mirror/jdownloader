@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -43,17 +42,14 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/.+\\?id=\\d+" })
 public class RtbfBeDecrypter extends PluginForDecrypt {
-
     public RtbfBeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Settings stuff */
     private static final String FAST_LINKCHECK      = "FAST_LINKCHECK";
-
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
     private final List<String>  all_known_qualities = Arrays.asList("hls_mp4_1080", "hls_mp4_720", "http_mp4_720", "hls_mp4_570", "hls_mp4_480", "http_mp4_480", "hls_mp4_200", "http_mp4_200", "hls_mp4_360", "http_webm_high", "hls_mp4_270", "http_mp4_high", "http_webm_low", "hls_mp4_170", "http_mp4_low", "hls_aac_0");
-
     private boolean             fastLinkcheck       = false;
 
     @SuppressWarnings({ "deprecation" })
@@ -64,7 +60,6 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String decryptedhost = "http://" + this.getHost() + "decrypted/";
         String date_formatted = null;
-
         fastLinkcheck = cfg.isFastLinkcheckEnabled();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -80,10 +75,13 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
              */
             video_id = id_url;
         }
-
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
+        String title = br.getRegex("<h1[^<>]*?class=\"rtbf\\-media\\-item__title\">([^<>]+)</h1>").getMatch(0);
         if (title == null) {
-            /* Fallback 1 - title with date --> Grab title without date */
+            /* Fallback 1 (can contain subtitle as well!) */
+            title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
+        }
+        if (title == null) {
+            /* Fallback 2 - title with date (can contain subtitle as well!) --> Grab title without date */
             title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\- \\d{2}/\\d{2}/\\d{4}").getMatch(0);
         }
         /* 2017-03-01: Removed subtitle for now as we got faulty names before. Title should actually contain everything we need! */
@@ -125,25 +123,22 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (date_formatted != null) {
             title = date_formatted + "_" + title;
         }
-        if (subtitle != null && !subtitle.equalsIgnoreCase("{{subtitle}}")) {
+        if (subtitle != null && !subtitle.equalsIgnoreCase("{{subtitle}}") && !title.toLowerCase().contains(subtitle.toLowerCase())) {
             title = title + " - " + subtitle;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-
         /* Quality selection */
         HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
         List<String> all_selected_qualities = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final boolean grabBEST = cfg.isGrabBESTEnabled();
         final boolean grabBESTWithinSelected = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
-
         final boolean grabHls200 = cfg.isGrabHLS200pVideoEnabled();
         final boolean grabHls480 = cfg.isGrabHLS480pVideoEnabled();
         final boolean grabHls570 = cfg.isGrabHLS570pVideoEnabled();
         final boolean grabHls720 = cfg.isGrabHLS720pVideoEnabled();
         final boolean grabHls1080 = cfg.isGrabHLS1080pVideoEnabled();
-
         if (grabHls200) {
             all_selected_qualities.add("hls_mp4_200");
         }
@@ -159,11 +154,9 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (grabHls1080) {
             all_selected_qualities.add("hls_mp4_1080");
         }
-
         final boolean grabHttp200 = cfg.isGrabHTTP200pVideoEnabled();
         final boolean grabHttp480 = cfg.isGrabHTTP480VideoEnabled();
         final boolean grabHttp720 = cfg.isGrabHTTP720VideoEnabled();
-
         if (grabHttp200) {
             all_selected_qualities.add("http_mp4_200");
         }
@@ -173,9 +166,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (grabHttp720) {
             all_selected_qualities.add("http_mp4_720");
         }
-
         final boolean grab_hls = grabBEST || grabHls200 || grabHls480 || grabHls570 || grabHls720 || grabHls1080;
-
         /* "url" = usually highest == 720p --> Leave that out as we have it already */
         final String[] qualities = { "mobile", "web", "high" };
         String protocol = "http";
@@ -195,12 +186,10 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String filename = String.format(format_filename, title, protocol, height);
                 final String linkid = String.format(linkid_format, video_id, protocol, height_for_quality_selection);
-
                 setDownloadlinkProperties(dl, parameter, date_formatted, filename, linkid, finallink);
                 all_found_downloadlinks.put("http_mp4_" + height_for_quality_selection, dl);
             }
         }
-
         /* Add hls qualities if wanted. */
         protocol = "hls";
         final String hls_master = PluginJSonUtils.getJsonValue(video_json, "urlHls");
@@ -227,7 +216,6 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 all_found_downloadlinks.put("hls_mp4_" + height_for_quality_selection, dl);
             }
         }
-
         if (grabBEST) {
             decryptedLinks.add(best_hls_quality);
         } else {
@@ -237,11 +225,9 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                     all_selected_downloadlinks.put(selected_quality, selected_downloadlink);
                 }
             }
-
             if (grabBESTWithinSelected) {
                 all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
             }
-
             if (all_selected_downloadlinks.isEmpty()) {
                 /* Errorhandling */
                 all_selected_downloadlinks = all_found_downloadlinks;
@@ -253,7 +239,6 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(entry.getValue());
             }
         }
-
         if (decryptedLinks.size() == 0) {
             logger.info("No formats were found, decrypting done...");
             return decryptedLinks;
@@ -299,12 +284,10 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 }
             }
         }
-
         if (newMap.isEmpty()) {
             /* Failover in case of bad user selection or general failure! */
             newMap = bestMap;
         }
-
         return newMap;
     }
 
@@ -331,5 +314,4 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

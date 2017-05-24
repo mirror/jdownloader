@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -39,9 +38,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "bangbrosdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
-
     public BangbrosCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.bangbrosnetwork.com/bangbrothers/join");
@@ -60,13 +60,8 @@ public class BangbrosCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    private final String         type_zip                     = ".+\\.zip.*?";
-
     private final String         DOMAIN_PREFIX_PREMIUM        = "members.";
-
     public static final String   html_loggedin                = "class=\"thumbsMN thumbsMN\\-urPrchs\"";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
     private boolean              logged_in                    = false;
@@ -89,43 +84,64 @@ public class BangbrosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null && !link.getDownloadURL().matches(type_zip)) {
-            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
-            return AvailableStatus.UNCHECKABLE;
-        }
+        String final_filename = link.getStringProperty("decryptername", null);
+        final boolean loginRequired = jd.plugins.decrypter.BangbrosCom.requiresAccount(this.getMainlink(link));
         if (aa != null) {
             this.login(this.br, aa, false);
             logged_in = true;
         } else {
             logged_in = false;
         }
-        if (!logged_in) {
+        if (!this.logged_in && loginRequired) {
+            link.getLinkStatus().setStatusText("Cannot check this link type without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        dllink = link.getDownloadURL();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
-                /* Refresh directurl */
-                refreshDirecturl(link);
-                con = br.openHeadConnection(dllink);
-                if (con.getContentType().contains("html")) {
-                    server_issues = true;
-                    return AvailableStatus.TRUE;
-                }
-                /* If user copies url he should always get a valid one too :) */
-                link.setContentUrl(dllink);
-            }
-            link.setDownloadSize(con.getLongContentLength());
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-        } finally {
+        dllink = getDllink(link);
+        if (!StringUtils.isEmpty(dllink)) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
+                    /* Refresh directurl */
+                    refreshDirecturl(link);
+                    con = br.openHeadConnection(dllink);
+                    if (con.getContentType().contains("html")) {
+                        server_issues = true;
+                        return AvailableStatus.TRUE;
+                    }
+                    /* If user copies url he should always get a valid one too :) */
+                    link.setContentUrl(dllink);
+                }
+                link.setDownloadSize(con.getLongContentLength());
+                if (final_filename == null) {
+                    final_filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        if (final_filename != null) {
+            link.setFinalFileName(final_filename);
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private String getDllink(final DownloadLink dl) throws IOException, PluginException {
+        final String mainlink = this.getMainlink(dl);
+        final String dllink;
+        if (mainlink.matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+            br.getPage(mainlink);
+            if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br, mainlink)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = br.getRegex("var\\s*?videoLink\\s*?=\\s*?\\'(http[^<>\"\\']+)\\';").getMatch(0);
+        } else {
+            dllink = dl.getDownloadURL();
+        }
+        return dllink;
     }
 
     private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
@@ -140,10 +156,10 @@ public class BangbrosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/product/" + product + "/movie/" + fid);
-        if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br)) {
+        if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br, getMainlink(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (link.getDownloadURL().matches(type_zip)) {
+        if (link.getDownloadURL().matches(jd.plugins.decrypter.BangbrosCom.type_decrypted_zip)) {
             dllink = jd.plugins.decrypter.BangbrosCom.regexZipUrl(this.br, quality);
         } else {
             final String[] htmls_videourls = jd.plugins.decrypter.BangbrosCom.getVideourls(this.br);
@@ -171,6 +187,10 @@ public class BangbrosCom extends PluginForHost {
         return dl.getStringProperty("fid", null);
     }
 
+    private String getMainlink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -178,7 +198,19 @@ public class BangbrosCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setProperty("free_directlink", this.dllink);
+        dl.startDownload();
     }
 
     @Override
@@ -255,7 +287,7 @@ public class BangbrosCom extends PluginForHost {
         requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -274,8 +306,21 @@ public class BangbrosCom extends PluginForHost {
             /* The original plugin is always allowed to download. */
             return true;
         } else {
-            /* Multihost download impossible. */
-            return false;
+            /* Multihost download only possible for specified linktype. */
+            if (this.getMainlink(downloadLink).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        if (!StringUtils.equals(this.getHost(), buildForThisPlugin.getHost())) {
+            return getMainlink(downloadLink);
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
     }
 
@@ -304,5 +349,4 @@ public class BangbrosCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
