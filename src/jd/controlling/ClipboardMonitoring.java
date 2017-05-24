@@ -488,7 +488,7 @@ public class ClipboardMonitoring {
                                 } catch (final Throwable e) {
                                     clipboardChangeDetector.slowDown(e);
                                     final String message = e.getMessage();
-                                    if (!StringUtils.containsIgnoreCase(message, "cannot open system clipboard") && !StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
+                                    if (!StringUtils.containsIgnoreCase(message, "Failed to retrieve atom name") && !StringUtils.containsIgnoreCase(message, "cannot open system clipboard") && !StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
                                         if (message != null) {
                                             logger.severe(message);
                                         }

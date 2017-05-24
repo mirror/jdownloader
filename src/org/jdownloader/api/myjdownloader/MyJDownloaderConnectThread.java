@@ -237,26 +237,38 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         return directServer;
     }
 
-    private final static long SESSION_REVALIDATE_TIMEOUT = 15 * 60 * 1000l;
+    private final static long SESSION_REVALIDATE_TIMEOUT = 30 * 60 * 1000l;
 
     public boolean isSessionValid(final String sessionToken) {
+        final long currentTimeMillis = System.currentTimeMillis();
         synchronized (KNOWNSESSIONS) {
             AtomicLong validUntil = KNOWNSESSIONS.get(sessionToken);
-            if (validUntil == null || System.currentTimeMillis() > Math.abs(validUntil.get())) {
+            if (validUntil == null || currentTimeMillis > Math.abs(validUntil.get())) {
                 final Boolean valid = validateSession(sessionToken);
+                if (validUntil == null) {
+                    validUntil = new AtomicLong(-1);
+                    KNOWNSESSIONS.put(sessionToken, validUntil);
+                }
                 if (valid == null) {
                     // valid for 1 min
-                    validUntil = new AtomicLong(System.currentTimeMillis() + 1 * 60 * 1000l);
+                    validUntil.set(currentTimeMillis + 1 * 60 * 1000l);
                 } else if (Boolean.TRUE.equals(valid)) {
                     // valid until SESSION_REVALIDATE_TIMEOUT
-                    validUntil = new AtomicLong(System.currentTimeMillis() + SESSION_REVALIDATE_TIMEOUT);
+                    validUntil.set(currentTimeMillis + SESSION_REVALIDATE_TIMEOUT);
                 } else {
                     // not valid for 1 min
-                    validUntil = new AtomicLong(-(System.currentTimeMillis() + 1 * 60 * 1000l));
+                    validUntil.set(-(currentTimeMillis + 1 * 60 * 1000l));
                 }
-                KNOWNSESSIONS.put(sessionToken, validUntil);
             }
-            return validUntil.get() > System.currentTimeMillis();
+            if (validUntil.get() > currentTimeMillis) {
+                // extend valid sessions
+                if (validUntil.get() - currentTimeMillis > 1 * 60 * 1000l) {
+                    validUntil.set(currentTimeMillis + SESSION_REVALIDATE_TIMEOUT);
+                }
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

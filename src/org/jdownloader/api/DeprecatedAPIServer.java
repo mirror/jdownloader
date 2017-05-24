@@ -199,7 +199,7 @@ public class DeprecatedAPIServer extends HttpServer {
     protected static final APICert getAPICert(final String serverName) throws NoSuchAlgorithmException, CertificateEncodingException, InvalidKeyException, IllegalStateException, SignatureException, IOException {
         final String name;
         if (serverName != null) {
-            if (serverName.matches("^\\d+-\\d+-\\d+-\\d+.mydns.jdownloader.org$")) {
+            if (serverName.matches("(?i)^\\d+-\\d+-\\d+-\\d+.mydns.jdownloader.org$") || serverName.matches("(?i)^[a-fA-F0-9]{8}.mydns.jdownloader.org$") || serverName.matches("(?i)^[a-fA-F0-9]{32}.mydns.jdownloader.org$")) {
                 name = "*.mydns.jdownloader.org";
             } else {
                 name = serverName;
