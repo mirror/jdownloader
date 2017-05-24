@@ -89,6 +89,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
+    private String                                                  trafficmaxlimit                         = "100";
+    private final String                                            retrys                                  = "retrys";
+    private final String[]                                          allretrys                               = new String[] { "100", "99", "98", "97", "96", "95", "90" };
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -245,6 +248,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
          * https downloads are speed-limited serverside
          */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HTTPS, _GUI.T.gui_plugin_settings_share_online_traffic_premium_prefer_https()).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), retrys, allretrys, JDL.L("", "Traffic max. Limit in GiB")).setDefaultValue(0));
     }
 
     private void errorHandling(Browser br, DownloadLink downloadLink, Account acc, HashMap<String, String> usedPremiumInfos) throws PluginException {
@@ -473,7 +477,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP")) {
                 /* VIP do not have traffic usage available via api */
-                final long maxDay = 100 * 1024 * 1024 * 1024l;// 100 GiB per day
+                final int chosenRetrys = getPluginConfig().getIntegerProperty(retrys, 0);
+                trafficmaxlimit = this.allretrys[chosenRetrys];
+                final int maxTraffic = Integer.parseInt(trafficmaxlimit);
+                final long maxDay = maxTraffic * 1024 * 1024 * 1024l;// 100 GiB per day
                 final String trafficDay = infos.get("traffic_1d");
                 final String trafficDayData[] = trafficDay.split(";");
                 final long usedDay = Long.parseLong(trafficDayData[0].trim());
