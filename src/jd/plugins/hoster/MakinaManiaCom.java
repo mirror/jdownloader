@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,9 +37,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.net" }, urls = { "http://(www\\.)?makinamania\\.(com|net)/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.net" }, urls = { "https?://(?:www\\.)?makinamania\\.(com|net)/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" })
 public class MakinaManiaCom extends PluginForHost {
-
     public MakinaManiaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -54,7 +52,7 @@ public class MakinaManiaCom extends PluginForHost {
     private static final String MAINPAGE         = "http://makinamania.net";
     private static Object       LOCK             = new Object();
     private static final String NOCHUNKS         = "NOCHUNKS";
-    private static final String ATTACHEDFILELINK = "http://(www\\.)?makinamania\\.(com|net)/index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+";
+    private static final String ATTACHEDFILELINK = ".+/index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -84,11 +82,13 @@ public class MakinaManiaCom extends PluginForHost {
             }
             final String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             final String filesize = br.getRegex("\\&nbsp;\\&nbsp;Tamaño: ([^<>\"]*?)<br").getMatch(0);
-            if (filename == null || filesize == null) {
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -106,14 +106,7 @@ public class MakinaManiaCom extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Premium Members");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 
@@ -246,5 +239,4 @@ public class MakinaManiaCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
