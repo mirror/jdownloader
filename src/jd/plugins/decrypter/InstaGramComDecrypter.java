@@ -96,7 +96,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         ArrayList<Object> resource_data_list;
-        ArrayList<Object> resource_data_list2 = null;
         if (parameter.matches(TYPE_GALLERY)) {
             /* Crawl single images & galleries */
             resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
@@ -139,6 +138,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             int page = 0;
+            int decryptedLinksLastSize = 0;
+            int decryptedLinksCurrentSize = 0;
             do {
                 if (this.isAbort()) {
                     logger.info("User aborted decryption");
@@ -209,11 +210,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     logger.info("Found no new links on page " + page + " --> Stopping decryption");
                     break;
                 }
+                decryptedLinksLastSize = decryptedLinks.size();
                 for (final Object o : resource_data_list) {
                     decryptAlbum((LinkedHashMap<String, Object>) o);
                 }
+                decryptedLinksCurrentSize = decryptedLinks.size();
                 page++;
-            } while (nextid != null);
+            } while (nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize);
         }
         return decryptedLinks;
     }
@@ -311,7 +314,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             hostplugin_url += "/" + shortcode;
         }
         final DownloadLink dl = this.createDownloadlink(hostplugin_url);
-        final String linkid = linkid_main + shortcode != null ? shortcode : "";
+        final String linkid;
+        if (dllink != null) {
+            /* 2017-05-24: Prefer this method over the ID as it is more reliable. */
+            linkid = new Regex(dllink, "https?://[^/]+/(.+)").getMatch(0);
+        } else {
+            linkid = linkid_main + shortcode != null ? shortcode : "";
+        }
         String content_url = createSingle_P_url(linkid_main);
         if (isPrivate) {
             /*
