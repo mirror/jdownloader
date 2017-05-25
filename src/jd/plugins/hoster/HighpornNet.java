@@ -13,10 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,8 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?(?:highporn\\.net|tanix\\.net)/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "highporn.net", "tanix.net" };
+    }
+
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,12 +45,14 @@ public class HighpornNet extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
+
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 1;
+
     private String               dllink            = null;
     private String               fid               = null;
     private boolean              server_issues     = false;
@@ -57,17 +65,11 @@ public class HighpornNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        // dllink = null;
+        dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url_source = link.getStringProperty("mainlink", null);
-        if (url_source == null) {
-            /* Should never happen */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.getPage(url_source);
-        dllink = br.getRegex("data\\-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        br.getPage(link.getDownloadURL());
         if (jd.plugins.decrypter.HighpornNet.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -83,12 +85,7 @@ public class HighpornNet extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, default_extension);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -97,7 +94,7 @@ public class HighpornNet extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                prepHeaders(this.br);
+                prepStreamHeaders(br);
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
@@ -123,7 +120,7 @@ public class HighpornNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (dllink == null) {
-            this.br.postPage("http://highporn.net/play.php", "v=" + fid);
+            br.postPage("/play.php", "v=" + fid);
             dllink = this.br.toString();
             if (this.br.toString().equals("fail")) {
                 server_issues = true;
@@ -134,7 +131,7 @@ public class HighpornNet extends PluginForHost {
         } else if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        prepHeaders(this.br);
+        prepStreamHeaders(br);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -152,7 +149,7 @@ public class HighpornNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void prepHeaders(final Browser br) {
+    private void prepStreamHeaders(final Browser br) {
         br.getHeaders().put("Range", "bytes=0-");
     }
 
