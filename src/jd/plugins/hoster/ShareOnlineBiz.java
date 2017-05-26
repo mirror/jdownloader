@@ -491,12 +491,13 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     ai.setTrafficLeft(freeDay);
                 } else {
                     // Penalty-Premium needs TrafficLeft > 0 (TrafficWorkaround, throttled accounts)
-                    ai.setTrafficLeft(1024 * 1024);
-                }
-                if (userTrafficWorkaround()) {
-                    ai.setSpecialTraffic(true);
-                } else {
-                    ai.setSpecialTraffic(false);
+                    if (userTrafficWorkaround()) {
+                        ai.setSpecialTraffic(true);
+                        ai.setTrafficLeft(1024 * 1024);
+                    } else {
+                        ai.setSpecialTraffic(false);
+                        ai.setTrafficLeft(Math.max(0, freeDay));
+                    }
                 }
             }
         }
