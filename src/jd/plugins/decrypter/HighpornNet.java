@@ -37,9 +37,10 @@ public class HighpornNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("www.", "").replace("tanix.net/", "highporn.net/");
+        final String parameter = param.toString().replace("www.", "");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (isOffline(this.br)) {
+        if (isOffline(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

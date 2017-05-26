@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?(?:highporn\\.net|tanix\\.net)/video/\\d+(?:/[a-z0-9\\-]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
 
     @Override
@@ -49,10 +49,9 @@ public class HighpornNet extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = false;
+    private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 1;
-
     private String               dllink            = null;
     private String               fid               = null;
     private boolean              server_issues     = false;
@@ -65,11 +64,16 @@ public class HighpornNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        final String url_source = link.getStringProperty("mainlink", null);
+        if (url_source == null) {
+            /* Should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(url_source);
+        dllink = br.getRegex("data\\-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         if (jd.plugins.decrypter.HighpornNet.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -85,7 +89,12 @@ public class HighpornNet extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, default_extension);
+        final String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, default_extension);
+        } else {
+            ext = default_extension;
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
