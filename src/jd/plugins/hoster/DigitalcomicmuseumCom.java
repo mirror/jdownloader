@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import org.appwork.utils.IO;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.dcm.Dcm;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -26,6 +30,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -36,9 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/index\\.php\\?dlid=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/index\\.php\\?dlid=\\d+" })
 public class DigitalcomicmuseumCom extends PluginForHost {
 
     public DigitalcomicmuseumCom(PluginWrapper wrapper) {
@@ -60,7 +63,6 @@ public class DigitalcomicmuseumCom extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
     private String               fid                       = null;
 
     @SuppressWarnings("deprecation")
@@ -69,14 +71,14 @@ public class DigitalcomicmuseumCom extends PluginForHost {
         fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("/images/error\\.")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/images/error\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("id=\\'catname\\'>> <a href=\\'index\\.php\\?dlid=\\d+\\'>([^<>]*?)</a>").getMatch(0);
+        String filename = br.getRegex("id='catname'>> <a href='index\\.php\\?dlid=\\d+'>([^<>]*?)</a>").getMatch(0);
         if (filename == null) {
             filename = fid;
         }
-        String filesize = br.getRegex(">Filesize:</td>[\t\n\r ]+<td colspan=\\'2\\'>([^<>\"]*?)</td>").getMatch(0);
+        String filesize = br.getRegex(">Filesize:</td>[\t\n\r ]+<td colspan='2'>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -132,15 +134,48 @@ public class DigitalcomicmuseumCom extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.setFollowRedirects(false);
-                br.postPage("http://digitalcomicmuseum.com/forum/index.php?action=login2", "cookielength=-1&user=" + Encoding.urlEncode(account.getUser()) + "&passwrd=" + Encoding.urlEncode(account.getPass()));
+                br.setFollowRedirects(true);
+                br.getPage("http://digitalcomicmuseum.com/forum/index.php?action=login2");
+                final Form login = br.getForm(0);
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.setAction("/forum/index.php?action=login2");
+                // login has hashed values, derived from javascript
+                final String charset = br.getRegex("var smf_charset\\s*=\\s*\"(.*?)\";").getMatch(0);
+                final String cur_session_id = login.getRegex("onsubmit=\"hashLoginPassword\\(this,\\s*'([a-f0-9]{32})'").getMatch(0);
+                final String myEn = br.getRegex("myElement\\.name\\s*=\\s'(.*?)';").getMatch(0);
+                final String myEv = br.getRegex("myElement\\.value\\s*=\\s'(.*?)';").getMatch(0);
+                String result = null;
+                try {
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    engine.eval(IO.readURLToString(Dcm.class.getResource("dcm.js")));
+                    engine.eval(IO.readURLToString(Dcm.class.getResource("sha1.js")));
+                    engine.put("user", account.getUser());
+                    engine.put("pass", account.getPass());
+                    engine.put("smf_charset", charset);
+                    engine.put("cur_session_id", cur_session_id);
+                    engine.eval("var res = hex_sha1(hex_sha1(user.php_to8bit().php_strtolower() + pass.php_to8bit()) + cur_session_id);");
+                    result = engine.get("res").toString();
+                } catch (final Exception e) {
+                    // e.printStackTrace();
+                    throw e;
+                }
+                login.put(myEn, Encoding.urlEncode(myEv));
+                login.put("user", Encoding.urlEncode(account.getUser()));
+                login.put("passwrd", "");
+                login.put("hash_passwrd", result);
+                login.put("cookielength", "-1");
+                br.submitForm(login);
                 if (br.getCookie(MAINPAGE, "rwd_password") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -148,10 +183,12 @@ public class DigitalcomicmuseumCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
     }
@@ -167,11 +204,10 @@ public class DigitalcomicmuseumCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -185,12 +221,12 @@ public class DigitalcomicmuseumCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String dllink = this.checkDirectLink(link, "premium_directlink");
         if (dllink == null) {
-            dllink = br.getRegex("\\'(index\\.php\\?ACT=dl[^<>\"\\']+)").getMatch(0);
+            dllink = br.getRegex("'(index\\.php\\?ACT=dl[^<>\"']+)").getMatch(0);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://digitalcomicmuseum.com/" + Encoding.htmlDecode(dllink);
+            dllink = "/" + Encoding.htmlDecode(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -205,12 +241,6 @@ public class DigitalcomicmuseumCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
