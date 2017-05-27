@@ -274,7 +274,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         String match1 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\",.*?CryptoJS.SHA256\\(").getMatch(0);
         String skey = "nhasasdbasdtene7230asb";
         if (match1 != null) {
-            skey = Encoding.unescape(match1);
+            skey = Encoding.unicodeDecode(match1);
         }
         boolean match2 = br.getRegex("src=\"/Scripts/shal.js\">").matches();
         if (match2) {
@@ -282,7 +282,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         }
         String match2b = br.getRegex("\\[\"([^\"]+)\"\\]; skH \\+=").getMatch(0);
         if (match2b != null) {
-            skey += Encoding.unescape(match2b);
+            skey += Encoding.unicodeDecode(match2b);
         }
         boolean match3 = br.getRegex("src=\"/Scripts/file3.js\">").matches();
         if (match3) {
@@ -290,7 +290,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         }
         String match3b = br.getRegex("\\[\"([^\"]+)\", \"\\\\x72\\\\x65\\\\x70\\\\x6C\\\\x61\\\\x63\\\\x65\"\\]; skH =").getMatch(0);
         if (match3b != null) {
-            skey = skey.replace("a", Encoding.unescape(match3b));
+            skey = skey.replace("a", Encoding.unicodeDecode(match3b));
         }
         return skey;
     }

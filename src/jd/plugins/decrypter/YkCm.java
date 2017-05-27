@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
@@ -26,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,13 +36,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://v\\.youku.com/v_show/id_.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://v\\.youku.com/v_show/id_.*?\\.html" })
 public class YkCm extends PluginForDecrypt {
-
     private double                      SEED    = 0;
     private int                         PARTS   = 0;
     private String[]                    streamTypes;
@@ -99,7 +96,6 @@ public class YkCm extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
         videoId = br.getRegex("var videoId2= \\'(.*?)\\'").getMatch(0);
         if (videoId == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -148,7 +144,6 @@ public class YkCm extends PluginForDecrypt {
         if (!jsonParser(jsonString)) {
             return null;
         }
-
         progress.setRange(PARTS);
         ArrayList<DownloadLink> parts = null;
         for (String sType : streamTypes) {
@@ -168,7 +163,6 @@ public class YkCm extends PluginForDecrypt {
             if (fileName == null || fileSize == null) {
                 continue;
             }
-
             SEED = Double.parseDouble(fileDesc.get("seed"));
             final String streamFileIds = streamFileId.get(sType);
             if (SEED == 0 || streamFileIds == null) {
@@ -234,11 +228,9 @@ public class YkCm extends PluginForDecrypt {
     }
 
     private boolean jsonParser(String jsonString) {
-
         if (jsonString == null) {
             return false;
         }
-
         jsonString = jsonString.replaceAll("\\{\"data\":\\[\\{", "");
         final String sfi = new Regex(jsonString, "\"streamfileids\":\\{(.*?)\\}").getMatch(0);
         final String ss = new Regex(jsonString, "\"streamsizes\":\\{(.*?)\\}").getMatch(0);
@@ -251,19 +243,14 @@ public class YkCm extends PluginForDecrypt {
         if (title == null) {
             title = new Regex(jsonString, ",\"title\":\"(.*?)\",").getMatch(0);
         }
-
         if (sfi != null && ss != null && st != null && se != null && seed != null && title != null) {
-
             final String[][] streamfileid = new Regex(sfi, "\"(.*?)\":\"(.*?)\"").getMatches();
             final String[][] streamsizes = new Regex(ss, "\"(.*?)\":\"(.*?)\"").getMatches();
             final String[][] seqs = new Regex(se, "\"(.*?)\":\\[\\{(.*?)\\}\\]").getMatches();
-
             fileDesc = new HashMap<String, String>();
             fileDesc.put("seed", seed);
-            fileDesc.put("title", unescape(title.trim()));
-
+            fileDesc.put("title", Encoding.unicodeDecode(title.trim()));
             streamTypes = new Regex(st, "\"(.*?)\"").getColumn(0);
-
             streamFileId = new HashMap<String, String>();
             for (final String[] element : streamfileid) {
                 if (element.length != 2) {
@@ -271,7 +258,6 @@ public class YkCm extends PluginForDecrypt {
                 }
                 streamFileId.put(element[0], element[1]);
             }
-
             streamSizes = new HashMap<String, String>();
             for (final String[] element : streamsizes) {
                 if (element.length != 2) {
@@ -279,11 +265,9 @@ public class YkCm extends PluginForDecrypt {
                 }
                 streamSizes.put(element[0], element[1]);
             }
-
             if (streamFileId == null || streamFileId.size() == 0 || streamSizes == null || streamSizes.size() == 0) {
                 return false;
             }
-
             videoParts = new HashMap<String, String[][]>();
             for (final String[] element : seqs) {
                 final String[][] V1 = new Regex(element[1], "\"no\":\"?(.*?)\"?,\"size\":\"(.*?)\",\"seconds\":\"?(.*?)\"?,\"k\":\"(.*?)\"").getMatches();
@@ -305,15 +289,8 @@ public class YkCm extends PluginForDecrypt {
         return false;
     }
 
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        JDUtilities.getPluginForHost("youtube.com");
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
