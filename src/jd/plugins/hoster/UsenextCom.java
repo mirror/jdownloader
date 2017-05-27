@@ -3,7 +3,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -15,12 +18,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenext.com" }, urls = { "" })
+public class UsenextCom extends UseNet {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenext.com" }, urls = { "" }) public class UsenextCom extends UseNet {
     public UsenextCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.usenext.com/signup");
@@ -67,7 +67,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 br.submitForm(login);
                 final String url = br.getRegex("\"url\"\\s*:\\s*\"(https?.*?)\"").getMatch(0);
                 if (url != null) {
-                    final String url2 = Encoding.unescapeYoutube(url);
+                    final String url2 = Encoding.unicodeDecode(url);
                     br.getPage(url2);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

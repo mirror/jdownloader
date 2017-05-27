@@ -23,8 +23,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,14 +43,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" })
 public class RapiduNet extends PluginForHost {
+
     private String       userAgent        = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
     // some how related to storbit.net(cloudflare errors), but streambit.tv domain redirects to rapidu.net
     // requested by admin of the hoster due to high traffic
@@ -141,7 +138,7 @@ public class RapiduNet extends PluginForHost {
                         logger.warning("Linkchecker returns not available for: " + getHost() + " and link: " + dllink.getDownloadURL());
                     } else {
                         fileName = Encoding.htmlDecode(fileName.trim());
-                        fileName = unescape(fileName);
+                        fileName = Encoding.unicodeDecode(fileName);
                         dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
                         dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
                         dllink.setAvailable(true);
@@ -485,16 +482,6 @@ public class RapiduNet extends PluginForHost {
         return ai;
     }
 
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     private int checkMaxSimultanPremiumDowloadNum() {
         int limit = 2;
         Browser br2 = new Browser();
@@ -576,15 +563,17 @@ public class RapiduNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
-        }
-    };
+
+                                                  {
+                                                      put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
-        }
-    };
+
+                                                  {
+                                                      put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

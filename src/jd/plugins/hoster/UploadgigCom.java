@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Locale;
@@ -43,7 +42,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
 public class UploadgigCom extends antiDDoSForHost {
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
@@ -150,7 +148,6 @@ public class UploadgigCom extends antiDDoSForHost {
             if (waittime_str != null) {
                 wait = Integer.parseInt(waittime_str);
             }
-
             this.sleep(wait * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -312,8 +309,8 @@ public class UploadgigCom extends antiDDoSForHost {
             if (isAccountCookiesMissing()) {
                 // to ensure cookies are gone!
                 account.clearCookies("");
-                login(account, true);
                 // you can't not have the cookies here, login method will throw exception.
+                login(account, true);
                 getPage(link.getDownloadURL());
                 // if cookies are now gone.. wtf, site issue???
                 if (isAccountCookiesMissing()) {
@@ -355,5 +352,4 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

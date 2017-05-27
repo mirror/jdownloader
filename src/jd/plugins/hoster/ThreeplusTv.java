@@ -17,7 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3plus.tv" }, urls = { "https?://(?:www\\.)?3plus.tv/(?:episode/[a-z0-9\\-]+/[a-z0-9\\-]+|videos/\\d+/\\d+)" })
 public class ThreeplusTv extends PluginForHost {
@@ -95,7 +93,7 @@ public class ThreeplusTv extends PluginForHost {
         if (sdnPlayoutId != null) {
             /* First ID goes to second ID --> Access that */
             this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
-            this.br.getRequest().setHtmlCode(Encoding.unescape(this.br.toString()));
+            this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
         }
 
         final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
@@ -156,7 +154,7 @@ public class ThreeplusTv extends PluginForHost {
             /* 2017-02-02: E.g. for '/videos/' urls. */
             ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([^<>\"\\']+)<").getMatch(0);
         }
-        ret = Encoding.unescapeYoutube(ret);
+        ret = Encoding.unicodeDecode(ret);
         return ret;
     }
 
@@ -187,7 +185,7 @@ public class ThreeplusTv extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            this.dllink_hls = Encoding.unescape(this.dllink_hls);
+            this.dllink_hls = Encoding.unicodeDecode(this.dllink_hls);
             this.br.getPage(this.dllink_hls);
             if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

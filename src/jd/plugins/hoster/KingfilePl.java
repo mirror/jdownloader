@@ -62,7 +62,7 @@ public class KingfilePl extends PluginForHost {
         link.setLinkID(fid);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        final String secret = Encoding.unescape(br.getRegex("\\\\x3C\\\\x69\\\\x6D\\\\x67\\\\x3E\"\\,\"([^\"]+)").getMatch(0));
+        final String secret = Encoding.unicodeDecode(br.getRegex("\\\\x3C\\\\x69\\\\x6D\\\\x67\\\\x3E\"\\,\"([^\"]+)").getMatch(0));
         if (secret != null) {
             br.openGetConnection("/googletagmanager/" + secret + ".png").disconnect();
             br.getPage(link.getDownloadURL());

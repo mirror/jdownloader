@@ -17,7 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,14 +40,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" })
 public class MinhatecaComBr extends PluginForHost {
+
     @Override
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
         if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
@@ -129,7 +127,7 @@ public class MinhatecaComBr extends PluginForHost {
             try {
                 final Browser br2 = this.br.cloneBrowser();
                 br2.setFollowRedirects(false);
-                br2.getPage("http://minhateca.com.br/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
+                br2.getPage("/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
                 dllink = br2.getRedirectLocation();
                 if (!StringUtils.isEmpty(dllink)) {
                     maxchunks = 1;
@@ -167,11 +165,11 @@ public class MinhatecaComBr extends PluginForHost {
             }
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://" + this.getHost() + "/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+            br.postPage("/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             /* 2017-05-09: Added captcha support */
             String captchaurl = getCaptchaURL();
             if (captchaurl != null) {
-                final String unescapedBR = unescape(br.toString());
+                final String unescapedBR = Encoding.unicodeDecode(br.toString());
                 final String serializedUserSelection = new Regex(unescapedBR, "name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
                 final String serializedOrgFile = new Regex(unescapedBR, "name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
                 if (serializedUserSelection == null || serializedOrgFile == null) {
@@ -192,7 +190,13 @@ public class MinhatecaComBr extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            dllink = PluginJSonUtils.getJson(this.br, "redirectUrl");
+            dllink = PluginJSonUtils.getJson(br, "redirectUrl");
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = PluginJSonUtils.getJson(br, "Content");
+                if (StringUtils.isNotEmpty(dllink)) {
+                    dllink = new Regex(dllink, "href=(\"|')(http.*?)\\1").getMatch(1);
+                }
+            }
             if (StringUtils.isEmpty(dllink)) {
                 if (br.containsHTML("payment_window")) {
                     /* User needs to use an account and/or buy traffic for his existing account to download this file. */
@@ -200,7 +204,6 @@ public class MinhatecaComBr extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = unescape(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getResponseCode() != 206) {
@@ -363,18 +366,6 @@ public class MinhatecaComBr extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

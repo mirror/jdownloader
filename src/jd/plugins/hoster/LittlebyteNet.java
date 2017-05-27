@@ -136,7 +136,7 @@ public class LittlebyteNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Timeout server error", 60 * 1000l);
             }
             /* Remove json escapes from html */
-            br.getRequest().setHtmlCode(Encoding.unescape(this.br.toString()));
+            br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             dllink = br.getRegex("to download the file:</strong><br> <a href=\\'(http[^<>\"]+)\\'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("(http://cdn\\d+\\.littlebyte\\.net/files/[^<>\"]+)\\'").getMatch(0);

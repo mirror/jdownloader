@@ -18,9 +18,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -28,8 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^\\?]+\\?h=[0-9a-f]+" })
 public class DropboxGallery extends PluginForDecrypt {
@@ -75,7 +73,7 @@ public class DropboxGallery extends PluginForDecrypt {
             for (String urlAttr : urlAttrs) {
                 String url = new Regex(singleLink, "'" + urlAttr + "': ('|\")(.*?)('|\")").getMatch(1);
                 if (url != null && url.length() != 0) {
-                    url = unescape(url);
+                    url = Encoding.unicodeDecode(url);
                     ret.add(createDownloadlink(url));
                     break;
                 }
@@ -92,17 +90,6 @@ public class DropboxGallery extends PluginForDecrypt {
             return true;
         }
         return false;
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-
-        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) {
-            throw new IllegalStateException("youtube plugin not found!");
-        }
-
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /* NO OVERRIDE!! */

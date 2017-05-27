@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -29,8 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/(videos/watch/video|watch/video)/.+" })
 public class BingCom extends PluginForDecrypt {
@@ -80,7 +77,7 @@ public class BingCom extends PluginForDecrypt {
         for (final String[] quality : qualities) {
             final String qualityCode = quality[0];
             String directlink = quality[1];
-            directlink = unescape(directlink);
+            directlink = Encoding.unicodeDecode(directlink);
             foundQualities.put(qualityCode, directlink);
         }
         if (cfg.getBooleanProperty(Q_BEST, false)) {
@@ -149,14 +146,4 @@ public class BingCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-
-        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) {
-            throw new IllegalStateException("youtube plugin not found!");
-        }
-
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
 }

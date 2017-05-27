@@ -28,10 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -39,7 +37,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -283,8 +280,7 @@ public class DepositFiles extends antiDDoSForHost {
         if (fileName == null) {
             String eval = br.getRegex("class=\"info\".*?unescape\\('(.*?)'").getMatch(0);
             if (eval != null) {
-                JDUtilities.getPluginForHost("youtube.com");
-                eval = jd.nutils.encoding.Encoding.unescapeYoutube(eval);
+                eval = Encoding.unicodeDecode(eval);
                 fileName = new Regex(eval, FILE_INFO_NAME).getMatch(0);
             }
         }

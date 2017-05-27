@@ -22,8 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,12 +38,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
+
     public FreshfilePl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://freshfile.pl/premium/");
@@ -132,7 +129,7 @@ public class FreshfilePl extends PluginForHost {
                         logger.warning("Linkchecker returns not available for: " + getHost() + " and link: " + dllink.getPluginPatternMatcher());
                     } else {
                         fileName = Encoding.htmlDecode(fileName.trim());
-                        fileName = unescape(fileName);
+                        fileName = Encoding.unicodeDecode(fileName);
                         dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
                         dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
                         dllink.setAvailable(true);
@@ -369,16 +366,6 @@ public class FreshfilePl extends PluginForHost {
             }
         }
         return ai;
-    }
-
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

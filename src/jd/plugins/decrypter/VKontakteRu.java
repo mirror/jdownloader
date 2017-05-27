@@ -1498,7 +1498,7 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
             if (currentOffset > 0) {
                 this.getPageSafe(String.format("https://vk.com/wall-%s?al=-1&local=1&offset=%s&_rndVer=%s", ownerID, currentOffset, "68802"));
-                this.br.getRequest().setHtmlCode(Encoding.unescape(this.br.toString()));
+                this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             }
 
             final String[] htmls = this.br.getRegex("<div class=\"post_content\">.*?reply_fakebox").getColumn(-1);

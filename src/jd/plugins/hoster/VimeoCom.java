@@ -26,7 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,11 +51,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" })
 public class VimeoCom extends PluginForHost {
@@ -746,7 +743,7 @@ public class VimeoCom extends PluginForHost {
 
     public String getFormattedString(final String s) {
         String format = s;
-        format = unescape(format);
+        format = Encoding.unicodeDecode(format);
         format = Encoding.htmlDecode(format);
         format = charRemoval(format);
         return format.trim();
@@ -766,21 +763,6 @@ public class VimeoCom extends PluginForHost {
         // output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
-    }
-
-    private static boolean ut_pluginLoaded = false;
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (ut_pluginLoaded == false) {
-
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            ut_pluginLoaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     private String getForcedReferer(final DownloadLink dl) {

@@ -68,7 +68,7 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             }
             final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
 
-            final String finallink = Encoding.unescape(image);
+            final String finallink = Encoding.unicodeDecode(image);
             if (finallink == null) {
                 return null;
             }

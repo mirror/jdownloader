@@ -175,7 +175,7 @@ public class FreeDiscPl extends PluginForHost {
             maxchunks = 0;
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             postPageRaw("http://freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
-            br.getRequest().setHtmlCode(Encoding.unescape(this.br.toString()));
+            br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             if (br.containsHTML("Pobranie plików większych jak [0-9\\.]+ (MB|GB|TB), wymaga opłacenia kosztów transferu")) {
                 logger.info("File is premiumonly --> Maybe stream download is possible!");
                 /* Premiumonly --> But maybe we can download the video-stream */

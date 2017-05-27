@@ -25,7 +25,9 @@ import java.security.GeneralSecurityException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
-
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.SkipReasonException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,10 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.SkipReasonException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -256,7 +254,7 @@ public class ARDMediathek extends PluginForHost {
                         text = style_text[1];
                         text = text.replaceAll(lineseparator, " ");
                         text = text.replaceAll("&apos;", "\\\\u0027");
-                        text = unescape(text);
+                        text = Encoding.unicodeDecode(text);
                         text = HTMLEntities.unhtmlentities(text);
                         text = HTMLEntities.unhtmlAmpersand(text);
                         text = HTMLEntities.unhtmlAngleBrackets(text);
@@ -316,10 +314,6 @@ public class ARDMediathek extends PluginForHost {
             colorCode = "FFFFFF";
         }
         return colorCode;
-    }
-
-    private String unescape(final String s) {
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

@@ -184,7 +184,7 @@ public class UdemyCom extends PluginForHost {
                     if (json_view_html == null) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    json_view_html = Encoding.unescape(json_view_html);
+                    json_view_html = Encoding.unicodeDecode(json_view_html);
                     json_view_html = Encoding.htmlDecode(json_view_html);
                     final String jssource = new Regex(json_view_html, "sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
                     if (jssource != null) {

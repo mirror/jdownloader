@@ -68,7 +68,7 @@ public class TumangaonlineCom extends antiDDoSForDecrypt {
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
 
         final String official_downloadurl = (String) entries.get("urlDescarga");
-        final String images_array_text = Encoding.unescape((String) entries.get("imagenes"));
+        final String images_array_text = Encoding.unicodeDecode((String) entries.get("imagenes"));
 
         final FilePackage fp = FilePackage.getInstance();
         /* 2017-30-31: First chapter name, then chapter number (user request, thread 73101) */
