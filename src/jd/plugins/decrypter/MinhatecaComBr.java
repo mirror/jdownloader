@@ -17,7 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -33,10 +33,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "https?://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" })
 public class MinhatecaComBr extends PluginForDecrypt {
+
     public MinhatecaComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,13 +47,13 @@ public class MinhatecaComBr extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://", "https://");
         br.setAllowedResponseCodes(new int[] { 401 });
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
-        /* No permission to see file/folder */{
+        /* No permission to see file/folder */ {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -72,13 +71,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
             }
             br.getPage(parameter);
         }
-        final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
-        final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (br.containsHTML("class=\"LoginToFolderForm\"")) {
             // folder password
-            final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
+            if (reqtoken == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -90,7 +86,13 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 if (passCode == null) {
                     passCode = Plugin.getUserInput("Folder password?", param);
                 }
-                br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                // TODO: fix this with form!
+                if (true) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                // br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid
+                // + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode)
+                // + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 if (br.containsHTML("\"IsSuccess\":false")) {
                     this.getPluginConfig().setProperty("last_used_password", Property.NULL);
                     continue;
@@ -168,17 +170,16 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 lastpage = Integer.parseInt(maxpage);
             }
             for (int i = startnumber; i <= lastpage; i++) {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
                 }
                 logger.info("Decrypting page " + i + " of " + lastpage);
                 if (i > 1) {
-                    br.postPage("http://minhateca.com.br/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                    final Form next = br.getFormbyActionRegex("/action/Files/FilesList");
+                    next.put("__RequestVerificationToken", Encoding.urlEncode(reqtoken));
+                    next.put("pageNr", String.valueOf(i));
+                    br.submitForm(next);
                     maxpage = br.getRegex("title=\"\\d+\">(\\d+)</a></li></ul><div").getMatch(0);
                     if (maxpage == null) {
                         maxpage = br.getRegex("title=\"\\d+ \\.\\.\\.\">(\\d+) \\.\\.\\.</a></li></ul><div").getMatch(0);
