@@ -19,10 +19,11 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,12 +32,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/u/\\d{6,7}(/\\d{6,7})?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/u/\\d{6,7}(/\\d{6,7})?" })
 public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES
@@ -142,7 +140,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
             for (String[] args : results) {
                 DownloadLink dl = createDownloadlink(args[1]);
                 if (args[1] != null) {
-                    dl.setName(unescape(args[2]));
+                    dl.setName(Encoding.unicodeDecode(args[2]));
                     if (args[4] != null) {
                         dl.setDownloadSize(SizeFormatter.getSize(args[4]));
                     }
@@ -168,7 +166,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
      * site has really bad connective issues, this method helps retry over throwing exception at the first try
      *
      * @author raztoki
-     * */
+     */
     private boolean getPage(Browser ibr, final String url) throws Exception {
         if (ibr == null || url == null) {
             return false;
@@ -204,20 +202,6 @@ public class CtDiskComFolder extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    private static boolean pluginloaded = false;
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
 }

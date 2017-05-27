@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,12 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" })
 public class U115Com extends PluginForHost {
 
     private final String        ua                                 = RandomUserAgent.generate();
@@ -53,7 +50,6 @@ public class U115Com extends PluginForHost {
     private static final String UNDERMAINTENANCETEXT               = "The servers are under maintenance";
     private static final String ACCOUNTNEEDEDUSERTEXT              = "Account is needed to download this link";
     private static Object       LOCK                               = new Object();
-    private boolean             pluginloaded                       = false;
     private boolean             downloadCompleted                  = false;
     private String              DELETEFILEFROMACCOUNTAFTERDOWNLOAD = "DELETEFILEFROMACCOUNTAFTERDOWNLOAD";
 
@@ -183,7 +179,7 @@ public class U115Com extends PluginForHost {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();
-                        this.br.setCookie(MAINPAGE, key, value);
+                        br.setCookie(MAINPAGE, key, value);
                     }
                     return;
                 }
@@ -238,7 +234,7 @@ public class U115Com extends PluginForHost {
             }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(MAINPAGE);
+            final Cookies add = br.getCookies(MAINPAGE);
             for (final Cookie c : add.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
@@ -403,7 +399,7 @@ public class U115Com extends PluginForHost {
             if (currentFilename == null) {
                 continue;
             }
-            currentFilename = unescape(currentFilename);
+            currentFilename = Encoding.unicodeDecode(currentFilename);
             if (currentFilename.equals(plainfilename)) {
                 fileIDs[0] = new Regex(file, "\"fid\":\"([a-z0-9]+)\"").getMatch(0);
                 if (fileIDs[0] == null) {
@@ -417,20 +413,8 @@ public class U115Com extends PluginForHost {
     }
 
     public String findLink() throws Exception {
-        String linkToDownload = br.getRegex("\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|[a-z0-9\\.]+\\.115\\.com)/gdown_group[^<>\"]*?)\"").getMatch(0);
+        String linkToDownload = br.getRegex("\"(https?://(\\d+\\.\\d+\\.\\d+\\.\\d+|[a-z0-9\\.]+\\.115\\.com)/gdown_group[^<>\"]*?)\"").getMatch(0);
         return linkToDownload;
-    }
-
-    private synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     public void setConfigElements() {

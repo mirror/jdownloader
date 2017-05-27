@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
-
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.config.Property;
@@ -29,6 +28,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter(\\.[a-z]+){1,2}/books\\?id=.*&pg=.*" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter(\\.[a-z]+){1,2}/books\\?id=.*&pg=.*" })
 public class GoogleBooks extends PluginForHost {
 
     // Dev Notes
@@ -53,7 +53,7 @@ public class GoogleBooks extends PluginForHost {
 
     /**
      * @author raztoki
-     * */
+     */
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -222,25 +222,15 @@ public class GoogleBooks extends PluginForHost {
 
         if (results != null && results.length != 0) {
             for (String[] result : results) {
-                bookList.put(buid + result[0], unescape(result[1]));
+                bookList.put(buid + result[0], Encoding.unicodeDecode(result[1]));
                 if (result[0].equalsIgnoreCase(page)) {
-                    dl = unescape(result[1]);
+                    dl = Encoding.unicodeDecode(result[1]);
                 }
             }
         }
         // lets save after each run
         getPluginConfig().setProperty("savedSigs", bookList);
         return dl;
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) {
-            throw new IllegalStateException("youtube plugin not found!");
-        }
-
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
 }

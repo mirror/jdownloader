@@ -22,12 +22,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,10 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" })
 public class MdrDe extends PluginForHost {
 
     /** Settings stuff */
@@ -180,7 +178,7 @@ public class MdrDe extends PluginForHost {
                     final String style = style_text[0];
                     String text = style_text[1];
                     text = text.replaceAll("&apos;", "\\\\u0027");
-                    text = unescape(text);
+                    text = Encoding.unicodeDecode(text);
                     text = HTMLEntities.unhtmlentities(text);
                     text = HTMLEntities.unhtmlAmpersand(text);
                     text = HTMLEntities.unhtmlAngleBrackets(text);
@@ -245,16 +243,6 @@ public class MdrDe extends PluginForHost {
         String result = info.getMatch(0) + ":" + info.getMatch(1) + ":" + info.getMatch(2) + "," + milliseconds;
 
         return result;
-    }
-
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

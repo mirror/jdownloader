@@ -144,11 +144,10 @@ public class DigitalcomicmuseumCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://digitalcomicmuseum.com/forum/index.php?action=login2");
-                final Form login = br.getForm(0);
+                final Form login = br.getFormbyActionRegex(".*action=login2.*");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                login.setAction("/forum/index.php?action=login2");
                 // login has hashed values, derived from javascript
                 final String charset = br.getRegex("var smf_charset\\s*=\\s*\"(.*?)\";").getMatch(0);
                 final String cur_session_id = login.getRegex("onsubmit=\"hashLoginPassword\\(this,\\s*'([a-f0-9]{32})'").getMatch(0);
@@ -226,7 +225,7 @@ public class DigitalcomicmuseumCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "/" + Encoding.htmlDecode(dllink);
+            dllink = "/" + Encoding.htmlOnlyDecode(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {

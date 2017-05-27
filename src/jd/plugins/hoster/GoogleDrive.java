@@ -15,6 +15,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,13 +39,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
+
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.google.com/signup");
@@ -235,20 +235,20 @@ public class GoogleDrive extends PluginForHost {
         if (stream_map != null) {
             final String[] links = stream_map.split("\\|");
             streamLink = links[links.length - 1];
-            streamLink = unescape(streamLink);
+            streamLink = Encoding.unicodeDecode(streamLink);
         } else {
             stream_map = br.getRegex("\"fmt_stream_map\",\"(.*?)\"").getMatch(0);
             if (stream_map != null) {
                 final String[] links = stream_map.split("\\|");
                 streamLink = links[links.length - 1];
-                streamLink = unescape(streamLink);
+                streamLink = Encoding.unicodeDecode(streamLink);
             }
         }
         stream_map = br.getRegex("\"url_encoded_fmt_stream_map\",\"(.*?)\"").getMatch(0);
         if (stream_map != null) {
             final String[] links = stream_map.split("\\,");
             for (int i = 0; i < links.length; i++) {
-                links[i] = unescape(links[i]);
+                links[i] = Encoding.unicodeDecode(links[i]);
             }
             final UrlQuery query = Request.parseQuery(links[0]);
             streamLink = Encoding.urlDecode(query.get("url"), false);
@@ -398,10 +398,6 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return FREE_MAXDOWNLOADS;
-    }
-
-    private String unescape(final String s) {
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

@@ -356,7 +356,7 @@ public class PornHubCom extends PluginForHost {
                     if (var[matchQuality].equals(q)) {
                         String directurl = var[matchUrl];
                         directurl = directurl.replaceAll("( |\"|\\+)", "");
-                        directurl = Encoding.unescape(directurl);
+                        directurl = Encoding.unicodeDecode(directurl);
                         qualities.put(q, directurl);
                     }
                 }

@@ -85,7 +85,7 @@ public class VivoSx extends PluginForHost {
                 dllink = this.br.getRegex("Core\\.InitializeStream\\s*?\\(\\'([^<>\"]+)\\'").getMatch(0);
                 if (dllink != null) {
                     dllink = Encoding.Base64Decode(dllink);
-                    dllink = Encoding.unescape(dllink);
+                    dllink = Encoding.unicodeDecode(dllink);
                     dllink = new Regex(dllink, "(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
                 }
             }

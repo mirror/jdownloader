@@ -18,8 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -33,9 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
@@ -146,7 +142,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     String dllink = protocol + "://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
                     final DownloadLink finalOne = createDownloadlink(dllink);
                     // name here can be unicode....
-                    finalOne.setFinalFileName(Encoding.htmlDecode(unescape(filename)));
+                    finalOne.setFinalFileName(Encoding.htmlDecode(Encoding.unicodeDecode(filename)));
                     finalOne.setDownloadSize(Integer.parseInt(filesize));
                     finalOne.setAvailable(true);
                     // for this to be used in hoster plugin it needs non escaped name. see: getNewTemporaryLink
@@ -181,16 +177,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /* NO OVERRIDE!! */

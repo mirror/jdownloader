@@ -285,8 +285,8 @@ public class GoogleDrive extends PluginForDecrypt {
                     String filename = new Regex(item, "\"([^<>\"]*?)\"").getMatch(0);
                     String final_link = filelinks[counter];
                     if (filename != null) {
-                        filename = unescape(filename);
-                        final_link = unescape(final_link);
+                        filename = Encoding.unicodeDecode(filename);
+                        final_link = Encoding.unicodeDecode(final_link);
                         final DownloadLink fina = createDownloadlink(final_link);
                         fina.setName(filename);
                         fina.setAvailable(true);
@@ -298,7 +298,7 @@ public class GoogleDrive extends PluginForDecrypt {
             final String[] folderlinks = new Regex(content, "(" + FOLDER_CURRENT + ")").getColumn(0);
             if (folderlinks != null && folderlinks.length != 0) {
                 for (String folderlink : folderlinks) {
-                    folderlink = unescape(folderlink);
+                    folderlink = Encoding.unicodeDecode(folderlink);
                     // return folder links back into the plugin again.
                     if (!folderlink.contains("id=" + fid + "&")) {
                         decryptedLinks.add(createDownloadlink(folderlink));
@@ -316,15 +316,6 @@ public class GoogleDrive extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) {
-            throw new IllegalStateException("youtube plugin not found!");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /* NO OVERRIDE!! */

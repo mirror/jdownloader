@@ -65,7 +65,7 @@ public class CamvaultXyz extends PluginForDecrypt {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken();
                 br.postPage("/gallery/megadownload", "captcha=" + Encoding.urlEncode(recaptchaV2Response) + "&token=" + Encoding.urlEncode(videoToken));
             }
-            br.getRequest().setHtmlCode(Encoding.unescape(this.br.toString()));
+            br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             final String[] dllinks = this.br.getRegex("download\\-link\"><a href=\"(https[^<>\"]+)\"").getColumn(0);
             for (final String dllink : dllinks) {
                 decryptedLinks.add(createDownloadlink(dllink));

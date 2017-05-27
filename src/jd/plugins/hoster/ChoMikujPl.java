@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Random;
-
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,19 +41,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
+
     private String              dllink                      = null;
     private static final String PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
     private static final String PREMIUMONLYUSERTEXT         = "Download is only available for registered/premium users!";
@@ -158,18 +155,6 @@ public class ChoMikujPl extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -266,7 +251,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             }
             br.setCookie(this.getHost(), "cookiesAccepted", "1");
             postPageWithCleanup(br, "http://" + this.getHost() + "/action/License/DownloadContext", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-            unescapedBR = unescape(br.toString());
+            unescapedBR = Encoding.unicodeDecode(br.toString());
             final String serializedUserSelection = new Regex(unescapedBR, "name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
             final String serializedOrgFile = new Regex(unescapedBR, "name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
             if (br.containsHTML("downloadWarningForm")) {
@@ -275,7 +260,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                     return false;
                 }
                 postPageWithCleanup(br, "/action/License/DownloadWarningAccept", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile));
-                unescapedBR = unescape(br.toString());
+                unescapedBR = Encoding.unicodeDecode(br.toString());
             }
             if (br.containsHTML("g\\-recaptcha")) {
                 final String rcSiteKey = PluginJSonUtils.getJson(unescapedBR, "sitekey");
@@ -313,7 +298,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             }
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = unescape(dllink);
+            dllink = Encoding.unicodeDecode(dllink);
         }
         br.setFollowRedirects(redirectsSetting);
         return true;
@@ -436,7 +421,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                 dllink = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
             }
             if (dllink != null) {
-                dllink = unescape(dllink);
+                dllink = Encoding.unicodeDecode(dllink);
                 dllink = Encoding.htmlDecode(dllink);
                 if (dllink.contains("#SliderTransfer")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -454,7 +439,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = unescape(dllink);
+        dllink = Encoding.unicodeDecode(dllink);
         free_resume = false;
         account_resume = false;
         return dllink;
@@ -657,6 +642,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         final String oURL = ibr.getURL();
         final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
         Request req = new Request(oURL) {
+
             {
                 boolean okay = false;
                 try {

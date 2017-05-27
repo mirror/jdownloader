@@ -271,7 +271,7 @@ public class Video2brainCom extends PluginForHost {
             }
             if (config_url.startsWith("trailer")) {
                 /* Fix trailer xml url as it is escaped and incomplete. */
-                config_url = "/" + url_language + "/" + Encoding.unescape(config_url);
+                config_url = "/" + url_language + "/" + Encoding.unicodeDecode(config_url);
             }
             getPage(config_url);
             final String rtmpurl = this.br.getRegex("<src>(rtmp[^\n]+)").getMatch(0);

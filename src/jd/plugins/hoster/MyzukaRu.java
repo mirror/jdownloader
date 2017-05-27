@@ -16,8 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,12 +30,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org|fm)/Song/\\d+" })
 public class MyzukaRu extends PluginForHost {
+
     public MyzukaRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -101,7 +98,7 @@ public class MyzukaRu extends PluginForHost {
                 dllink = br.getRegex("\"(http://[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
                     logger.info("Found streamurl");
-                    dllink = unescape(dllink);
+                    dllink = Encoding.unicodeDecode(dllink);
                 } else {
                     logger.warning("Failed to find streamurl");
                 }
@@ -143,16 +140,6 @@ public class MyzukaRu extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

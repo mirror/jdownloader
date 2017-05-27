@@ -174,7 +174,7 @@ public class DropBoxCom extends PluginForDecrypt {
 
         if (fpName != null) {
             if (fpName.contains("\\")) {
-                fpName = Encoding.unescape(fpName);
+                fpName = Encoding.unicodeDecode(fpName);
             }
             currentPackage = FilePackage.getInstance();
             currentPackage.setName(Encoding.htmlDecode(fpName.trim()));

@@ -169,7 +169,7 @@ public class PbsOrg extends PluginForHost {
             /* Fallback to url-filename */
             title = vid;
         }
-        title = Encoding.unescape(title);
+        title = Encoding.unicodeDecode(title);
         link.setName(title + ".mp4");
         return AvailableStatus.TRUE;
     }

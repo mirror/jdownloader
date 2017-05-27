@@ -70,7 +70,7 @@ public class ScribdCom extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 br.getPage("https://www.scribd.com/collections/" + collection_id + "/get_collection_documents?page=" + page);
-                br.getRequest().setHtmlCode(unescape(br.toString()));
+                br.getRequest().setHtmlCode(Encoding.unicodeDecode(br.toString()));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("\"objects\":null")) {
                     break;
@@ -148,7 +148,7 @@ public class ScribdCom extends PluginForDecrypt {
                     decryptedLinks.add(getOfflineLink(parameter));
                     return decryptedLinks;
                 }
-                br.getRequest().setHtmlCode(unescape(br.toString()));
+                br.getRequest().setHtmlCode(Encoding.unicodeDecode(br.toString()));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("\"objects\":null")) {
                     break;
@@ -194,16 +194,6 @@ public class ScribdCom extends PluginForDecrypt {
         offline.setAvailable(false);
         offline.setProperty("offline", true);
         return offline;
-    }
-
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
 }

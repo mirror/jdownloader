@@ -24,11 +24,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,7 +50,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
@@ -90,7 +87,6 @@ public class SoundcloudCom extends PluginForHost {
     private final String         CUSTOM_PACKAGENAME                          = "CUSTOM_PACKAGENAME";
     private final static String  SETS_ADD_POSITION_TO_FILENAME               = "SETS_ADD_POSITION_TO_FILENAME";
 
-    private static boolean       pluginloaded                                = false;
     private String               dllink                                      = null;
     private boolean              serverissue                                 = false;
     private boolean              is_officially_downloadable                  = false;
@@ -149,36 +145,36 @@ public class SoundcloudCom extends PluginForHost {
         serverissue = false;
         is_geo_blocked = false;
         String secrettoken = parameter.getStringProperty("secret_token", null);
-        prepBR(this.br);
+        prepBR(br);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            login(this.br, aa, false);
+            login(br, aa, false);
         }
         String songid = parameter.getStringProperty("track_id", null);
 
         Map<String, Object> response = null;
         if (songid == null) {
-            this.br.getPage(parameter.getDownloadURL());
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage(parameter.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // this is poor way to determine the track id.
-            songid = this.br.getRegex("soundcloud://sounds:(\\d+)").getMatch(0);
+            songid = br.getRegex("soundcloud://sounds:(\\d+)").getMatch(0);
             if (songid == null) {
                 /* 99,99% chance that the current url is not a song --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         if (secrettoken == null) {
-            this.br.getPage("https://api-v2.soundcloud.com/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(this.br));
+            br.getPage("https://api-v2.soundcloud.com/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
 
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (this.br.getHttpConnection().getResponseCode() == 401) {
+            if (br.getHttpConnection().getResponseCode() == 401) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            response = getStartJsonMap(this.br.toString());
+            response = getStartJsonMap(br.toString());
             final AvailableStatus status = checkStatusJson(this, parameter, response, true);
             if (status.equals(AvailableStatus.FALSE)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -202,17 +198,17 @@ public class SoundcloudCom extends PluginForHost {
                 } else {
                     br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
                 }
-                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                dllink = PluginJSonUtils.getJsonValue(this.br, "http_mp3_128_url");
+                dllink = PluginJSonUtils.getJsonValue(br, "http_mp3_128_url");
                 if (dllink == null || dllink.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dllink = unescape(dllink);
+                dllink = Encoding.unicodeDecode(dllink);
                 dllink = Encoding.htmlDecode(dllink);
             } else {
-                dllink = getDirectlink(this.br.toString(), songid);
+                dllink = getDirectlink(br.toString(), songid);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -614,7 +610,7 @@ public class SoundcloudCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -627,20 +623,8 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this.br, account, false);
+        login(br, account, false);
         doFree(link);
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
@@ -730,6 +714,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+
                                                   {
                                                       put("SETTING_GRAB_PURCHASE_URL", "Grab purchase URL?\r\n<html><b>The purchase-URL sometimes lead to external downloadlinks e.g. mediafire.com.</b></html>");
                                                       put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Only download files which have a download button/are officially downloadable?\r\n<html><p style=\"color:#F62817\"><b>Warning: If you enable this, all soundcloud downloads without an official download possibility will get a red error state and will NOT be downloaded!</b></p></html>");
@@ -753,6 +738,7 @@ public class SoundcloudCom extends PluginForHost {
                                               };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+
                                                   {
                                                       put("SETTING_GRAB_PURCHASE_URL", "Kauflink einfügen?\r\n<html><b>Der Kauflink führt manchmal zu externen Downloadmöglichkeiten z.B. mediafire.com.</b></html>");
                                                       put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Lade nur Links mit offizieller downloadmöglichkeit/Downloadbutton herunter??\r\n<html><p style=\"color:#F62817\"><b>Warnung: Falls du das aktivierst werden alle Soundcloud Links ohne offizielle Downloadmöglichkeit einen roten Fehlerstatus bekommen und NICHT heruntergeladen!</b></p></html>");
