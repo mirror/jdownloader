@@ -15,12 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(www\\.)?myzuka\\.(ru|org|fm)/Song/\\d+" })
-public class MyzukaRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me)/Song/(\\d+)" })
+public class MyzukaRu extends antiDDoSForHost {
 
     public MyzukaRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,23 +44,17 @@ public class MyzukaRu extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Florced https */
-        link.setUrlDownload("https://myzuka.fm/Song/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("https://myzuka.me/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw e;
-        }
-        if (br.getHttpConnection().getResponseCode() == 400) {
+        br.setAllowedResponseCodes(500);
+        getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 500 || br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Abused */
@@ -91,11 +83,11 @@ public class MyzukaRu extends PluginForHost {
             if (dllink == null) {
                 logger.info("Could not find downloadurl, trying to get streamurl");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://myzuka.fm/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+                br.getPage("/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
                 }
-                dllink = br.getRegex("\"(http://[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
                     logger.info("Found streamurl");
                     dllink = Encoding.unicodeDecode(dllink);
