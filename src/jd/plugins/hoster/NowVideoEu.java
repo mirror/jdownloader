@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -24,6 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,16 +47,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=|embed/\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/(embed\\.php|embed/)\\?v=)[a-z0-9]+" })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     // cloudtime.to and nowvideo are the same provider, finallink servers are identical hostnames!
     // note: avi containers are not converted to flv!
-
     private static Object                  LOCK               = new Object();
     private static final String            currentMainDomain  = "nowvideo.to";
     private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
@@ -63,35 +61,56 @@ public class NowVideoEu extends PluginForHost {
     private String                         filename           = null;
     private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
-    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
+    // note: .ch parked
+    // note: .at parked
+    // note: .eu no dns record
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "nowvideo.to", "nowvideo.sx", "nowvideo.co", "nowvideo.ag", "nowvideo.ec", "nowvideo.li" };
+    }
 
     private String validateHost() {
-        final String[] ccTLDs = { "to", "ch", "sx", "eu", "co", "ag", "at", "ec", "li" };
-
-        for (int i = 0; i < ccTLDs.length; i++) {
-            final String ccTLD = ccTLDs[i];
+        for (final String domain : siteSupportedNames()) {
             try {
                 final Browser br = new Browser();
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
-                br.getPage("http://www.nowvideo." + ccTLD);
+                br.getPage("http://www." + domain);
                 final String redirect = br.getRedirectLocation();
                 if (redirect == null && Browser.getHost(br.getURL()).matches(domains)) {
                     // primary domain wont redirect
-                    return ccTLD;
+                    return domain;
                 } else if (redirect != null) {
                     final String cctld = new Regex(redirect, domains).getMatch(0);
                     if (cctld != null) {
-                        return ccTLD;
+                        return domain;
                     }
                 } else {
                     continue;
                 }
             } catch (Exception e) {
-                logger.warning("NowVideo." + ccTLD + " seems to be offline...");
+                logger.warning(domain + " seems to be offline...");
             }
         }
         return null;
+    }
+
+    private void correctCurrentDomain() throws PluginException {
+        if (AVAILABLE_PRECHECK.get() == false) {
+            synchronized (LOCK) {
+                /*
+                 * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
+                 * proceeding.
+                 */
+                final String domain = validateHost();
+                if (domain == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Could not determine proper ccTLD!");
+                }
+                MAINPAGE.set("http://www." + domain);
+                this.enablePremium(MAINPAGE.toString() + "/premium.php");
+                AVAILABLE_PRECHECK.set(true);
+            }
+        }
     }
 
     private final static String  PROPERTY_FILENAME_WITH_FUID         = "PROPERTY_FILENAME_WITH_FUID";
@@ -144,30 +163,7 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
-    private void correctCurrentDomain() throws PluginException {
-        if (AVAILABLE_PRECHECK.get() == false) {
-            synchronized (LOCK) {
-                /*
-                 * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
-                 * proceeding.
-                 */
-
-                final String CCtld = validateHost();
-                if (CCtld == null) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Could not determine proper ccTLD!");
-                }
-                MAINPAGE.set("http://www.nowvideo." + CCtld);
-                this.enablePremium(MAINPAGE.toString() + "/premium.php");
-                AVAILABLE_PRECHECK.set(true);
-            }
-        }
-    }
-
     private Browser prepBrowser(Browser prepBr) {
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
         prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0");
         return prepBr;
     }
@@ -473,5 +469,4 @@ public class NowVideoEu extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_VideoHosting;
     }
-
 }
