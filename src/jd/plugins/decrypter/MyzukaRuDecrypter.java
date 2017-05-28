@@ -16,31 +16,31 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me)/Album/(\\d+)" })
+public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(ru|org|fm)/Album/\\d+" })
-public class MyzukaRuDecrypter extends PluginForDecrypt {
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced https */
-        final String parameter = "https://myzuka.fm/Album/" + new Regex(param.toString(), "(\\d+)$").getMatch(0);
+        final String parameter = "https://myzuka.me/Album/" + new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         /* offline|abused */
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Альбом удален по просьбе правообладателя")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
@@ -58,7 +58,7 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
             fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         if (fpName == null) {
-            fpName = new Regex(br.getURL(), "myzuka\\.(?:ru|org|fm)/Album/\\d+/(.+)").getMatch(0);
+            fpName = new Regex(br.getURL(), this.getSupportedLinks()).getMatch(0);
         }
         for (final String singleLink : info) {
             final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[^<>\"/]+)\"").getMatch(0);
@@ -70,7 +70,7 @@ public class MyzukaRuDecrypter extends PluginForDecrypt {
                 return null;
             }
             filesize = new Regex(filesize, "(\\d+(?:,\\d+)?)").getMatch(0) + "MB";
-            final DownloadLink fina = createDownloadlink("http://myzuka.ru" + Encoding.htmlDecode(url));
+            final DownloadLink fina = createDownloadlink(Request.getLocation(Encoding.htmlDecode(url), br.getRequest()));
             fina.setName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
             fina.setDownloadSize(SizeFormatter.getSize(filesize));
             fina.setAvailable(true);
