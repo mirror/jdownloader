@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -25,6 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,16 +47,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.org" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.org" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" })
 public class NowDownloadEu extends PluginForHost {
 
-    private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.sx");
-
-    private static AtomicReference<String> DOMAIN                  = new AtomicReference<String>("sx");
+    // note: .to is primary domain.
+    private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.to");
     private static AtomicBoolean           AVAILABLE_PRECHECK      = new AtomicBoolean(false);
     private static AtomicReference<String> ua                      = new AtomicReference<String>(RandomUserAgent.generate());
     private static Object                  LOCK                    = new Object();
@@ -61,33 +59,58 @@ public class NowDownloadEu extends PluginForHost {
     private final String                   TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
     private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)";
 
-    private String validateHost() {
-        final String[] ccTLDs = { "to", "sx", "eu", "co", "ch", "ag", "at", "ec", "li" };
+    // note: .sx seems to be adverting portal now.
+    // note: .ch is parked
+    // note: .li has no dns record.
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "nowdownload.to", "nowdownload.eu", "nowdownload.co", "nowdownload.ag", "nowdownload.at", "nowdownload.ec" };
+    }
 
-        for (int i = 0; i < ccTLDs.length; i++) {
-            final String ccTLD = ccTLDs[i];
+    private String validateHost() {
+        for (final String domain : siteSupportedNames()) {
             try {
                 final Browser br = new Browser();
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
-                br.getPage("http://www.nowdownload." + ccTLD);
+                br.getPage("http://www." + domain);
                 final String redirect = br.getRedirectLocation();
                 if (redirect == null && Browser.getHost(br.getURL()).matches(domains)) {
                     // primary domain wont redirect
-                    return ccTLD;
+                    return domain;
                 } else if (redirect != null) {
                     final String cctld = new Regex(redirect, domains).getMatch(0);
                     if (cctld != null) {
-                        return ccTLD;
+                        return domain;
                     }
                 } else {
                     continue;
                 }
             } catch (Exception e) {
-                logger.warning("NowDownload." + ccTLD + " seems to be offline...");
+                logger.warning(domain + " seems to be offline...");
             }
         }
         return null;
+    }
+
+    private void correctCurrentDomain() throws PluginException {
+        if (AVAILABLE_PRECHECK.get() == false) {
+            synchronized (LOCK) {
+                /*
+                 * == Fix original link ==
+                 *
+                 * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
+                 * proceed, to select one available.
+                 */
+                final String domain = validateHost();
+                if (domain == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Could not determine proper ccTLD!");
+                }
+                MAINPAGE.set("http://www." + domain);
+                this.enablePremium(MAINPAGE.toString() + "/premium.php");
+                AVAILABLE_PRECHECK.set(true);
+            }
+        }
     }
 
     @Override
@@ -119,31 +142,9 @@ public class NowDownloadEu extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("likeupload.")) {
             // all likeupload uid to nowdownload uid contain 0 prefix
-            link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/0" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+            link.setUrlDownload(MAINPAGE.get() + "/dl/0" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
         } else {
-            link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-        }
-    }
-
-    private void correctCurrentDomain() throws PluginException {
-        if (AVAILABLE_PRECHECK.get() == false) {
-            synchronized (LOCK) {
-                /*
-                 * == Fix original link ==
-                 *
-                 * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
-                 * proceed, to select one available.
-                 */
-
-                final String CCtld = validateHost();
-                if (CCtld == null) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Could not determine proper ccTLD!");
-                }
-                DOMAIN.set(CCtld);
-                MAINPAGE.set("http://www.nowdownload." + CCtld);
-                this.enablePremium(MAINPAGE.toString() + "/premium.php");
-                AVAILABLE_PRECHECK.set(true);
-            }
+            link.setUrlDownload(MAINPAGE.get() + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         }
     }
 
@@ -163,7 +164,6 @@ public class NowDownloadEu extends PluginForHost {
             link.getLinkStatus().setStatusText(TEMPUNAVAILABLEUSERTEXT);
             return AvailableStatus.TRUE;
         }
-
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
         /* Looks very bad but sometimes this is the only way to get the full filenames with extension! */
         String filename = this.br.getRegex("<\\!-- Ads - DO NOT MODIFY -->[\t\n\r ]*?<\\!--([^<>\"]*?)-->[\t\n\r ]*?<hr class=\"footer_sep\">").getMatch(0);
@@ -322,7 +322,6 @@ public class NowDownloadEu extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-
         }
         return dllink;
     }
@@ -458,5 +457,4 @@ public class NowDownloadEu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
