@@ -13,11 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,9 +42,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "http://digitalplaygrounddecrypted.+" })
 public class DigitalplaygroundCom extends PluginForHost {
 
@@ -64,12 +63,9 @@ public class DigitalplaygroundCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private final String         type_premium_pic             = ".+\\.jpg.*?";
     private final String         type_premium_pic_archive     = ".+\\.zip.*?";
-
     public static final String   html_loggedin                = "class=\"member\\-nav\"";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -294,10 +290,16 @@ public class DigitalplaygroundCom extends PluginForHost {
         if (is_this_plugin) {
             /* The original plugin is always allowed to download. */
             return true;
+        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+            /*
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
+             */
+            return true;
         } else {
             final String mainlink = getMainlink(downloadLink);
             /* Multihosts should only be tried if we have the correct url. */
-            return jd.plugins.decrypter.DigitalplaygroundCom.isTrailerUrl(mainlink) || mainlink.equals("");
+            return jd.plugins.decrypter.DigitalplaygroundCom.isTrailerUrl(mainlink);
         }
     }
 
@@ -354,5 +356,4 @@ public class DigitalplaygroundCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

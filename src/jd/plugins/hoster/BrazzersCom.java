@@ -17,6 +17,16 @@ package jd.plugins.hoster;
 
 import java.util.List;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,18 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.translate._JDT;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
 public class BrazzersCom extends antiDDoSForHost {
+
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://enter.brazzers.com/signup/signup.php");
@@ -269,7 +270,7 @@ public class BrazzersCom extends antiDDoSForHost {
 
     private boolean isMOCHUrlOnly(final DownloadLink dl) {
         final String url = dl.getPluginPatternMatcher();
-        return "".equals(url) || (url != null && (url.matches(type_normal_moch) || url.matches(jd.plugins.decrypter.BrazzersCom.type_video_free)));
+        return url != null && (url.matches(type_normal_moch) || url.matches(jd.plugins.decrypter.BrazzersCom.type_video_free));
     }
 
     @Override
@@ -289,6 +290,12 @@ public class BrazzersCom extends antiDDoSForHost {
         final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
         if (is_this_plugin) {
             /* The original brazzers plugin is always allowed to download. */
+            return true;
+        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+            /*
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
+             */
             return true;
         } else {
             /* Multihosts should not be tried if we know that content is not yet downloadable! */
@@ -453,7 +460,9 @@ public class BrazzersCom extends antiDDoSForHost {
     }
 
     public static interface BrazzersConfigInterface extends PluginConfigInterface {
+
         public static class TRANSLATION {
+
             public String getFastLinkcheckEnabled_label() {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }
