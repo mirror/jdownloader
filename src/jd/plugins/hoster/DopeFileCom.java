@@ -23,7 +23,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,49 +47,48 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dopefile.com" }, urls = { "https?://(www\\.)?dopefile\\.(?:com|me|pk)/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dopefile.com" }, urls = { "https?://(www\\.)?dopefile\\.(?:com|me|pk)/(vidembed\\-)?[a-z0-9]{12}" })
 public class DopeFileCom extends PluginForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String                         correctedBR                   = "";
+    private String                         passCode                      = null;
+    private static final String            PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://dopefile.pk";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                   = "http://dopefile.pk";
+    private static final String            NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(dopefile\\.(?:com|me|pk))";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static final String            DOMAINS                       = "(dopefile\\.(?:com|me|pk))";
+    private static final String            MAINTENANCE                   = ">This server is in maintenance mode";
+    private static final String            MAINTENANCEUSERTEXT           = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String            ALLWAIT_SHORT                 = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean           VIDEOHOSTER                   = false;
+    private static final boolean           VIDEOHOSTER_2                 = false;
+    private static final boolean           SUPPORTSHTTPS                 = false;
+
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE = true;
+
+    private final boolean                  ENABLE_RANDOM_UA              = false;
+    private static AtomicReference<String> agent                         = new AtomicReference<String>(null);
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                   = true;
+    private static final int               FREE_MAXCHUNKS                = -2;
+    private static final int               FREE_MAXDOWNLOADS             = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME           = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger           maxFree                       = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                       = new AtomicInteger(1);
+    private static Object                  LOCK                          = new Object();
+    private String                         fuid                          = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
@@ -141,6 +142,11 @@ public class DopeFileCom extends PluginForHost {
         }
         final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
+        /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
+            fileInfo[0] = getFnameViaAbuseLink(br.cloneBrowser(), link);
+        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -208,6 +214,20 @@ public class DopeFileCom extends PluginForHost {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    /**
+     * Get filename via abuse-URL.<br />
+     * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
+     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b>!<br />
+     *
+     * @throws Exception
+     */
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+        br.getPage(COOKIE_HOST + "/?op=report_file&id=" + fuid);
+        final String result = br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        return result;
     }
 
     @Override
