@@ -13,11 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -31,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -45,7 +45,6 @@ public class HighpornNet extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -126,7 +125,10 @@ public class HighpornNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            requestFileInformation(downloadLink);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (dllink == null) {
             br.postPage("/play.php", "v=" + fid);
@@ -155,7 +157,29 @@ public class HighpornNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String directlinkproperty) {
+        String dllink = downloadLink.getStringProperty("directlink");
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                final String contenttype = con.getContentType();
+                final long contentlength = con.getLongContentLength();
+                if (contenttype.contains("html") || con.getLongContentLength() == -1 || (contentlength < 10 && contenttype.equals("application/octet-stream"))) {
+                    downloadLink.setProperty("directlink", Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty("directlink", Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     private void prepStreamHeaders(final Browser br) {
