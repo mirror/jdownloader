@@ -306,17 +306,17 @@ public class BangbrosCom extends PluginForHost {
         if (is_this_plugin) {
             /* The original plugin is always allowed to download. */
             return true;
+        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+            /*
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
+             */
+            return true;
+        } else if (getMainlink(downloadLink) != null && getMainlink(downloadLink).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+            /* Multihost download only possible for specified linktype. */
+            return true;
         } else {
-            // setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false.
-            // we must set to true for the supportedhostmap, but download routine checks via next if statement.
-            if (!downloadLink.isEnabled()) {
-                return true;
-            } else if (getMainlink(downloadLink) != null && getMainlink(downloadLink).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
-                /* Multihost download only possible for specified linktype. */
-                return true;
-            } else {
-                return false;
-            }
+            return false;
         }
     }
 

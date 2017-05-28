@@ -13,10 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -37,9 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|realitykingsdecrypted://.+" })
 public class RealityKingsCom extends PluginForHost {
@@ -62,11 +61,8 @@ public class RealityKingsCom extends PluginForHost {
     private static final boolean ACCOUNT_RESUME       = true;
     private static final int     ACCOUNT_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_MAXDOWNLOADS = 20;
-
     private final String         type_premium_pic     = ".+\\.jpg.*?";
-
     public static final String   html_loggedin        = "/member/profile/";
-
     private String               dllink               = null;
     private boolean              server_issues        = false;
 
@@ -124,7 +120,6 @@ public class RealityKingsCom extends PluginForHost {
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-
                     /* ... new URL should work! */
                     con = br.openHeadConnection(dllink);
                     if (!con.getContentType().contains("html")) {
@@ -315,10 +310,15 @@ public class RealityKingsCom extends PluginForHost {
         if (is_this_plugin) {
             /* The original plugin is always allowed to download. */
             return true;
+        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+            /*
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
+             */
+            return true;
         } else {
             /* Multihosts can only download 'trailer' URLs */
-            final String url = downloadLink.getPluginPatternMatcher();
-            return jd.plugins.decrypter.RealityKingsCom.isVideoURL(downloadLink.getDownloadURL()) || "".equals(url);
+            return jd.plugins.decrypter.RealityKingsCom.isVideoURL(downloadLink.getDownloadURL());
         }
     }
 
@@ -354,5 +354,4 @@ public class RealityKingsCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

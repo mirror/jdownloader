@@ -13,12 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,13 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofos.com" }, urls = { "https?://members2\\.mofos\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|mofosdecrypted://.+" })
 public class MofosCom extends PluginForHost {
@@ -66,11 +65,8 @@ public class MofosCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-
     private final String         type_premium_pic             = ".+\\.jpg.*?";
-
     public static final String   html_loggedin                = "data\\-membership";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
     private boolean              premiumonly                  = true;
@@ -126,7 +122,6 @@ public class MofosCom extends PluginForHost {
                 }
             }
             premiumonly = false;
-
         }
         final String fid = link.getStringProperty("fid", null);
         if (!StringUtils.isEmpty(dllink)) {
@@ -158,7 +153,6 @@ public class MofosCom extends PluginForHost {
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-
                         /* ... new URL should work! */
                         con = br.openHeadConnection(dllink);
                         if (!con.getContentType().contains("html")) {
@@ -235,7 +229,6 @@ public class MofosCom extends PluginForHost {
                 }
                 br.getPage("http://members2." + account.getHoster() + "/access/login/");
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 if (br.containsHTML("div class=\"g-recaptcha\"")) {
                     if (dlinkbefore == null) {
@@ -247,7 +240,6 @@ public class MofosCom extends PluginForHost {
                         this.setDownloadLink(dlinkbefore);
                     }
                 }
-
                 br.postPage("/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
@@ -405,7 +397,6 @@ public class MofosCom extends PluginForHost {
         boolean isGrab272_650Enabled();
 
         void setGrab272_650Enabled(boolean b);
-
     }
 
     @Override
@@ -428,10 +419,16 @@ public class MofosCom extends PluginForHost {
         if (is_this_plugin) {
             /* The original plugin is always allowed to download. */
             return true;
+        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+            /*
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
+             */
+            return true;
         } else {
             /* Multihosts can only download 'trailer' URLs */
             final String url = downloadLink.getPluginPatternMatcher();
-            return jd.plugins.decrypter.MofosCom.isFreeVideoUrl(getMainlink(downloadLink)) || "".equals(url);
+            return jd.plugins.decrypter.MofosCom.isFreeVideoUrl(getMainlink(downloadLink));
         }
     }
 
@@ -442,5 +439,4 @@ public class MofosCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
