@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,10 +40,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "bangbrosdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
+
     public BangbrosCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.bangbrosnetwork.com/bangbrothers/join");
@@ -306,8 +307,12 @@ public class BangbrosCom extends PluginForHost {
             /* The original plugin is always allowed to download. */
             return true;
         } else {
-            /* Multihost download only possible for specified linktype. */
-            if (this.getMainlink(downloadLink).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+            // setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false.
+            // we must set to true for the supportedhostmap, but download routine checks via next if statement.
+            if (!downloadLink.isEnabled()) {
+                return true;
+            } else if (getMainlink(downloadLink) != null && getMainlink(downloadLink).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+                /* Multihost download only possible for specified linktype. */
                 return true;
             } else {
                 return false;
