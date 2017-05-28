@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -24,6 +23,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,13 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * Note: prem.link redirects to grab8
  *
@@ -67,12 +66,10 @@ public class Grab8Com extends antiDDoSForHost {
     private final String                                   NORESUME                       = NICE_HOSTproperty + "_NORESUME";
     private static final String                            CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
     private final boolean                                  default_clear_download_history = false;
-
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME         = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS      = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS   = 20;
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                        = null;
     private DownloadLink                                   currDownloadLink               = null;
@@ -113,6 +110,7 @@ public class Grab8Com extends antiDDoSForHost {
             if (accounts != null && accounts.size() != 0) {
                 // lets sort, premium > non premium
                 Collections.sort(accounts, new Comparator<Account>() {
+
                     @Override
                     public int compare(Account o1, Account o2) {
                         final int io1 = AccountType.PREMIUM.equals(o1.getType()) ? 1 : 0;
@@ -195,7 +193,6 @@ public class Grab8Com extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -512,11 +509,13 @@ public class Grab8Com extends antiDDoSForHost {
                 final String[] tableRow = br.getRegex("<tr>\\s*<td>.*?</tr>").getColumn(-1);
                 freeAccount = currAcc.getType() == AccountType.FREE;
                 for (final String row : tableRow) {
-                    // we should be left with two cleanuped up lines
-                    final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", "").replaceAll("[\r\n\t]+", "\r\n").trim();
-                    String host = cleanup.split("\r\n")[0];
-                    final String online = cleanup.split("\r\n")[1];
-                    final boolean free = new Regex(row, ".*/themes/images/free\\.gif").matches();
+                    // we should be left with two cleanuped up lines. -not anymore... can be 3, but 3rd is useless info
+                    final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", " ").replaceAll("[\r\n\t]+", "\r\n").trim();
+                    final boolean free = new Regex(row, ".*/themes/images/free\\.gif").matches() || StringUtils.contains(cleanup.split("\r\n")[0].trim(), "Only Premium");
+                    // now can be, 'host' or 'host & Only Premium'
+                    final String host = cleanup.split("\r\n")[0].trim().replaceAll("\\s*Only Premium\\s*", "");
+                    // can be, online, offline, unstable, fixing
+                    final String online = cleanup.split("\r\n")[1].trim();
                     if (host == null || online == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -530,7 +529,6 @@ public class Grab8Com extends antiDDoSForHost {
                 }
                 // note: on the account page, they do have array of hosts but it only shows ones with traffic limits.
                 ai.setMultiHostSupport(this, supportedHosts);
-
                 currAcc.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
                 currAcc.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
                 currAcc.setProperty("cookies", fetchCookies(br, getHost()));
@@ -768,5 +766,4 @@ public class Grab8Com extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
