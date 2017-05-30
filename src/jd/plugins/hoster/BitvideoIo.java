@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -33,14 +34,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|v/|embed/)[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
-
     public BitvideoIo(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     /* DEV NOTES */
@@ -48,14 +50,11 @@ public class BitvideoIo extends PluginForHost {
     // protocol: no https
     // other: playernaut.com -> redirect into rapidvideo.com --> redirects to raptu.com
     // other: same owner/sites I assume..
-
     /* Connection stuff */
     private static final boolean free_resume         = true;
     private static final int     free_maxchunks      = 0;
     private static final int     free_maxdownloads   = -1;
-
     private static final String  html_video_encoding = ">This video is still in encoding progress";
-
     private String               dllink              = null;
     private boolean              server_issues       = false;
 
@@ -80,7 +79,6 @@ public class BitvideoIo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -95,13 +93,11 @@ public class BitvideoIo extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Object not found<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) {
                 /* Fallback */
                 filename = fid;
             }
-
             json_source = this.br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         } else {
             /* Only use one of their domains */
@@ -144,9 +140,11 @@ public class BitvideoIo extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         if (json_source != null) {
+            final String userPreferredVideoquality = getConfiguredVideoQuality();
+            String dllink_user_prefered = null;
             String dllink_temp = null;
+            String dllink_best = null;
             final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
             Map<String, Object> entries = null;
             int maxvalue = 0;
@@ -157,23 +155,37 @@ public class BitvideoIo extends PluginForHost {
                     entries = (Map<String, Object>) videoo;
                     tempquality = (String) entries.get("label");
                     dllink_temp = (String) entries.get("file");
+                    if (StringUtils.isEmpty(tempquality) || StringUtils.isEmpty(dllink_temp)) {
+                        /* Skip invalid objects */
+                        continue;
+                    }
+                    if (tempquality.equalsIgnoreCase(userPreferredVideoquality)) {
+                        logger.info("Found user selected videoquality");
+                        dllink_user_prefered = dllink_temp;
+                    }
                     // if ("Source( File)?".equalsIgnoreCase(tempquality)) {
                     if (tempquality.contains("Source")) {
                         /* That IS the highest quality */
-                        dllink = dllink_temp;
-                        break;
+                        tempvalue = 100000;
+                        dllink_best = dllink_temp;
                     } else {
                         /* Look for the highest quality! */
                         tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)p?").getMatch(0));
-                        if (tempvalue > maxvalue) {
-                            maxvalue = tempvalue;
-                            dllink = dllink_temp;
-                        }
+                    }
+                    if (tempvalue > maxvalue) {
+                        maxvalue = tempvalue;
+                        dllink_best = dllink_temp;
                     }
                 }
             }
+            if (dllink_user_prefered != null) {
+                logger.info("Downloading user-selected quality");
+                this.dllink = dllink_user_prefered;
+            } else {
+                logger.info("Downloading highest quality possible");
+                this.dllink = dllink_best;
+            }
         }
-
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -187,7 +199,6 @@ public class BitvideoIo extends PluginForHost {
         if (!filename.endsWith(extension)) {
             filename += extension;
         }
-
         if (dllink != null) {
             link.setFinalFileName(filename);
             final Browser br2 = br.cloneBrowser();
@@ -247,6 +258,20 @@ public class BitvideoIo extends PluginForHost {
         }
         dl.startDownload();
     }
+
+    private String getConfiguredVideoQuality() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final String selectedQuality = FORMATS[selection];
+        return selectedQuality;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred videoquality:").setDefaultValue(0));
+    }
+
+    /* The list of qualities displayed to the user */
+    private final String[] FORMATS               = new String[] { "Source", "360p", "480p", "720p", "1080p HD" };
+    private final String   SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForDecrypt;
 //Decrypts embedded videos from liveleak.com
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "https?://(www\\.)?liveleak\\.com/(view\\?i=[a-z0-9]+_\\d+|ll_embed\\?f=[a-z0-9]+)" })
 public class LiveLeakComDecrypter extends PluginForDecrypt {
-
     public LiveLeakComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,8 +51,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         if (isOffline(this.br)) {
             /* e.g. 'a possible violation of our terms of service' or 'a copyright violation' */
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String externID = br.getRegex("\"(https?://(www\\.)?prochan\\.com/embed\\?f=[^<>\"/]*?)\"").getMatch(0);
@@ -113,6 +110,11 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            if (!this.br.containsHTML("<video")) {
+                logger.info("Seems like our object contains only text --> Nothing we want to download --> Adding URL as offline");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -123,12 +125,11 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.containsHTML(">This item has been deleted because of") || br.getHttpConnection().getResponseCode() == 404;
+        return br.containsHTML(">This item has been deleted because of|>Item not found") || br.getHttpConnection().getResponseCode() == 404;
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

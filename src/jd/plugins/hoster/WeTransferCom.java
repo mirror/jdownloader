@@ -13,11 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,13 +33,13 @@ import jd.utils.JDHexUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/([a-f0-9]{46}/)?[a-f0-9]{46}(/[a-z0-9]+)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
-
-    private String hash   = null;
-    private String code   = null;
-    private String dllink = null;
-    private String param  = null;
+    private String security_hash = null;
+    private String id_main       = null;
+    private String id_single     = null;
+    private String dllink        = null;
+    private String param         = null;
 
     public WeTransferCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +51,7 @@ public class WeTransferCom extends PluginForHost {
     }
 
     private String getAMFRequest() {
-        final String data = "0A000000020200" + getHexLength(code) + JDHexUtils.getHexString(code) + "0200" + getHexLength(hash) + JDHexUtils.getHexString(hash);
+        final String data = "0A000000020200" + getHexLength(id_main) + JDHexUtils.getHexString(id_main) + "0200" + getHexLength(security_hash) + JDHexUtils.getHexString(security_hash);
         return JDHexUtils.toString("000000000001002177657472616E736665722E446F776E6C6F61642E636865636B446F776E6C6F616400022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
     }
 
@@ -67,59 +65,39 @@ public class WeTransferCom extends PluginForHost {
         return -1;
     }
 
+    public static Browser prepBR(final Browser br) {
+        br.addAllowedResponseCodes(new int[] { 410, 503 });
+        br.setCookie("wetransfer.com", "wt_tandc", "2016317");
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = new Browser();
-        br.addAllowedResponseCodes(new int[] { 410, 503 });
+        br = prepBR(this.br);
         setBrowserExclusive();
-        br.setCookie(getHost(), "wt_tandc", "2016317");
-        String dlink = link.getDownloadURL();
-        if (dlink.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
-            br.setFollowRedirects(false);
-            br.getPage(dlink);
-            dlink = br.getRedirectLocation();
-            if (dlink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dlink.contains("/error")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
-        final Regex urlregex = new Regex(dlink, "/downloads/([a-f0-9]+)/(?:[a-f0-9]{46}/)?([a-f0-9]+)");
-        final String small_string = new Regex(dlink, "([a-z0-9]+)$").getMatch(0);
-        code = urlregex.getMatch(0);
-        hash = urlregex.getMatch(1);
-        if (hash == null || code == null) {
+        final String[] dlinfo = link.getDownloadURL().replace("http://wetransferdecrypted/", "").split("/");
+        id_main = dlinfo[0];
+        security_hash = dlinfo[1];
+        id_single = dlinfo[2];
+        if (security_hash == null || id_main == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Allow redirects for change to https
-        br.setFollowRedirects(true);
-        br.getPage(dlink);
-        if (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 503) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);
-        // if (recepientID == null) {
-        // recepientID = "";
-        // }
-        final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
-        final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        if ("invalid".equals(map.get("state"))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
-        final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
         final boolean withRecepient = false;
         if (withRecepient) {
-            br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
+            br.getPage("https://" + this.getHost() + "/api/ui/transfers/" + id_main + "/" + security_hash + "/download?recipient_id=" + security_hash);
         } else {
-            br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download");
+            /*
+             * https://wetransfer.com/api/ui/transfers/0d9f92839e6772d79ce5ee4256d936a620170524074451/4fd9d9/files/
+             * cbd496b1ef50e4ff5d98ffb9337e394920170524074451/download
+             */
+            br.getPage("https://" + this.getHost() + "/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/files/" + this.id_single + "/download");
         }
-        // br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
+        String filename1 = null;
+        long filesize1 = 0;
         if (dllink == null) {
             // 20160415-raztoki
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
@@ -143,10 +121,10 @@ public class WeTransferCom extends PluginForHost {
             if (filename == null) {
                 filename = filename1;
             }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename != null) {
+                /* 2017-05-30: Filename will usually be set already within decrypter. */
+                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             }
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             if (filesize1 > 0) {
                 link.setDownloadSize(filesize1);
             }
@@ -159,14 +137,12 @@ public class WeTransferCom extends PluginForHost {
             br.getHeaders().put("Content-Type", "application/x-amf");
             br.getHeaders().put("Referer", "https://www.wetransfer.com/index.swf?nocache=" + String.valueOf(System.currentTimeMillis() / 1000));
             br.postPageRaw("https://v1.wetransfer.com/amfphp/gateway.php", getAMFRequest());
-
             // successfully request?
             // final int rC = br.getHttpConnection().getResponseCode();
             // if (rC != 200) {
             // logger.warning("File not found! Link: " + dlink);
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // }
-
             final StringBuffer sb = new StringBuffer();
             /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             for (final byte element : br.toString().getBytes()) {
@@ -182,7 +158,6 @@ public class WeTransferCom extends PluginForHost {
             if (new Regex(result, "(download_error_no_download|download_error_file_expired)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
             if (filename == null) {
                 filename = filename1;
@@ -196,13 +171,11 @@ public class WeTransferCom extends PluginForHost {
                 link.setDownloadSize(filesize1);
             }
             dllink = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
-
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename != null) {
+                /* 2017-05-30: Filename will usually be set already within decrypter. */
+                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             }
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         }
-
         return AvailableStatus.TRUE;
     }
 
@@ -244,5 +217,4 @@ public class WeTransferCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
