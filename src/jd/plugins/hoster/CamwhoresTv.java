@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -40,12 +39,10 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores\\.tv/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
-
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.camwhores.tv/");
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -63,7 +60,6 @@ public class CamwhoresTv extends PluginForHost {
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String              dllink                       = null;
     private boolean             server_issues                = false;
     private boolean             is_private_video             = false;
@@ -147,12 +143,19 @@ public class CamwhoresTv extends PluginForHost {
         final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
         final String licenseCode = br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
         final String videoUrl = br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        if (scriptUrl != null && videoUrl != null && licenseCode != null) {
-            final Browser cbr = br.cloneBrowser();
-            cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            cbr.getPage(scriptUrl);
-            final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
-            dllink = decryptHash(videoUrl, licenseCode, hashRange);
+        if (videoUrl == null) {
+            return null;
+        }
+        if (videoUrl.startsWith("function")) {
+            if (scriptUrl != null && videoUrl != null && licenseCode != null) {
+                final Browser cbr = br.cloneBrowser();
+                cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                cbr.getPage(scriptUrl);
+                final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
+                dllink = decryptHash(videoUrl, licenseCode, hashRange);
+            }
+        } else {
+            dllink = videoUrl;
         }
         return dllink;
     }
@@ -365,7 +368,6 @@ public class CamwhoresTv extends PluginForHost {
         } else {
             return false;
         }
-
     }
 
     @Override
