@@ -23,6 +23,13 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,15 +54,9 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class FileJokerNet extends antiDDoSForHost {
+
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -107,6 +108,39 @@ public class FileJokerNet extends antiDDoSForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    /* do not add @Override here to keep 0.* compatibility */
+    public boolean hasAutoCaptcha() {
+        return true;
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (acc.getType() == AccountType.FREE) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
+    }
+
     private Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
@@ -123,7 +157,7 @@ public class FileJokerNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setFUID(link);
-        prepBR(this.br);
+        prepBR(br);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -456,39 +490,6 @@ public class FileJokerNet extends antiDDoSForHost {
         return maxFree.get();
     }
 
-    /* do not add @Override here to keep 0.* compatibility */
-    public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    protected boolean useRUA() {
-        return true;
-    }
-
-    @Override
-    protected Browser prepBrowser(final Browser prepBr, final String host) {
-        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            super.prepBrowser(prepBr, host);
-            /* define custom browser headers and language settings */
-            prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        }
-        return prepBr;
-    }
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -808,7 +809,7 @@ public class FileJokerNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|class=\"premium\\-only\"|<strong>This file can only be downloaded by <[^>]*>Premium Member)").matches()) {
+        if (new Regex(correctedBR, "( can download files (?:up to|no bigger than) |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|class=\"premium\\-only\"|<strong>This file can only be downloaded by <[^>]*>Premium Member)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit == null) {
                 filesizelimit = new Regex(correctedBR, "Free Members can download files no bigger than (.*?)\\.").getMatch(0);
@@ -965,22 +966,22 @@ public class FileJokerNet extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBR(this.br);
+                prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* Try to re-use these cookies as long as possible to prevent login captcha. */
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     getPage("https://" + this.getHost() + "/profile");
-                    if (this.br.getURL().contains("/profile")) {
+                    if (br.getURL().contains("/profile")) {
                         /* Existing cookies are fine. */
                         account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
                         return;
                     }
-                    this.br = prepBR(new Browser());
+                    br = prepBR(prepBrowser(new Browser(), COOKIE_HOST));
                 }
                 // required otherwise they redirect to /#login then we need to get login again...
                 getPage("https://" + this.getHost() + "/");
-                this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 getPage("/login");
                 String postdata = "op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (correctedBR.contains("data-sitekey=")) {
