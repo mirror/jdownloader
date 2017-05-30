@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -64,7 +63,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
-
     private static final String DOMAIN                                          = "vk.com";
     private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                  = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
@@ -100,20 +98,15 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKAUDIOS_USEIDASPACKAGENAME                     = "VKAUDIOS_USEIDASPACKAGENAME";
     private static final String VKDOCS_USEIDASPACKAGENAME                       = "VKDOCS_USEIDASPACKAGENAME";
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
-
     private static final String VKPHOTO_CORRECT_FINAL_LINKS                     = "VKPHOTO_CORRECT_FINAL_LINKS";
     public static final String  VKWALL_USE_API                                  = "VKWALL_USE_API";
     public static final String  VKADVANCED_USER_AGENT                           = "VKADVANCED_USER_AGENT";
-
     /* html patterns */
     public static final String  HTML_VIDEO_NO_ACCESS                            = "NO_ACCESS";
     public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS           = "This video has been removed from public access";
-
     private final boolean       docs_add_unique_id                              = true;
-
     public static Object        LOCK                                            = new Object();
     private String              finalUrl                                        = null;
-
     private String              ownerID                                         = null;
     private String              contentID                                       = null;
     private String              mainlink                                        = null;
@@ -175,12 +168,10 @@ public class VKontakteRuHoster extends PluginForHost {
         // setters
         prepBrowser(br, false);
         setConstants(link);
-
         /* Check if offline was set via decrypter */
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         if (link.getDownloadURL().matches(TYPE_DIRECT)) {
             finalUrl = link.getDownloadURL();
             /* Prefer filename inside url */
@@ -304,7 +295,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -401,7 +392,6 @@ public class VKontakteRuHoster extends PluginForHost {
                                     }
                                 }
                             }
-
                             if (albumID != null) {
                                 /* Save this! Important! */
                                 link.setProperty("albumid", albumID);
@@ -615,7 +605,6 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
      */
-
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -699,7 +688,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 downloadLink.setLivePlugin(orginalPlugin);
             }
         }
-
     }
 
     /**
@@ -887,7 +875,6 @@ public class VKontakteRuHoster extends PluginForHost {
             br.getPage(br.getRedirectLocation());
         }
         generalErrorhandling();
-
     }
 
     private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
@@ -1037,7 +1024,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
             return null;
-
         } else if (o instanceof ArrayList) {
             final ArrayList<Object> array = (ArrayList) o;
             for (final Object arrayo : array) {
@@ -1287,7 +1273,6 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_AUDIO, "Grab audio urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_AUDIO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, "Grab video urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_VIDEO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, "Grab other urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_URLS));
-
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/video' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?")).setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));
@@ -1308,5 +1293,4 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationCommunityVideos", "Define sleep time for community videos pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.vkontakteruhoster.sleep.tooManyRequests", "Define sleep time for 'Temp Blocked' event"), (int) defaultSLEEP_TOO_MANY_REQUESTS, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
     }
-
 }
