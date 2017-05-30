@@ -27,6 +27,9 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,10 +51,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
@@ -246,6 +246,7 @@ public class VideoFCTwoCom extends PluginForHost {
             if (accounts != null && accounts.size() != 0) {
                 // lets sort, premium over non premium
                 Collections.sort(accounts, new Comparator<Account>() {
+
                     @Override
                     public int compare(final Account o1, final Account o2) {
                         final int io1 = o1.getBooleanProperty("free", false) ? 0 : 1;
@@ -369,7 +370,7 @@ public class VideoFCTwoCom extends PluginForHost {
 
         br.getHeaders().put("Referer", null);
 
-        finalURL = br.getRegex("filepath=(http://.*?)$").getMatch(0);
+        finalURL = br.getRegex("filepath=(https?://.*?)$").getMatch(0);
         prepareFinalLink();
         if (finalURL == null) {
             logger.warning("video.fc2.com: Final downloadlink equals null. Error code: " + error);
@@ -378,11 +379,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default)) {
             URLConnectionAdapter con = null;
             try {
-                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                    con = br.openHeadConnection(finalURL);
-                } else {
-                    con = br.openGetConnection(finalURL);
-                }
+                con = br.openHeadConnection(finalURL);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
