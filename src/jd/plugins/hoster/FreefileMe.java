@@ -48,6 +48,7 @@ import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freefile.me" }, urls = { "https?://(?:www\\.)?freefile\\.me/[A-Za-z0-9]+" })
 public class FreefileMe extends antiDDoSForHost {
+
     public FreefileMe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -121,7 +122,7 @@ public class FreefileMe extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(this.br);
+        prepBrowser(br);
         final String fid = getFID(link);
         link.setLinkID(fid);
         String filename;
@@ -131,15 +132,15 @@ public class FreefileMe extends antiDDoSForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
+            final String[] tableData = br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+            filename = br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
             if (filename == null) {
                 /* "Information about"-filename-trait without the animation(delay). */
-                filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
+                filename = br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
             }
             if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                filename = br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             }
             filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             try {
@@ -217,7 +218,7 @@ public class FreefileMe extends antiDDoSForHost {
         } else {
             if (enable_embed) {
                 try {
-                    final Browser br2 = this.br.cloneBrowser();
+                    final Browser br2 = br.cloneBrowser();
                     getPage(br2, String.format("/embed/u=%s/", this.getFID(link)));
                     continue_link = this.getStreamUrl(br2);
                 } catch (final BrowserException e) {
@@ -265,7 +266,7 @@ public class FreefileMe extends antiDDoSForHost {
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
-                    final Recaptcha rc = new Recaptcha(this.br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -346,7 +347,7 @@ public class FreefileMe extends antiDDoSForHost {
     }
 
     private String getDllink() {
-        return getDllink(this.br);
+        return getDllink(br);
     }
 
     private String getDllink(final Browser br) {
@@ -354,7 +355,7 @@ public class FreefileMe extends antiDDoSForHost {
     }
 
     private String getStreamUrl() {
-        return getStreamUrl(this.br);
+        return getStreamUrl(br);
     }
 
     private String getStreamUrl(final Browser br) {
@@ -397,10 +398,10 @@ public class FreefileMe extends antiDDoSForHost {
             int wait = 0;
             int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             /* Ticket Time */
-            String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+            String ttt = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
             if (ttt == null) {
                 /* Special */
-                ttt = this.br.getRegex("var\\s*?seconds\\s*?= (\\d+);").getMatch(0);
+                ttt = br.getRegex("var\\s*?seconds\\s*?= (\\d+);").getMatch(0);
             }
             if (ttt != null) {
                 logger.info("Found waittime, parsing waittime: " + ttt);
@@ -438,7 +439,7 @@ public class FreefileMe extends antiDDoSForHost {
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
         }
-        checkResponseCodeErrors(this.br.getHttpConnection());
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -461,7 +462,7 @@ public class FreefileMe extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            final Browser br2 = this.br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
@@ -489,7 +490,7 @@ public class FreefileMe extends antiDDoSForHost {
     }
 
     private String getProtocol() {
-        if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
+        if ((br.getURL() != null && br.getURL().contains("https://")) || supportshttps_FORCED) {
             return "https://";
         } else {
             return "http://";
@@ -518,18 +519,17 @@ public class FreefileMe extends antiDDoSForHost {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
+                prepBrowser(br);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
-                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    postPage("/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -538,11 +538,10 @@ public class FreefileMe extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    getPage("/login." + type);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage("/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -551,8 +550,8 @@ public class FreefileMe extends antiDDoSForHost {
                         }
                     }
                 }
-                getPage(loginstart + this.getHost() + "/account_home." + type);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                getPage("/account_home." + type);
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -575,7 +574,7 @@ public class FreefileMe extends antiDDoSForHost {
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
         } else {
             getPage("/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
@@ -595,12 +594,12 @@ public class FreefileMe extends antiDDoSForHost {
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
+                ai.setStatus("Free Account");
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
+                ai.setStatus("Premium Account");
             }
         }
         account.setValid(true);
