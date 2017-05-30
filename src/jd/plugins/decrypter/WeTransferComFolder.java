@@ -38,6 +38,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        jd.plugins.hoster.WeTransferCom.prepBR(this.br);
         if (parameter.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
