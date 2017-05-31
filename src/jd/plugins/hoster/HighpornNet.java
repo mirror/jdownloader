@@ -48,7 +48,8 @@ public class HighpornNet extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
+    /* 2017-05-31: Disabled resume as it will cause a lot of retries and then fail. */
+    private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 1;
     private String               dllink            = null;

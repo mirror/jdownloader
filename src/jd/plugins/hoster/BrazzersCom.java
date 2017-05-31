@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
@@ -48,7 +51,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
 public class BrazzersCom extends antiDDoSForHost {
-
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://enter.brazzers.com/signup/signup.php");
@@ -181,6 +183,7 @@ public class BrazzersCom extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final boolean isTrailerDownloadable = jd.plugins.decrypter.BrazzersCom.isBrazzersTrailerAvailable(this.br);
             final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/([^/]+)").getMatch(0);
             String filename = br.getRegex("<h1[^>]*?itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
             /* This way we have a better dupe-detection! */
@@ -196,51 +199,96 @@ public class BrazzersCom extends antiDDoSForHost {
                 /* Add fileid in front of the filename to make it look nicer - will usually be removed in the final filename. */
                 filename = fid + "_" + filename;
             }
-            // final boolean moch_download_possible = AccountController.getInstance().hasMultiHostAccounts(this.getHost());
-            long filesize_final = 0;
-            long filesize_max = -1;
-            long filesize_temp = -1;
-            final String[] filesizes = br.getRegex("\\[(\\d{1,5}(?:\\.\\d{1,2})? (?:GB|GiB|MB))\\]").getColumn(0);
-            for (final String filesize_temp_str : filesizes) {
-                filesize_temp = SizeFormatter.getSize(filesize_temp_str);
-                if (filesize_temp > filesize_max) {
-                    filesize_max = filesize_temp;
-                }
-            }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             filename = Encoding.htmlDecode(filename).trim();
             filename = encodeUnicode(filename);
             /* Do NOT set final filename yet!! */
             link.setName(filename + ".mp4");
-            if (filesize_max > -1) {
-                if (aa != null) {
-                    /* Original brazzers account available --> Set highest filesize found --> Best Quality possible */
-                    filesize_final = filesize_max;
-                } else if (moch_account != null && moch_account.getHoster().contains("debriditalia")) {
-                    /* Multihoster debriditalia usually returns a medium quality - about 1 / 4 the size of the best possible! */
-                    filesize_final = (long) (filesize_max * 0.25);
-                } else if (moch_account != null && moch_account.getHoster().contains("premiumize")) {
-                    /* Multihoster premiumize usually returns 720p quality (or less, if not possible). */
-                    if (this.br.containsHTML("HD MP4 1080P") && filesizes.length == 5) {
-                        final String filesize_720p_temp_str = filesizes[1];
-                        filesize_final = SizeFormatter.getSize(filesize_720p_temp_str);
+            if (moch_account != null || !isTrailerDownloadable) {
+                /* MOCH account available OR trailer not available --> Try to display a realistic filesize */
+                long filesize_final = 0;
+                long filesize_max = -1;
+                long filesize_temp = -1;
+                final String[] filesizes = br.getRegex("\\[(\\d{1,5}(?:\\.\\d{1,2})? (?:GB|GiB|MB))\\]").getColumn(0);
+                for (final String filesize_temp_str : filesizes) {
+                    filesize_temp = SizeFormatter.getSize(filesize_temp_str);
+                    if (filesize_temp > filesize_max) {
+                        filesize_max = filesize_temp;
+                    }
+                }
+                if (filesize_max > -1) {
+                    if (aa != null) {
+                        /* Original brazzers account available --> Set highest filesize found --> Best Quality possible */
+                        filesize_final = filesize_max;
+                    } else if (moch_account != null && moch_account.getHoster().contains("debriditalia")) {
+                        /* Multihoster debriditalia usually returns a medium quality - about 1 / 4 the size of the best possible! */
+                        filesize_final = (long) (filesize_max * 0.25);
+                    } else if (moch_account != null && moch_account.getHoster().contains("premiumize")) {
+                        /* Multihoster premiumize usually returns 720p quality (or less, if not possible). */
+                        if (this.br.containsHTML("HD MP4 1080P") && filesizes.length == 5) {
+                            final String filesize_720p_temp_str = filesizes[1];
+                            filesize_final = SizeFormatter.getSize(filesize_720p_temp_str);
+                        } else {
+                            /* 1080p not available. This else is also used as a fallback! */
+                            filesize_final = filesize_max;
+                        }
                     } else {
-                        /* 1080p not available. This else is also used as a fallback! */
                         filesize_final = filesize_max;
                     }
+                    link.setProperty("not_yet_released", false);
+                    not_yet_released = false;
+                    link.setDownloadSize(filesize_final);
                 } else {
-                    filesize_final = filesize_max;
+                    /* No filesize available --> Content is (probably) not (yet) released/downloadable */
+                    link.getLinkStatus().setStatusText("Content has not yet been released");
+                    link.setProperty("not_yet_released", true);
+                    not_yet_released = true;
                 }
-                link.setProperty("not_yet_released", false);
-                not_yet_released = false;
-                link.setDownloadSize(filesize_final);
             } else {
-                /* No filesize available --> Content is (probably) not (yet) released/downloadable */
-                link.getLinkStatus().setStatusText("Content has not yet been released");
-                link.setProperty("not_yet_released", true);
-                not_yet_released = true;
+                /* No account available but trailer available --> Download trailer in highest quality possible */
+                final String json = this.br.getRegex("streams\\s*?:\\s*?(\\{.*?\\}),?\\s+").getMatch(0);
+                if (json == null) {
+                    return null;
+                }
+                final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(json);
+                int bitrate_max = 0;
+                int bitrate_temp = 0;
+                final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Object> entry = it.next();
+                    final String quality_key = entry.getKey();
+                    String quality_url = (String) entry.getValue();
+                    if (quality_url != null && quality_url.startsWith("//")) {
+                        /* Fix bad URLs */
+                        quality_url = "http:" + quality_url;
+                    }
+                    if (quality_url == null || !quality_url.startsWith("http")) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    if (quality_key.matches("mp4_\\d+_\\d+")) {
+                        bitrate_temp = Integer.parseInt(quality_key.replaceAll("mp4|_", ""));
+                        if (bitrate_temp > bitrate_max) {
+                            bitrate_max = bitrate_temp;
+                            dllink = quality_url;
+                        }
+                    }
+                }
+                if (dllink != null) {
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = br.openHeadConnection(dllink);
+                        if (!con.getContentType().contains("html")) {
+                            link.setDownloadSize(con.getLongContentLength());
+                        } else {
+                            server_issues = true;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -252,10 +300,37 @@ public class BrazzersCom extends antiDDoSForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         handleGeneralErrors();
-        /* Premiumonly - TODO: Maybe download trailer in this case. */
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            /*
+             * If trailer download is possible but dllink == null in theory this would be a PLUGIN_DEFECT but I think that premiumonly
+             * message is more suitable here as a trailer is usually not what you'd want to download.
+             */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        resumable = ACCOUNT_PREMIUM_RESUME;
+        maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
+        if (downloadLink.getDownloadURL().matches(type_premium_pic)) {
+            /* Not needed for pictures / avoid connection issues. */
+            resumable = false;
+            maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setProperty("free_directlink", dllink);
+        dl.startDownload();
     }
 
     private void handleGeneralErrors() throws PluginException {
@@ -269,6 +344,10 @@ public class BrazzersCom extends antiDDoSForHost {
     }
 
     private boolean isMOCHUrlOnly(final DownloadLink dl) {
+        return isVideoURL(dl);
+    }
+
+    private boolean isVideoURL(final DownloadLink dl) {
         final String url = dl.getPluginPatternMatcher();
         return url != null && (url.matches(type_normal_moch) || url.matches(jd.plugins.decrypter.BrazzersCom.type_video_free));
     }
@@ -279,7 +358,7 @@ public class BrazzersCom extends antiDDoSForHost {
          * Usually an account is needed for this host but in case content has not yet been released the plugin should jump into download
          * mode to display this errormessage to the user!
          */
-        return account != null || contentHasNotYetBeenReleased(downloadLink);
+        return account != null || isVideoURL(downloadLink) || contentHasNotYetBeenReleased(downloadLink);
     }
 
     private boolean contentHasNotYetBeenReleased(final DownloadLink dl) {
@@ -460,9 +539,7 @@ public class BrazzersCom extends antiDDoSForHost {
     }
 
     public static interface BrazzersConfigInterface extends PluginConfigInterface {
-
         public static class TRANSLATION {
-
             public String getFastLinkcheckEnabled_label() {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }

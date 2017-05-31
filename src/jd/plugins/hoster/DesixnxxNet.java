@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,31 +29,32 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "https?://(?:www\\.)?desixnxx\\.net/[a-z0-9\\-]{20,}/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?desixnxx\\.net/[a-z0-9\\-]{20,}/" })
 public class DesixnxxNet extends PluginForHost {
-
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    public static final String   default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
         return "http://desixnxx.net/faq/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("desixnxxdecrypted://", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -64,14 +65,10 @@ public class DesixnxxNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
-        String filename = br.getRegex("<div id=\"sp\">\\s*?<b>([^<>\"]+)</b>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
-        }
+        final String filename = getFilename(this.br, link.getDownloadURL());
         dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
@@ -82,24 +79,9 @@ public class DesixnxxNet extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
+        link.setFinalFileName(filename);
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -115,11 +97,27 @@ public class DesixnxxNet extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static String getURLTitle(final String url) {
+        return new Regex(url, "([a-z0-9\\-]+)/?$").getMatch(0);
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
+    }
+
+    public static String getFilename(final Browser br, final String url) {
+        final String url_filename = getURLTitle(url);
+        String filename = br.getRegex("<div id=\"sp\">\\s*?<b>([^<>\"]+)</b>").getMatch(0);
+        if (filename == null) {
+            filename = url_filename;
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        filename += default_extension;
+        return filename;
     }
 
     @Override

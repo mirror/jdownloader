@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,10 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?decryptedmystere\\-tv\\.com/.*?\\-v\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?decryptedmystere\\-tv\\.com/.*?\\-v\\d+\\.html" })
 public class MystereTvCom extends PluginForHost {
-
-    private String DLLINK = null;
+    private String dllink = null;
 
     public MystereTvCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -85,28 +83,30 @@ public class MystereTvCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (jd.plugins.decrypter.MystereTvComDecrypter.isPremiumonly(this.br)) {
+            return AvailableStatus.TRUE;
         }
         String filename = getFilename(this.br, downloadLink.getDownloadURL());
-        DLLINK = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"?(http://(www\\.)?mystere\\-tv\\.(net|com)/flv/[\\w-\\.\\?=]+)\"?").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"?(http://(www\\.)?mystere\\-tv\\.(net|com)/flv/[\\w-\\.\\?=]+)\"?").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("dock=true\\&amp;file=(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("dock=true\\&amp;file=(http://[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = this.br.getRegex("file:[\t\n\r ]+\"(videos/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("file:[\t\n\r ]+\"(videos/[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = "http://www.mystere-tv.com/videos/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + ".mp4";
+        if (dllink == null) {
+            dllink = "http://www.mystere-tv.com/videos/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + ".mp4";
         }
-        if (filename != null && DLLINK == null) {
+        if (filename != null && dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         downloadLink.setFinalFileName(filename + ".flv");
         if (!br.containsHTML("\\.flv\\?key=")) {
             final Browser br2 = br.cloneBrowser();
@@ -114,7 +114,7 @@ public class MystereTvCom extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") && con.getLongContentLength() < 100) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
@@ -136,7 +136,10 @@ public class MystereTvCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        if (jd.plugins.decrypter.MystereTvComDecrypter.isPremiumonly(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getLongContentLength() < 100) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

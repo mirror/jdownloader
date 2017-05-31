@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "http://(www\\.)?fux\\.com/(video|embed)/\\d+" })
 public class FuxCom extends PluginForHost {
-
     public FuxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,18 +73,24 @@ public class FuxCom extends PluginForHost {
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("Origin", "http://www.fux.com");
-        br.postPage("http://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+        final boolean newWay = true;
+        if (newWay) {
+            /* 2017-05-31 */
+            br.postPage("https://tkn.kodicdn.com/" + mediaID + "/desktop/" + availablequalities, "");
+        } else {
+            br.postPage("https://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+        }
         // seems to be listed in order highest quality to lowest. 20130513
-        String DLLINK = getDllink();
-        if (DLLINK == null) {
+        String dllink = getDllink();
+        if (dllink == null) {
             logger.warning("Couldn't find 'DDLINK'");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename.trim());
-        if (DLLINK.contains(".m4v")) {
+        if (dllink.contains(".m4v")) {
             downloadLink.setFinalFileName(filename + ".m4v");
-        } else if (DLLINK.contains(".mp4")) {
+        } else if (dllink.contains(".mp4")) {
             downloadLink.setFinalFileName(filename + ".mp4");
         } else {
             downloadLink.setFinalFileName(filename + ".flv");
@@ -95,7 +99,7 @@ public class FuxCom extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK.trim());
+            con = br.openGetConnection(dllink.trim());
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setProperty("DDLink", br.getURL());

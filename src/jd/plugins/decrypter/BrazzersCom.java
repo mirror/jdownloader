@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,10 +40,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.BrazzersCom.BrazzersConfigInterface;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/(?:scene/view/\\d+/[a-z0-9\\-]+/?|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+/[a-z0-9\\-]+/?|embed/\\d+)" })
 public class BrazzersCom extends PluginForDecrypt {
@@ -102,7 +102,7 @@ public class BrazzersCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (aa == null && moch_accounts != null && moch_accounts.size() > 0) {
-                /* Only MOCH download possible --> Add link for hostplugin */
+                /* Only MOCH download and/or trailer download --> Add link for hostplugin */
                 final DownloadLink dl = this.createDownloadlink(String.format(brazzers_decrypted, fid));
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -183,6 +183,10 @@ public class BrazzersCom extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(title.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public static boolean isBrazzersTrailerAvailable(final Browser br) {
+        return br.containsHTML("selectors\\s*?:\\s*?\\{id\\s*?:\\s*?\\'trailer\\-player\\'\\}");
     }
 
     public static String getVideoUrlFree(final String fid) {
