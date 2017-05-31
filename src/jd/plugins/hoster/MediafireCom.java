@@ -25,6 +25,10 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,6 +44,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,10 +56,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
@@ -399,6 +400,12 @@ public class MediafireCom extends PluginForHost {
             apiCommand(account, "file/get_links.php", "link_type=direct_download&quick_key=" + getFUID(downloadLink));
             final String url = PluginJSonUtils.getJsonValue(api, "direct_download");
             if (url == null) {
+                // you can error under success.....
+                // {"response":{"action":"file\/get_links","links":[{"quickkey":"removed","error":"User lacks
+                // permissions"}],"result":"Success","current_api_version":"1.5"}}
+                if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJson(api, "error"), "User lacks permissions")) {
+                    throw new AccountRequiredException("Incorrect account been used to download this file");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);
@@ -419,6 +426,7 @@ public class MediafireCom extends PluginForHost {
     private void handlePW(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("dh\\(''\\)")) {
             new PasswordSolver(this, br, downloadLink) {
+
                 String curPw = null;
 
                 @Override
@@ -558,6 +566,7 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handleApiError(final Account account) throws PluginException {
+        // FYI you can have errors even though it's success
         if (!StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(api, "result"), "Success")) {
             if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(api, "result"), "Error")) {
                 // error handling
