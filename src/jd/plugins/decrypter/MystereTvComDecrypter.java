@@ -13,26 +13,24 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?mystere\\-tv\\.com/.*?\\-v\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?mystere\\-tv\\.com/.*?\\-v\\d+\\.html" })
 public class MystereTvComDecrypter extends PluginForDecrypt {
-
     public MystereTvComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     /* Porn_plugin */
 
@@ -46,19 +44,22 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         if (jd.plugins.hoster.MystereTvCom.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (this.br.containsHTML("class=\"playerwrapper\">[\t\n\r ]+<a href=\"inscription\\.html\"")) {
+        } else if (isPremiumonly(this.br)) {
             /* Premiumonly */
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(createDownloadlink(parameter.replace("mystere-tv.com/", "decryptedmystere-tv.com/")));
             return decryptedLinks;
         }
         // Same as in hosterplugin
         final String filename = jd.plugins.hoster.MystereTvCom.getFilename(this.br, parameter);
-        String externalLink = br.getRegex("\"(http://(www\\.)dailymotion\\.com/embed/video/.*?)\"").getMatch(0);
-        if (externalLink != null) {
-            decryptedLinks.add(createDownloadlink(externalLink.replace("/embed", "")));
+        final String[] externalURLs = br.getRegex("<iframe[^<>]*?(dailymotion\\.com/embed/video/[^\"]+)\"").getColumn(0);
+        if (externalURLs.length > 0) {
+            for (String externalURL : externalURLs) {
+                externalURL = "https://www." + externalURL;
+                decryptedLinks.add(createDownloadlink(externalURL));
+            }
             return decryptedLinks;
         }
-        externalLink = br.getRegex("tagtele\\.com/v/(\\d+)\"").getMatch(0);
+        String externalLink = br.getRegex("tagtele\\.com/v/(\\d+)\"").getMatch(0);
         if (externalLink != null) {
             br.getPage("http://www.tagtele.com/videos/playlist/" + externalLink);
             String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
@@ -90,9 +91,12 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public static boolean isPremiumonly(final Browser br) {
+        return br.containsHTML("class=\"playerwrapper\">[\t\n\r ]+<a href=\"inscription\\.html\"");
+    }
+
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

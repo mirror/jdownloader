@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,13 +31,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "http://(?:www\\.)?megabooru\\.com/post/view/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "https?://(?:www\\.)?megabooru\\.com/post/view/\\d+" })
 public class MegabooruCom extends PluginForHost {
-
     public MegabooruCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -48,12 +45,11 @@ public class MegabooruCom extends PluginForHost {
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://megabooru.com/contact";
+        return "https://megabooru.com/contact";
     }
 
     @SuppressWarnings("deprecation")

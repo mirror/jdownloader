@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" })
 public class ExtremeTubeCom extends PluginForHost {
-    private String DLLINK = null;
+    private String dllink = null;
 
     public ExtremeTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,7 +57,7 @@ public class ExtremeTubeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -80,25 +80,25 @@ public class ExtremeTubeCom extends PluginForHost {
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
         for (final String quality : qualities) {
-            DLLINK = br.getRegex("quality_" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK != null) {
-                DLLINK = DLLINK.replace("\\", "");
+            dllink = br.getRegex("quality_" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) {
+                dllink = dllink.replace("\\", "");
                 break;
             }
         }
-        if (filename == null || DLLINK == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

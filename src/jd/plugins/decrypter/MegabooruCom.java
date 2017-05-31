@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -29,9 +28,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megabooru.com" }, urls = { "https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/\\d+" })
 public class MegabooruCom extends PluginForDecrypt {
-
     public MegabooruCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,15 +37,21 @@ public class MegabooruCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String url_single = this.br.getRegex("You should be redirected to <a href=\\'(/post/view/\\d+)\\'").getMatch(0);
+        if (url_single != null) {
+            /* 2017-05-31: 'List' URLs can redirect to single URLs */
+            decryptedLinks.add(this.createDownloadlink("https://www." + this.br.getHost() + url_single));
+            return decryptedLinks;
+        }
         final String fpName = new Regex(parameter, "megabooru\\.com/post/list/([^/]+)/").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-
         final String url_part = new Regex(parameter, "(https?://(?:www\\.)?megabooru\\.com/post/list/[^/]+/)\\d+").getMatch(0);
         int counter = 1;
         final int max_entries_per_page = 40;
@@ -79,7 +83,6 @@ public class MegabooruCom extends PluginForDecrypt {
             }
             counter++;
         } while (entries_per_page_current >= max_entries_per_page);
-
         return decryptedLinks;
     }
 
@@ -87,5 +90,4 @@ public class MegabooruCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Danbooru;
     }
-
 }
