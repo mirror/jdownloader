@@ -16,10 +16,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -53,6 +56,9 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        if ("protect-iframe.com".equals(getHost())) {
+            getPage("/embed/embed.php?u=" + fid);
         }
         final String finallink = getLink(getPacked());
         if (finallink == null) {
