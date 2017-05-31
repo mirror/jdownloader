@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -21,6 +20,9 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,12 +42,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
-
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,16 +54,12 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String     TYPE_GROUPS              = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
     private static final String     TYPE_SET_SINGLE          = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/(?:sets|albums)/\\d+/?";
     private static final String     TYPE_SETS_OF_USER_ALL    = ".+/(?:albums|sets)/?$";
-    private static final String     TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+.+";
-
+    private static final String     TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/(?!tags/)[^<>\"/]+/\\d+.+";
     private static final String     TYPE_PHOTO               = "https?://(www\\.)?flickr\\.com/photos/.*?";
-
     private static final String     INVALIDLINKS             = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
-
     private static final String     EXCEPTION_LINKOFFLINE    = "EXCEPTION_LINKOFFLINE";
     private static final String     api_format               = "json";
     private static final int        api_max_entries_per_page = 500;
-
     private ArrayList<DownloadLink> decryptedLinks           = new ArrayList<DownloadLink>();
     private String                  api_apikey               = null;
     private String                  csrf                     = null;
@@ -88,7 +82,6 @@ public class FlickrCom extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 2);
         parameter = correctParameter(param.toString());
         username = new Regex(parameter, "(?:photos|groups)/([^<>\"/]+)").getMatch(0);
-
         try {
             /* Check if link is for hosterplugin */
             if (parameter.matches(TYPE_SINGLE_PHOTO)) {
@@ -292,10 +285,8 @@ public class FlickrCom extends PluginForDecrypt {
                 fina.setProperty("ext", extension);
                 fina.setProperty("LINKDUPEID", "flickrcom_" + username + "_" + photo_id);
                 fina.setProperty("custom_filenames_allowed", true);
-
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
-
                 fina.setAvailable(true);
                 fina._setFilePackage(fp);
                 distribute(fina);
@@ -471,7 +462,6 @@ public class FlickrCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = "favourites of user " + username;
         }
-
         final FilePackage fp = FilePackage.getInstance();
         // lets allow merge, so if the user imports multiple pages manually they will go into the same favourites package.
         fp.setProperty("ALLOW_MERGE", true);
@@ -483,7 +473,6 @@ public class FlickrCom extends PluginForDecrypt {
         } else {
             totalEntries = -1;
         }
-
         /**
          * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
          */
@@ -557,7 +546,6 @@ public class FlickrCom extends PluginForDecrypt {
                  * TODO: Improve upper part to be able to find the posted-date as well (if possible) so users who user custom filenames get
                  * better filenames right after the decryption process.
                  */
-
                 final String url = "https://www.flickr.com/photos/" + pathAlias + "/" + pic_id;
                 final DownloadLink fina = createDownloadlink(url.replace("flickr.com/", "flickrdecrypted.com/"));
                 final String extension;
@@ -611,7 +599,6 @@ public class FlickrCom extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-
         filename = trimFilename(filename);
         return filename;
     }
@@ -658,5 +645,4 @@ public class FlickrCom extends PluginForDecrypt {
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
-
 }
