@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -33,10 +32,9 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitbox.tv" }, urls = { "https?://(?:www\\.)?hitbox\\.tv/video/(\\d+)" })
-public class HitBoxTv extends PluginForHost {
-
-    public HitBoxTv(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smashcast.tv" }, urls = { "https?://(?:www\\.)?(?:hitbox\\.tv/video/\\d+|smashcast\\.tv/[^/]+/videos/\\d+)" })
+public class SmashcastTv extends PluginForHost {
+    public SmashcastTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -46,7 +44,15 @@ public class HitBoxTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://about.hitbox.tv/terms-of-use/";
+        return "https://www.smashcast.tv/legal/terms-of-use";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("hitbox.tv".equals(getHost())) {
+            return "smashcast.tv";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -54,18 +60,17 @@ public class HitBoxTv extends PluginForHost {
         server_error = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String vid = new Regex(downloadLink.getDownloadURL(), this.getLazyP().getPattern()).getMatch(0);
+        final String vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 ");
         br.getPage(downloadLink.getDownloadURL());
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
-        ajax.getPage("https://www.hitbox.tv/api/media/video/" + vid + "?showHidden=true");
+        ajax.getPage("https://www." + this.getHost() + "/api/media/video/" + vid + "?showHidden=true");
         // auth sig
         final String auth = PluginJSonUtils.getJsonValue(ajax, "media_file");
         final String userId = PluginJSonUtils.getJsonValue(ajax, "user_id");
         final String userName = PluginJSonUtils.getJsonValue(ajax, "user_name");
         final String vidName = PluginJSonUtils.getJsonValue(ajax, "media_title");
-
         // not sure if this is needed, its done trying to get channel info, and then auths
         // Request URL:https://www.hitbox.tv/api/auth/media/video/88e235d7ffc3f79cf1de079646326890f8bcee4f-543bd5693d819
         // Request Method:OPTIONS
@@ -100,14 +105,13 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         final String crap = "{\"media_name\":\"" + auth + "\",\"media_type\":\"video\",\"authToken\":null}";
-        ajax.postPageRaw("https://www.hitbox.tv/api/auth/media/video/" + auth, Encoding.urlEncode(crap));
-
+        ajax.postPageRaw("https://www." + this.getHost() + "/api/auth/media/video/" + auth, Encoding.urlEncode(crap));
         // Request URL:http://www.hitbox.tv/api/player/config/video/286169?redis=true&embed=false&qos=false&redis=true&showHidden=true
         // Request Method:GET
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
-        ajax.getPage("http://www.hitbox.tv/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
+        ajax.getPage("http://www." + this.getHost() + "/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
         url = PluginJSonUtils.getJsonValue(ajax, "url");
         if (url == null || url.equals("")) {
             /* 2017-01-21: New */
@@ -125,7 +129,7 @@ public class HitBoxTv extends PluginForHost {
             if (!"null".equalsIgnoreCase(server) && server != null) {
                 url = server + "/" + url;
             } else {
-                url = "http://edge.vie.hitbox.tv/static/videos/recordings/" + url;
+                url = "http://edge.vie." + this.getHost() + "/static/videos/recordings/" + url;
             }
             String ext = getFileNameExtensionFromString(url, ".mp4");
             if (ext == null || ext.length() > 5) {
@@ -161,7 +165,6 @@ public class HitBoxTv extends PluginForHost {
             if (downloadLink.getBooleanProperty("encrypted")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
             }
-
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "ShockwaveFlash/17.0.0.169");
             br.getHeaders().put("Referer", downloadLink.getContentUrl());

@@ -13,17 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -33,14 +34,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.BrDe;
+import jd.plugins.hoster.BrDe.BrDeConfigInterface;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" })
 public class BrDeDecrypter extends PluginForDecrypt {
-
-    private static final String TYPE_INVALID = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";
+    private static final String   TYPE_INVALID           = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";
+    /* only keep best quality , do not change the ORDER */
+    private static final String[] all_possible_qualities = { "X", "C", "E", "B", "A", "0" };
 
     public BrDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +57,6 @@ public class BrDeDecrypter extends PluginForDecrypt {
         boolean offline = false;
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-
         br.getPage(parameter);
         if (offline || this.br.getHttpConnection().getResponseCode() == 404 || parameter.matches(TYPE_INVALID)) {
             /* Add offline link so user can see it */
@@ -66,12 +68,12 @@ public class BrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
-        final SubConfiguration cfg = SubConfiguration.getConfig("br-online.de");
-        final boolean grab_subtitle = cfg.getBooleanProperty(BrDe.Q_SUBTITLES, false);
-
+        HashMap<String, DownloadLink> tmpBestMap = new HashMap<String, DownloadLink>();
+        final BrDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.BrDe.BrDeConfigInterface.class);
+        final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
+        final boolean grabBEST = cfg.isGrabBESTEnabled();
         final String player_link = br.getRegex("\\{dataURL:\\'(/mediathek/video/[^<>\"]*?)\\'\\}").getMatch(0);
         String date = br.getRegex(">(\\d{2}\\.\\d{2}\\.\\d{4}), \\d{2}:\\d{2} Uhr,?</time>").getMatch(0);
         if (player_link == null) {
@@ -97,12 +99,10 @@ public class BrDeDecrypter extends PluginForDecrypt {
         }
         plain_name = encodeUnicode(Encoding.htmlDecode(plain_name).trim()).replace("\n", "");
         show = encodeUnicode(Encoding.htmlDecode(show).trim());
-
         String subtitle_url = br.getRegex("<dataTimedText url=\"(/mediathek/video/untertitel[^<>\"/]+\\.xml)\"").getMatch(0);
         if (subtitle_url != null) {
             subtitle_url = "http://www.br.de" + Encoding.htmlDecode(subtitle_url);
         }
-
         for (final String qinfo : qualities) {
             final String final_url = this.getXML(qinfo, "downloadUrl");
             /* Avoid HDS */
@@ -128,30 +128,25 @@ public class BrDeDecrypter extends PluginForDecrypt {
             best_map.put(q_string, dl_video);
             newRet.add(dl_video);
         }
-
         if (newRet.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
-        final ArrayList<String> selected_qualities = new ArrayList<String>();
-        if (newRet.size() > 1 && cfg.getBooleanProperty(BrDe.Q_BEST, false)) {
-            /* only keep best quality , do not change the ORDER */
-            final String[] best_list = { "X", "C", "E", "B", "A", "0" };
-            for (final String current_quality : best_list) {
-                final DownloadLink keep = best_map.get(current_quality);
-                if (keep != null) {
-                    selected_qualities.add(current_quality);
-                    break;
-                }
+        boolean atLeastOneSelectedQualityExists = false;
+        ArrayList<String> selected_qualities = new ArrayList<String>();
+        if (newRet.size() > 1 && grabBEST) {
+            tmpBestMap = findBESTInsideGivenMap(best_map);
+            if (!tmpBestMap.isEmpty()) {
+                atLeastOneSelectedQualityExists = true;
+                best_map = tmpBestMap;
             }
         } else {
-            boolean grab_0 = cfg.getBooleanProperty(BrDe.Q_0, true);
-            boolean grab_A = cfg.getBooleanProperty(BrDe.Q_A, true);
-            boolean grab_B = cfg.getBooleanProperty(BrDe.Q_B, true);
-            boolean grab_C = cfg.getBooleanProperty(BrDe.Q_C, true);
-            boolean grab_E = cfg.getBooleanProperty(BrDe.Q_E, true);
-            boolean grab_X = cfg.getBooleanProperty(BrDe.Q_X, true);
+            boolean grab_0 = cfg.isGrabHTTPMp4XSVideoEnabled();
+            boolean grab_A = cfg.isGrabHTTPMp4SVideoEnabled();
+            boolean grab_B = cfg.isGrabHTTPMp4MVideoEnabled();
+            boolean grab_C = cfg.isGrabHTTPMp4LVideoEnabled();
+            boolean grab_E = cfg.isGrabHTTPMp4XLVideoEnabled();
+            boolean grab_X = cfg.isGrabHTTPMp4XXLVideoEnabled();
             /* User deselected all --> Add all */
             if (!grab_0 && !grab_A && !grab_B && !grab_C && !grab_E && !grab_X) {
                 grab_0 = true;
@@ -161,27 +156,46 @@ public class BrDeDecrypter extends PluginForDecrypt {
                 grab_E = true;
                 grab_X = true;
             }
-            if (grab_0) {
-                selected_qualities.add("0");
-            }
-            if (grab_A) {
-                selected_qualities.add("A");
-            }
-            if (grab_B) {
-                selected_qualities.add("B");
-            }
-            if (grab_C) {
-                selected_qualities.add("C");
+            if (grab_X) {
+                selected_qualities.add("X");
             }
             if (grab_E) {
                 selected_qualities.add("E");
             }
-            if (grab_X) {
-                selected_qualities.add("X");
+            if (grab_C) {
+                selected_qualities.add("C");
+            }
+            if (grab_B) {
+                selected_qualities.add("B");
+            }
+            if (grab_A) {
+                selected_qualities.add("A");
+            }
+            if (grab_0) {
+                selected_qualities.add("0");
+            }
+            for (final String selected_quality : selected_qualities) {
+                if (best_map.containsKey(selected_quality)) {
+                    if (!atLeastOneSelectedQualityExists) {
+                        atLeastOneSelectedQualityExists = true;
+                    }
+                    tmpBestMap.put(selected_quality, best_map.get(selected_quality));
+                }
+            }
+            if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled() && atLeastOneSelectedQualityExists) {
+                /* Select highest quality inside user selected qualities. */
+                best_map = findBESTInsideGivenMap(tmpBestMap);
+            } else {
+                best_map = tmpBestMap;
             }
         }
-        for (final String selected_quality : selected_qualities) {
-            final DownloadLink keep = best_map.get(selected_quality);
+        if (!atLeastOneSelectedQualityExists) {
+            selected_qualities = (ArrayList<String>) Arrays.asList(all_possible_qualities);
+        }
+        final Iterator<Entry<String, DownloadLink>> it = best_map.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, DownloadLink> entry = it.next();
+            final DownloadLink keep = entry.getValue();
             if (keep != null) {
                 /* Add subtitle link for every quality so players will automatically find it */
                 if (grab_subtitle && subtitle_url != null) {
@@ -207,8 +221,26 @@ public class BrDeDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(date_formatted + "_br_" + show + " - " + plain_name);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
+    }
+
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
+        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        DownloadLink keep = null;
+        if (bestMap.size() > 0) {
+            for (final String quality : all_possible_qualities) {
+                keep = bestMap.get(quality);
+                if (keep != null) {
+                    newMap.put(quality, keep);
+                    break;
+                }
+            }
+        }
+        if (newMap.isEmpty()) {
+            /* Failover in case of bad user selection or general failure! */
+            newMap = bestMap;
+        }
+        return newMap;
     }
 
     private String getXML(final String source, final String parameter) {
@@ -242,5 +274,4 @@ public class BrDeDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
