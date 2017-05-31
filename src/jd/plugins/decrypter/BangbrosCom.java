@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://bangbrothers\\.com/video\\d+/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://bangbrothers\\.(?:com|net)/video\\d+/[a-z0-9\\-]+" })
 public class BangbrosCom extends PluginForDecrypt {
     public BangbrosCom(PluginWrapper wrapper) {
         super(wrapper);
