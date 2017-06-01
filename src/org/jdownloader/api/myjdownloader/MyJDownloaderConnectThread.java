@@ -964,9 +964,10 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         }
     }
 
-    private void validateSession(SessionInfoWrapper session) {
+    private SessionInfoWrapper validateSession(SessionInfoWrapper session) {
         saveSessionInfo(session);
         startWaitingConnections(false);
+        return session;
     }
 
     private void saveSessionInfo(SessionInfoWrapper session) {
@@ -1035,7 +1036,6 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     if (!device.getId().equals(uniqueID)) {
                         setUniqueDeviceID(device.getId());
                     }
-                    validateSession(session);
                     CFG_MYJD.DEVICE_NAME.setValue(device.getName());
                     deviceBound = true;
                 }
@@ -1073,9 +1073,8 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     session = (SessionInfoWrapper) lapi.reconnect();
                     /* we need an additional call that will activate the new session */
                     lapi.keepalive();
-                    validateSession(session);
                     if (session != null) {
-                        return bindDevice(session, connectionHelper);
+                        return validateSession(bindDevice(session, connectionHelper));
                     }
                 }
             } finally {
@@ -1096,7 +1095,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         connectionHelper.mark();
         try {
             session = (SessionInfoWrapper) lapi.connect(getEmail(), getPassword());
-            return bindDevice(session, connectionHelper);
+            return validateSession(bindDevice(session, connectionHelper));
         } finally {
             connectionHelper.unmark();
         }

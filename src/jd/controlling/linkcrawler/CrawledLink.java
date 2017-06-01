@@ -28,7 +28,6 @@ import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier, Iterable<CrawledLink> {
-
     private volatile boolean crawlDeep = false;
 
     public boolean isCrawlDeep() {
@@ -44,7 +43,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private volatile CrawledLinkModifier       modifyHandler        = null;
     private volatile BrokenCrawlerHandler      brokenCrawlerHandler = null;
     private volatile boolean                   autoConfirmEnabled   = false;
-
     private volatile UniqueAlltimeID           uniqueID             = null;
     private LinkOriginDetails                  origin;
 
@@ -94,7 +92,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     private volatile LinkCollectingJob         sourceJob          = null;
     private volatile long                      created            = -1;
-
     private boolean                            enabledState       = true;
     private volatile PackageInfo               desiredPackageInfo = null;
     private volatile LinkCollectingInformation collectingInfo     = null;
@@ -634,6 +631,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public LinkInfo getLinkInfo() {
+        final DownloadLink dlLink = getDownloadLink();
+        if (!isNameSet() && dlLink != null) {
+            return dlLink.getLinkInfo();
+        }
         final LinkInfo linkInfo = this.linkInfo;
         if (linkInfo == null) {
             final LinkInfo newLinkInfo = LinkInfo.getLinkInfo(this);
@@ -736,7 +737,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     @Override
     public Iterator<CrawledLink> iterator() {
         return new Iterator<CrawledLink>() {
-
             private CrawledLink current = CrawledLink.this;
 
             @Override
@@ -759,5 +759,4 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             }
         };
     }
-
 }

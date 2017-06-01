@@ -73,6 +73,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
         }
     }
 
+    // http://www.imagetyperz.com/Forms/recaptchaapi.aspx
     protected void handleRecaptchaV2(CESSolverJob<String> job) throws InterruptedException, SolverException {
         job.showBubble(this);
         checkInterruption();
@@ -268,8 +269,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             r.addFormData(new FormData("username", userName));
             r.addFormData(new FormData("password", config.getPassword()));
             conn = br.openRequestConnection(r);
-            br.loadConnection(conn);
-            final String response = br.toString();
+            final String response = br.loadConnection(conn).getHtmlCode();
             if (response.startsWith("ERROR: ")) {
                 throw new SolverException(response.substring("Error: ".length()));
             }
