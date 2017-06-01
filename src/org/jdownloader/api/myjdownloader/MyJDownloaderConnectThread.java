@@ -972,11 +972,13 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
     private void saveSessionInfo(SessionInfoWrapper session) {
         synchronized (SESSIONLOCK) {
             try {
-                if (session == null) {
-                    return;
+                if (session == null || SessionInfoWrapper.STATE.INVALID.equals(session.getState())) {
+                    if (sessionInfoCache.exists()) {
+                        sessionInfoCache.delete();
+                    }
                 }
                 session.setState(SessionInfoWrapper.STATE.VALID);
-                final byte[] key = HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue()));
+                final byte[] key = getKey();
                 final byte[] json = JSonStorage.getMapper().objectToByteArray(new SessionInfoStorable(session));
                 final Runnable run = new Runnable() {
                     @Override
@@ -991,18 +993,22 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         }
     }
 
+    private final byte[] getKey() {
+        return HexFormatter.hexToByteArray(Hash.getMD5(Hash.getMD5(CFG_MYJD.EMAIL.getValue()) + "LOCALECACHE" + Hash.getMD5(CFG_MYJD.PASSWORD.getValue())));
+    }
+
     private void loadSessionInfo() {
         synchronized (SESSIONLOCK) {
             try {
                 if (!sessionInfoCache.exists()) {
                     return;
                 }
-                SessionInfoStorable sessionInfoStorable = JSonStorage.restoreFrom(sessionInfoCache, false, HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue())), new TypeRef<SessionInfoStorable>() {
+                final SessionInfoStorable sessionInfoStorable = JSonStorage.restoreFrom(sessionInfoCache, false, getKey(), new TypeRef<SessionInfoStorable>() {
                 }, null);
                 if (sessionInfoStorable == null) {
                     return;
                 }
-                SessionInfoWrapper sessionInfo = sessionInfoStorable._getSessionInfoWrapper();
+                final SessionInfoWrapper sessionInfo = sessionInfoStorable._getSessionInfoWrapper();
                 if (sessionInfo == null) {
                     return;
                 }
@@ -1010,6 +1016,36 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                 getApi().setSessionInfo(sessionInfo);
             } catch (final Throwable e) {
                 log(e);
+            }
+        }
+    }
+
+    protected SessionInfoWrapper bindDevice(SessionInfoWrapper session, DeviceConnectionHelper connectionHelper) throws MyJDownloaderException, InterruptedException {
+        final MyJDownloaderAPI lapi = getApi();
+        if (lapi == null) {
+            throw new WTFException("api is null, disconnected?!");
+        }
+        boolean deviceBound = false;
+        try {
+            connectionHelper.mark();
+            try {
+                final String uniqueID = getUniqueDeviceID();
+                final DeviceData device = lapi.bindDevice(new DeviceData(uniqueID, "jd", getDeviceName()));
+                if (StringUtils.isNotEmpty(device.getId())) {
+                    if (!device.getId().equals(uniqueID)) {
+                        setUniqueDeviceID(device.getId());
+                    }
+                    validateSession(session);
+                    CFG_MYJD.DEVICE_NAME.setValue(device.getName());
+                    deviceBound = true;
+                }
+                return session;
+            } finally {
+                connectionHelper.unmark();
+            }
+        } finally {
+            if (deviceBound == false) {
+                disconnectSession(lapi, session);
             }
         }
     }
@@ -1039,7 +1075,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     lapi.keepalive();
                     validateSession(session);
                     if (session != null) {
-                        return session;
+                        return bindDevice(session, connectionHelper);
                     }
                 }
             } finally {
@@ -1057,29 +1093,12 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                 throw e;
             }
         }
-        boolean deviceBound = false;
+        connectionHelper.mark();
         try {
-            connectionHelper.mark();
-            try {
-                session = (SessionInfoWrapper) lapi.connect(getEmail(), getPassword());
-                final String uniqueID = getUniqueDeviceID();
-                final DeviceData device = lapi.bindDevice(new DeviceData(uniqueID, "jd", getDeviceName()));
-                if (StringUtils.isNotEmpty(device.getId())) {
-                    if (!device.getId().equals(uniqueID)) {
-                        setUniqueDeviceID(device.getId());
-                    }
-                    validateSession(session);
-                    CFG_MYJD.DEVICE_NAME.setValue(device.getName());
-                    deviceBound = true;
-                }
-                return session;
-            } finally {
-                connectionHelper.unmark();
-            }
+            session = (SessionInfoWrapper) lapi.connect(getEmail(), getPassword());
+            return bindDevice(session, connectionHelper);
         } finally {
-            if (deviceBound == false) {
-                disconnectSession(lapi, session);
-            }
+            connectionHelper.unmark();
         }
     }
 
