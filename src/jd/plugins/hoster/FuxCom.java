@@ -35,6 +35,9 @@ public class FuxCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+    /* tags: fux.com, porntube.com, 4tube.com, pornerbros.com */
     @Override
     public String getAGBLink() {
         return "http://www.fux.com/legal/tos";
@@ -106,13 +109,13 @@ public class FuxCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

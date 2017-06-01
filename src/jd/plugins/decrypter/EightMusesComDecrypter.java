@@ -13,10 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,12 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/comix/(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,4})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/comix/(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
-
     public EightMusesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,6 +60,8 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink(Request.getLocation(singleLink, br.getRequest()));
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                dl.setAvailable(true);
                 fp.add(dl);
                 decryptedLinks.add(dl);
             }
@@ -75,8 +76,6 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
                 }
             }
         }
-
         return decryptedLinks;
     }
-
 }

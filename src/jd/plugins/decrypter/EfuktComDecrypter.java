@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,11 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "https?://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktComDecrypter extends antiDDoSForDecrypt {
-
     public EfuktComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -83,7 +81,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
                 pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://cdn\\.efukt\\.com/[^\"<>]*)\"\\s*onerror=").getColumn(0);
             }
             if (pics == null || pics.length == 0) {
-                pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://cdn\\.efukt\\.com/[^\"<>]*\\.(gif|webm))\"\\s*alt=\".*?\"\\s*class=\"image_content\"").getColumn(0);
+                pics = br.getRegex("<img\\s*?src\\s*?=\\s*?\"(https?://cdn\\.efukt\\.com/[^\"<>]*\\.(gif|webm|jpg))\"\\s*?alt=\".*?\"\\s*?class=\"image_content\"").getColumn(0);
             }
             if (pics == null || pics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -96,10 +94,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
             fp.addLinks(decryptedLinks);
-
         }
-
         return decryptedLinks;
     }
-
 }

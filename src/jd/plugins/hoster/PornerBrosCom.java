@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,12 +31,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "https?://(?:www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" })
 public class PornerBrosCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
+    /* tags: fux.com, porntube.com, 4tube.com, pornerbros.com */
     private String dllink = null;
 
     public PornerBrosCom(PluginWrapper wrapper) {
@@ -65,7 +63,6 @@ public class PornerBrosCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -102,12 +99,10 @@ public class PornerBrosCom extends PluginForHost {
             if (dllink == null) {
                 // confirmed 16. March 2014
                 dllink = br.getRegex("hwurl=\\'([^']+)").getMatch(0);
-
             }
             if (dllink == null) {
                 // confirmed 16. March 2014
                 dllink = br.getRegex("file:\\'([^']+)").getMatch(0);
-
             }
             if (dllink == null) {
                 logger.warning("Null download link, reverting to secondary method. Continuing....");
@@ -123,11 +118,11 @@ public class PornerBrosCom extends PluginForHost {
         if (dllink == null) {
             final String[] qualities = { "1080", "720", "480", "360", "240" };
             String availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-            String lid = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
-            if (lid == null) {
-                lid = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+            String mediaID = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
+            if (mediaID == null) {
+                mediaID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
             }
-            if (lid == null) {
+            if (mediaID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (availablequalities != null) {
@@ -153,7 +148,13 @@ public class PornerBrosCom extends PluginForHost {
                 }
             }
             this.br.getHeaders().put("Origin", "http://www.pornerbros.com");
-            br.postPage("http://tkn.pornerbros.com/" + lid + "/desktop/" + availablequalities, "");
+            final boolean newWay = true;
+            if (newWay) {
+                /* 2017-05-31 */
+                br.postPage("https://tkn.kodicdn.com/" + mediaID + "/desktop/" + availablequalities, "");
+            } else {
+                br.postPage("https://tkn.pornerbros.com/" + mediaID + "/desktop/" + availablequalities, "");
+            }
             for (final String quality : qualities) {
                 dllink = br.getRegex("\"" + quality + "\".*?\"token\":\"(http:[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
@@ -186,7 +187,6 @@ public class PornerBrosCom extends PluginForHost {
             }
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         }
-
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
@@ -222,5 +222,4 @@ public class PornerBrosCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

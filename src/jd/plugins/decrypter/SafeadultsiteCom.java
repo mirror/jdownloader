@@ -25,10 +25,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safeadultsite.com", "eroticretina.com" }, urls = { "https?://(?:www\\.)?safeadultsite\\.com/pic/.*?\\.html", "https?://(?:www\\.)?eroticretina\\.com/pic/.*?\\.html" })
-public class SafeadultsiteCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safeadultsite.com", "eroticretina.com" }, urls = { "https?://(?:www\\.)?safeadultsite\\.com/(?:pic|video)/.*?\\.html", "https?://(?:www\\.)?eroticretina\\.com/pic/.*?\\.html" })
+public class SafeadultsiteCom extends PornEmbedParser {
     public SafeadultsiteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,34 +40,38 @@ public class SafeadultsiteCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<H1>(.*?)</H1>").getMatch(0);
-        final String html_gallery = this.br.getRegex("<div class=\"gallery\">(.*?)</div>").getMatch(0);
-        final String[] thumbnails = new Regex(html_gallery, "decodeURIComponent\\(\\'([^<>\"\\']+)\\'").getColumn(0);
-        if (thumbnails == null || thumbnails.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final String full_url_host;
-        if (this.br.getHost().equalsIgnoreCase("safeadultsite.com")) {
-            full_url_host = "saspic";
+        if (parameter.contains("/video/")) {
+            decryptedLinks.addAll(findEmbedUrls(null));
         } else {
-            full_url_host = "erpic";
-        }
-        for (String singleThumbnail : thumbnails) {
-            singleThumbnail = Encoding.htmlDecode(singleThumbnail);
-            final String urlpart = new Regex(singleThumbnail, "/\\d+x\\d+/(.+)").getMatch(0);
-            if (urlpart == null) {
-                continue;
+            String fpName = br.getRegex("<H1>(.*?)</H1>").getMatch(0);
+            final String html_gallery = this.br.getRegex("<div class=\"gallery\">(.*?)</div>").getMatch(0);
+            final String[] thumbnails = new Regex(html_gallery, "decodeURIComponent\\(\\'([^<>\"\\']+)\\'").getColumn(0);
+            if (thumbnails == null || thumbnails.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            final String finallink = String.format("https://%s.xxxssl.com/pics/%s", full_url_host, urlpart);
-            final DownloadLink dl = createDownloadlink(finallink);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            final String full_url_host;
+            if (this.br.getHost().equalsIgnoreCase("safeadultsite.com")) {
+                full_url_host = "saspic";
+            } else {
+                full_url_host = "erpic";
+            }
+            for (String singleThumbnail : thumbnails) {
+                singleThumbnail = Encoding.htmlDecode(singleThumbnail);
+                final String urlpart = new Regex(singleThumbnail, "/\\d+x\\d+/(.+)").getMatch(0);
+                if (urlpart == null) {
+                    continue;
+                }
+                final String finallink = String.format("https://%s.xxxssl.com/pics/%s", full_url_host, urlpart);
+                final DownloadLink dl = createDownloadlink(finallink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
