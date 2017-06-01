@@ -32,16 +32,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +57,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -71,9 +69,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" })
 public class Uploadedto extends PluginForHost {
-
     // DEV NOTES:
     // other: respects https in download methods, even though final download
     // link isn't https (free tested).
@@ -81,7 +84,6 @@ public class Uploadedto extends PluginForHost {
     private static final boolean           ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE    = true;
     private static final boolean           ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE = true;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS                 = 1;
-
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload              = new AtomicInteger(20);
     /* don't touch the following! */
@@ -259,7 +261,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     static class Sec {
-
         public static String d(final byte[] b, final byte[] key) {
             Cipher cipher;
             try {
@@ -313,7 +314,6 @@ public class Uploadedto extends PluginForHost {
         } else {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-
                     @Override
                     public void run() {
                         try {
@@ -565,15 +565,14 @@ public class Uploadedto extends PluginForHost {
                     String expireDate = br.getRegex("account_premium\":\\s*?\"?(\\d+)").getMatch(0);
                     ai.setValidUntil(Long.parseLong(expireDate) * 1000);
                     if (current <= 0 || br.containsHTML("download_available\":false")) {
-                        String refreshIn = br.getRegex("traffic_reset\":\\s*?(\\d+)").getMatch(0);
-                        if (refreshIn != null) {
-                            account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(refreshIn) * 1000);
-                        } else {
-                            account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
-                        }
                         final boolean downloadAvailable = br.containsHTML("download_available\":true");
                         logger.info("Download_available: " + br.containsHTML("download_available\":true"));
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "DownloadAvailable:" + downloadAvailable, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        String refreshIn = br.getRegex("traffic_reset\":\\s*?(\\d+)").getMatch(0);
+                        if (refreshIn != null) {
+                            throw new AccountUnavailableException("DownloadAvailable:" + downloadAvailable, Long.parseLong(refreshIn) * 1000);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "DownloadAvailable:" + downloadAvailable, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
                     }
                     ai.setStatus("Premium account");
                     account.setProperty("free", false);
@@ -796,8 +795,7 @@ public class Uploadedto extends PluginForHost {
                  */
                 /* IP was changed - now we only have to switch to the next account! */
                 logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
-                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("Free limit reached", 60 * 60 * 1000l);
             }
         }
         final String addedDownloadlink = baseURL + "file/" + id;
@@ -1011,8 +1009,7 @@ public class Uploadedto extends PluginForHost {
             } else {
                 logger.info("Limit reached, disabling free account to use the next one!");
                 account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
-                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException(60 * 60 * 1000l);
             }
         }
         checkGeneralErrors();
@@ -1060,8 +1057,7 @@ public class Uploadedto extends PluginForHost {
                 }
             case 16:
                 if (acc != null) {
-                    acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Disabled because of flood protection", 60 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Disabled because of flood protection", 60 * 60 * 1000l);
                 }
@@ -1090,11 +1086,10 @@ public class Uploadedto extends PluginForHost {
                 if (acc != null) {
                     String reset = br.getRegex("reset\":\\s*?\"?(\\d+)").getMatch(0);
                     if (reset != null) {
-                        acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(reset) * 1000);
+                        throw new AccountUnavailableException(Long.parseLong(reset) * 1000);
                     } else {
-                        acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -1408,20 +1403,17 @@ public class Uploadedto extends PluginForHost {
                 }
                 if (error != null) {
                     if (error.contains("error_traffic")) {
-                        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new AccountUnavailableException(JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), 60 * 60 * 1000l);
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k\\&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
                     logger.info("Download blocked (IP), disabling account...");
-                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", 60 * 60 * 1000l);
                 } else if (br.containsHTML("You used too many different IPs, Downloads have been blocked for today\\.")) {
                     // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
                     logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
-                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", 60 * 60 * 1000l);
                 }
                 int chunks = 0;
                 boolean resume = true;
@@ -1434,8 +1426,7 @@ public class Uploadedto extends PluginForHost {
                         logger.info("Traffic exhausted, temp disabled account");
                         /* temp debug info */
                         logger.info(br.toString());
-                        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new AccountUnavailableException(60 * 60 * 1000l);
                     }
                     logger.info("InDirect Downloads active");
                     Form form = br.getForm(0);
@@ -1726,8 +1717,7 @@ public class Uploadedto extends PluginForHost {
                 } while (counter <= 5 && loginIssues);
                 if (loginIssues) {
                     logger.warning("Account check failed because of login/server issues");
-                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin issues", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Login issues", 60 * 60 * 1000l);
                 }
                 changeToEnglish(br);
                 /* Save cookies */
@@ -1899,7 +1889,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-
                                                   {
                                                       put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
                                                       put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
@@ -1909,7 +1898,6 @@ public class Uploadedto extends PluginForHost {
                                                   }
                                               };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-
                                                   {
                                                       put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
                                                       put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
@@ -1967,5 +1955,4 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
