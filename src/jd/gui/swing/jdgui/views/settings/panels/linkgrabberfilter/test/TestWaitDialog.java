@@ -38,25 +38,16 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
-
-    private CircledProgressBar          progress;
-
-    private Thread                      recThread;
-
-    private String                      url;
-    private java.util.List<CrawledLink> found;
-
-    private JLabel                      lbl;
-
-    private int                         filtered;
-
-    private ExtTableModel<CrawledLink>  model;
-
-    private DelayedRunnable             delayer;
-
-    private LinkFilterController        linkFilterController;
-
-    private PackagizerController        packagizer;
+    private CircledProgressBar            progress;
+    private Thread                        recThread;
+    private String                        url;
+    private java.util.List<CrawledLink>   found;
+    private JLabel                        lbl;
+    private int                           filtered;
+    private ExtTableModel<CrawledLink>    model;
+    private final DelayedRunnable         delayer;
+    private final LinkFilterController    linkFilterController;
+    private volatile PackagizerController packagizer;
 
     public TestWaitDialog(String string, String title, LinkFilterController controller) {
         super(UIOManager.BUTTONS_HIDE_OK, title, null, null, _GUI.T.literally_close());
@@ -73,7 +64,6 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
                 update();
             }
         };
-
     }
 
     public TestWaitDialog(String string, LinkFilterController controller) {
@@ -92,9 +82,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         }
         found = new ArrayList<CrawledLink>();
         filtered = 0;
-
         lch.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
-
             public void linkCheckStopped() {
             }
 
@@ -115,7 +103,6 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
             }
         });
         lc.setHandler(new LinkCrawlerHandler() {
-
             public void linkCrawlerStopped() {
             }
 
@@ -143,14 +130,12 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
             }
         });
         lc.crawl(url, null, true);
-
         lc.waitForCrawling();
         lch.waitForChecked();
     }
 
     protected void update() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (lbl != null) {
@@ -163,10 +148,8 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
                 // synchronized (found) {
                 model._fireTableStructureChanged(new ArrayList<CrawledLink>(found), true);
                 // }
-
             }
         };
-
     }
 
     public java.util.List<CrawledLink> getFound() {
@@ -187,7 +170,6 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         progress.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_FILTER, 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
-
         progress.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_FILTER, 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
@@ -203,7 +185,6 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         }
         p.add(new JScrollPane(new ResultTable(this, model = createTableModel())), "spanx,pushx,growx,newline");
         recThread = new Thread("LinkFilterTesting") {
-
             private final LinkCrawler        lc  = new LinkCrawler(true, true) {
                 @Override
                 protected Long getDefaultAverageRuntime() {
@@ -224,7 +205,6 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
                     runTest(lc, lch);
                 } finally {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             progress.setIndeterminate(false);
@@ -234,9 +214,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
                 }
             }
         };
-
         recThread.start();
-
         return p;
     }
 
@@ -250,7 +228,6 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
     }
 
     protected boolean isResizable() {
-
         return true;
     }
 
@@ -258,11 +235,9 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
     public void dispose() {
         super.dispose();
         recThread.interrupt();
-
     }
 
     public void edit(LinkgrabberFilterRule rule) {
-
         try {
             if (rule.isAccept()) {
                 Dialog.getInstance().showDialog(new ExceptionsRuleDialog(rule));
@@ -281,5 +256,4 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
     public void setPackagizer(PackagizerController packagizer) {
         this.packagizer = packagizer;
     }
-
 }
