@@ -65,7 +65,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         final Challenge<String> challenge = job.getChallenge();
-        if (false && challenge instanceof RecaptchaV2Challenge) {
+        if (challenge instanceof RecaptchaV2Challenge) {
             // not finished, failed to work in my tests
             handleRecaptchaV2(job);
         } else {
