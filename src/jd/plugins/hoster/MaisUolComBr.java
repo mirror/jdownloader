@@ -13,11 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,11 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "http://(www\\.)?mais\\.uol\\.com\\.br/view/[a-z0-9]+/[A-Za-z0-9\\-]+" })
 public class MaisUolComBr extends PluginForHost {
-
     public MaisUolComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +52,6 @@ public class MaisUolComBr extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         server_issues = false;
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 400, 500 });
@@ -73,7 +73,7 @@ public class MaisUolComBr extends PluginForHost {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("item");
         String filename = (String) entries.get("title");
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("formats");
+        final Object formatso = entries.get("formats");
         final Object audioUrlo = entries.get("audioUrl");
         if (audioUrlo != null && audioUrlo instanceof String) {
             /* 2017-02-14 */
@@ -84,14 +84,28 @@ public class MaisUolComBr extends PluginForHost {
                 dllink = "http:" + dllink;
             }
         }
-        if (ressourcelist != null && dllink == null) {
-            /* Old */
-            for (final Object o : ressourcelist) {
-                final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) o;
-                final int id = ((Number) format.get("id")).intValue();
-                if (id == 9 || id == 2) {
-                    dllink = (String) format.get("url");
-                    break;
+        if (formatso != null && dllink == null) {
+            if (formatso instanceof ArrayList) {
+                final ArrayList<Object> ressourcelist = (ArrayList) formatso;
+                /* Old */
+                for (final Object o : ressourcelist) {
+                    final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) o;
+                    final int id = ((Number) format.get("id")).intValue();
+                    if (id == 9 || id == 2) {
+                        dllink = (String) format.get("url");
+                        break;
+                    }
+                }
+            } else {
+                entries = (LinkedHashMap<String, Object>) formatso;
+                final Iterator<Entry<String, Object>> formatiterate = entries.entrySet().iterator();
+                while (formatiterate.hasNext()) {
+                    final Entry entry = formatiterate.next();
+                    entries = (LinkedHashMap<String, Object>) entry.getValue();
+                    this.dllink = (String) entries.get("url");
+                    if (!StringUtils.isEmpty(dllink) && dllink.startsWith("http")) {
+                        break;
+                    }
                 }
             }
         }

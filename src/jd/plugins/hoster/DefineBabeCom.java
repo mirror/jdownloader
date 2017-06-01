@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.URL;
@@ -44,15 +43,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "http://(www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "definebabedecrypted://(?:www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" })
 public class DefineBabeCom extends PluginForHost {
-
     public DefineBabeCom(PluginWrapper wrapper) {
         super(wrapper);
         /* Don't overload the server. */
         this.setStartIntervall(3 * 1000l);
     }
-
     /* Tags: TubeContext@Player */
     /* Sites using the same player: pornsharing.com, [definebabes.com, definebabe.com, definefetish.com] */
 
@@ -60,7 +57,6 @@ public class DefineBabeCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -70,7 +66,7 @@ public class DefineBabeCom extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         /* Definebabes.com simply redirecty to definebabe.com */
-        link.setUrlDownload(link.getDownloadURL().replace("definebabes.com/", "definebabe.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("definebabes.com/", "definebabe.com/").replace("definebabedecrypted://", "http://"));
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })
@@ -79,7 +75,7 @@ public class DefineBabeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Please, call later\\.")) {
             downloadLink.getLinkStatus().setStatusText("Server is busy");
@@ -125,13 +121,10 @@ public class DefineBabeCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(dllink);
+                con = br.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -141,13 +134,17 @@ public class DefineBabeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override
@@ -181,11 +178,9 @@ public class DefineBabeCom extends PluginForHost {
      */
     private static String decryptRC4HexString(final String plainTextKey, final String hexStringCiphertext) throws Exception {
         String ret = "";
-
         try {
             Cipher rc4 = Cipher.getInstance("RC4");
             rc4.init(Cipher.DECRYPT_MODE, new SecretKeySpec(plainTextKey.getBytes(), "RC4"));
-
             ret = new String(rc4.doFinal(DatatypeConverter.parseHexBinary(hexStringCiphertext)));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -202,7 +197,6 @@ public class DefineBabeCom extends PluginForHost {
         } catch (BadPaddingException e) {
             e.printStackTrace();
         }
-
         return ret;
     }
 

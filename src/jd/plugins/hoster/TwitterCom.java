@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,11 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -149,6 +149,10 @@ public class TwitterCom extends PluginForHost {
                     link.setFinalFileName(filename);
                     checkFFProbe(link, "Download a HLS Stream");
                     br.getPage(this.dllink);
+                    if (this.br.getHttpConnection().getResponseCode() == 403) {
+                        /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
+                    }
                     final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                     this.dllink = hlsbest.getDownloadurl();
                     final HLSDownloader downloader = new HLSDownloader(link, br, dllink);

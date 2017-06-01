@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -31,11 +30,10 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(?:www\\.)?4tube\\.com/(?:embed|videos)/(\\d+)/?([\\w-]+)?" })
 public class FourTubeCom extends antiDDoSForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
+    /* tags: fux.com, porntube.com, 4tube.com, pornerbros.com */
     // /embed/UID are not transferable to /videos/UID -raztoki
-
     public FourTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -113,7 +111,13 @@ public class FourTubeCom extends antiDDoSForHost {
         br2.getHeaders().put("Origin", "http://www.4tube.com");
         br2.getHeaders().put("Accept-Charset", null);
         br2.getHeaders().put("Content-Type", null);
-        postPageRaw(br2, "http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
+        final boolean newWay = true;
+        if (newWay) {
+            /* 2017-05-31 */
+            br2.postPage("https://tkn.kodicdn.com/" + mediaID + "/desktop/" + availablequalities, "");
+        } else {
+            br2.postPage("https://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+        }
         String finallink = null;
         final String[] qualities = availablequalities.split("\\+");
         for (final String quality : qualities) {
@@ -174,17 +178,14 @@ public class FourTubeCom extends antiDDoSForHost {
             if (playpath == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             if (!playpath.startsWith("http")) {
                 dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
                 jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
                 String host = url.substring(0, url.lastIndexOf("/") + 1);
                 String app = url.replace(host, "");
                 if (host == null || app == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-
                 if (app.equals("vod/")) {
                     rtmp.setLive(true);
                 } else {
@@ -195,7 +196,6 @@ public class FourTubeCom extends antiDDoSForHost {
                 rtmp.setApp(app);
                 rtmp.setUrl(host + app);
                 rtmp.setSwfUrl("http://www.4tube.com/player2.swf");
-
                 ((RTMPDownload) dl).startDownload();
                 return;
             }
@@ -220,5 +220,4 @@ public class FourTubeCom extends antiDDoSForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

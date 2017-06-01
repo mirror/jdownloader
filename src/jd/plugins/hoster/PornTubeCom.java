@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,10 +32,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntube.com" }, urls = { "http://(www\\.)?(porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)" })
 public class PornTubeCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
+    /* tags: fux.com, porntube.com, 4tube.com, pornerbros.com */
     private String DLLINK = null;
 
     public PornTubeCom(PluginWrapper wrapper) {
@@ -83,7 +81,13 @@ public class PornTubeCom extends PluginForHost {
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("Origin", "http://www.porntube.com");
-        br.postPage("http://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+        final boolean newWay = true;
+        if (newWay) {
+            /* 2017-05-31 */
+            br.postPage("https://tkn.kodicdn.com/" + mediaID + "/desktop/" + availablequalities, "");
+        } else {
+            br.postPage("https://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+        }
         // seems to be listed in order highest quality to lowest. 20130513
         getDllink();
         String ext = "mp4";
@@ -192,5 +196,4 @@ public class PornTubeCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
