@@ -24,6 +24,9 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
@@ -35,9 +38,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BrDe.BrDeConfigInterface;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" })
 public class BrDeDecrypter extends PluginForDecrypt {
@@ -57,6 +57,11 @@ public class BrDeDecrypter extends PluginForDecrypt {
         boolean offline = false;
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        if (parameter.contains("/livestream/")) {
+            /* Invalid URLs. */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (offline || this.br.getHttpConnection().getResponseCode() == 404 || parameter.matches(TYPE_INVALID)) {
             /* Add offline link so user can see it */
