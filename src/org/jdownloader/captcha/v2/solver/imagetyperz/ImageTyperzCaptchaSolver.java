@@ -5,11 +5,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -26,7 +21,13 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_IMAGE_TYPERZ;
 import org.seamless.util.io.IO;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+
 public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
+
     private final ImageTyperzConfigInterface      config;
     private static final ImageTyperzCaptchaSolver INSTANCE   = new ImageTyperzCaptchaSolver();
     private final ThreadPoolExecutor              threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -66,7 +67,6 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         final Challenge<String> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
-            // not finished, failed to work in my tests
             handleRecaptchaV2(job);
         } else {
             super.solveCES(job);
@@ -219,6 +219,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
     public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof ImageTyperzResponse) {
             threadPool.execute(new Runnable() {
+
                 @Override
                 public void run() {
                     URLConnectionAdapter conn = null;
