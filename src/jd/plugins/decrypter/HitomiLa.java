@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
@@ -37,6 +37,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html)" })
 public class HitomiLa extends antiDDoSForDecrypt {
+
     public HitomiLa(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,7 +56,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
         // get the image host.
         final String imghost = "la";// + getImageHost(guid);
-        final String[] links = br.getRegex("(/" + guid + "/[^<>\"]*?\\.[a-z]+)").getColumn(0);
+        final String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
