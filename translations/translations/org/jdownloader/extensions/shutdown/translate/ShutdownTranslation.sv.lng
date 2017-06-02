@@ -6,6 +6,7 @@ config_toolbarbutton=Toolbar Button synlig
 gui_config_jdshutdown_close=Stäng JD
 gui_config_jdshutdown_forceshutdown=Tvinga nerstängning (Inte för alla OS)
 gui_config_jdshutdown_hibernate=Viloläge (Inte för alla OS)
+gui_config_jdshutdown_logoff=Logga ut
 gui_config_jdshutdown_mode=Mod:
 gui_config_jdshutdown_shutdown=Stäng av
 gui_config_jdshutdown_standby=Standby (Inte för alla OS)
@@ -14,10 +15,12 @@ install_msg=Vill du anpassa din dator för tvingande nerstängning?
 install_title=Installera Tvingande nerstängning
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kommer att avslutas!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systemet kommer att försättas i viloläge!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">Användaren kommer att loggas ut!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Systemet kommer att stängas av!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Systemet kommer att sättas i standby!</font></h2>
 interaction_shutdown_dialog_title_closejd=Stänga ner JD?
 interaction_shutdown_dialog_title_hibernate=Viloläge?
+interaction_shutdown_dialog_title_logoff=Logga ut?
 interaction_shutdown_dialog_title_shutdown=Stänga av?
 interaction_shutdown_dialog_title_standby=Standby?
 jd_plugins_optional_jdshutdown=JD Avstängning
