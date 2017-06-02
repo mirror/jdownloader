@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -70,6 +71,13 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         if (fp != null) {
             fp.setName(fpName);
             fp.setProperty("AllOW_MERGE", true);
+        }
+        // more steps y0! 20170602
+        {
+            final Form click = br.getFormByInputFieldKeyValue("captcha_click", "1");
+            if (click != null) {
+                br.submitForm(click);
+            }
         }
         String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
         if (continuelink != null) {
