@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -54,51 +53,54 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.eu" }, urls = { "https?://(www\\.)?rockfile\\.eu/(embed\\-)?[a-z0-9]{12}\\.html" })
 public class RockFileEu extends antiDDoSForHost {
 
-    private String               correctedBR                  = "";
-    private String               passCode                     = null;
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                   = "";
+    private String               passCode                      = null;
+    private static final String  PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                  = "https://rockfile.eu";
-    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                   = "https://rockfile.eu";
+    private static final String  NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                      = "(rockfile\\.eu|rockfileserver\\.eu|rfservers\\.eu)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean VIDEOHOSTER_2                = false;
-    private static final boolean SUPPORTSHTTPS                = true;
-    private static final boolean SUPPORTSHTTPS_FORCED         = true;
-    private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
+    private static final String  DOMAINS                       = "(rockfile\\.eu|rockfileserver\\.eu|rfservers\\.eu)";
+    private static final String  MAINTENANCE                   = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT           = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String  ALLWAIT_SHORT                 = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                   = false;
+    private static final boolean VIDEOHOSTER_2                 = false;
+    private static final boolean SUPPORTSHTTPS                 = true;
+    private static final boolean SUPPORTSHTTPS_FORCED          = true;
+    private static final boolean SUPPORTS_ALT_AVAILABLECHECK   = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE = true;
+
     /* Waittime stuff */
-    private static final boolean WAITFORCED                   = true;
-    private static final int     WAITSECONDSMIN               = 40;
-    private static final int     WAITSECONDSMAX               = 200;
-    private static final int     WAITSECONDSFORCED            = 36;
+    private static final boolean WAITFORCED                    = true;
+    private static final int     WAITSECONDSMIN                = 40;
+    private static final int     WAITSECONDSMAX                = 200;
+    private static final int     WAITSECONDSFORCED             = 36;
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private static final boolean FREE_RESUME                   = true;
+    private static final int     FREE_MAXCHUNKS                = 1;
+    private static final int     FREE_MAXDOWNLOADS             = 1;
+    private static final boolean ACCOUNT_FREE_RESUME           = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS        = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS     = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME        = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS     = 1;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS  = 10;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
-    private String               fuid                         = null;
+    private static AtomicInteger maxFree                       = new AtomicInteger(1);
+    private static Object        LOCK                          = new Object();
+    private String               fuid                          = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
@@ -108,7 +110,6 @@ public class RockFileEu extends antiDDoSForHost {
     // captchatype: null
     // other: extended waittime handling
     // TODO: Add case maintenance + alternative filesize check
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -122,6 +123,16 @@ public class RockFileEu extends antiDDoSForHost {
         if (!link.getDownloadURL().contains(".html")) {
             link.setUrlDownload(link.getDownloadURL() + ".html");
         }
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected BrowserName setBrowserName() {
+        return BrowserName.Chrome;
     }
 
     @Override
@@ -196,8 +207,19 @@ public class RockFileEu extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
-            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
+
+        /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
+            logger.info("Failed to find filename, trying getFnameViaAbuseLink");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        }
+
+        if (inValidate(fileInfo[0])) {
+            if (correctedBR.contains("You have reached the download(-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -273,7 +295,7 @@ public class RockFileEu extends antiDDoSForHost {
     }
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "https://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -436,7 +458,6 @@ public class RockFileEu extends antiDDoSForHost {
                         skipWaittime = true;
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = null;
                         try {
@@ -600,7 +621,6 @@ public class RockFileEu extends antiDDoSForHost {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
         if (br.getURL().endsWith("/login.html")) {
             regexStuff.add("<script>(var curr = document\\.URL.*?)</script>");
@@ -610,7 +630,6 @@ public class RockFileEu extends antiDDoSForHost {
         /* 2016-05-12:Removed this entry as it removed important html! */
         // regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -642,26 +661,21 @@ public class RockFileEu extends antiDDoSForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -1175,5 +1189,4 @@ public class RockFileEu extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
