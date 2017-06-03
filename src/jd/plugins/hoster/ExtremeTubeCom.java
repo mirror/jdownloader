@@ -15,7 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +33,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" })
 public class ExtremeTubeCom extends PluginForHost {
+
     private String dllink = null;
 
     public ExtremeTubeCom(PluginWrapper wrapper) {
@@ -67,7 +70,7 @@ public class ExtremeTubeCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "extremetube\\.com/video/(.+)").getMatch(0));
         // Set cookie so we can watch all videos ;)
@@ -78,16 +81,20 @@ public class ExtremeTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
+        final String json = br.getRegex("var flashvars\\s*=\\s*(\\{.*?\\})\\s*;").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
         for (final String quality : qualities) {
-            dllink = br.getRegex("quality_" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = (String) entries.get("quality_" + quality);
             if (dllink != null) {
-                dllink = dllink.replace("\\", "");
                 break;
             }
         }
         if (filename == null || dllink == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + dllink);
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
