@@ -38,7 +38,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|v/|embed/)[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:e(?:mbed)?/|(?:embed/)?\\?v=|v(?:iew)?/)[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
     public BitvideoIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -142,6 +142,7 @@ public class BitvideoIo extends PluginForHost {
         }
         if (json_source != null) {
             final String userPreferredVideoquality = getConfiguredVideoQuality();
+            logger.info("userPreferredVideoquality: " + userPreferredVideoquality);
             String dllink_user_prefered = null;
             String dllink_temp = null;
             String dllink_best = null;
@@ -155,13 +156,21 @@ public class BitvideoIo extends PluginForHost {
                     entries = (Map<String, Object>) videoo;
                     tempquality = (String) entries.get("label");
                     dllink_temp = (String) entries.get("file");
+                    logger.info("label: " + tempquality + " file: " + dllink_temp);
                     if (StringUtils.isEmpty(tempquality) || StringUtils.isEmpty(dllink_temp)) {
                         /* Skip invalid objects */
                         continue;
                     }
+                    if (tempquality.contains("Standard")) { // rapidvideo
+                        tempquality = "360p";
+                    }
+                    if (tempquality.contains("High")) { // rapidvideo
+                        tempquality = "480p";
+                    }
                     if (tempquality.equalsIgnoreCase(userPreferredVideoquality)) {
-                        logger.info("Found user selected videoquality");
+                        logger.info("Found user selected videoquality: " + tempquality);
                         dllink_user_prefered = dllink_temp;
+                        break;
                     }
                     // if ("Source( File)?".equalsIgnoreCase(tempquality)) {
                     if (tempquality.contains("Source")) {
@@ -184,6 +193,7 @@ public class BitvideoIo extends PluginForHost {
             } else {
                 logger.info("Downloading highest quality possible");
                 this.dllink = dllink_best;
+                logger.info("file: " + dllink_best);
             }
         }
         filename = Encoding.htmlDecode(filename);
