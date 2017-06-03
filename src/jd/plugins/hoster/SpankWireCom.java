@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spankwire.com" }, urls = { "https?://(?:www\\.)?spankwire\\.com/(?:.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spankwire.com" }, urls = { "https?://(?:www\\.)?spankwire\\.com/(?:.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" })
 public class SpankWireCom extends PluginForHost {
 
-    public String DLLINK = null;
+    public String dllink = null;
 
     public SpankWireCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -108,16 +108,16 @@ public class SpankWireCom extends PluginForHost {
         if (br.containsHTML("playerData\\.isVideoUnavailable\\s*=\\s*true;")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = finddllink();
-        if (DLLINK == null) {
+        dllink = finddllink();
+        if (dllink == null) {
             if (br.containsHTML("playerData.cdnPath180\\s+= encodeURIComponent\\(''\\)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        if (DLLINK.contains(".mp4")) {
+        if (dllink.contains(".mp4")) {
             downloadLink.setFinalFileName(filename + ".mp4");
         } else {
             downloadLink.setFinalFileName(filename + ".flv");
@@ -125,7 +125,7 @@ public class SpankWireCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        final URLConnectionAdapter con = br2.openHeadConnection(DLLINK);
+        final URLConnectionAdapter con = br2.openHeadConnection(dllink);
         if (!con.getContentType().contains("html")) {
             downloadLink.setDownloadSize(con.getLongContentLength());
         } else {
@@ -141,7 +141,7 @@ public class SpankWireCom extends PluginForHost {
         if (downloadLink.getDownloadURL().contains("EmbedPlayer.aspx") && br.containsHTML("This video is temporarily unavailable")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is temporarily unavailable!");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,7 +166,7 @@ public class SpankWireCom extends PluginForHost {
                 count_offline++;
                 continue;
             }
-            if (dllink_plain.matches("http[^<>\"\\']*?\\.mp4[^<>\"\\']*?")) {
+            if (dllink_plain.matches("(?-i)(?:https?:)?[^<>\"\\']*?\\.mp4[^<>\"\\']*?")) {
                 dllink = dllink_plain;
                 break;
             }
