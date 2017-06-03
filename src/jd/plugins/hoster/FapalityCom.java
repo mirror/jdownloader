@@ -33,6 +33,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fapality.com" }, urls = { "https?://(?:[a-z]+\\.)?fapality\\.com/\\d+/?$" })
 public class FapalityCom extends PluginForHost {
+
     public FapalityCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -72,15 +73,6 @@ public class FapalityCom extends PluginForHost {
             filename = url_filename;
         }
         dllink = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        // if (dllink == null) {
-        // dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        // }
-        // if (dllink == null) {
-        // dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        // }
-        // if (dllink == null) {
-        // dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-        // }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -101,7 +93,7 @@ public class FapalityCom extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                con = br.cloneBrowser().openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -158,10 +150,6 @@ public class FapalityCom extends PluginForHost {
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
     @Override
