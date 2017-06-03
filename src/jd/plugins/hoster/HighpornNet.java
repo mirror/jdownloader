@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
@@ -39,6 +43,7 @@ public class HighpornNet extends PluginForHost {
 
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     /* DEV NOTES */
@@ -46,15 +51,16 @@ public class HighpornNet extends PluginForHost {
     // protocol: no https
     // other:
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    private static final String default_extension = ".mp4";
     /* Connection stuff */
     /* 2017-05-31: Disabled resume as it will cause a lot of retries and then fail. */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = 1;
-    private String               dllink            = null;
-    private String               fid               = null;
-    private boolean              server_issues     = false;
+    private boolean             free_resume       = false;
+    private static final int    free_maxchunks    = 1;
+    private static final int    free_maxdownloads = 1;
+    private String              dllink            = null;
+    private String              fid               = null;
+    private boolean             server_issues     = false;
+    private SubConfiguration    cfg               = getPluginConfig();
 
     @Override
     public String getAGBLink() {
@@ -102,8 +108,9 @@ public class HighpornNet extends PluginForHost {
          * 2017-06-01: Disabled filesize check as this could lead to download issues as this host only allows a total of 1
          * stream-connection.
          */
-        final boolean checkFilesize = false;
-        if (dllink != null && checkFilesize) {
+        boolean Allow_filesize_check = cfg.getBooleanProperty("Allow_filesize_check", false);
+        logger.info("Allow_filesize_check: " + Allow_filesize_check);
+        if (dllink != null && Allow_filesize_check) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
@@ -149,6 +156,12 @@ public class HighpornNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepStreamHeaders(br);
+        boolean Allow_resume = cfg.getBooleanProperty("Allow_resume", false);
+        logger.info("Allow_resume: " + Allow_resume);
+        if (Allow_resume) {
+            free_resume = true;
+        }
+        logger.info("free_resume: " + free_resume);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -190,6 +203,11 @@ public class HighpornNet extends PluginForHost {
 
     private void prepStreamHeaders(final Browser br) {
         br.getHeaders().put("Range", "bytes=0-");
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Allow_resume", JDL.L("plugins.hoster.HighpornNet.Allow_resume", "Allow resume")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Allow_filesize_check", JDL.L("plugins.hoster.HighpornNet.Allow_filesize_check", "Allow filesize check")).setDefaultValue(false));
     }
 
     @Override
