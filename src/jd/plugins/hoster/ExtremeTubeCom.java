@@ -33,7 +33,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" })
 public class ExtremeTubeCom extends PluginForHost {
-
     private String dllink = null;
 
     public ExtremeTubeCom(PluginWrapper wrapper) {
@@ -77,7 +76,7 @@ public class ExtremeTubeCom extends PluginForHost {
         br.setCookie("http://www.extremetube.com/", "age_verified", "1");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.extremetube.com/") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().equals("http://www.extremetube.com/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This video has been removed<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
