@@ -31,6 +31,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,16 +70,10 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class BackinNet extends antiDDoSForHost {
+
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://backin.net";
@@ -1342,7 +1343,7 @@ public class BackinNet extends antiDDoSForHost {
      */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
-        if (form.containsHTML(";background:#ccc;text-align")) {
+        if (form.containsHTML(";background:#(?:ccc|ggg);[^>]*text-align:")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
             String[][] letters = form.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
@@ -1866,6 +1867,7 @@ public class BackinNet extends antiDDoSForHost {
         final String oURL = ibr.getURL();
         final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
         Request req = new Request(oURL) {
+
             {
                 boolean okay = false;
                 try {
