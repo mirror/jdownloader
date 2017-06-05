@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.com" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" })
 public class CopiapopComDecrypter extends PluginForDecrypt {
-
     public CopiapopComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,7 +55,6 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
             }
             br.getPage(parameter);
         }
-
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("class=\"tiles_container\"|id=\"fileDetails\"")) {
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -75,7 +72,6 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
         // decryptedLinks.add(dl);
         // return decryptedLinks;
         // }
-
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
             String filename = br.getRegex("<span>Gratis:</span>([^<>\"]*?)<").getMatch(0);
@@ -87,12 +83,9 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename).trim();
             final DownloadLink dl = createDownloadLink(fid, filename, parameter);
-
             dl.setProperty("plain_filesize", filesize);
-
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
-
             decryptedLinks.add(dl);
         } else {
             String fpName = br.getRegex("class=\"scrollTop\">([^<>\"]*?)</a></h1>").getMatch(0);
@@ -101,14 +94,12 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-
             final short max_entries_per_page = 24;
             int addedlinks = 0;
             int page = 1;
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             boolean stop_after_one_page = false;
             String nextpage = null;
-
             final String decrypt_specified_page_only_str = new Regex(this.br.getURL(), "(/gallery,\\d+,\\d+)").getMatch(0);
             if (decrypt_specified_page_only_str != null) {
                 page = Integer.parseInt(new Regex(decrypt_specified_page_only_str, "gallery,\\d+,(\\d+)").getMatch(0));
@@ -119,7 +110,6 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
                     stop_after_one_page = true;
                 }
             }
-
             do {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user");
@@ -151,40 +141,33 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     filename = Encoding.htmlDecode(filename).trim();
-
                     final DownloadLink dl = createDownloadLink(fid, filename, parameter);
                     dl.setProperty("plain_filesize", filesize);
                     dl._setFilePackage(fp);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
-
                     decryptedLinks.add(dl);
-
                     distribute(dl);
                     addedlinks++;
                 }
-
                 page++;
                 nextpage = this.br.getRegex("data-nextpage-number=\"" + page + "\" data\\-nextpage\\-url=\"(/[^<>\"]*?)\"").getMatch(0);
             } while (addedlinks >= max_entries_per_page && !stop_after_one_page && nextpage != null);
-
             if (decryptedLinks.size() == 0) {
                 return null;
             }
         }
-
         return decryptedLinks;
     }
 
     public DownloadLink createDownloadLink(final String fid, final String filename, final String main_url) {
         final DownloadLink dl = super.createDownloadlink("http://copiapopdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-
         dl.setProperty("plain_filename", filename);
         dl.setProperty("plain_fid", fid);
         dl.setProperty("mainlink", main_url);
         dl.setLinkID(fid + filename);
         dl.setName(filename);
-
+        dl.setContentUrl(main_url);
         return dl;
     }
 
@@ -192,5 +175,4 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.ChomikujPlScript;
     }
-
 }
