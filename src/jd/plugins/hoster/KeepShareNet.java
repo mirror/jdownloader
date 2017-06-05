@@ -29,6 +29,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,12 +59,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keepshare.net" }, urls = { "https?://(www\\.)?keepshare\\.net/(embed\\-)?[A-Za-z0-9]+" })
 public class KeepShareNet extends PluginForHost {
@@ -247,6 +247,9 @@ public class KeepShareNet extends PluginForHost {
 
         /* standard traits from base page */
         if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<div class=\"file_details\">\\s*(.*?)\\s*<").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
@@ -254,7 +257,7 @@ public class KeepShareNet extends PluginForHost {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        fileInfo[0] = new Regex(correctedBR, "Filename:?\\s*(?:<[^>]+>\\s*)*([^<>\"']+)").getMatch(0);
                         // next two are details from sharing box
                         if (fileInfo[0] == null) {
                             fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
@@ -667,6 +670,11 @@ public class KeepShareNet extends PluginForHost {
                     correctedBR = correctedBR.replace(result, "");
                 }
             }
+        }
+        // remove extra wasteful blanklines, or blanklines with combination of tab or space
+        while (new Regex(correctedBR, "\r{2,}(?:[\t ]+\r+)?|\n{2,}(?:[\t ]+\n+)?").matches()) {
+            correctedBR = correctedBR.replaceAll("\n{1,}(?:[\t ]+\n+)*", "\n");
+            correctedBR = correctedBR.replaceAll("\r{1,}(?:[\t ]+\r+)*", "\r");
         }
     }
 
