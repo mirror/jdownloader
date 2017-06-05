@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+.*?\\.html" })
 public class CrackedCom extends PluginForDecrypt {
-
     public CrackedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,12 +38,13 @@ public class CrackedCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-
         br.setFollowRedirects(true);
         br.getPage(parameter);
-
         // they have youtube sometimes
         String finallink = br.getRegex("id=youtubePlayer src=\"//(?:www\\.)?(youtube\\.com/embed/[^<>\"]+)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("<iframe.*? src=\"(?:http://www\\.)?(youtube\\.com/embed/[^<>\"]+)\"").getMatch(0);
+        }
         if (finallink != null) {
             finallink = "http://www." + finallink;
             decryptedLinks.add(createDownloadlink(finallink));
@@ -57,7 +56,6 @@ public class CrackedCom extends PluginForDecrypt {
         // when nothing is found or result was not a youtube video lets just throw back to hoster plugin, error handling there can pick it
         // up!
         decryptedLinks.add(createDownloadlink(parameter.replace("cracked.com/", "crackeddecrypted.com/")));
-
         return decryptedLinks;
     }
 }
