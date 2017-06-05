@@ -97,6 +97,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     private void handleErrors() throws Exception {
         final PluginForHost plugin = JDUtilities.getPluginForHost("depfile.com");
         try {
+            ((jd.plugins.hoster.DepfileCom) plugin).setBrowser(br);
             ((jd.plugins.hoster.DepfileCom) plugin).handleErrors();
         } catch (final Exception e) {
             if (e instanceof PluginException) {
