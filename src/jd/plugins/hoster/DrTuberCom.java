@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -51,7 +50,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "http://(www\\.|m\\.)?drtuber\\.com/(video/\\d+|player/config_embed3\\.php\\?vkey=[a-z0-9]+|embed/\\d+)" })
 public class DrTuberCom extends PluginForHost {
-
     public DrTuberCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.drtuber.com/signup?track=top_menu");
@@ -82,10 +80,8 @@ public class DrTuberCom extends PluginForHost {
     private boolean              allow_uncrypted_downloadlink = false;
     private static final String  normalUA                     = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0";
     private static final String  mobileUA                     = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile";
-
     private final String         type_embed                   = "https?://(?:www\\.)?drtuber\\.com/embed/\\d+";
     private final String         type_normal                  = "https?://(?:www\\.)?drtuber\\.com/video/\\d+(?:/[a-z0-9\\-_]+)?";
-
     private String               DLLINK                       = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -97,7 +93,6 @@ public class DrTuberCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -133,7 +128,6 @@ public class DrTuberCom extends PluginForHost {
         br.setCookie("http://drtuber.com", "lang", "en");
         String continueLink = null, filename = null;
         // Check if link is an embedded link e.g. from a decrypter
-
         /* embed v3 */
         String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(\\w+)").getMatch(0);
         if (vk != null) {
@@ -149,7 +143,6 @@ public class DrTuberCom extends PluginForHost {
             }
             downloadLink.setUrlDownload(Encoding.htmlDecode(original_video_link));
         }
-
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -273,6 +266,9 @@ public class DrTuberCom extends PluginForHost {
             }
         }
         if (filename == null || DLLINK == null) {
+            if (br.containsHTML("<video_file><\\!\\[CDATA\\[\\]\\]></video_file>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
@@ -544,5 +540,4 @@ public class DrTuberCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.UnknownPornScript9;
     }
-
 }
