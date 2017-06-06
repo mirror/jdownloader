@@ -409,7 +409,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity", false));
         if (rangeRequest != null) {
             initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, rangeRequest, false));
-            URLConnectionAdapter connection = browser.openRequestConnection(initialRequest, false);
+            final URLConnectionAdapter connection = browser.openRequestConnection(initialRequest, false);
             if (connection.getRequest().getLocation() != null) {
                 return connection;
             }
@@ -422,7 +422,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             return connection;
         } else {
             initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, null, false));
-            URLConnectionAdapter connection = browser.openRequestConnection(initialRequest, false);
+            final URLConnectionAdapter connection = browser.openRequestConnection(initialRequest, false);
             if (connection.getRequest().getLocation() != null) {
                 return connection;
             }
