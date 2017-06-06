@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.plugins.download.SparseFile;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 
 public class BytesMappedFile implements FileBytesCacheFlusher {
 
@@ -73,7 +74,7 @@ public class BytesMappedFile implements FileBytesCacheFlusher {
                 }
             } catch (IOException e) {
             }
-            raf = new RandomAccessFile(file, "rw");
+            raf = IO.open(file, "rw");
             callBacks.add(callback);
             return true;
         } else {
