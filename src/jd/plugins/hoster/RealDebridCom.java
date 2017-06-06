@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -23,6 +22,31 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
+import jd.controlling.captcha.SkipException;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -51,43 +75,15 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.captcha.SkipException;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+(?:/.+)?" })
 public class RealDebridCom extends PluginForHost {
-
     private static final String CLIENT_SECRET_KEY = "client_secret";
     private static final String CLIENT_ID_KEY     = "client_id";
     private static final String CLIENT_SECRET     = "CLIENT_SECRET";
     private static final String TOKEN             = "TOKEN";
-
     private static final String AUTHORIZATION     = "Authorization";
 
     private static class APIException extends Exception {
-
         private final URLConnectionAdapter connection;
 
         public APIException(URLConnectionAdapter connection, Error error, String msg) {
@@ -105,7 +101,6 @@ public class RealDebridCom extends PluginForHost {
         public Error getError() {
             return error;
         }
-
     }
 
     private static final String                            API                = "https://api.real-debrid.com";
@@ -116,13 +111,9 @@ public class RealDebridCom extends PluginForHost {
     private static Object                                  LOCK               = new Object();
     private static AtomicInteger                           MAX_DOWNLOADS      = new AtomicInteger(Integer.MAX_VALUE);
     private static AtomicInteger                           RUNNING_DOWNLOADS  = new AtomicInteger(0);
-
     private final String                                   mName              = "real-debrid.com";
-
     private final String                                   mProt              = "https://";
-
     private Browser                                        apiBrowser;
-
     private TokenResponse                                  token;
 
     public RealDebridCom(PluginWrapper wrapper) {
@@ -146,7 +137,6 @@ public class RealDebridCom extends PluginForHost {
             case BAD_LOGIN:
             case BAD_TOKEN:
                 // refresh Token
-
                 login(account, true);
                 return callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + method, query, type);
             default:
@@ -193,7 +183,6 @@ public class RealDebridCom extends PluginForHost {
 
     private <T> T callRestAPI(final Account account, String method, TypeRef<T> type) throws Exception {
         return callRestAPI(account, method, null, type);
-
     }
 
     @Override
@@ -313,6 +302,10 @@ public class RealDebridCom extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), resume, resume ? maxChunks : 1);
             if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
+                if (dl.getConnection().getLongContentLength() == 0) {
+                    dl.getConnection().disconnect();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "RD still processing download", 5 * 60 * 1000l);
+                }
                 /* content disposition, lets download it */
                 RUNNING_DOWNLOADS.incrementAndGet();
                 increment = true;
@@ -331,7 +324,6 @@ public class RealDebridCom extends PluginForHost {
                 MAX_DOWNLOADS.set(Integer.MAX_VALUE);
             }
         }
-
     }
 
     @Override
@@ -455,7 +447,6 @@ public class RealDebridCom extends PluginForHost {
             default:
                 throw e;
             }
-
         }
     }
 
@@ -527,7 +518,6 @@ public class RealDebridCom extends PluginForHost {
             final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
             final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
-
                 private volatile long lastValidation = -1;
 
                 @Override
@@ -723,7 +713,6 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-
     }
 
     @Override
@@ -760,5 +749,4 @@ public class RealDebridCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-
 }
