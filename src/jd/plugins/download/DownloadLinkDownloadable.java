@@ -63,10 +63,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         downloadLink.setResumeable(value);
     }
 
-    public PluginForHost getPlugin() {
-        return plugin;
-    }
-
     @Override
     public Browser getContextBrowser() {
         return plugin.getBrowser().cloneBrowser();
@@ -228,31 +224,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         downloadLink.addPluginProgress(progress);
     }
 
-    @Override
-    public String getMD5Hash() {
-        return downloadLink.getMD5Hash();
-    }
-
-    @Override
-    public String getSha1Hash() {
-        return downloadLink.getSha1Hash();
-    }
-
-    @Override
-    public String getSha256Hash() {
-        return downloadLink.getSha256Hash();
-    }
-
-    @Override
-    public long[] getChunksProgress() {
-        return downloadLink.getView().getChunksProgress();
-    }
-
-    @Override
-    public void setChunksProgress(long[] ls) {
-        downloadLink.setChunksProgress(ls);
-    }
-
     public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
         if (hashInfo == null) {
             return null;
@@ -384,6 +355,40 @@ public class DownloadLinkDownloadable implements Downloadable {
         } else {
             return controller.getFileOutput(false, ignoreCustom);
         }
+    }
+
+    @Override
+    @Deprecated
+    public String getMD5Hash() {
+        return downloadLink.getMD5Hash();
+    }
+
+    @Override
+    @Deprecated
+    public String getSha1Hash() {
+        return downloadLink.getSha1Hash();
+    }
+
+    @Override
+    @Deprecated
+    public String getSha256Hash() {
+        return downloadLink.getSha256Hash();
+    }
+
+    @Override
+    @Deprecated
+    public long[] getChunksProgress() {
+        return downloadLink.getView().getChunksProgress();
+    }
+
+    @Override
+    @Deprecated
+    public void setChunksProgress(long[] ls) {
+        downloadLink.setChunksProgress(ls);
+    }
+
+    public PluginForHost getPlugin() {
+        return plugin;
     }
 
     @Override
@@ -544,7 +549,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             logger.info("FinalFileName is not set yet!");
             if (connection.isContentDisposition() || dl.allowFilenameFromURL) {
                 String name = Plugin.getFileNameFromHeader(connection);
-                logger.info("FinalFileName: set to " + name + "(from connection)");
+                logger.info("FinalFileName: set to '" + name + "' from connection");
                 if (dl.fixWrongContentDispositionHeader) {
                     setFinalFileName(Encoding.htmlDecode(name));
                 } else {
@@ -552,7 +557,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 }
             } else {
                 String name = getName();
-                logger.info("FinalFileName: set to " + name + "(from plugin)");
+                logger.info("FinalFileName: set to '" + name + "' from plugin");
                 setFinalFileName(name);
             }
         }

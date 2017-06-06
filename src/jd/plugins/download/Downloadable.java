@@ -14,10 +14,24 @@ import jd.plugins.PluginProgress;
 import org.appwork.utils.logging2.LogInterface;
 
 public interface Downloadable {
-
     void setResumeable(boolean value);
 
     Browser getContextBrowser();
+
+    @Deprecated
+    String getMD5Hash();
+
+    @Deprecated
+    public long[] getChunksProgress();
+
+    @Deprecated
+    public void setChunksProgress(long[] ls);
+
+    @Deprecated
+    String getSha1Hash();
+
+    @Deprecated
+    String getSha256Hash();
 
     LogInterface getLogger();
 
@@ -100,16 +114,6 @@ public interface Downloadable {
 
     boolean isHashCheckEnabled();
 
-    String getMD5Hash();
-
-    public long[] getChunksProgress();
-
-    public void setChunksProgress(long[] ls);
-
-    String getSha1Hash();
-
-    String getSha256Hash();
-
     String getName();
 
     /**
@@ -125,12 +129,13 @@ public interface Downloadable {
 
     HashInfo getHashInfo();
 
+    public void setHashInfo(HashInfo hashInfo);
+
     void setHashResult(HashResult result);
 
     boolean rename(File from, File to) throws InterruptedException;
 
     // void setFinalFileOutput(String absolutePath);
-
     void removeConnectionHandler(ManagedThrottledConnectionHandler managedConnetionHandler);
 
     void waitForNextConnectionAllowed() throws InterruptedException;
@@ -152,5 +157,4 @@ public interface Downloadable {
     public <T> T getDataBindingInterface(Class<? extends DownloadLinkDatabindingInterface> T);
 
     public int getChunks();
-
 }
