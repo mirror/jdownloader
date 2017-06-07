@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
-
     public Keep2ShareCcDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -66,29 +64,44 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage((br.getURL() + "?ajax=yw1&pageSize=10000"));
-            final String[] links = br.getRegex("target=\"_blank\" href=\"([^\"]+)?(/file/[a-z0-9]+)").getColumn(1);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (final String link : links) {
-                final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc" + link);
-                String name = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">(.*?)</a>").getMatch(1);
-                String size = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">.*?>\\[.*?([0-9\\.GKMB ]+?) \\]<").getMatch(1);
-                if (name != null) {
-                    singlink.setName(name);
-                    singlink.setAvailable(true);
-                }
-                if (size != null) {
-                    singlink.setDownloadSize(SizeFormatter.getSize(size.trim()));
-                }
-                decryptedLinks.add(singlink);
-            }
+            final FilePackage fp;
             if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
+                fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
                 fp.addLinks(decryptedLinks);
+            } else {
+                fp = null;
+            }
+            int pageIndex = 1;
+            while (!isAbort()) {
+                final String[] links = br.getRegex("target=\"_blank\" href=\"([^\"]+)?(/file/[a-z0-9]+)").getColumn(1);
+                if (links == null || links.length == 0) {
+                    if (decryptedLinks.isEmpty()) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    } else {
+                        break;
+                    }
+                }
+                for (final String link : links) {
+                    final DownloadLink singlelink = createDownloadlink("http://keep2sharedecrypted.cc" + link);
+                    final String name = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">(.*?)</a>").getMatch(1);
+                    final String size = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">.*?>\\[.*?([0-9\\.GKMB ]+?) \\]<").getMatch(1);
+                    if (name != null) {
+                        singlelink.setName(name);
+                        singlelink.setAvailable(true);
+                    }
+                    if (size != null) {
+                        singlelink.setDownloadSize(SizeFormatter.getSize(size.trim()));
+                    }
+                    if (fp != null) {
+                        fp.add(singlelink);
+                    }
+                    decryptedLinks.add(singlelink);
+                    distribute(singlelink);
+                }
+                sleep(250, param);
+                ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage("?UserFile_page=" + (pageIndex++));
             }
         } else {
             final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc/file/" + uid);
@@ -119,7 +132,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             }
             decryptedLinks.add(singlink);
         }
-
         return decryptedLinks;
     }
 }
