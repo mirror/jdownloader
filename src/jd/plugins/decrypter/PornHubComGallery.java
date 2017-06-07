@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/album/\\d+" })
 public class PornHubComGallery extends PluginForDecrypt {
-
     public PornHubComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,6 +38,7 @@ public class PornHubComGallery extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replaceAll("https://", "http://");
         parameter = parameter.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "http://www.");
+        br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {
@@ -67,13 +66,11 @@ public class PornHubComGallery extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 }
