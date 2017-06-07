@@ -104,7 +104,7 @@ public class UJCECheck {
 
     public static void main(String[] args) {
         removeCryptographyRestrictions();
-        if (isRestrictedCryptography()) {
+        if (!isRestrictedCryptography()) {
             System.out.println("Hello World!");
         } else {
             System.out.println("Sad world :(");
