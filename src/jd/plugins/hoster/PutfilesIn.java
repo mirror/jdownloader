@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -48,7 +47,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putfiles.in" }, urls = { "https?://(?:www\\.)?putfiles\\.in/[A-Za-z0-9]+" })
 public class PutfilesIn extends PluginForHost {
-
     public PutfilesIn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -63,7 +61,6 @@ public class PutfilesIn extends PluginForHost {
      * captchatype: null<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -80,7 +77,7 @@ public class PutfilesIn extends PluginForHost {
     private static final boolean           supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
-    private static final boolean           useOldLoginMethod                            = true;
+    private static final boolean           useOldLoginMethod                            = false;
     private static final boolean           enable_RANDOM_UA                             = false;
     /* Known errors */
     private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -94,7 +91,6 @@ public class PutfilesIn extends PluginForHost {
     private static final String            errortext_ERROR_SERVER                       = "Server error";
     private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
     private static final int               free_MAXCHUNKS                               = 1;
@@ -105,7 +101,6 @@ public class PutfilesIn extends PluginForHost {
     private static final boolean           account_PREMIUM_RESUME                       = true;
     private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = -1;
-
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
@@ -647,5 +642,4 @@ public class PutfilesIn extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }
