@@ -120,7 +120,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     }
 
     protected synchronized boolean hasErrors() {
-        return errorMap.isEmpty();
+        return !errorMap.isEmpty();
     }
 
     protected synchronized int getErrors(HTTPChunk.ERROR error) {
@@ -496,7 +496,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         if (isFileComplete()) {
             return true;
         }
-        if (externalDownloadStop() == false && hasErrors()) {
+        if (externalDownloadStop() == false && !hasErrors()) {
             logger.info("isDownloadComplete: errorFree=true");
             return true;
         }
