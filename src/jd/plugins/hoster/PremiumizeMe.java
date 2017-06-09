@@ -57,21 +57,23 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UnavailableHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/(torrentdl|dl)/.+" })
 public class PremiumizeMe extends UseNet {
-    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
-    private static final String                                       SENDDEBUGLOG       = "SENDDEBUGLOG";
-    private static final String                                       NOCHUNKS           = "NOCHUNKS";
-    private static final String                                       FAIL_STRING        = "premiumizeme";
+
+    private static MultiHosterManagement mhm          = new MultiHosterManagement("premiumize.me");
+    private static final String          SENDDEBUGLOG = "SENDDEBUGLOG";
+    private static final String          NOCHUNKS     = "NOCHUNKS";
+    private static final String          FAIL_STRING  = "premiumizeme";
 
     /*
      * IMPORTANT INFORMATION: According to their support we can 'hammer' their API every 5 minutes so we could even make an
@@ -317,7 +319,7 @@ public class PremiumizeMe extends UseNet {
             } else {
                 link.setProperty("timesfailed" + FAIL_STRING + "_unknown2", Property.NULL);
                 logger.info("Unknown error2 - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l, "error2");
+                mhm.putError(account, link, 60 * 60 * 1000l, "error2");
             }
         }
     }
@@ -333,38 +335,7 @@ public class PremiumizeMe extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            synchronized (hostUnavailableMap) {
-                HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
-                UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
-                if (nue != null) {
-                    final Long lastUnavailable = nue.getErrorTimeout();
-                    final String errorReason = nue.getErrorReason();
-                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                        final long wait = lastUnavailable - System.currentTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                    } else if (lastUnavailable != null) {
-                        unavailableMap.remove(link.getHost());
-                        if (unavailableMap.size() == 0) {
-                            hostUnavailableMap.remove(null);
-                        }
-                    }
-                }
-                unavailableMap = hostUnavailableMap.get(account);
-                nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
-                if (nue != null) {
-                    final Long lastUnavailable = nue.getErrorTimeout();
-                    final String errorReason = nue.getErrorReason();
-                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                        final long wait = lastUnavailable - System.currentTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                    } else if (lastUnavailable != null) {
-                        unavailableMap.remove(link.getHost());
-                        if (unavailableMap.size() == 0) {
-                            hostUnavailableMap.remove(account);
-                        }
-                    }
-                }
-            }
+            mhm.runCheck(account, link);
             br = newBrowser();
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
@@ -378,7 +349,7 @@ public class PremiumizeMe extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                 } else {
                     link.setProperty("timesfailed" + FAIL_STRING, Property.NULL);
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Server error");
+                    mhm.putError(account, link, 60 * 60 * 1000l, "Server error");
                 }
             }
             handleAPIErrors(br, account, link);
@@ -394,7 +365,7 @@ public class PremiumizeMe extends UseNet {
                 } else {
                     link.setProperty("timesfailed" + FAIL_STRING + "_unknown", Property.NULL);
                     logger.info("Unknown error - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Unknown Error");
+                    mhm.putError(account, link, 60 * 60 * 1000l, "Unknown Error");
                 }
             }
             dllink = dllink.replaceAll("\\\\/", "/");
@@ -423,6 +394,12 @@ public class PremiumizeMe extends UseNet {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+        // free / expired accounts are pointless adding
+        if ("free".equalsIgnoreCase(type)) {
+            ai.setProperty("multiHostSupport", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+
         String status = type;
         // https://secure.premiumize.me/<extuid>/<port>/proxy.pac
         String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
@@ -506,22 +483,6 @@ public class PremiumizeMe extends UseNet {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout, final String reason) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, UnavailableHost>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            unavailableMap.put(downloadLink.getHost(), nue);
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"status\":(\\d+)").getMatch(0);
         if (statusCode == null) {
@@ -532,34 +493,22 @@ public class PremiumizeMe extends UseNet {
             int status = Integer.parseInt(statusCode);
             switch (status) {
             case 0:
+                // should not happen since we don't allow free accounts... free accounts can not donwload... pointless having them enabled
                 if ("Your account is not premium".equalsIgnoreCase(statusMessage)) {
-                    if (account.getType() == AccountType.FREE) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    } else {
-                        logger.warning("Huston we have a problem, account is picked up as free yet, JD thinks it's premium.");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new AccountRequiredException("Your account type is not supported");
                 }
                 // 20150425
                 // {"result":null,"statusmessage":"Daily limit reached for this host!","status":0}
                 if (statusMessage == null) {
                     statusMessage = "Download limit reached for this host!";
                 }
-                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
-                break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                mhm.putError(account, downloadLink, 10 * 60 * 1000l, statusMessage);
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
                 if (downloadLink.getIntegerProperty("timesfailed" + FAIL_STRING, 0) >= 5) {
                     /* Retried enough times --> Temporarily disable host! */
-                    tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000, "Errorcode 2");
+                    mhm.putError(account, downloadLink, 5 * 60 * 1000l, "Errorcode 2");
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Errorcode 2");
             case 200:
@@ -570,7 +519,7 @@ public class PremiumizeMe extends UseNet {
                 if (statusMessage == null) {
                     statusMessage = "Invalid DownloadLink";
                 }
-                tempUnavailableHoster(null, downloadLink, 3 * 60 * 60 * 1000, statusMessage);
+                mhm.putError(null, downloadLink, 3 * 60 * 60 * 1000l, statusMessage);
                 break;
             case 401:
                 /* not logged in, disable account. */
@@ -602,14 +551,14 @@ public class PremiumizeMe extends UseNet {
                 if (statusMessage == null) {
                     statusMessage = "Hoster currently not possible";
                 }
-                tempUnavailableHoster(null, downloadLink, 30 * 60 * 1000, statusMessage);
+                mhm.putError(null, downloadLink, 30 * 60 * 1000l, statusMessage);
                 break;
             case 500:
                 /* link limit reached, disable plugin for this link */
                 if (statusMessage == null) {
                     statusMessage = "Link limit reached";
                 }
-                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
+                mhm.putError(account, downloadLink, 10 * 60 * 1000l, statusMessage);
                 break;
             case 502:
                 /* unknown technical error, block host for 3 mins */
@@ -634,8 +583,7 @@ public class PremiumizeMe extends UseNet {
                 if (statusMessage == null) {
                     statusMessage = "Fair use limit reached!";
                 }
-                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
-                break;
+                mhm.putError(account, downloadLink, 10 * 60 * 1000l, statusMessage);
             default:
                 /* unknown error, do not try again with this multihoster */
                 if (statusMessage == null) {
@@ -686,6 +634,7 @@ public class PremiumizeMe extends UseNet {
     }
 
     public static class PremiumizeMeAccountFactory extends MigPanel implements AccountBuilderInterface {
+
         /**
          *
          */
@@ -734,6 +683,7 @@ public class PremiumizeMe extends UseNet {
             add(new JLink(getProtocol() + "www.premiumize.me/account"));
             add(idLabel = new JLabel(_GUI.T.premiumize_add_account_idlabel()));
             add(this.name = new ExtTextField() {
+
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
@@ -742,6 +692,7 @@ public class PremiumizeMe extends UseNet {
             name.setHelpText(IDHELP);
             add(new JLabel("PIN:"));
             add(this.pass = new ExtPasswordField() {
+
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
