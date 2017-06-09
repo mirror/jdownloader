@@ -66,7 +66,6 @@ import jd.utils.RazStringBuilder;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
-
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,7 +80,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         KISS_ASIAN,
         KISS_CARTOON,
         KISS_UNKNOWN;
-
         private static HostType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "kissanime")) {
                 return KISS_ANIME;
@@ -278,24 +276,19 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         postPage(ajax, "/External/RSK", "krsk=1378");
-        String postData = ajax.toString();
-        String skey = postData;
-        // used
+        String skey = ajax.toString();
         String varName = br.getRegex("\\\\x67\\\\x65\\\\x74\\\\x53\\\\x65\\\\x63\\\\x72\\\\x65\\\\x74\\\\x4B\\\\x65\\\\x79\"];var ([^=]+)=\\$kissenc").getMatch(0);
-        // used
-        String match1 = br.getRegex("<script[^>]*>\\s*" + varName + " \\+= '([^']+)';\\s*</").getMatch(0);
+        String match1 = br.getRegex("\\]; " + varName + " \\+= '([^']+)';").getMatch(0);
         if (match1 != null) {
-            skey += match1;
+            skey = skey + match1 + skey;
         }
-        // used, modified regex at x\d{3}
-        String[][] match2 = br.getRegex("var _x1 = '([^']+)'.*?x\\d{3}\\('([^']+)',.*?'([^']+)';\\s*</").getMatches();
-        if (match2.length != 0) {
-            skey = match2[0][1] + "9c" + match2[0][0] + skey + match2[0][2];
+        String[] match2 = br.getRegex(varName + " = x951\\('([^']+)',.*?'([^']+)';\\s*</").getRow(0);
+        if (match2 != null && match2.length != 0) {
+            skey = match2[0] + "pkr" + skey + "9bs" + match2[1];
         }
-        // couldn't see this been used
-        String[][] match3 = br.getRegex("'k', 'l', 'm'];[^']+'([^']+)'[^']+'([^']+)';").getMatches();
-        if (match3.length != 0) {
-            skey = match3[0][0] + "uef" + skey + match3[0][1];
+        String[] match3 = br.getRegex(varName + " = x952\\('([^']+)',.*?'([^']+)';\\s*</").getRow(0);
+        if (match3 != null && match3.length != 0) {
+            skey = match3[0] + "n1f" + skey + match3[1];
         }
         return skey;
     }
@@ -589,5 +582,4 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
