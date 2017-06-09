@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,16 +24,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "https?://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" })
 public class PornRabbitComDecrypter extends PornEmbedParser {
-
     public PornRabbitComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -62,5 +59,4 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
