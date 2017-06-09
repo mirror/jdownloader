@@ -56,7 +56,7 @@ public class CrazyshareCc extends PluginForHost {
 
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareBasic Version 0.9.2-psp<br />
+     * YetiShareBasic Version 0.9.2-psp <br />
      * mods:<br />
      * limit-info:<br />
      * protocol: no https<br />
