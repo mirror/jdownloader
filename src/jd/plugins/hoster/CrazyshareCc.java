@@ -60,7 +60,7 @@ public class CrazyshareCc extends PluginForHost {
      * mods:<br />
      * limit-info:<br />
      * protocol: no https<br />
-     * captchatype: reCaptchaV2<br />
+     * captchatype: reCaptchaV2 <br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
     @Override
