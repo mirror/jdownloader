@@ -18,10 +18,9 @@ package jd.plugins.decrypter;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -32,6 +31,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -39,7 +39,6 @@ import org.jdownloader.plugins.components.config.KissanimeToConfig;
 import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -57,28 +56,19 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDHexUtils;
+import jd.utils.RazStringBuilder;
 
 /**
  *
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://kisscartoon\\.(?:me|io)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
+
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    protected Browser prepBrowser(final Browser prepBr, final String host) {
-        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            super.prepBrowser(prepBr, host);
-            /* define custom browser headers and language settings */
-            // this will give you alternative captcha: select an image from selection that best fits provided phrase
-            // prepBr.setCookie(this.getHost(), "AreYouHumanUrlMETHOD", "AreYouHuman2");
-        }
-        return prepBr;
     }
 
     @Override
@@ -91,12 +81,13 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         KISS_ASIAN,
         KISS_CARTOON,
         KISS_UNKNOWN;
+
         private static HostType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "kissanime")) {
                 return KISS_ANIME;
             } else if (StringUtils.containsIgnoreCase(link, "kissasian")) {
                 return KISS_ASIAN;
-            } else if (StringUtils.containsIgnoreCase(link, "kisscartoon")) {
+            } else if (StringUtils.containsIgnoreCase(link, "cartoon")) {
                 return KISS_CARTOON;
             } else {
                 return KISS_UNKNOWN;
@@ -107,12 +98,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         HostType hostType = HostType.parse(param.toString());
-        final String parameter;
-        if (hostType == HostType.KISS_CARTOON) {
-            parameter = param.toString().replace("kisscartoon.me", "kisscartoon.io");
-        } else {
-            parameter = param.toString();
-        }
+        final String parameter = param.toString();
         final KissanimeToConfig pc = PluginJsonConfig.get(KissanimeToConfig.class);
         if (pc == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "User has no config!");
@@ -131,12 +117,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         }
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
         handleHumanCheck(this.br);
-        String title;
-        if (hostType == HostType.KISS_CARTOON) {
-            title = br.getRegex("<title>\\s*(.*?)\\s*Online Free").getMatch(0);
-        } else {
-            title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
-        }
+        String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
         if (title == null) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -153,12 +134,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 getPage(url_base + mirror_param);
             }
             // we have two things we need to base64decode
-            final String[][] quals;
-            if (hostType == HostType.KISS_CARTOON) {
-                quals = getQualsCartoon(br, parameter);
-            } else {
-                quals = getQuals(br);
-            }
+            final String[][] quals = getQuals(br);
             if (quals != null) {
                 String skey = null;
                 String iv = null;
@@ -171,6 +147,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     skey = getSecretKeyAsian();
                     iv = "32b812e9a1321ae0e84af660c4722b3a";
                     break;
+                case KISS_CARTOON:
+                    skey = getSecretKeyCartoon();
+                    iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                 default:
                     break;
                 }
@@ -179,10 +158,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     switch (hostType) {
                     case KISS_ANIME:
                     case KISS_ASIAN:
-                        decode = decodeSingleURL(qual[1], skey, iv);
-                        break;
                     case KISS_CARTOON:
-                        decode = qual[1];
+                        decode = decodeSingleURL(qual[1], skey, iv);
                         break;
                     default:
                         break;
@@ -242,34 +219,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return quals;
     }
 
-    @SuppressWarnings("unchecked")
-    public String[][] getQualsCartoon(final Browser br, final String param) throws Exception {
-        String fid = new Regex(param, "id=(.*)").getMatch(0);
-        final Browser ajax = br.cloneBrowser();
-        postPage(ajax, "https://kisscartoon.io/ajax/anime/load_episodes", "episode_id=" + Encoding.urlEncode(fid));
-        String queryUrl = PluginJSonUtils.getJson(ajax, "value");
-        ajax.getHeaders().put("Content-Type", "application/json");
-        getPage(ajax, queryUrl + "&_=" + System.currentTimeMillis());
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-        List<Object> playlist = (List<Object>) entries.get("playlist");
-        List<Object> sources = (List<Object>) ((LinkedHashMap<String, Object>) playlist.get(0)).get("sources");
-        String[][] quals = new String[sources.size()][3];
-        for (int i = 0; i < sources.size(); i++) {
-            quals[i][0] = "";
-            String fileUrl = (String) ((LinkedHashMap<String, Object>) sources.get(i)).get("file");
-            if (StringUtils.contains(fileUrl, "blogspot.com/")) {
-                // this is redirect bullshit
-                final Browser test = new Browser();
-                test.setFollowRedirects(false);
-                getPage(test, fileUrl);
-                fileUrl = test.getRedirectLocation();
-            }
-            quals[i][1] = fileUrl;
-            quals[i][2] = (String) ((LinkedHashMap<String, Object>) sources.get(i)).get("label");
-        }
-        return quals;
-    }
-
     private String getSecretKeyAnime() {
         String match1 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\",.*?CryptoJS.SHA256\\(").getMatch(0);
         String skey = "nhasasdbasdtene7230asb";
@@ -297,6 +246,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
     private String getSecretKeyAsian() throws Exception {
         final Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         postPage(ajax, "/External/RSK", "krsk=665");
         String postData = ajax.toString();
         String skey = postData;
@@ -316,14 +267,47 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return skey;
     }
 
+    /**
+     * copy of getSecretKeyAnime with slight mods. TODO: not entirely sure this is correct, as we do get padding issues.
+     *
+     * @author raztoki
+     * @author zt333
+     */
+    private String getSecretKeyCartoon() throws Exception {
+        final Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        postPage(ajax, "/External/RSK", "krsk=1378");
+        String postData = ajax.toString();
+        String skey = postData;
+        // used
+        String varName = br.getRegex("\\\\x67\\\\x65\\\\x74\\\\x53\\\\x65\\\\x63\\\\x72\\\\x65\\\\x74\\\\x4B\\\\x65\\\\x79\"];var ([^=]+)=\\$kissenc").getMatch(0);
+        // used
+        String match1 = br.getRegex("<script[^>]*>\\s*" + varName + " \\+= '([^']+)';\\s*</").getMatch(0);
+        if (match1 != null) {
+            skey += match1;
+        }
+        // used, modified regex at x\d{3}
+        String[][] match2 = br.getRegex("var _x1 = '([^']+)'.*?x\\d{3}\\('([^']+)',.*?'([^']+)';\\s*</").getMatches();
+        if (match2.length != 0) {
+            skey = match2[0][1] + "9c" + match2[0][0] + skey + match2[0][2];
+        }
+        // couldn't see this been used
+        String[][] match3 = br.getRegex("'k', 'l', 'm'];[^']+'([^']+)'[^']+'([^']+)';").getMatches();
+        if (match3.length != 0) {
+            skey = match3[0][0] + "uef" + skey + match3[0][1];
+        }
+        return skey;
+    }
+
     public String decodeSingleURL(final String encodedString, final String skey, final String iv) {
         String decode = null;
         try {
             byte[] encodedArray = Base64.decode(encodedString);
             String hash = Hash.getSHA256(skey);
             // AES256
-            byte[] byteKey = hexStringToByteArray(hash);
-            byte[] byteIv = hexStringToByteArray(iv);
+            final byte[] byteKey = JDHexUtils.getByteArray(hash);
+            final byte[] byteIv = JDHexUtils.getByteArray(iv);
             SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
             IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
             try {
@@ -355,16 +339,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return decode;
     }
 
-    public static byte[] hexStringToByteArray(String hexString) {
-        byte[] bytes = new byte[hexString.length() / 2];
-        for (int i = 0; i < hexString.length(); i += 2) {
-            String sub = hexString.substring(i, i + 2);
-            Integer intVal = Integer.parseInt(sub, 16);
-            bytes[i / 2] = intVal.byteValue();
-        }
-        return bytes;
-    }
-
     public static boolean isOffline(final Browser br) {
         return br.containsHTML("Page Not Found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404;
     }
@@ -375,7 +349,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             if (isAbort()) {
                 throw new InterruptedException("Aborted");
             }
-            final Form ruh = br.getFormbyAction("/Special/AreYouHuman");
+            final Form ruh = br.getFormbyActionRegex("/Special/AreYouHuman.*");
             // recaptchav2 event can happen here
             if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || ruh != null) {
                 if (ruh == null) {
@@ -405,78 +379,50 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     /**
                      * select an image from selection that best fits provided phrase
                      *
-                     * @date 20170511
+                     * @date 20170511 select multi from image selection that best fits provided phrase
+                     * @date 20170517
+                     *
                      * @author raztoki
                      */
-                    final String phrase = ruh.getRegex("Choose the most suitable image for: <span style=\".*?\">(.*?)</span></p>").getMatch(0);
+                    final String phraseSingle = ruh.getRegex("Choose the most suitable image for: <span style=\".*?\">(.*?)</span></p>").getMatch(0);
+                    final String[] phraseMulti = ruh.getRegex("(Choose the)\\s*<b>(\\w+)</b>\\s*(suitable images for\\s*:)\\s*<span style=\"[^\"]*\">\\s*([^<>]+)\\s*</span>(?:(\\s*and\\s*)<span style=\"[^\"]*\">\\s*([^<>]+)\\s*</span>)*").getRow(0);
                     final String[] captchaImages = ruh.getRegex("('|\")(/Special/CapImg\\?f=.*?)\\1").getColumn(1);
-                    if (phrase == null || captchaImages == null || captchaImages.length == 0) {
+                    if (captchaImages == null || captchaImages.length == 0) {
                         throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                     }
-                    final BufferedImage[] images = new BufferedImage[captchaImages.length];
-                    int i = -1;
-                    for (final String ci : captchaImages) {
-                        // download each image
-                        URLConnectionAdapter con = null;
-                        try {
-                            i++;
-                            final Browser img = br.cloneBrowser();
-                            img.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
-                            images[i] = ImageIO.read(img.openGetConnection(ci).getInputStream());
-                        } finally {
-                            try {
-                                con.disconnect();
-                            } catch (final Throwable e) {
-                            }
+                    // single click
+                    if (phraseSingle != null) {
+                        final BufferedImage[] images = new BufferedImage[captchaImages.length];
+                        final File stitchedImageOutput = getStitchedImage(captchaImages, images);
+                        final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, null, phraseSingle);
+                        final Integer click = getClickedImageLocation(c, images);
+                        ruh.put("answerCap", String.valueOf(click));
+                        submitForm(br, ruh);
+                        // error checking, they say wrong when answer is correct... happens in browser also.
+                        if (br.toString().startsWith("Wrong answer. Click <a href='/Special/AreYouHuman?")) {
+                            final String link = br.getRegex("<a href=('|\")(.*?)\\1").getMatch(1);
+                            getPage(link);
+                            continue loop;
                         }
+                        return;
                     }
-                    // display each image within single row, merged image, show in dialog with phrase
-                    // track only the width to determine which image has been clicked.
-                    final Integer[] widths = new Integer[images.length];
-                    // analyse the images
-                    int h = 0;
-                    int w = 0;
-                    i = 0;
-                    for (final BufferedImage bi : images) {
-                        if (h < bi.getHeight()) {
-                            h = bi.getHeight();
+                    // multi click
+                    else if (phraseMulti != null && phraseMulti.length != 0) {
+                        final BufferedImage[] images = new BufferedImage[captchaImages.length];
+                        final File stitchedImageOutput = getStitchedImage(captchaImages, images);
+                        final MultiClickedPoint c = getMultiCaptchaClickedPoint(getHost(), stitchedImageOutput, param, null, RazStringBuilder.buildString(phraseMulti));
+                        final Integer[] clicks = getClickedImageLocation(c, images);
+                        ruh.put("answerCap", Encoding.urlEncode(RazStringBuilder.buildString(clicks, ",") + ","));
+                        submitForm(br, ruh);
+                        // error checking, they say wrong when answer is correct... happens in browser also.
+                        if (br.toString().startsWith("Wrong answer. Click <a href='/Special/AreYouHuman")) {
+                            final String link = br.getRegex("<a href=('|\")(.*?)\\1").getMatch(1);
+                            getPage(link);
+                            continue loop;
                         }
-                        // with width we want total
-                        w += bi.getWidth();
-                        widths[i++] = bi.getWidth();
-                    }
-                    final BufferedImage stichedImageBuffer = IconIO.createEmptyImage(w, h);
-                    final Graphics graphic = stichedImageBuffer.getGraphics();
-                    w = 0;
-                    for (final BufferedImage bi : images) {
-                        graphic.drawImage(bi, w, 0, null);
-                        w += bi.getWidth();
-                    }
-                    final File stitchedImageOutput = getLocalCaptchaFile(".jpg");
-                    ImageIO.write(stichedImageBuffer, "jpg", stitchedImageOutput);
-                    final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, null, phrase);
-                    // determine cords
-                    final int x = c.getX();
-                    i = 0;
-                    int min = 0;
-                    int max = 0;
-                    for (final BufferedImage bi : images) {
-                        // image width
-                        max = min + widths[i];
-                        if (x >= min && x <= max) {
-                            // return count;
-                            ruh.put("answerCap", String.valueOf(i));
-                            submitForm(br, ruh);
-                            // error checking, they say wrong when answer is correct... happens in browser also.
-                            if (br.toString().startsWith("Wrong answer. Click <a href='/Special/AreYouHuman?")) {
-                                final String link = br.getRegex("<a href=('|\")(.*?)\\1").getMatch(1);
-                                getPage(link);
-                                continue loop;
-                            }
-                            return;
-                        }
-                        min = max;
-                        i++;
+                        return;
+                    } else {
+                        throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                     }
                 } else if (ruh.containsHTML("sweetcaptcha\\.com/api/v\\d+/apps/")) {
                     new CaptchaHelperCrawlerPluginSweetCaptcha(this, br).setFormValues(ruh);
@@ -489,9 +435,97 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 break;
             }
         }
-        if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || br.getFormbyAction("/Special/AreYouHuman") != null) {
+        if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || br.getFormbyActionRegex("/Special/AreYouHuman.*") != null || br.toString().startsWith("Wrong answer. Click <a href='/Special/AreYouHuman")) {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
+    }
+
+    private Integer[] getClickedImageLocation(final MultiClickedPoint c, final BufferedImage[] images) {
+        final Integer[] results = new Integer[c.getX().length];
+        // determine cords
+        loop: for (int a = 0; a < results.length; a++) {
+            int x = c.getX()[a];
+            int i = 0;
+            int min = 0;
+            int max = 0;
+            for (final BufferedImage bi : images) {
+                // image width
+                max = min + widths[i];
+                if (x >= min && x <= max) {
+                    // return count;
+                    results[a] = i;
+                    continue loop;
+                }
+                min = max;
+                i++;
+            }
+        }
+        return results;
+    }
+
+    private Integer getClickedImageLocation(final ClickedPoint c, final BufferedImage[] images) {
+        // determine cords
+        final int x = c.getX();
+        int i = 0;
+        int min = 0;
+        int max = 0;
+        for (final BufferedImage bi : images) {
+            // image width
+            max = min + widths[i];
+            if (x >= min && x <= max) {
+                // return count;
+                return i;
+            }
+            min = max;
+            i++;
+        }
+        return null;
+    }
+
+    private Integer[] widths = null;
+
+    private File getStitchedImage(final String[] captchaImages, final BufferedImage[] images) throws IOException {
+        int i = -1;
+        for (final String ci : captchaImages) {
+            // download each image
+            URLConnectionAdapter con = null;
+            try {
+                i++;
+                final Browser img = br.cloneBrowser();
+                img.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                images[i] = ImageIO.read(img.openGetConnection(ci).getInputStream());
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        // display each image within single row, merged image, show in dialog with phrase
+        // track only the width to determine which image has been clicked.
+        widths = new Integer[images.length];
+        // analyse the images
+        int h = 0;
+        int w = 0;
+        i = 0;
+        for (final BufferedImage bi : images) {
+            if (h < bi.getHeight()) {
+                h = bi.getHeight();
+            }
+            // with width we want total
+            w += bi.getWidth();
+            widths[i++] = bi.getWidth();
+        }
+        final BufferedImage stichedImageBuffer = IconIO.createEmptyImage(w, h);
+        final Graphics graphic = stichedImageBuffer.getGraphics();
+        w = 0;
+        for (final BufferedImage bi : images) {
+            graphic.drawImage(bi, w, 0, null);
+            w += bi.getWidth();
+        }
+        final File stitchedImageOutput = getLocalCaptchaFile(".jpg");
+        ImageIO.write(stichedImageBuffer, "jpg", stitchedImageOutput);
+        return stitchedImageOutput;
     }
 
     public String refreshVideoDirectUrl(final DownloadLink dl, final Browser br) throws Exception {
@@ -508,12 +542,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         handleHumanCheck(br);
         HostType hostType = HostType.parse(source_url);
         /* Find new directlink for original quality */
-        final String[][] quals;
-        if (hostType == HostType.KISS_CARTOON) {
-            quals = getQualsCartoon(this.br, source_url);
-        } else {
-            quals = getQuals(this.br);
-        }
+        final String[][] quals = getQuals(this.br);
         if (quals != null) {
             String skey = null;
             String iv = null;
@@ -526,6 +555,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 skey = getSecretKeyAsian();
                 iv = "32b812e9a1321ae0e84af660c4722b3a";
                 break;
+            case KISS_CARTOON:
+                skey = getSecretKeyCartoon();
+                iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
             default:
                 break;
             }
@@ -537,10 +569,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 switch (hostType) {
                 case KISS_ANIME:
                 case KISS_ASIAN:
-                    directlink = decodeSingleURL(qual[1], skey, iv);
-                    break;
                 case KISS_CARTOON:
-                    directlink = qual[1];
+                    directlink = decodeSingleURL(qual[1], skey, iv);
                     break;
                 default:
                     break;
@@ -559,4 +589,5 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
+
 }
