@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -66,15 +65,12 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+(/.*)?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" })
 public class FileFactory extends PluginForHost {
-
     // DEV NOTES
     // other: currently they 302 redirect all non www. to www. which kills most of this plugin.
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
-
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-
     private static AtomicInteger       maxPrem                      = new AtomicInteger(1);
     private static AtomicInteger       maxFree                      = new AtomicInteger(1);
     private final String               NO_SLOT                      = ">All free download slots";
@@ -141,9 +137,8 @@ public class FileFactory extends PluginForHost {
         final String errRetry = "retry_" + errCode;
         final int tri = this.getDownloadLink().getIntegerProperty(errRetry, 0) + 1;
         this.getDownloadLink().setProperty(errRetry, (tri >= errTries ? 0 : tri));
-        final String errMsg = (tri >= errTries ? "Exausted try count " : "Try count ") + tri + ", for '" + errCode + "' error";
+        String errMsg = (tri >= errTries ? "Exausted try count " : "Try count ") + tri + ", for '" + errCode + "' error";
         logger.warning(errMsg);
-
         if (postDownload && freeDownload) {
             if (br.containsHTML("have exceeded the download limit|Please try again in <span>")) {
                 long waittime = 10 * 60 * 1000l;
@@ -180,7 +175,11 @@ public class FileFactory extends PluginForHost {
                 }
             }
             if (br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">You have recently started a download") || errCode == 275) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errMsg, 5 * 60 * 1000l);
+                if (br.containsHTML("You are currently downloading too many files at once")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are currently downloading too many files at once", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have exceeded the hourly limit for free users", 5 * 60 * 1000l);
+                }
             }
             if (errCode == 266) {
                 // <strong>Download error (266)</strong><br>This download is not yet ready. Please retry your download and wait for the
@@ -190,7 +189,7 @@ public class FileFactory extends PluginForHost {
                     // want to see this issue reported to statserv so I can monitor / report back to admin!
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "266 IS STILL HAPPENING!");
                 }
-                throw new PluginException(LinkStatus.ERROR_RETRY, errMsg, 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "This download is not yet ready", 2 * 60 * 1000l);
             }
         }
         if (errCode == 265) {
@@ -463,10 +462,8 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (url == null) {
-
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
-
             final String[] eval = br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
             if (eval != null) {
                 // first load js
@@ -483,10 +480,8 @@ public class FileFactory extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
         }
         return url;
-
     }
 
     @Override
@@ -551,7 +546,6 @@ public class FileFactory extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     br.getPage(urlWithFilename);
-
                     // Sometimes there is an ad
                     final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
                     if (skipAds != null) {
@@ -570,7 +564,6 @@ public class FileFactory extends PluginForHost {
                         logger.warning("getUrl is broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-
                     wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                     waittime = 60 * 1000l;
                     if (wait != null) {
@@ -930,7 +923,6 @@ public class FileFactory extends PluginForHost {
                 }
                 downloadLink.setAvailable(true);
             }
-
         }
         return AvailableStatus.TRUE;
     }
@@ -1068,7 +1060,6 @@ public class FileFactory extends PluginForHost {
     }
 
     private final AtomicBoolean useAPI  = new AtomicBoolean(true);
-
     private String              fuid    = null;
     private String              dllink  = null;
     private int                 chunks  = 0;
@@ -1460,5 +1451,4 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
 }
