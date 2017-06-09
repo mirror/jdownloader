@@ -156,6 +156,7 @@ public class HighpornNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepStreamHeaders(br);
+        br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
         boolean Allow_resume = cfg.getBooleanProperty("Allow_resume", false);
         logger.info("Allow_resume: " + Allow_resume);
         if (Allow_resume) {
