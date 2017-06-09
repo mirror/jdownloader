@@ -118,6 +118,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 dl.setProperty("spaceid", spaceIDLonger);
                 dl.setProperty("fileid", fileID);
                 dl.setProperty("versionid", versionId);
+                dl.setContentUrl(parameter);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
