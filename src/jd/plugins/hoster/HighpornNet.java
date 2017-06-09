@@ -186,6 +186,7 @@ public class HighpornNet extends PluginForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 final String contenttype = con.getContentType();
                 final long contentlength = con.getLongContentLength();
