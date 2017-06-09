@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,8 +26,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.RazStringBuilder;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class RLCsh extends PluginForDecrypt {
@@ -51,7 +54,7 @@ public class RLCsh extends PluginForDecrypt {
         String[] ret = new String[names.length];
 
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|sitemap|reset_password|register_new|mailto|(.*?)\\.php|https:).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+            ret[i] = "(http://[\\w\\.]*?" + Pattern.quote(names[i]) + "/(?!\\?ref=|promote|sitemap|reset_password|register_new|mailto|(.*?)\\.php|https:).+)|(http://(?!master)[\\w\\-]{5,16}\\." + Pattern.quote(names[i]) + ")";
 
         }
         return ret;
@@ -72,7 +75,7 @@ public class RLCsh extends PluginForDecrypt {
         // cleanup rules.
 
         // generic cleanup
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("<\\!(--.*?--)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
@@ -89,45 +92,80 @@ public class RLCsh extends PluginForDecrypt {
     private final String INVALIDLINKS = "http://images\\..+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         br.getPage(parameter);
         correctBR();
-        String link = new Regex(correctedBR, "<META HTTP\\-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
+        String link = new Regex(correctedBR, "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
         if (link == null) {
-            link = new Regex(correctedBR, "onClick=\"top\\.location=\\'(.*?)\\'\">").getMatch(0);
+            link = new Regex(correctedBR, "onClick=\"top\\.location='(.*?)'\">").getMatch(0);
             if (link == null) {
                 // urlcash fail over.
                 link = new Regex(correctedBR, "linkDestUrl = '([^']+)").getMatch(0);
                 if (link == null) {
-                    link = new Regex(correctedBR, "<iframe name=\\'redirectframe\\' id=\\'redirectframe\\'.*?src=\\'(.*?)\\'.*?></iframe>").getMatch(0);
+                    link = new Regex(correctedBR, "<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
                 }
             }
         }
-
         if (link == null) {
             link = br.getRedirectLocation();
-            if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from|register_new\\.php\"")) {
+            if (link == null && br.containsHTML("<title>URLCash\\.net - An URL forwarding service where you make money from|register_new\\.php\"")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
-            } else {
-                final String[] piclinks = br.getRegex("\\'(http://[a-z0-9]+\\.imgchili\\.com/[^<>\"]*?)\\'").getColumn(0);
-                if (piclinks != null && piclinks.length != 0) {
-                    for (final String piclink : piclinks) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(piclink)));
-                    }
-                    return decryptedLinks;
-                }
-                logger.warning("Decrypter broken for link:" + parameter);
-                return null;
             }
         }
+        if (link != null) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            return decryptedLinks;
+        }
 
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+        // image galleries.
+        final String fpName = br.getRegex("<strong>(.*?)</strong>").getMatch(0);
+        final FilePackage fp;
+        if (fpName != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlOnlyDecode(fpName));
+        } else {
+            fp = null;
+        }
+        final String pattern = RazStringBuilder.buildString(getAnnotationNames(), "|", true);
+        // lets find all images based on error...
+        final String[] picshtml = br.getRegex("<a\\s+[^>]+><\\s*img\\s+[^>]*/img/imagehost_unavailable[^>]+>").getColumn(-1);
+        if (picshtml != null && picshtml.length != 0) {
+            for (final String pic : picshtml) {
+                // src could be a thumb nail! we don't want that persay!
+                final String href = new Regex(pic, "href=('|\")(.*?)\\1").getMatch(1);
+                final String src = new Regex(pic, "src=('|\")(.*?)\\1").getMatch(1);
+                // if href is linking back into plugin.. then treat it as full size image!
+                final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(href != null && new Regex(href, pattern).matches() ? href : src));
+                if (fp != null) {
+                    fp.add(dl);
+                }
+                decryptedLinks.add(dl);
+            }
+        }
+        // fail over, with generic regex... this has downside, as it can pickup thumbnails...
+        if (decryptedLinks.isEmpty()) {
+            final String[] piclinks = br.getRegex("'(http://[a-z0-9]+\\.(?:image[^/]+|img[^/]+)/[^<>\"]*?)'").getColumn(0);
+            if (piclinks != null && piclinks.length != 0) {
+                for (final String piclink : piclinks) {
+                    final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(piclink));
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    decryptedLinks.add(dl);
+                }
+            }
+        }
+        if (decryptedLinks.isEmpty()) {
+            logger.warning("Decrypter broken for link:" + parameter);
+            return null;
+        }
+
         return decryptedLinks;
     }
 
