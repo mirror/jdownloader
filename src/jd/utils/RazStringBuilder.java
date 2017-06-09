@@ -11,7 +11,6 @@
  * @email  raztoki <atsign> gmail <period> com
  *
  */
-
 package jd.utils;
 
 import java.util.regex.Pattern;
@@ -22,7 +21,6 @@ import java.util.regex.Pattern;
  * @author raztoki
  */
 public class RazStringBuilder {
-
     /**
      * to build 'String' from 'Object[]'. Using default separator ' ' (space),
      *
@@ -52,21 +50,22 @@ public class RazStringBuilder {
      * @return
      */
     public static String buildString(final Object[] array, final String separator, final boolean pattern) {
-        if (array == null || separator == null) {
+        if (array != null) {
+            final StringBuilder s = new StringBuilder();
+            for (final Object elem : array) {
+                if (s.length() != 0 && separator != null) {
+                    s.append(separator);
+                }
+                if (elem instanceof String) {
+                    final String value = ((String) elem).trim();
+                    s.append(pattern ? Pattern.quote(value) : value);
+                } else {
+                    s.append(String.valueOf(elem));
+                }
+            }
+            return s.toString();
+        } else {
             return null;
         }
-        final StringBuilder s = new StringBuilder();
-        for (final Object ray : array) {
-            if (s.length() != 0) {
-                s.append(separator);
-            }
-            if (ray instanceof String) {
-                s.append(pattern ? Pattern.quote(String.valueOf(ray).trim()) : String.valueOf(ray).trim());
-            } else {
-                s.append(ray);
-            }
-        }
-        return s.toString();
     }
-
 }
