@@ -193,7 +193,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             if (!dl.getConnection().isContentDisposition()) {
                 /* download is not contentdisposition, so remove this host from premiumHosts list */
                 br.followConnection();
-                if (br.containsHTML("Not enough credits")) {
+                if (br.containsHTML("Not enough credits") || br.containsHTML("insufficient credits")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 updateCredits = false;
@@ -244,7 +244,7 @@ public class SuperLoadCz extends antiDDoSForHost {
                 } else if (StringUtils.equalsIgnoreCase(error, "unsupportedServer")) {
                     logger.info("Superload.cz says 'unsupported server', disabling real host");
                     mhm.putError(null, link, 5 * 60 * 1000l, "Unsuported Server");
-                } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits")) {
+                } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits") || StringUtils.equalsIgnoreCase(error, "insufficient credits")) {
                     logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (StringUtils.equalsIgnoreCase(error, "no credits")) {
