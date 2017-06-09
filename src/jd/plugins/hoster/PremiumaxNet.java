@@ -44,20 +44,17 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UnavailableHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
 
-    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
-    private static final String                                       NOCHUNKS           = "NOCHUNKS";
-    private static final String                                       MAINPAGE           = "http://premiumax.net";
-    private static final String                                       NICE_HOST          = "premiumax.net";
-    private static final String                                       NICE_HOSTproperty  = "premiumaxnet";
-
-    private Account                                                   currAcc            = null;
-    private DownloadLink                                              currDownloadLink   = null;
+    private static MultiHosterManagement mhm               = new MultiHosterManagement("premiumax.net");
+    private static final String          NOCHUNKS          = "NOCHUNKS";
+    private static final String          MAINPAGE          = "http://premiumax.net";
+    private static final String          NICE_HOST         = "premiumax.net";
+    private static final String          NICE_HOSTproperty = "premiumaxnet";
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,11 +64,6 @@ public class PremiumaxNet extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return "http://www.premiumax.net/more/terms-and-conditions.html";
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
     }
 
     @Override
@@ -86,7 +78,6 @@ public class PremiumaxNet extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -158,40 +149,7 @@ public class PremiumaxNet extends antiDDoSForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
-            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(null);
-                    }
-                }
-            }
-            unavailableMap = hostUnavailableMap.get(account);
-            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         String dllink = null;
 
         synchronized (LOCK) {
@@ -207,33 +165,32 @@ public class PremiumaxNet extends antiDDoSForHost {
                 dllink = brc.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl\\d*/[a-z0-9]+/?)\"").getMatch(0);
                 if (dllink == null) {
                     if (brc.getHttpConnection().getResponseCode() == 500) {
-                        handleErrorRetries(link, "500 Internal Server Error", 20, 5 * 60 * 1000l);
+                        handleErrorRetries(link, account, "500 Internal Server Error", 20, 5 * 60 * 1000l);
                     } else if (brc.containsHTML("temporary problem")) {
                         logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
-                        tempUnavailableHoster(60 * 60 * 1000l, "Temporary MultiHoster issue (Disabled Host)");
+                        mhm.putError(account, link, 60 * 60 * 1000l, "Temporary MultiHoster issue (Disabled Host)");
                     } else if (brc.containsHTML("You do not have the rights to download from")) {
                         logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
-                        tempUnavailableHoster(60 * 60 * 1000l, "No rights to download from " + link.getHost() + " (Disabled Host)");
+                        mhm.putError(account, link, 60 * 60 * 1000l, "No rights to download from " + link.getHost() + " (Disabled Host)");
                     } else if (brc.containsHTML("We do not support your link")) {
                         logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
-                        this.currAcc = null;
-                        tempUnavailableHoster(3 * 60 * 60 * 1000l, "Unsupported link format (Disabled Host)");
+                        // global issue
+                        mhm.putError(null, link, 3 * 60 * 60 * 1000l, "Unsupported link format (Disabled Host)");
                     } else if (brc.containsHTML("You only can download")) {
                         /* We're too fast - usually this should not happen */
-                        handleErrorRetries(link, "Too many active connections", 10, 5 * 60 * 1000l);
+                        handleErrorRetries(link, account, "Too many active connections", 10, 5 * 60 * 1000l);
                     } else if (brc.containsHTML("> Our server can't connect to")) {
-                        handleErrorRetries(link, "cantconnect", 20, 5 * 60 * 1000l);
+                        handleErrorRetries(link, account, "cantconnect", 20, 5 * 60 * 1000l);
                     } else if (brc.toString().equalsIgnoreCase("Traffic limit exceeded") || brc.containsHTML("^<div class=\"res_bad\">Traffic limit exceeded</div>")) {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
-                        tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
+                        mhm.putError(account, link, determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
                     } else if (brc.toString().equalsIgnoreCase("nginx error") || brc.containsHTML("There are too many attempts")) {
                         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nginx Error", 30 * 1000l);
-                        dumpAccountSessionInfo();
+                        dumpAccountSessionInfo(account);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     } else if (brc.containsHTML(">\\s*Our [\\w\\-\\.]+ account has reach bandwidth limit\\s*<")) {
                         // global issue
-                        this.currAcc = null;
-                        tempUnavailableHoster(1 * 60 * 60 * 1000l, "Multihoster has no download traffic for " + link.getHost());
+                        mhm.putError(null, link, 1 * 60 * 60 * 1000l, "Multihoster has no download traffic for " + link.getHost());
                     } else if (brc.containsHTML("<font color=red>\\s*Link Dead\\s*!!!\\s*</font>")) {
                         // not trust worthy in my opinion. see jdlog://0535035891641
                         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -245,11 +202,10 @@ public class PremiumaxNet extends antiDDoSForHost {
                          * document.createElement("iframe");...
                          */
                         // this error is multihoster wide, not specific to account... -raztoki20160921
-                        this.currAcc = null;
-                        tempUnavailableHoster(15 * 60 * 1000l, "Provider has no account's available to download with.");
+                        mhm.putError(null, link, 15 * 60 * 1000l, "Provider has no account's available to download with.");
                     } else {
                         // final failover! dllink == null
-                        handleErrorRetries(link, "dllinknullerror", 10, 5 * 60 * 1000l);
+                        handleErrorRetries(link, account, "dllinknullerror", 10, 5 * 60 * 1000l);
                     }
                 }
             }
@@ -261,7 +217,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
-                handleErrorRetries(link, "404servererror", 10, 5 * 60 * 1000l);
+                handleErrorRetries(link, account, "404servererror", 10, 5 * 60 * 1000l);
             }
             br.followConnection();
             logger.info("Unhandled download error on premiumax.net: " + br.toString());
@@ -367,18 +323,18 @@ public class PremiumaxNet extends antiDDoSForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(DownloadLink link, final String error, final int maxRetries, final long disableTime) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+    private void handleErrorRetries(final DownloadLink link, final Account account, final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            link.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             sleep(5000l, link);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            link.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime, error);
+            mhm.putError(account, link, disableTime, error);
         }
     }
 
@@ -482,7 +438,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                 account.setProperty("ua", br.getHeaders().get("User-Agent"));
                 return true;
             } catch (final PluginException e) {
-                dumpAccountSessionInfo();
+                dumpAccountSessionInfo(account);
                 throw e;
             } finally {
                 br.setFollowRedirects(ifrd);
@@ -490,32 +446,14 @@ public class PremiumaxNet extends antiDDoSForHost {
         }
     }
 
-    private void dumpAccountSessionInfo() throws PluginException {
-        if (currAcc == null) {
+    private void dumpAccountSessionInfo(final Account account) throws PluginException {
+        if (account == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        currAcc.setProperty("name", Property.NULL);
-        currAcc.setProperty("password", Property.NULL);
-        currAcc.setProperty("cookies", Property.NULL);
-        currAcc.setProperty("ua", Property.NULL);
-    }
-
-    private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
-        if (this.currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-
-        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, UnavailableHost>();
-                hostUnavailableMap.put(this.currAcc, unavailableMap);
-            }
-            unavailableMap.put(this.currDownloadLink.getHost(), nue);
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
+        account.setProperty("name", Property.NULL);
+        account.setProperty("password", Property.NULL);
+        account.setProperty("cookies", Property.NULL);
+        account.setProperty("ua", Property.NULL);
     }
 
     @Override

@@ -48,24 +48,25 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.UnavailableHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.ZeveraApiTracker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
+
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
-    private static ZeveraApiTracker                                   API                = new ZeveraApiTracker();
-    private static final String                                       mName              = "zevera.com";
-    private static final String                                       NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");
-    private static final String                                       mProt              = "http://";
-    private String                                                    mServ              = mProt + API.get() + mName;
-    private static Object                                             LOCK               = new Object();
-    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
-    private static final String                                       NOCHUNKS           = "NOCHUNKS";
-    private Account                                                   currAcc            = null;
-    private DownloadLink                                              currDownloadLink   = null;
+    private static ZeveraApiTracker      API               = new ZeveraApiTracker();
+    private static final String          mName             = "zevera.com";
+    private static final String          NICE_HOSTproperty = mName.replaceAll("(\\.|\\-)", "");
+    private static final String          mProt             = "http://";
+    private String                       mServ             = mProt + API.get() + mName;
+    private static Object                LOCK              = new Object();
+    private static MultiHosterManagement mhm               = new MultiHosterManagement("zevera.com");
+    private static final String          NOCHUNKS          = "NOCHUNKS";
+    private Account                      currAcc           = null;
+    private DownloadLink                 currDownloadLink  = null;
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -314,44 +315,13 @@ public class ZeveraCom extends antiDDoSForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(error + " -> Disabling current host");
-            tempUnavailableHoster(timeout, error);
+            mhm.putError(this.currAcc, this.currDownloadLink, timeout, error);
         }
     }
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
-            UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(null);
-                    }
-                }
-            }
-            unavailableMap = hostUnavailableMap.get(account);
-            nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         br.setFollowRedirects(false);
         login(account, false);
         setConstants(account, link);
@@ -407,11 +377,10 @@ public class ZeveraCom extends antiDDoSForHost {
             handleErrorRetries("dllink_null_redirect", 20, 1 * 60 * 60 * 1000l);
         } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
             // out of traffic for that given host for that given account.
-            tempUnavailableHoster(1 * 60 * 60 * 1000l, "No traffic left for this host.");
+            mhm.putError(this.currAcc, this.currDownloadLink, 1 * 60 * 60 * 1000l, "No traffic left for this host.");
         } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+$").matches()) {
             // out of traffic for that given host for whole of multihoster, set to null account to prevent retry across different accounts.
-            this.currAcc = null;
-            tempUnavailableHoster(30 * 60 * 1000l, "No traffic left for this host.");
+            mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "No traffic left for this host.");
         } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
             // we assume that they might have other error types for that same URL.
             handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
@@ -543,22 +512,6 @@ public class ZeveraCom extends antiDDoSForHost {
     private Form getMoreForm(final Account account) {
         final Form more = br.getFormbyActionRegex("(?:\\./)?OfferLogin\\.aspx\\?login=" + Pattern.quote(Encoding.urlEncode(account.getUser())) + "&(?:amp;)?pass=" + Pattern.quote(Encoding.urlEncode(account.getPass())));
         return more;
-    }
-
-    private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
-        if (this.currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, UnavailableHost>();
-                hostUnavailableMap.put(this.currAcc, unavailableMap);
-            }
-            unavailableMap.put(this.currDownloadLink.getHost(), nue);
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     private void showMessage(DownloadLink link, String message) {

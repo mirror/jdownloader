@@ -13,13 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,12 +36,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
-
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.debriditalia.com/premium.php");
@@ -55,7 +53,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
     private static final String                            NOCHUNKS                      = "NOCHUNKS";
     private static final String                            MAX_RETRIES_DL_ERROR_PROPERTY = "MAX_RETRIES_DL_ERROR";
     private static final int                               DEFAULT_MAX_RETRIES_DL_ERROR  = 50;
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap            = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                       = null;
     private DownloadLink                                   currDownloadLink              = null;
@@ -106,12 +103,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
             accountInvalid();
         }
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
-
         getPage("https://debriditalia.com/api.php?hosts");
         final String[] hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final List<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Premium account");
+        ac.setStatus("Premium Account");
         return ac;
     }
 
@@ -156,7 +152,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -172,9 +167,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 }
             }
         }
-
         showMessage(link, "Generating link");
-
         /* since no requests are done with this.br we need to manually set so checkdirectlink is correct */
         prepBrowser(br, "https://debriditalia.com/");
         dllink = checkDirectLink(link, "debriditaliadirectlink");

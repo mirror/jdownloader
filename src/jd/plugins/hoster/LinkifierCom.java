@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.requests.PostRequest;
@@ -17,18 +22,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.UnavailableHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
 
-    private static final String API_KEY = "d046c4309bb7cabd19f49118a2ab25e0";
+    private static MultiHosterManagement mhm     = new MultiHosterManagement("linkifier.com");
+    private static final String          API_KEY = "d046c4309bb7cabd19f49118a2ab25e0";
 
     public LinkifierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -117,56 +117,9 @@ public class LinkifierCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private static WeakHashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new WeakHashMap<Account, HashMap<String, UnavailableHost>>();
-
-    private void tempUnavailableHoster(final DownloadLink downloadLink, final Account account, final long timeout, final String reason) throws PluginException {
-        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, UnavailableHost>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            unavailableMap.put(downloadLink.getHost(), nue);
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     @Override
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
-            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(downloadLink.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(null);
-                    }
-                }
-            }
-            unavailableMap = hostUnavailableMap.get(account);
-            nue = unavailableMap != null ? unavailableMap.get(downloadLink.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
-
+        mhm.runCheck(account, downloadLink);
         final HashMap<String, Object> downloadJson = new HashMap<String, Object>();
         downloadJson.put("login", account.getUser());
         downloadJson.put("md5Pass", Hash.getMD5(account.getPass()));
@@ -226,10 +179,10 @@ public class LinkifierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (StringUtils.containsIgnoreCase(errorMsg, "Customer reached daily limit for current hoster")) {
-                tempUnavailableHoster(downloadLink, account, 60 * 60 * 1000l, errorMsg);
+                mhm.putError(account, downloadLink, 60 * 60 * 1000l, errorMsg);
             }
             if (StringUtils.containsIgnoreCase(errorMsg, "Accounts are maxed out for current hoster")) {
-                tempUnavailableHoster(downloadLink, account, 60 * 60 * 1000l, errorMsg);
+                mhm.putError(account, downloadLink, 60 * 60 * 1000l, errorMsg);
             }
             if (StringUtils.containsIgnoreCase(errorMsg, "Downloads blocked until")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

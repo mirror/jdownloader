@@ -25,6 +25,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,25 +46,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.UnavailableHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "" })
 public class RapidsPl extends PluginForHost {
 
-    private static WeakHashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap      = new WeakHashMap<Account, HashMap<String, UnavailableHost>>();
-    private static final String                                           NOCHUNKS                = "NOCHUNKS";
+    private static MultiHosterManagement                     mhm                     = new MultiHosterManagement("rapids.pl");
+    private static final String                              NOCHUNKS                = "NOCHUNKS";
 
-    private static final String                                           NICE_HOST               = "rapids.pl";
-    private static final String                                           NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                                           COOKIE_HOST             = "http://" + NICE_HOST;
+    private static final String                              NICE_HOST               = "rapids.pl";
+    private static final String                              NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                              COOKIE_HOST             = "http://" + NICE_HOST;
 
-    private static WeakHashMap<Account, Map<String, Object>>              SUPPORTED_HOST_SETTINGS = new WeakHashMap<Account, Map<String, Object>>();
+    private static WeakHashMap<Account, Map<String, Object>> SUPPORTED_HOST_SETTINGS = new WeakHashMap<Account, Map<String, Object>>();
 
     public RapidsPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -187,7 +187,7 @@ public class RapidsPl extends PluginForHost {
                 } else if ("jx1007".equals(code)) {
                     // At the moment the service is not supported
                     if (account != null && downloadLink != null) {
-                        tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l, message == null ? "At the moment the service is not supported" : message);
+                        mhm.putError(account, downloadLink, 60 * 60 * 1000l, message == null ? "At the moment the service is not supported" : message);
                     }
                 } else if ("jx1008".equals(code)) {
                     // Link was not recognized
@@ -248,38 +248,7 @@ public class RapidsPl extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
-            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(null);
-                    }
-                }
-            }
-            unavailableMap = hostUnavailableMap.get(account);
-            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
-            if (nue != null) {
-                final Long lastUnavailable = nue.getErrorTimeout();
-                final String errorReason = nue.getErrorReason();
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         login(account, false);
         this.br = newBrowser();
         final Map<String, Object> checkLink = callAPI(account, link, "jd_check_link", new Object[] { "link", link.getDefaultPlugin().buildExternalDownloadURL(link, this) });
@@ -458,23 +427,6 @@ public class RapidsPl extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout, final String reason) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, UnavailableHost>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 'long timeout' to retry this host */
-            unavailableMap.put(downloadLink.getHost(), nue);
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     @Override
