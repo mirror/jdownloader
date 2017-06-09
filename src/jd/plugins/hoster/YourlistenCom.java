@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourlisten.com" }, urls = { "http://(www\\.)?yourlisten\\.com/[A-Za-z0-9\\-]+/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourlisten.com" }, urls = { "http://(www\\.)?yourlisten\\.com/[A-Za-z0-9\\-\\.]+/[A-Za-z0-9\\-\\.]+" })
 public class YourlistenCom extends PluginForHost {
-
     public YourlistenCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,7 +40,6 @@ public class YourlistenCom extends PluginForHost {
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -63,7 +60,7 @@ public class YourlistenCom extends PluginForHost {
             }
             throw e;
         }
-        if (!br.getURL().matches("http://(www\\.)?yourlisten\\.com/[A-Za-z0-9\\-]+/[A-Za-z0-9]+") || !br.containsHTML("id=\"player\"")) {
+        if (!br.getURL().matches("http://(www\\.)?yourlisten\\.com/[A-Za-z0-9\\-\\.]+/[A-Za-z0-9\\-\\.]+") || !br.containsHTML("id=\"player\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>]*?)\"").getMatch(0);
