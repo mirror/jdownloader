@@ -404,13 +404,22 @@ public class AccountInfo extends Property {
                                 plugin = lazyHostPlugin;
                             }
                         } else if (list.size() > 1) {
-                            for (LazyHostPlugin lazyHostPlugin : list) {
+                            for (final LazyHostPlugin lazyHostPlugin : list) {
                                 if (!lazyHostPlugin.isOfflinePlugin()) {
                                     if (plugin == null) {
                                         plugin = lazyHostPlugin;
                                     } else {
-                                        plugin = null;
-                                        break;
+                                        final boolean a = StringUtils.containsIgnoreCase(plugin.getHost(), host + ".");
+                                        final boolean b = StringUtils.containsIgnoreCase(lazyHostPlugin.getHost(), host + ".");
+                                        if (a && !b) {
+                                            continue;
+                                        } else if (!a && b) {
+                                            plugin = lazyHostPlugin;
+                                            continue;
+                                        } else {
+                                            plugin = null;
+                                            break;
+                                        }
                                     }
                                 }
                             }
