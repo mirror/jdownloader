@@ -56,7 +56,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fistfast.com" }, urls = { "https?://(?:www\\.)?fistfast\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fistfast.com" }, urls = { "https?://(?:www\\.)?fistfast\\.(?:com|net)/(?:embed\\-)?[a-z0-9]{12}" })
 public class FistfastCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -65,11 +65,11 @@ public class FistfastCom extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://fistfast.com";
+    private static final String  COOKIE_HOST                        = "http://fistfast.net";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(fistfast\\.com)";
+    private static final String  DOMAINS                            = "(fistfast\\.(?:com|net))";
 
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -1286,6 +1286,7 @@ public class FistfastCom extends antiDDoSForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
@@ -1294,6 +1295,7 @@ public class FistfastCom extends antiDDoSForHost {
                     br.setCookies(this.getHost(), cookies);
                     return;
                 }
+                br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
@@ -1329,6 +1331,8 @@ public class FistfastCom extends antiDDoSForHost {
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
     }
