@@ -64,11 +64,16 @@ import jd.http.Request;
 import jd.plugins.components.UserAgents;
 
 public class PhantomJS implements HttpRequestHandler {
+
     private static final boolean  DEBUGGER = false;
     private volatile LogInterface logger;
     private File                  exe;
     private String                accessToken;
     private WebCache              webCache;
+
+    public boolean isEnabled() {
+        return JsonConfig.create(PhantomJSConfig.class).getEnabled();
+    }
 
     public boolean isAvailable() {
         final File bins = getBinaryPath(true);
@@ -358,6 +363,7 @@ public class PhantomJS implements HttpRequestHandler {
     private final AtomicReference<Thread> psjPinger            = new AtomicReference<Thread>(null);
 
     private class LoggerStream extends OutputStream {
+
         @Override
         public void write(int b) throws IOException {
         }
@@ -410,6 +416,7 @@ public class PhantomJS implements HttpRequestHandler {
         ipcBrowser.setDebug(false);
         webCache = initWebCache();
         ipcBrowser.setProxySelector(new ProxySelectorInterface() {
+
             private ArrayList<HTTPProxy> lst = new ArrayList<HTTPProxy>();
             {
                 lst.add(HTTPProxy.NONE);
@@ -448,6 +455,7 @@ public class PhantomJS implements HttpRequestHandler {
         final ProcessBuilder pb = ProcessBuilderFactory.create(lst);
         pb.directory(exe.getParentFile());
         final OutputStream stdStream = new OutputStream() {
+
             @Override
             public void write(int b) throws IOException {
             }
@@ -495,6 +503,7 @@ public class PhantomJS implements HttpRequestHandler {
             }
         };
         phantomProcessThread.set(new Thread("Phantom.JS") {
+
             public void run() {
                 try {
                     ProcessBuilderFactory.runCommand(pb, stream, stdStream);
@@ -510,6 +519,7 @@ public class PhantomJS implements HttpRequestHandler {
             };
         });
         psjPinger.set(new Thread("Phantom.JS Ping") {
+
             private final int maxTry = 3;
 
             public void run() {
