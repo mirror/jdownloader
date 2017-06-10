@@ -6,6 +6,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractValidator;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.utils.StringUtils;
@@ -36,5 +37,12 @@ public interface PhantomJSConfig extends ConfigInterface {
     public String getCustomBinaryPath();
 
     public void setCustomBinaryPath(String path);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("A way to enable/disable the use of the PhantomJS module")
+    public Boolean getEnabled();
+
+    void setEnabled(boolean b);
 
 }
