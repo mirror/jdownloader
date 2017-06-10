@@ -36,7 +36,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -126,10 +125,7 @@ public class HighpornNet extends PluginForHost {
                     server_issues = true;
                 }
             } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                con.disconnect();
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
@@ -163,6 +159,7 @@ public class HighpornNet extends PluginForHost {
         if (!resumes) {
             prepStreamHeaders(br);
         }
+        br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -184,20 +181,22 @@ public class HighpornNet extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String directlinkproperty) {
         String dllink = downloadLink.getStringProperty("directlink");
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 final String contenttype = con.getContentType();
                 final long contentlength = con.getLongContentLength();
-                if (contenttype.contains("html") || con.getLongContentLength() == -1 || (contentlength < 10 && contenttype.equals("application/octet-stream"))) {
+                if (contenttype.contains("html") || con.getResponseCode() == 403 || con.getLongContentLength() == -1 || (contentlength < 10 && contenttype.equals("application/octet-stream"))) {
                     downloadLink.setProperty("directlink", Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty("directlink", Property.NULL);
                 dllink = null;
+            } finally {
+                con.disconnect();
             }
         }
         return dllink;
