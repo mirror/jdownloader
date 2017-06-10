@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -37,7 +36,6 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/i[a-zA-Z0-9_\\-]{10}" })
 public class CloudUpCom extends PluginForHost {
-
     private String  csrfToken      = null;
     private String  mydb_socket_id = null;
     private Browser ajax           = null;
@@ -84,7 +82,6 @@ public class CloudUpCom extends PluginForHost {
         // we need some session info here, these are not actually verified....
         mydb_socket_id = br.getRegex("mydb_socket_id\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
         csrfToken = br.getRegex("csrfToken\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
-
         ajaxGetPage("/files/" + new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0) + "?mydb=1");
         // is file
         final String file = PluginJSonUtils.getJsonValue(ajax, "type");
@@ -125,6 +122,9 @@ public class CloudUpCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML(">The download of this file has been disabled")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
