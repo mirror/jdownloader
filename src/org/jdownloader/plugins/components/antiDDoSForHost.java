@@ -502,6 +502,12 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     }
 
                 }.getToken();
+                // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
+                final String rayId = getRayID(ibr);
+                if (inValidate(rayId)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                cloudflare.put("id", Encoding.urlEncode(rayId));
                 cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             // recapthca v1
@@ -713,6 +719,24 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 cookies.add(c);
             }
         }
+    }
+
+    /**
+     * id = rayid located within headers, and html. sixteen chars hex.
+     */
+    private String getRayID(Browser ibr) {
+        String rayID = ibr.getRegex("data-ray=\"([a-f0-9]{16})\"").getMatch(0);
+        if (inValidate(rayID)) {
+            rayID = ibr.getRegex("Cloudflare Ray ID:\\s*<strong>([a-f0-9]{16})</strong>").getMatch(0);
+            if (inValidate(rayID)) {
+                // header response
+                final String header = ibr.getRequest().getResponseHeader("CF-RAY");
+                if (header != null) {
+                    rayID = new Regex(header, "^([a-f0-9]{16})").getMatch(0);
+                }
+            }
+        }
+        return rayID;
     }
 
     private Form getCloudflareChallengeForm(final Browser ibr) {
