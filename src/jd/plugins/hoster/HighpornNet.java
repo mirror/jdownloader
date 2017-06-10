@@ -36,6 +36,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
+
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -144,7 +145,7 @@ public class HighpornNet extends PluginForHost {
             requestFileInformation(downloadLink);
         }
         if (dllink == null) {
-            // should this be within another browser? as it will mess referrer
+            final Browser br = this.br.cloneBrowser();
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/play.php", "v=" + fid);
             dllink = br.toString();
@@ -162,7 +163,6 @@ public class HighpornNet extends PluginForHost {
         if (!resumes) {
             prepStreamHeaders(br);
         }
-        br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
