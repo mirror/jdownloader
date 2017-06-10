@@ -36,6 +36,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
+
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -54,9 +55,9 @@ public class HighpornNet extends PluginForHost {
     private static final String default_extension = ".mp4";
     /* Connection stuff */
     /* 2017-05-31: Disabled resume as it will cause a lot of retries and then fail. */
-    private boolean             free_resume       = false;
-    private static final int    free_maxchunks    = 1;
-    private static final int    free_maxdownloads = 1;
+    private final boolean       free_resume       = false;
+    private final int           free_maxchunks    = 1;
+    private final int           free_maxdownloads = 1;
     private String              dllink            = null;
     private String              fid               = null;
     private boolean             server_issues     = false;
@@ -79,8 +80,8 @@ public class HighpornNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(url_source);
-        dllink = br.getRegex("data\\-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
-        if (jd.plugins.decrypter.HighpornNet.isOffline(this.br)) {
+        dllink = br.getRegex("data-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        if (jd.plugins.decrypter.HighpornNet.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -115,8 +116,9 @@ public class HighpornNet extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                prepStreamHeaders(br);
-                con = br.openHeadConnection(dllink);
+                final Browser br2 = br.cloneBrowser();
+                prepStreamHeaders(br2);
+                con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -142,11 +144,12 @@ public class HighpornNet extends PluginForHost {
         if (dllink == null) {
             requestFileInformation(downloadLink);
         }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (dllink == null) {
+            // should this be within another browser? as it will mess referrer
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/play.php", "v=" + fid);
-            dllink = this.br.toString();
-            if (this.br.toString().equals("fail")) {
+            dllink = br.toString();
+            if (br.toString().equals("fail")) {
                 server_issues = true;
             }
         }
@@ -155,15 +158,12 @@ public class HighpornNet extends PluginForHost {
         } else if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        prepStreamHeaders(br);
-        br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
-        boolean Allow_resume = cfg.getBooleanProperty("Allow_resume", false);
-        logger.info("Allow_resume: " + Allow_resume);
-        if (Allow_resume) {
-            free_resume = true;
+        final boolean resumes = cfg.getBooleanProperty("Allow_resume", free_resume);
+        logger.info("resumes: " + resumes);
+        if (!resumes) {
+            prepStreamHeaders(br);
         }
-        logger.info("free_resume: " + free_resume);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

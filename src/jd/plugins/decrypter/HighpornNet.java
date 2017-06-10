@@ -31,6 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?(highporn\\.net|tanix\\.net)/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
+
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,9 +45,9 @@ public class HighpornNet extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = getTitle(this.br, parameter);
-        final String videoLink = br.getRegex("data\\-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
-        String[] videoIDs = br.getRegex("data\\-src=\"(\\d+)\"").getColumn(0);
+        final String fpName = getTitle(br, parameter);
+        final String videoLink = br.getRegex("data-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        String[] videoIDs = br.getRegex("data-src=\"(\\d+)\"").getColumn(0);
         if (videoIDs == null || videoIDs.length == 0) {
             if (videoLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
