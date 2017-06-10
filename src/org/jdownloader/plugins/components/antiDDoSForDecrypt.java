@@ -488,6 +488,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         final Form cloudflare = getCloudflareChallengeForm(ibr);
         if (responseCode == 403 && cloudflare != null) {
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            }
             a_captchaRequirement = true;
             // recapthcha v2
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
