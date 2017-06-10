@@ -125,7 +125,10 @@ public class HighpornNet extends PluginForHost {
                     server_issues = true;
                 }
             } finally {
-                con.disconnect();
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
@@ -196,7 +199,10 @@ public class HighpornNet extends PluginForHost {
                 downloadLink.setProperty("directlink", Property.NULL);
                 dllink = null;
             } finally {
-                con.disconnect();
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;
