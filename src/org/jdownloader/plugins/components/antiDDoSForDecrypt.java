@@ -3,18 +3,32 @@ package org.jdownloader.plugins.components;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,23 +42,14 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -111,6 +116,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Pragma", null);
+
         // we now set
         browserPrepped.put(prepBr, Boolean.TRUE);
         return prepBr;
@@ -485,6 +491,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         final Form cloudflare = getCloudflareChallengeForm(ibr);
         if (responseCode == 403 && cloudflare != null) {
+            if (true) {
+                // test
+                simulateBrowser(ibr);
+            }
             a_captchaRequirement = true;
             // recapthcha v2
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
@@ -502,6 +512,12 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     }
 
                 }.getToken();
+                // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
+                final String rayId = getRayID(ibr);
+                if (inValidate(rayId)) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                cloudflare.getInputFields().add(0, new InputField("id", Encoding.urlEncode(rayId)));
                 cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             // recapthca v1
@@ -712,6 +728,24 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 cookies.add(c);
             }
         }
+    }
+
+    /**
+     * id = rayid located within headers, and html. sixteen chars hex.
+     */
+    private String getRayID(Browser ibr) {
+        String rayID = ibr.getRegex("data-ray=\"([a-f0-9]{16})\"").getMatch(0);
+        if (inValidate(rayID)) {
+            rayID = ibr.getRegex("Cloudflare Ray ID:\\s*<strong>([a-f0-9]{16})</strong>").getMatch(0);
+            if (inValidate(rayID)) {
+                // header response
+                final String header = ibr.getRequest().getResponseHeader("CF-RAY");
+                if (header != null) {
+                    rayID = new Regex(header, "^([a-f0-9]{16})").getMatch(0);
+                }
+            }
+        }
+        return rayID;
     }
 
     private Form getCloudflareChallengeForm(final Browser ibr) {
@@ -1054,6 +1088,90 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
         }
         return result != null ? result.toString() : null;
+    }
+
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    private void simulateBrowser(final Browser br) throws InterruptedException {
+        dupe.clear();
+
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
+
+        String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        // css
+        l1 = new Regex(br, "\\s+(?:href)=(\"|')(.*?\\.css.*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(br, "\\s+(?:href)=(?!\"|')([^\\s]+\\.css.*?)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        links.add("/cdn-cgi/images/browser-bar.png?1376755637");
+        links.add("/cdn-cgi/images/error_icons.png");
+        links.add("/cdn-cgi/styles/fonts/opensans-700.woff");
+        links.add("/cdn-cgi/styles/fonts/opensans-300i.woff");
+        links.add("/cdn-cgi/styles/fonts/opensans-400.woff");
+        links.add("/cdn-cgi/styles/fonts/opensans-300.woff");
+        links.add("/cdn-cgi/styles/fonts/opensans-600.woff");
+        links.add("/cdn-cgi/styles/fonts/opensans-400i.woff");
+        links.add("/favicon.ico");
+
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, br.getRequest());
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("'") && !correctedLink.contains(".ie.")) {
+                if (dupe.add(correctedLink)) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        public void run() {
+                            final Browser rb = br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (correctedLink.matches(".+\\.(?:png|jpe?g).*")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            } else if (correctedLink.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (correctedLink.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            } else if (correctedLink.matches(".+\\.(?:woff|ico).*")) {
+                                rb.getHeaders().put("Accept", "text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                requestQ.getAndIncrement();
+                                con = rb.openGetConnection(correctedLink);
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                                requestS.getAndIncrement();
+                            }
+                            return;
+                        }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
+
+                }
+            }
+        }
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
     }
 
 }
