@@ -22,6 +22,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -45,17 +54,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.translate._JDT;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" })
 public class OneFichierCom extends PluginForHost {
+
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
     private final String         PROPERTY_FREELINK            = "freeLink";
     private final String         PROPERTY_HOTLINK             = "hotlink";
@@ -102,9 +103,9 @@ public class OneFichierCom extends PluginForHost {
         // Remove everything after the domain
         String linkID;
         if (link.getDownloadURL().matches("https?://[a-z0-9\\.]+(/|$)")) {
-            final String[] idhostandName = new Regex(url, "(https?://)(.*?\\.)(.*?)(/|$)").getRow(0);
+            final String[] idhostandName = new Regex(url, "(https?://)((?!www\\.).*?)\\.(.*?)(/|$)").getRow(0);
             if (idhostandName != null) {
-                link.setUrlDownload(idhostandName[0] + idhostandName[1] + idhostandName[2]);
+                link.setUrlDownload(idhostandName[0] + idhostandName[2] + "/?" + idhostandName[1]);
                 linkID = getHost() + "://" + idhostandName[1];
                 link.setLinkID(linkID);
             }
@@ -900,7 +901,9 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public static interface OneFichierConfigInterface extends PluginConfigInterface {
+
         public static class OneFichierConfigInterfaceTranslation {
+
             public String getPreferReconnectEnabled_label() {
                 return _JDT.T.lit_prefer_reconnect();
             }
