@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrink-service.it" }, urls = { "https?://(?:www\\.)?shrink\\-service\\.it/s/[A-Za-z0-9]+|https?://get\\.shrink\\-service\\.it/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrink-service.it" }, urls = { "https?://(?:www\\.)?shrink-service\\.it/s/[A-Za-z0-9]+|https?://get\\.shrink-service\\.it/[A-Za-z0-9]+" })
 public class ShrinkServiceIt extends PluginForDecrypt {
 
     public ShrinkServiceIt(PluginWrapper wrapper) {
@@ -35,7 +35,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String linkid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
@@ -44,7 +44,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String finallink = this.br.getRegex("<input type=\\'hidden\\'[^<>\">]*?value=\\'([^<>\"\\']*?)\\'>").getMatch(0);
+        String finallink = br.getRegex("<input type='hidden'[^<>\">]*?value='([^<>\"']*?)'>").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -53,10 +53,11 @@ public class ShrinkServiceIt extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        finallink = Encoding.htmlDecode(finallink);
+        finallink = Encoding.htmlOnlyDecode(finallink);
         finallink = finallink.replace("&sol;", "/");
         finallink = finallink.replace("&colon;", ":");
         finallink = finallink.replace("&period;", ".");
+        finallink = finallink.replace("&quest;", "?");
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
