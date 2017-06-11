@@ -117,7 +117,6 @@ public class HighpornNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                prepStreamHeaders(br2);
                 con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
@@ -140,17 +139,30 @@ public class HighpornNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
-            requestFileInformation(downloadLink);
+        final boolean resumes = cfg.getBooleanProperty("Allow_resume", free_resume);
+        logger.info("resumes: " + resumes);
+        dllink = downloadLink.getStringProperty("directlink");
+        if (dllink != null) {
+            // cached downloadlink doesn't have a browser session, which leads to 403.
+            br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403 || dl.getConnection().getLongContentLength() == -1 || (dl.getConnection().getLongContentLength() < 10 && dl.getConnection().getContentType().equals("application/octet-stream"))) {
+                downloadLink.setProperty("directlink", Property.NULL);
+                dllink = null;
+                dl = null;
+                br = new Browser();
+            }
         }
         if (dllink == null) {
-            final Browser br = this.br.cloneBrowser();
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/play.php", "v=" + fid);
-            dllink = br.toString();
-            if (br.toString().equals("fail")) {
-                server_issues = true;
+            requestFileInformation(downloadLink);
+            if (dllink == null) {
+                final Browser br = this.br.cloneBrowser();
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/play.php", "v=" + fid);
+                dllink = br.toString();
+                if (br.toString().equals("fail")) {
+                    server_issues = true;
+                }
             }
         }
         if (server_issues) {
@@ -158,58 +170,24 @@ public class HighpornNet extends PluginForHost {
         } else if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean resumes = cfg.getBooleanProperty("Allow_resume", free_resume);
-        logger.info("resumes: " + resumes);
-        if (!resumes) {
-            prepStreamHeaders(br);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (dl == null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String directlinkproperty) {
-        String dllink = downloadLink.getStringProperty("directlink");
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null)); // Test, requested
-                con = br2.openGetConnection(dllink);
-                final String contenttype = con.getContentType();
-                final long contentlength = con.getLongContentLength();
-                if (contenttype.contains("html") || con.getResponseCode() == 403 || con.getLongContentLength() == -1 || (contentlength < 10 && contenttype.equals("application/octet-stream"))) {
-                    downloadLink.setProperty("directlink", Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty("directlink", Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
-    }
-
-    private void prepStreamHeaders(final Browser br) {
-        br.getHeaders().put("Range", "bytes=0-");
     }
 
     private void setConfigElements() {
