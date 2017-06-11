@@ -149,6 +149,10 @@ public class HighpornNet extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403 || dl.getConnection().getLongContentLength() == -1 || (dl.getConnection().getLongContentLength() < 10 && dl.getConnection().getContentType().equals("application/octet-stream"))) {
                 downloadLink.setProperty("directlink", Property.NULL);
                 dllink = null;
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
                 dl = null;
                 br = new Browser();
             }
