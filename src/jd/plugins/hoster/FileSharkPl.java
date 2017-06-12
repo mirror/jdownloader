@@ -12,7 +12,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -53,18 +52,17 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "http://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "https?://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" })
 public class FileSharkPl extends PluginForHost {
-
     public FileSharkPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.fileshark.pl/premium/kup");
+        this.enablePremium("https://www.fileshark.pl/premium/kup");
         this.setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.fileshark.pl/strona/regulamin";
+        return "https://www.fileshark.pl/strona/regulamin";
     }
 
     private static final String DAILY_LIMIT                     = "30 GB";
@@ -74,7 +72,6 @@ public class FileSharkPl extends PluginForHost {
     private static final short  API_CALL_ACCOUNT_GET_DETAILS    = 0;
     private static final short  API_CALL_FILE_GET_DETAILS       = 1;
     private static final short  API_CALL_FILE_GET_DOWNLOAD_LINK = 2;
-
     private Account             currentAccount;
 
     public Account getCurrentAccount() {
@@ -92,7 +89,6 @@ public class FileSharkPl extends PluginForHost {
         if (br.containsHTML("Plik nie został odnaleziony w bazie danych.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         if (br.containsHTML("<li>Trwa pobieranie pliku. Możesz pobierać tylko jeden plik w tym samym czasie.</li>")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("OTHER_FILE_DOWNLOAD"), 5 * 60 * 1000l);
         }
@@ -100,24 +96,19 @@ public class FileSharkPl extends PluginForHost {
         if (dailyLimitWarning != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster reports: " + dailyLimitWarning, 60 * 60 * 1000l);
         }
-
         if (br.containsHTML("Kolejne pobranie możliwe za") || br.containsHTML("Proszę czekać. Pobieranie będzie możliwe za")) {
-
             String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
             if (waitTime == null) {
                 waitTime = br.getRegex("Pobieranie będzie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
             }
-
             if (waitTime != null) {
                 return Long.parseLong(waitTime) * 1000l;
             }
-
         }
         return 0l;
     }
 
     private String getErrorMessage(String source, int errorCode) {
-
         if (errorCode > 0) {
             //
             // 2 => 'Wrong method',
@@ -133,7 +124,6 @@ public class FileSharkPl extends PluginForHost {
             // 32 => 'You must wait for new download',
             // 33 => 'Daily limit has been reached',
             // 34 => 'Max number of active downloads has been reached'
-
             return PluginJSonUtils.getJsonValue(source, "errorMessage");
         }
         return "Unknown error";
@@ -144,34 +134,28 @@ public class FileSharkPl extends PluginForHost {
      */
     boolean getAPICall(DownloadLink downloadLink, short callType, String userName, String userPassword) throws IOException {
         if (callType > API_CALL_ACCOUNT_GET_DETAILS) {
-            String fileData[][] = new Regex(downloadLink.getPluginPatternMatcher(), "http://(www\\.)?fileshark\\.pl/pobierz/((\\d+)/([0-9a-zA-Z]+)/?)").getMatches();
+            String fileData[][] = new Regex(downloadLink.getPluginPatternMatcher(), "https?://(www\\.)?fileshark\\.pl/pobierz/((\\d+)/([0-9a-zA-Z]+)/?)").getMatches();
             if (fileData.length > 0) {
-
                 String fileId = fileData[0][2];
                 String fileToken = fileData[0][3];
                 if (fileId == null || fileToken == null) {
                     return (false);
                 } else {
                     if (callType == API_CALL_FILE_GET_DETAILS) {
-                        br.postPage("http://fileshark.pl/api/file/getDetails", "id=" + fileId + "&token=" + fileToken);
+                        br.postPage("https://fileshark.pl/api/file/getDetails", "id=" + fileId + "&token=" + fileToken);
                     } else {
                         if (userName != null && userPassword != null) {
-                            br.postPage("http://fileshark.pl/api/file/getDownloadLink", "id=" + fileId + "&token=" + fileToken + "&username=" + userName + "&password=" + userPassword);
-
+                            br.postPage("https://fileshark.pl/api/file/getDownloadLink", "id=" + fileId + "&token=" + fileToken + "&username=" + userName + "&password=" + userPassword);
                         } else {
-                            br.postPage("http://fileshark.pl/api/file/getDownloadLink", "id=" + fileId + "&token=" + fileToken);
+                            br.postPage("https://fileshark.pl/api/file/getDownloadLink", "id=" + fileId + "&token=" + fileToken);
                         }
-
                     }
-
                 }
             } else {
                 return (false);
             }
-
         } else {
-            br.postPage("http://fileshark.pl/api/account/getDetails", "username=" + userName + "&password=" + userPassword);
-
+            br.postPage("https://fileshark.pl/api/account/getDetails", "username=" + userName + "&password=" + userPassword);
         }
         if (br.containsHTML("404 Nie znaleziono strony:")) {
             return (false);
@@ -185,13 +169,11 @@ public class FileSharkPl extends PluginForHost {
         String fileSize = "";
         boolean useAPI = getUseAPI();
         if (useAPI) {
-
             // API CALL - file info: fileshark.pl/api/file/getDetails?id={id}&token={token}
             // POST
             // http://www.fileshark.pl/pobierz/{id}/{token}/
             // {id} - file id
             // {token} - file token
-
             useAPI = getAPICall(link, API_CALL_FILE_GET_DETAILS, null, null);
             if (useAPI) {
                 // Output (json):
@@ -230,7 +212,6 @@ public class FileSharkPl extends PluginForHost {
                     } else {
                         link.setProperty("PREMIUM", "FALSE");
                     }
-
                 } else
                     // try without API
                 {
@@ -251,7 +232,6 @@ public class FileSharkPl extends PluginForHost {
             // Informed them about this bug, hope they will correct it, next download
             // time should be displayed just when the user tries to start the download (button)
             // not at the time when the link is displayed.
-
             // for Premium only ! Read description above!
             final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("fileshark.pl");
             Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
@@ -265,31 +245,24 @@ public class FileSharkPl extends PluginForHost {
                 try {
                     login(aa, true);
                 } catch (Exception e) {
-
                 }
             }
-
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
-
             if (br.containsHTML(POLAND_ONLY)) {
                 link.getLinkStatus().setStatusText(getPhrase("POLAND_ONLY"));
                 return AvailableStatus.UNCHECKABLE;
             } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("warning\">Strona jest")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             fileName = br.getRegex("<h2[ \n\t\t\f]+class=\"name-file\">([^<>\"]*?)</h2>").getMatch(0);
             fileSize = br.getRegex("<p class=\"size-file\">Rozmiar: <strong>(.*?)</strong></p>").getMatch(0);
-
             if (fileName == null || fileSize == null) {
                 long waitTime = checkForErrors();
                 if (waitTime != 0) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
                 }
-
             }
-
         }
         link.setName(Encoding.htmlDecode(fileName.trim()));
         link.setDownloadSize(SizeFormatter.getSize(fileSize));
@@ -299,10 +272,8 @@ public class FileSharkPl extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-
         AvailableStatus as = requestFileInformation(downloadLink);
         if (as != AvailableStatus.FALSE) {
-
             if (!getUseAPI()) {
                 br.setFollowRedirects(false);
                 br.getPage(downloadLink.getDownloadURL());
@@ -330,7 +301,6 @@ public class FileSharkPl extends PluginForHost {
         boolean okay = false;
         try {
             fos = new FileOutputStream(file, false);
-
             final int length = data.length;
             fos.write(data, 0, length);
             okay = length > 0;
@@ -379,7 +349,6 @@ public class FileSharkPl extends PluginForHost {
                     waitTimeDetected = false;
                 }
             } while (waitTimeDetected && (trials < 2));
-
         }
         if (!useAPI) {
             if (br.containsHTML(">If you want to download this file, buy")) {
@@ -393,8 +362,7 @@ public class FileSharkPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("PREMIUM_ONLY"));
             }
             String downloadURL = downloadLink.getDownloadURL();
-            String fileId = new Regex(downloadURL, "http://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
-
+            String fileId = new Regex(downloadURL, "https?://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
             br.getPage(MAINPAGE + "pobierz/normal/" + fileId);
             String redirect = br.getRedirectLocation();
             if (redirect != null) {
@@ -404,7 +372,6 @@ public class FileSharkPl extends PluginForHost {
             if (waitTime != 0) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
             }
-
             Form dlForm = new Form();
             br.setCookie(downloadURL, "file", fileId);
             // captcha handling
@@ -413,13 +380,11 @@ public class FileSharkPl extends PluginForHost {
             for (int i = 0; i < 5; i++) {
                 dlForm = br.getForm(0);
                 String token = dlForm.getInputFieldByName("form%5B_token%5D").getValue();
-
                 File cf = getLocalCaptchaFile();
                 String imageDataEncoded = new Regex(dlForm.getHtmlCode(), "<img src=\"data:image/jpeg;base64,(.*)\" title=\"").getMatch(0);
                 byte[] imageData = Base64.decode(imageDataEncoded);
                 saveCaptchaImage(cf, imageData);
                 String c = getCaptchaCode(cf, downloadLink);
-
                 br.postPage(MAINPAGE + "pobierz/normal/" + fileId, "&form%5Bcaptcha%5D=" + c + "&form%5Bstart%5D=&form%5B_token%5D=" + token);
                 logger.info("Submitted DLForm");
                 if (br.containsHTML("class=\"error\">Błędny kod")) {
@@ -436,11 +401,9 @@ public class FileSharkPl extends PluginForHost {
             }
             dllink = br.getRedirectLocation();
         }
-
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -469,7 +432,6 @@ public class FileSharkPl extends PluginForHost {
         boolean useAPI = getUseAPI();
         boolean isPremium = false;
         AccountInfo ai = new AccountInfo();
-
         boolean hours = false;
         try {
             login(account, useAPI ? false : true);
@@ -479,16 +441,13 @@ public class FileSharkPl extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-
         String dailyLimitLeftUsed = "";
         String expire = "";
-
         if (useAPI) {
             // API CALL - get user Info: fileshark.pl/api/account/getDetails?username={username}&password={pass}
             // params (POST):
             // {username} - user name
             // {pass} - password
-
             useAPI = getAPICall(null, API_CALL_ACCOUNT_GET_DETAILS, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
             // br.postPage("http://fileshark.pl/api/account/getDetails", "username=" + userName + "&password=" + userPassword);
             // output (json)
@@ -520,7 +479,6 @@ public class FileSharkPl extends PluginForHost {
                         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
                         isPremium = true;
                     }
-
                 } else {
                     UserIO.getInstance().requestMessageDialog(0, "FileShark: " + getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_FAILED") + "!\r\n" + getPhrase("VERIFY_LOGIN"));
                     account.setValid(false);
@@ -532,12 +490,10 @@ public class FileSharkPl extends PluginForHost {
         if (!useAPI) {
             dailyLimitLeftUsed = br.getRegex("<p>Pobrano dzisiaj</p>[\r\t\n ]+<p><strong>(.*)</strong> z " + DAILY_LIMIT + "</p>").getMatch(0);
             setTrafficLeft(ai, dailyLimitLeftUsed, false);
-
             String accountType = br.getRegex("<p class=\"type-account\">Rodzaj konta <strong>([A-Za-z]+)</strong></p>").getMatch(0);
             if ("Standardowe".equals(accountType)) {
                 isPremium = false;
             } else {
-
                 expire = br.getRegex(">Rodzaj konta <strong>Premium <span title=\"(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})\">\\(do").getMatch(0);
                 if (expire == null) {
                     ai.setExpired(true);
@@ -547,9 +503,7 @@ public class FileSharkPl extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
                 isPremium = true;
             }
-
         }
-
         account.setValid(true);
         if (isPremium) {
             try {
@@ -558,7 +512,6 @@ public class FileSharkPl extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
-
             ai.setStatus(getPhrase("PREMIUM_USER"));
             account.setProperty("PREMIUM", "TRUE");
         } else {
@@ -580,21 +533,18 @@ public class FileSharkPl extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie("http://fileshark.pl", key, value);
+                            this.br.setCookie("https://fileshark.pl", key, value);
                         }
                         return;
                     }
                 }
-
-                br.getPage("http://fileshark.pl/zaloguj");
-
+                br.getPage("https://fileshark.pl/zaloguj");
                 Form login = br.getForm(0);
                 if (login == null) {
                     logger.warning("Couldn't find login form");
@@ -604,24 +554,21 @@ public class FileSharkPl extends PluginForHost {
                 login.put("_password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
                 br.getPage("/");
-
                 /*
                  * if (!br.containsHTML("Rodzaj konta <strong>Premium")) {
                  * logger.warning("Couldn't determine premium status or account is Free not Premium!"); throw new
                  * PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!",
                  * PluginException.VALUE_ID_PREMIUM_DISABLE); }
                  */
-
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies("http://fileshark.pl/");
+                final Cookies add = this.br.getCookies("https://fileshark.pl/");
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -645,15 +592,11 @@ public class FileSharkPl extends PluginForHost {
         }
         requestFileInformation(downloadLink);
         String downloadURL = downloadLink.getDownloadURL();
-
         String dllink = "";
         if (useAPI) {
-
             // API CALL: POST fileshark.pl/api/file/getDownloadLink?id={id}&token={token}&username={username}&password={password}
             String generatedLink = checkDirectLink(downloadLink, "generatedLinkFileSharkPl");
-
             if (generatedLink == null) {
-
                 useAPI = getAPICall(downloadLink, API_CALL_FILE_GET_DOWNLOAD_LINK, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                 if (useAPI) {
                     String response = br.toString();
@@ -664,7 +607,6 @@ public class FileSharkPl extends PluginForHost {
                         // optional (for Premium)
                         // {username} - user name
                         // {password} - password
-
                         // Output = json
                         // success: (bool)
                         // data: (array)
@@ -672,7 +614,6 @@ public class FileSharkPl extends PluginForHost {
                         // fileId: (int) : file id
                         // fileName: (string) : filename
                         // linkValidTo: (datetime) : Link valid date
-
                         dllink = PluginJSonUtils.getJsonValue(response, "downloadLink");
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -686,10 +627,8 @@ public class FileSharkPl extends PluginForHost {
                             logger.log(e);
                             dateValid = System.currentTimeMillis();
                         }
-
                         downloadLink.setProperty("generatedLinkFileSharkPl", dllink);
                         downloadLink.setProperty("generatedLinkFileSharkPlDate", dateValid);
-
                     } else {
                         useAPI = false;
                     }
@@ -700,12 +639,12 @@ public class FileSharkPl extends PluginForHost {
         }
         if (!useAPI) {
             br.getPage(downloadURL);
-            String fileId = new Regex(downloadURL, "http://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
+            String fileId = new Regex(downloadURL, "https?://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
             if (fileId == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(false);
-            br.getPage("http://fileshark.pl/pobierz/start/" + fileId);
+            br.getPage("https://fileshark.pl/pobierz/start/" + fileId);
             long waitTime = checkForErrors();
             dllink = br.getRedirectLocation();
         } else {
@@ -717,10 +656,9 @@ public class FileSharkPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-
     }
 
-    private static final String MAINPAGE = "http://fileshark.pl/";
+    private static final String MAINPAGE = "https://fileshark.pl/";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -741,7 +679,6 @@ public class FileSharkPl extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty("generatedLinkFileSharkPl", Property.NULL);
         link.setProperty("generatedLinkFileSharkPlDate", Property.NULL);
-
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -796,7 +733,6 @@ public class FileSharkPl extends PluginForHost {
             put("MAX_DOWNLOAD", "Reached max number of simultaneously downloaded files.");
         }
     };
-
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
         {
             put("USE_API", "Używaj API (zalecane!)");
@@ -832,7 +768,6 @@ public class FileSharkPl extends PluginForHost {
                     return null;
                 }
             }
-
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
@@ -851,5 +786,4 @@ public class FileSharkPl extends PluginForHost {
         }
         return dllink;
     }
-
 }
