@@ -72,7 +72,7 @@ public class MegabooruCom extends PluginForDecrypt {
             }
             entries_per_page_current = linkids.length;
             for (final String linkid : linkids) {
-                final String link = "http://" + this.getHost() + "/post/view/" + linkid;
+                final String link = "https://www." + this.getHost() + "/post/view/" + linkid;
                 final DownloadLink dl = createDownloadlink(link);
                 dl.setLinkID(linkid);
                 dl.setAvailable(true);
