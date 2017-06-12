@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -22,13 +21,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -47,9 +39,15 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
-
     private static MultiHosterManagement mhm               = new MultiHosterManagement("premiumax.net");
     private static final String          NOCHUNKS          = "NOCHUNKS";
     private static final String          MAINPAGE          = "http://premiumax.net";
@@ -130,6 +128,9 @@ public class PremiumaxNet extends antiDDoSForHost {
             } else if (crippledhost.equalsIgnoreCase("mediafire")) {
                 /* We don't want to add "mediafire.bz" by mistake --> Correct this here. */
                 crippledhost = "mediafire.com";
+            } else if (crippledhost.equalsIgnoreCase("filespace")) {
+                /* We don't want to add "mediafire.bz" by mistake --> Correct this here. */
+                crippledhost = "filespace.com";
             }
             final String[] imgs = new Regex(hinfo, "src=\"(tmpl/images/[^<>\"]*?)\"").getColumn(0);
             /* Apply supported hosts depending on account type */
@@ -151,7 +152,6 @@ public class PremiumaxNet extends antiDDoSForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         String dllink = null;
-
         synchronized (LOCK) {
             login(account, true);
             dllink = checkDirectLink(link, "premiumaxnetdirectlink");
@@ -276,7 +276,6 @@ public class PremiumaxNet extends antiDDoSForHost {
             }
             if (serverTime > 0) {
                 // we now need to determine when the next day starts.
-
                 final Calendar c = Calendar.getInstance();
                 c.setTimeInMillis(serverTime);
                 c.add(Calendar.DAY_OF_MONTH, 1);

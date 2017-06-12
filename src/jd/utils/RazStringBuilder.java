@@ -42,7 +42,8 @@ public class RazStringBuilder {
     }
 
     /**
-     * to build 'String' from 'Object[] with set specified separator. pattern = true when you're using with Regular Expressions/Patterns.
+     * to build 'String' from 'Object[] with set specified separator if not null. pattern = true when you're using with Regular
+     * Expressions/Patterns.
      *
      * @param array
      * @param separator
