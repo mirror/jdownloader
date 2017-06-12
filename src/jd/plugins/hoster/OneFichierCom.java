@@ -377,7 +377,7 @@ public class OneFichierCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            errorHandling(downloadLink, this.br);
+            errorHandling(downloadLink, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(PROPERTY_FREELINK, dllink);
@@ -393,13 +393,13 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-        } else if (br.containsHTML(">\\s*File not found !\\s*<br/>It has could be deleted by its owner\\.\\s*<")) {
+        } else if (ibr.containsHTML(">\\s*File not found !\\s*<br/>It has could be deleted by its owner\\.\\s*<")) {
             // api linkchecking can be out of sync (wrong)
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.")) {
+        } else if (ibr.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.")) {
             // jdlog://3278035891641 jdlog://7543779150841
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads - wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (br.containsHTML("<h1>Select files to send :</h1>")) {
+        } else if (ibr.containsHTML("<h1>Select files to send :</h1>")) {
             // for some reason they linkcheck correct, then show upload page. re: jdlog://3895673179241
             // https://svn.jdownloader.org/issues/65003
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue?", 60 * 60 * 1000l);
@@ -498,7 +498,7 @@ public class OneFichierCom extends PluginForHost {
             }
             /* And yet another workaround for broken API case ... */
             br.getPage("https://" + this.getHost() + "/en/console/index.pl");
-            final boolean isPremium = this.br.containsHTML("Premium offer Account");
+            final boolean isPremium = br.containsHTML("Premium offer Account");
             if (isPremium) {
                 setBasicPremiumAccountInfo(account, ai);
             } else {
@@ -600,7 +600,7 @@ public class OneFichierCom extends PluginForHost {
                 throw e;
             } finally {
                 /* Important! Basic Auth works safe on all of their domains - using only cookies could cause issues! */
-                setBasicAuthHeader(this.br, this.currAcc);
+                setBasicAuthHeader(br, this.currAcc);
             }
         }
     }
@@ -631,98 +631,86 @@ public class OneFichierCom extends PluginForHost {
             ensureSiteLogin();
             doFree(link);
             return;
-        } else {
-            String dllink = checkDirectLink(link, PROPERTY_PREMLINK);
-            if (dllink == null) {
-                br.setFollowRedirects(true);
-                sleep(2 * 1000l, link);
-                /*
-                 * 2017-02-23: This 'p&u' download method will only work if the "Force download menu" setting is DISABLED in the account:
-                 * https://1fichier.com/console/params.pl . This behavior is intended by the admin! If the user has enabled the download
-                 * menu, usually our fallback code below will work fine!
-                 */
-                final String url = getDownloadlinkOLD(link) + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
-                URLConnectionAdapter con = null;
-                for (int i = 0; i != 2; i++) {
-                    try {
-                        con = br.openHeadConnection(url);
-                        break;
-                    } catch (final ConnectException c) {
-                        if (i + 1 == 2) {
-                            throw c;
-                        }
-                        continue;
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                }
-                if (con.getResponseCode() == 401) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (con.isContentDisposition()) {
-                    dllink = br.getURL();
-                } else {
-                    // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
-                    br = new Browser();
-                    login(false);
-                    ensureSiteLogin();
-                    br.setFollowRedirects(false);
-                    br.getPage(getDownloadlinkOLD(link));
-                    // error checking, offline links can happen here.
-                    errorHandling(link, br);
-                    dllink = br.getRedirectLocation();
-                    if (pwProtected) {
-                        handlePassword();
-                        /*
-                         * The users' 'direct download' setting has no effect on the password handling so we should always get a redirect to
-                         * the final downloadlink after having entered the correct download password (for premium users).
-                         */
-                        dllink = br.getRedirectLocation();
-                        if (dllink == null) {
-                            dllink = br.getRegex(regex_dllink_middle).getMatch(1);
-                            if (dllink == null) {
-                                logger.warning("After successful password handling: Final downloadlink 'dllink' is null");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        }
-                    }
-                    try {
-                        errorIpBlockedHandling(br);
-                    } catch (PluginException e) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-                    }
-                }
-                if (dllink == null) {
-                    /* The link is always SSL - based on user setting it will redirect to either https or http. */
-                    final String postLink = getDownloadlinkNEW(link);
-                    String postData = "did=0&";
-                    postData += getSSLFormValue();
-                    br.postPage(postLink, postData);
-                    dllink = br.getRedirectLocation();
-                    if (dllink == null) {
-                        if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
-                            logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else if (br.containsHTML("Warning ! You can use your Premium account for downloading from 1 Internet access at a time") || br.containsHTML("Warning ! You can use your account for downloading from 1 Internet access at a time.")) {
-                            logger.warning("Your using account on multiple IP addresses at once");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account been used on another Internet connection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        } else {
-                            logger.warning("Final downloadlink 'dllink' is null");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                }
+        }
+        String dllink = link.getStringProperty("directlink");
+        if (dllink != null) {
+            try {
+                logger.info("Connecting to cached dllink: " + dllink);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
+            } catch (final ConnectException c) {
+                logger.info("Download failed because connection timed out, NOT a JD issue!");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
+            } catch (final Exception e) {
+                logger.info("Download failed because: " + e.getMessage());
+                throw e;
             }
-            if (PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled() && dllink.startsWith("http://")) {
-                dllink = dllink.replace("http://", "https://");
-            }
-            for (int i = 0; i != 2; i++) {
-                br.setFollowRedirects(true);
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || !dl.getConnection().isOK()) {
+                dllink = null;
                 try {
-                    logger.info("Connecting to " + dllink);
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                dl = null;
+                br = new Browser();
+            }
+        }
+        if (dllink == null) {
+            // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
+            br = new Browser();
+            login(false);
+            ensureSiteLogin();
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            // error checking, offline links can happen here.
+            errorHandling(link, br);
+            dllink = br.getRedirectLocation();
+            if (pwProtected) {
+                handlePassword();
+                /*
+                 * The users' 'direct download' setting has no effect on the password handling so we should always get a redirect to the
+                 * final downloadlink after having entered the correct download password (for premium users).
+                 */
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = br.getRegex(regex_dllink_middle).getMatch(1);
+                    if (dllink == null) {
+                        logger.warning("After successful password handling: Final downloadlink 'dllink' is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+            try {
+                errorIpBlockedHandling(br);
+            } catch (PluginException e) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+            }
+            if (dllink == null) {
+                /* The link is always SSL - based on user setting it will redirect to either https or http. */
+                String postData = "did=0&";
+                postData += getSSLFormValue();
+                br.postPage(link.getDownloadURL(), postData);
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
+                        logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if (br.containsHTML("Warning ! You can use your Premium account for downloading from 1 Internet access at a time") || br.containsHTML("Warning ! You can use your account for downloading from 1 Internet access at a time.")) {
+                        logger.warning("Your using account on multiple IP addresses at once");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account been used on another Internet connection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        logger.warning("Final downloadlink 'dllink' is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+        }
+        if (PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled() && dllink.startsWith("http://")) {
+            dllink = dllink.replace("http://", "https://");
+        }
+        for (int i = 0; i != 2; i++) {
+            if (dl == null || i > 0) {
+                try {
+                    logger.info("Connecting to dllink: " + dllink);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
                 } catch (final ConnectException c) {
                     logger.info("Download failed because connection timed out, NOT a JD issue!");
@@ -741,13 +729,13 @@ public class OneFichierCom extends PluginForHost {
                     }
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    errorHandling(link, this.br);
+                    errorHandling(link, br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                link.setProperty(PROPERTY_PREMLINK, dllink);
-                dl.startDownload();
-                return;
             }
+            link.setProperty(PROPERTY_PREMLINK, dllink);
+            dl.startDownload();
+            return;
         }
     }
 
