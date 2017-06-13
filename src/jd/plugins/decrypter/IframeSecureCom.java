@@ -33,7 +33,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iframe-secure.com", "protect-iframe.com" }, urls = { "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "protect-iframe.com" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+" })
 public class IframeSecureCom extends antiDDoSForDecrypt {
 
     public IframeSecureCom(PluginWrapper wrapper) {
@@ -45,6 +45,10 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if ("iframe-secure.com".equals(getHost())) {
             getPage("iframe.php?u=" + fid);
             // some form
@@ -52,13 +56,10 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             if (f != null) {
                 submitForm(f);
             }
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        if ("protect-iframe.com".equals(getHost())) {
+        } else if ("protect-iframe.com".equals(getHost())) {
             getPage("/embed/embed.php?u=" + fid);
+        } else if ("protect-video.com".equals(getHost())) {
+            getPage("/embed/embed.php?id=" + fid);
         }
         final String finallink = getLink(getPacked());
         if (finallink == null) {
@@ -87,7 +88,7 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         if (result == null) {
             return null;
         }
-        final String finallink = new Regex(result, "window\\.location\\.replace\\('(.*?)'\\);").getMatch(0);
+        final String finallink = new Regex(result, "window\\.location\\.replace\\(('|\")(.*?)\\1\\);").getMatch(1);
         return finallink;
     }
 }
