@@ -56,7 +56,6 @@ import org.jdownloader.updatev2.UpdateController;
 
 public class ExtensionController implements MenuExtenderHandler {
     private static final String              TMP_INVALIDEXTENSIONS = "invalidextensions";
-
     private static final ExtensionController INSTANCE              = new ExtensionController();
 
     /**
@@ -68,10 +67,8 @@ public class ExtensionController implements MenuExtenderHandler {
         return ExtensionController.INSTANCE;
     }
 
-    private List<LazyExtension>                  list = new ArrayList<LazyExtension>();
-
+    private volatile List<LazyExtension>         list = new ArrayList<LazyExtension>();
     private final ExtensionControllerEventSender eventSender;
-
     private final LogSource                      logger;
 
     /**
@@ -91,9 +88,8 @@ public class ExtensionController implements MenuExtenderHandler {
         return eventSender;
     }
 
-    private boolean                    cacheInvalidated      = false;
-
-    private List<UninstalledExtension> uninstalledExtensions = new ArrayList<UninstalledExtension>();
+    private boolean                             cacheInvalidated      = false;
+    private volatile List<UninstalledExtension> uninstalledExtensions = new ArrayList<UninstalledExtension>();
 
     public boolean isCacheInvalidated() {
         return cacheInvalidated;
@@ -141,13 +137,15 @@ public class ExtensionController implements MenuExtenderHandler {
                 }
             } finally {
                 logger.info("@ExtensionController: init in" + (System.currentTimeMillis() - t) + "ms :" + ret.size());
+                for (final LazyExtension lazyExtension : ret) {
+                    logger.info("@ExtensionController:" + lazyExtension.getName());
+                }
             }
             if (ret.size() == 0) {
                 logger.severe("@ExtensionController: WTF, no extensions!");
             }
             try {
                 Collections.sort(ret, new Comparator<LazyExtension>() {
-
                     public int compare(LazyExtension o1, LazyExtension o2) {
                         return o1.getName().compareTo(o2.getName());
                     }
@@ -160,11 +158,9 @@ public class ExtensionController implements MenuExtenderHandler {
                 MenuManagerMainToolbar.getInstance().registerExtender(this);
             }
             list = Collections.unmodifiableList(ret);
-
             initUninstalledExtensions();
             if (!org.appwork.utils.Application.isHeadless()) {
                 SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
                     public void run() {
                         List<LazyExtension> llist = list;
                         for (LazyExtension plg : llist) {
@@ -188,7 +184,6 @@ public class ExtensionController implements MenuExtenderHandler {
         if (set.add("org.jdownloader.extensions.eventscripter.EventScripterExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
         }
-
         if (set.add("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
         }
@@ -216,7 +211,6 @@ public class ExtensionController implements MenuExtenderHandler {
             }
             try {
                 // UpdateController.getInstance().runExtensionUnInstallation(ue.getId());
-
                 UpdateController.getInstance().runExtensionsFullUpdate(list);
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -228,10 +222,8 @@ public class ExtensionController implements MenuExtenderHandler {
     private java.util.List<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
         java.util.List<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
         }, new ArrayList<LazyExtension>());
-
         java.util.List<LazyExtension> lst = new ArrayList<LazyExtension>(cache);
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
-
             LazyExtension l = it.next();
             if (l.getJarPath() == null || !new File(l.getJarPath()).exists()) {
                 throw new InstantiationException("Jar Path " + l.getJarPath() + " is invalid");
@@ -241,9 +233,7 @@ public class ExtensionController implements MenuExtenderHandler {
                 // if exception occures here, we do a complete rescan. cache
                 // might be out of date
                 l.init();
-
             }
-
         }
         return lst;
     }
@@ -271,26 +261,22 @@ public class ExtensionController implements MenuExtenderHandler {
                 logger.log(e);
             }
         }
-        if (addons == null) {
+        if (addons == null || addons.length == 0) {
             addons = Application.getResource("extensions").listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
                 }
             });
         }
-
         if (addons != null) {
-            logger.info(Arrays.toString(addons));
+            logger.info("Extensions:" + Arrays.toString(addons));
             HashSet<File> dupes = new HashSet<File>();
             HashSet<URL> urlDupes = new HashSet<URL>();
-
             main: for (File jar : addons) {
                 try {
-
                     URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, getClass().getClassLoader());
                     String resource = AbstractExtension.class.getPackage().getName().replace('.', '/');
                     final Enumeration<URL> urls = cl.getResources(resource);
-
                     URL url;
                     Pattern pattern = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class");
                     boolean atLeastOneSourceFound = false;
@@ -298,12 +284,9 @@ public class ExtensionController implements MenuExtenderHandler {
                         atLeastOneSourceFound = true;
                         url = urls.nextElement();
                         if (urlDupes.add(url)) {
-
                             if ("jar".equalsIgnoreCase(url.getProtocol())) {
-
                                 // jarred addon (JAR)
                                 File jarFile = new File(new URL(url.getPath().substring(0, url.getPath().lastIndexOf('!'))).toURI());
-
                                 if (dupes.add(jarFile)) {
                                     FileInputStream fis = null;
                                     JarInputStream jis = null;
@@ -312,16 +295,12 @@ public class ExtensionController implements MenuExtenderHandler {
                                         JarEntry e;
                                         while ((e = jis.getNextJarEntry()) != null) {
                                             try {
-
                                                 Matcher matcher = pattern.matcher(e.getName());
-
                                                 if (matcher.find()) {
                                                     String pkg = matcher.group(1);
                                                     String clazzName = matcher.group(2);
                                                     Class<?> clazz = new URLClassLoader(new URL[] { jar.toURI().toURL() }, getClass().getClassLoader()).loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
-
                                                     if (AbstractExtension.class.isAssignableFrom(clazz)) {
-
                                                         initModule((Class<AbstractExtension<?, ?>>) clazz, ret, jarFile);
                                                         continue main;
                                                     }
@@ -353,9 +332,7 @@ public class ExtensionController implements MenuExtenderHandler {
                             if (s.getName().startsWith(resource)) {
                                 URI uri = jar.toURI();
                                 url = new URL(uri.toString() + "!" + s.getName());
-
                                 if (urlDupes.add(url)) {
-
                                     if (dupes.add(jar)) {
                                         FileInputStream fis = null;
                                         JarInputStream jis = null;
@@ -364,17 +341,13 @@ public class ExtensionController implements MenuExtenderHandler {
                                             JarEntry e;
                                             while ((e = jis.getNextJarEntry()) != null) {
                                                 try {
-
                                                     Matcher matcher = pattern.matcher(e.getName());
-
                                                     if (matcher.find()) {
                                                         String pkg = matcher.group(1);
                                                         String clazzName = matcher.group(2);
                                                         URLClassLoader classloader = new URLClassLoader(new URL[] { jar.toURI().toURL() }, getClass().getClassLoader());
                                                         Class<?> clazz = classloader.loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
-
                                                         if (AbstractExtension.class.isAssignableFrom(clazz)) {
-
                                                             initModule((Class<AbstractExtension<?, ?>>) clazz, ret, jar);
                                                             continue main;
                                                         }
@@ -394,13 +367,10 @@ public class ExtensionController implements MenuExtenderHandler {
                                             }
                                         }
                                     }
-
                                 }
-
                             }
                             System.out.println(s);
                         }
-
                     }
                 } catch (Throwable e) {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
@@ -408,7 +378,6 @@ public class ExtensionController implements MenuExtenderHandler {
             }
         }
         return ret;
-
     }
 
     @SuppressWarnings("unchecked")
@@ -476,7 +445,6 @@ public class ExtensionController implements MenuExtenderHandler {
                             // UIOManager.I().show(ExceptionDialogInterface.class, new
                             // ExceptionDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | UIOManager.BUTTONS_HIDE_CANCEL, "Error",
                             // e.getMessage(), e, null, null));
-
                         }
                     }
                     if (!loaded) {
@@ -494,7 +462,6 @@ public class ExtensionController implements MenuExtenderHandler {
             list = new ArrayList<LazyExtension>();
         }
         String id = cls.getName().substring(27);
-
         logger.fine("Load Extension: " + id);
         LazyExtension extension = LazyExtension.create(id, cls);
         if (!extension.isHeadlessRunnable() && org.appwork.utils.Application.isHeadless()) {
@@ -503,7 +470,6 @@ public class ExtensionController implements MenuExtenderHandler {
         }
         extension.setJarPath(jarFile.getAbsolutePath());
         extension._setPluginClass(cls);
-
         if (extension._isEnabled()) {
             extension.init();
         }
@@ -572,14 +538,11 @@ public class ExtensionController implements MenuExtenderHandler {
 
     public Class<?> loadClass(String className) throws ClassNotFoundException, ExtensionNotLoadedException {
         if (list == null || list.size() == 0) {
-
             //
             throw new ExtensionNotLoadedException(className);
-
         }
         ClassNotFoundException exc = null;
         for (AbstractExtension<?, ?> ae : getEnabledExtensions()) {
-
             if (className.startsWith(ae.getClass().getPackage().getName())) {
                 try {
                     return Class.forName(className, true, ae.getClass().getClassLoader());
@@ -587,7 +550,6 @@ public class ExtensionController implements MenuExtenderHandler {
                     exc = e;
                 }
             }
-
         }
         if (exc != null) {
             throw exc;
@@ -595,22 +557,18 @@ public class ExtensionController implements MenuExtenderHandler {
         for (LazyExtension le : getExtensions()) {
             String packageName = le.getClassname();
             packageName = packageName.substring(0, packageName.lastIndexOf("."));
-
             if (className.startsWith(packageName)) {
                 //
-
                 throw new ExtensionNotLoadedException(le.getClassname() + " - " + className);
             }
         }
         throw new ClassNotFoundException(className);
-
     }
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
         java.util.List<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(getExtensions());
         Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
-
             public int compare(LazyExtension o1, LazyExtension o2) {
                 return o1.getName().compareTo(o2.getName());
             }
@@ -624,11 +582,9 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     private MenuItemData updateMainMenu(List<LazyExtension> pluginsOptional, MenuContainerRoot mr) {
-
         MenuContainerRoot root = new MenuContainerRoot();
         root._setOwner(MenuManagerMainmenu.getInstance());
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
-
         OptionalContainer opt = new OptionalContainer(false);
         root.add(container);
         root.add(opt);
@@ -636,10 +592,8 @@ public class ExtensionController implements MenuExtenderHandler {
         // container.add(windows);
         for (final LazyExtension wrapper : pluginsOptional) {
             try {
-
                 if (wrapper.isQuickToggle()) {
                     MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
-
                     container.add(m);
                 } else {
                     // MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
@@ -651,11 +605,9 @@ public class ExtensionController implements MenuExtenderHandler {
             }
         }
         return root;
-
     }
 
     private MenuItemData updateMainToolbar(List<LazyExtension> pluginsOptional, MenuContainerRoot mr) {
-
         // AddonsMenuWindowContainer windows = new AddonsMenuWindowContainer();
         // container.add(windows);
         OptionalContainer opt = new OptionalContainer(false);
@@ -675,7 +627,6 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     public void setEnabled(LazyExtension object, boolean value) {
-
         if (value) {
             try {
                 object._setEnabled(true);
@@ -688,7 +639,6 @@ public class ExtensionController implements MenuExtenderHandler {
                                 object._getExtension().getGUI().setActive(true);
                                 // bring panel to front
                                 object._getExtension().getGUI().toFront();
-
                             }
                         } else {
                             // activate panel
@@ -710,7 +660,6 @@ public class ExtensionController implements MenuExtenderHandler {
             }
         } else {
             try {
-
                 object._setEnabled(false);
             } catch (StartException e1) {
                 e1.printStackTrace();
