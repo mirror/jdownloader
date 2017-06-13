@@ -14,10 +14,8 @@ import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 public class DownloadClient {
-
     private Browser                     httpClient;
     private DownloadProgress            progressCallback;
-
     private MeteredThrottledInputStream input;
 
     public DownloadProgress getProgressCallback() {
@@ -43,8 +41,11 @@ public class DownloadClient {
             if (getResumePosition() >= 0) {
                 request.getHeaders().put("Range", "bytes=" + getResumePosition() + "-");
             }
+            final DownloadProgress progress = getProgressCallback();
+            if (progress != null) {
+                progress.onConnect();
+            }
             connection = httpClient.openRequestConnection(request, true);
-            DownloadProgress progress = getProgressCallback();
             if (progress != null) {
                 progress.setTotal(connection.getCompleteContentLength());
             }
@@ -74,7 +75,6 @@ public class DownloadClient {
         default:
             throw new IOException("Invalid ResponseCode: " + connection);
         }
-
     }
 
     private void download(URLConnectionAdapter connection) throws IOException, InterruptedException {
@@ -84,11 +84,9 @@ public class DownloadClient {
             OutputStream output = getOutputStream();
             DownloadProgress progress = getProgressCallback();
             if (connection.getCompleteContentLength() >= 0) {
-
                 if (progress != null) {
                     progress.setTotal(connection.getCompleteContentLength());
                 }
-
             } else {
                 /* no contentLength is known */
             }
@@ -99,30 +97,23 @@ public class DownloadClient {
                 progress.setLoaded(loaded);
             }
             while (true) {
-
                 if ((len = input.read(b)) == -1) {
                     break;
                 }
                 if (!doContinue()) {
-
                     throw new InterruptedException();
-
                 }
                 if (len > 0) {
                     if (progress != null) {
                         progress.onBytesLoaded(b, len);
                     }
-
                     output.write(b, 0, len);
-
                     loaded += len;
-
                     if (progress != null) {
                         progress.increaseLoaded(len);
                     }
                 }
             }
-
             if (connection.getCompleteContentLength() >= 0) {
                 if (loaded != connection.getCompleteContentLength()) {
                     throw new IOException("Incomplete download! " + loaded + " from " + connection.getCompleteContentLength());
@@ -178,5 +169,4 @@ public class DownloadClient {
         }
         return input.getSpeedMeter();
     }
-
 }
