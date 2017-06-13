@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -31,9 +30,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" })
 public class XvideosCom extends PluginForHost {
-
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -204,5 +202,4 @@ public class XvideosCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

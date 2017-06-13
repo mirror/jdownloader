@@ -50,18 +50,31 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         short pageNum = 0;
         int decryptedLinksNum;
+        boolean pornStar = false;
+        boolean retry = false;
         do {
+            retry = false;
             if (this.isAbort()) {
                 return decryptedLinks;
             }
             logger.info(String.format("Decrypting page %d", pageNum));
             decryptedLinksNum = 0;
-            br.getPage("/profiles/" + username + "/videos/best/" + pageNum);
-            if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort")) {
-                logger.info("This user does not have any videos");
-                return decryptedLinks;
+            if (pornStar) {
+                br.getPage("/profiles/" + username + "/videos/pornstar/" + pageNum);
+            } else {
+                br.getPage("/profiles/" + username + "/videos/best/" + pageNum);
             }
-            final String[] links = br.getRegex("(/prof\\-video\\-click/upload/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
+            final String[] links = br.getRegex("(/prof\\-video\\-click/(?:upload|pornstar)/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
+            if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort") && (links == null || links.length == 0)) {
+                if (pornStar) {
+                    logger.info("This user does not have any videos");
+                    return decryptedLinks;
+                } else {
+                    pornStar = true;
+                    retry = true;
+                    continue;
+                }
+            }
             if (links == null || links.length == 0) {
                 break;
             }
@@ -70,7 +83,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
-                final String linkid = new Regex(singleLink, "prof\\-video\\-click/upload/[^/]+/(\\d+)").getMatch(0);
+                final String linkid = new Regex(singleLink, "prof\\-video\\-click/(?:upload|pornstar)/[^/]+/(\\d+)").getMatch(0);
                 /* Only add new URLs */
                 if (!dupeList.contains(linkid)) {
                     singleLink = "http://www." + this.getHost() + singleLink;
@@ -95,7 +108,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 }
             }
             pageNum++;
-        } while (decryptedLinksNum >= 36);
+        } while (decryptedLinksNum >= 36 || retry);
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
