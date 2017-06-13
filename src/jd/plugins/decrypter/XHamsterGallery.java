@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/(gallery/[0-9]+/.*?\\.html|view/[0-9\\-]+.*?\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/(gallery/[0-9A-Za-z_\\-/]+(\\.html)?|view/[0-9A-Za-z_\\-/]+(\\.html)?)" })
 public class XHamsterGallery extends PluginForDecrypt {
-
     public XHamsterGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,7 +60,6 @@ public class XHamsterGallery extends PluginForDecrypt {
             logger.info("This gallery is only visible for specified users, account needed: " + parameter);
             return decryptedLinks;
         }
-
         if (br.containsHTML(">This gallery needs password<")) {
             boolean failed = true;
             for (int i = 1; i <= 3; i++) {
@@ -78,7 +75,12 @@ public class XHamsterGallery extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-
+        if (new Regex(br.getURL(), "/gallery/[0-9]+/[0-9]+").matches()) { // Single picture
+            DownloadLink dl = createDownloadlink("directhttp://" + br.getRegex("class='slideImg'\\s+src='([^']+)").getMatch(0));
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         final String urlWithoutPageParameter = this.br.getURL();
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster\\.com</title>").getMatch(0);
         if (fpname == null) {
@@ -118,14 +120,12 @@ public class XHamsterGallery extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-
         }
         if (fpname != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpname.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -147,7 +147,6 @@ public class XHamsterGallery extends PluginForDecrypt {
             ((jd.plugins.hoster.XHamsterCom) hostPlugin).setBrowser(br);
             ((jd.plugins.hoster.XHamsterCom) hostPlugin).login(aa, force);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }
@@ -158,5 +157,4 @@ public class XHamsterGallery extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
