@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,14 +26,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 /**
  * DEV NOTES:<br/>
  * - related to keezmovies, same group of sites. Tells: incapsula and phncdn.com CDN -raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" })
 public class MofoSexCom extends antiDDoSForHost {
-
     private String DLLINK = null;
 
     public MofoSexCom(final PluginWrapper wrapper) {
@@ -72,7 +70,7 @@ public class MofoSexCom extends antiDDoSForHost {
             }
             String real_url = br.getRegex("link_url=(http%3A%2F%2F(www\\.)?mofosex\\.com%2Fvideos%2F[^<>\"/]*?\\.html)\\&amp;").getMatch(0);
             if (real_url == null) {
-                real_url = br.getRegex("class=\"footer\"><br/><a href=\"([^<>\"]*?)\"").getMatch(0);
+                real_url = br.getRegex("class=\"footer\".*?href=\"([^<>\"]*?)\"").getMatch(0);
             }
             if (real_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -106,7 +104,7 @@ public class MofoSexCom extends antiDDoSForHost {
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
