@@ -9,7 +9,7 @@ JPG:::ffd8ffe00010.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
 JPG:::ffd8ffe127de.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
 M4A:::000000206674.*::::::((.*\.m4a)|(.*\.mp4)|(.*\.m4v))
 MDF:::00ffffffffff.*::::::.*\.mdf
-MKV:::1a45.*:::Matroska Video file:::((.*\.mkv)|(.*\.webm))
+MKV:::1a45.*:::Matroska Video file:::((.*\.mkv)|(.*\.webm)|(.*\.mp4))
 MP3:::000040[a-f0-9]{2}[a-f0-9]{2}00.*::::::.*\.mp3
 MP3:::000064000000.*::::::.*\.mp3
 MP3:::000044[a-f0-9]{2}[a-f0-9]{2}00.*::::::.*\.mp3
