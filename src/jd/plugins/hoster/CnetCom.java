@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "http://(www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "http://(www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]*?\\.html" })
 public class CnetCom extends PluginForHost {
-
     public CnetCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,8 +47,8 @@ public class CnetCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500 || br.getURL().contains("/most-popular/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("class=\"download-now floating-button-dln\"")) {
-            /* No downloadable content */
+        } else if (!br.containsHTML("class=\"download-now title-detail-button-dln\"")) {
+            /* No downloadable content / External Download Site */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // // External mirrors are of course not supported
@@ -96,13 +94,15 @@ public class CnetCom extends PluginForHost {
             continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Download Now</span>").getMatch(0);
             ads_free = false;
         }
-        if (continueLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (continueLink != null) { // 20170614 continueLink is no longer available?
+            br.getPage(continueLink);
         }
-        br.getPage(continueLink);
         dllink = br.getRegex("data-download-now-url=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("http\\-equiv=\"refresh\" content=\\'0;url=(http://[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("data-dl-url=\\'(http://[^<>\"]*?)\\'").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -135,5 +135,4 @@ public class CnetCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
