@@ -52,7 +52,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling */
-        if (br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Sorry, no photos found|error\">Gallery not found<")) {
+        if (br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Sorry, no photos found|error\">Gallery not found<|>Page Not Found<")) {
             decryptedLinks.add(createOfflinelink(parameter, "Content Offline"));
             return decryptedLinks;
         }
