@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,11 +38,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
+
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -115,7 +116,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             /* Crawl all items of a user */
-            final String id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
+            String id_owner = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/id");
+            if (id_owner == null) {
+                id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
+            }
             username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
             final boolean isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
             if (username_url != null) {
@@ -170,16 +174,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                             }
                             /*
                              * Try to bypass rate-limit - usually kicks in after about 4000 items and it is bound to IP, not User-Agent or
-                             * cookies! Also we need to continue with the cookies we got at the beginning otherwise we'll get a 403! Aftzer
+                             * cookies! Also we need to continue with the cookies we got at the beginning otherwise we'll get a 403! After
                              * about 60 seconds wait we should be able to continue but it might happen than we only get one batch of items
                              * and are blocked again then.
                              */
                             this.sleep(30000, param);
                         }
-                        prepBRAjax(br, username_url, maxid);
-                        final String p = "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++dimensions+%7B%0A++++++height%2C%0A++++++width%0A++++%7D%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%2C%0A++++thumbnail_src%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow";
-                        br.postPage("https://www." + this.getHost() + "/query/", p);
+                        // prepBRAjax(br, username_url, maxid);
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        br.getHeaders().put("Accept", "*/*");
+                        final String p = "query_id=17880160963012870&id=" + id_owner + "&first=" + decryptedLinks.size() + "&after=" + nextid;
+                        br.getPage("/graphql/query/?" + p);
                         responsecode = br.getHttpConnection().getResponseCode();
+                        if (responsecode == 404) {
+                            logger.warning("Error occurred: 404");
+                            return decryptedLinks;
+                        }
                         if (responsecode == 403 || responsecode == 429) {
                             failed = true;
                             if (responsecode == 403) {
@@ -203,20 +213,26 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         break;
                     }
                     entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "media/nodes");
-                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "media/page_info/end_cursor");
+                    resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
+                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
                 }
-                if (resource_data_list.size() == 0) {
+                if (resource_data_list == null || resource_data_list.size() == 0) {
                     logger.info("Found no new links on page " + page + " --> Stopping decryption");
                     break;
                 }
                 decryptedLinksLastSize = decryptedLinks.size();
                 for (final Object o : resource_data_list) {
-                    decryptAlbum((LinkedHashMap<String, Object>) o);
+                    final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
+                    // pages > 0, have a additional nodes entry
+                    if (result.size() == 1 && result.containsKey("node")) {
+                        decryptAlbum((LinkedHashMap<String, Object>) result.get("node"));
+                    } else {
+                        decryptAlbum(result);
+                    }
                 }
                 decryptedLinksCurrentSize = decryptedLinks.size();
                 page++;
-            } while (nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize);
+            } while (nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
         }
         return decryptedLinks;
     }
@@ -228,15 +244,19 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         // is this id? // final String linkid_main = (String) entries.get("id");
         final String typename = (String) entries.get("__typename");
-        final String linkid_main = (String) entries.get("code");
+        String linkid_main = (String) entries.get("code");
+        // page > 0, now called 'shortcode'
+        linkid_main = (String) entries.get("shortcode");
         final String description = (String) entries.get("caption");
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
-        if ("GraphSidecar".equalsIgnoreCase(typename) && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
+        if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
             /*
              * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
              * the json does not contain the other images --> This has to go back into the decrypter and get crawled as a single item.
              */
-            this.decryptedLinks.add(this.createDownloadlink(createSingle_P_url(linkid_main)));
+            final DownloadLink dl = this.createDownloadlink(createSingle_P_url(linkid_main));
+            this.decryptedLinks.add(dl);
+            distribute(dl);
         } else if (resource_data_list != null && resource_data_list.size() > 0) {
             final int padLength = getPadLength(resource_data_list.size());
             int counter = 0;
