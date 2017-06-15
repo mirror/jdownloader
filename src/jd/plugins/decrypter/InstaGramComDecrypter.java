@@ -246,7 +246,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final String typename = (String) entries.get("__typename");
         String linkid_main = (String) entries.get("code");
         // page > 0, now called 'shortcode'
-        linkid_main = (String) entries.get("shortcode");
+        if (linkid_main == null) {
+            linkid_main = (String) entries.get("shortcode");
+        }
         final String description = (String) entries.get("caption");
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
