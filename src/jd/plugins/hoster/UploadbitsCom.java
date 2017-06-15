@@ -570,7 +570,8 @@ public class UploadbitsCom extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+        // if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+        if (!br.containsHTML("2.00 TB")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
@@ -582,14 +583,16 @@ public class UploadbitsCom extends antiDDoSForHost {
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
                 /* More wide RegEx to be more language independant */
-                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+                // expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4})[\t\n\r ]*?<").getMatch(0);
             }
             if (expire == null) {
                 account.setValid(false);
                 return ai;
             }
             long expire_milliseconds = 0;
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
