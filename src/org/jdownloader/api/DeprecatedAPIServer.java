@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.x500.X500Principal;
@@ -52,9 +53,17 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.tls.Certificate;
+import org.bouncycastle.crypto.tls.CertificateRequest;
+import org.bouncycastle.crypto.tls.CertificateStatus;
+import org.bouncycastle.crypto.tls.ClientCertificateType;
 import org.bouncycastle.crypto.tls.DefaultTlsServer;
 import org.bouncycastle.crypto.tls.DefaultTlsSignerCredentials;
 import org.bouncycastle.crypto.tls.ExtensionType;
@@ -66,6 +75,7 @@ import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jdownloader.logging.LogController;
 
@@ -398,6 +408,58 @@ public class DeprecatedAPIServer extends HttpServer {
                             }
                         }
                         return null;
+                    }
+
+                    // wget --ca-cert=ca.crt --certificate=cert.crt --private-key=key.key "url" -O /dev/null
+                    @Override
+                    public void notifyClientCertificate(org.bouncycastle.crypto.tls.Certificate clientCertificate) throws IOException {
+                        if (clientCertificate != null && clientCertificate.getLength() > 0) {
+                            System.out.println("IsValid:" + isValid(clientCertificate));
+                        }
+                    }
+
+                    // http://www.nakov.com/blog/2009/12/01/x509-certificate-validation-in-java-build-and-verify-chain-and-verify-clr-with-bouncy-castle/
+                    private final boolean isValid(Certificate... certs) throws IOException {
+                        final Certificate cert = certs[0];
+                        byte[] toSign = cert.getCertificateAt(0).getEncoded();
+                        try {
+                            SubjectPublicKeyInfo pkInfo = cert.getCertificateAt(1).getSubjectPublicKeyInfo();
+                            RSAKeyParameters rsa = (RSAKeyParameters) PublicKeyFactory.createKey(pkInfo);
+                            byte[] actual = cert.getCertificateAt(0).getSignature().getBytes();
+                            SHA1Digest digest = new SHA1Digest();
+                            RSADigestSigner signer = new RSADigestSigner(digest);
+                            signer.init(false, rsa);
+                            signer.update(toSign, 0, toSign.length);
+                            boolean isValid = signer.verifySignature(actual);
+                            System.out.println(isValid);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (DataLengthException e) {
+                            e.printStackTrace();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    public CertificateStatus getCertificateStatus() throws IOException {
+                        final CertificateStatus ret = super.getCertificateStatus();
+                        return ret;
+                    }
+
+                    @Override
+                    public CertificateRequest getCertificateRequest() throws IOException {
+                        final CertificateRequest ret;
+                        if (false) {
+                            final SignatureAndHashAlgorithm hash = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+                            final Vector<Object> hashs = new Vector<Object>();
+                            hashs.add(hash);
+                            ret = new CertificateRequest(new short[] { ClientCertificateType.rsa_sign }, hashs, null);
+                        } else {
+                            ret = null;
+                        }
+                        return ret;
                     }
 
                     @Override

@@ -111,6 +111,9 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect" })
     String action_Reconnect();
 
+    @Default(lngs = { "en" }, values = { "Restart JDownloader" })
+    String action_Restart_JDownloader();
+
     @Default(lngs = { "en" }, values = { "Set Downloadspeed" })
     String action_setDownloadspeed();
 
@@ -200,5 +203,4 @@ public interface SchedulerTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "No Accounts available" })
     String addScheduleEntryDialog_noAccount();
-
 }
