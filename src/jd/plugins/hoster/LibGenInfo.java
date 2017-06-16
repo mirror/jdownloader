@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
@@ -103,7 +104,11 @@ public class LibGenInfo extends PluginForHost {
         if (link.getDownloadURL().contains("/ads.php?md5=")) {
             final String author = getBracketResult("author");
             final String title = getBracketResult("title");
+            final String extension = new Regex(br, "Download via torrent\\s*</a>\\s*<input\\s*.*?value=\".*?(\\.[a-z0-9]{3,4})\"").getMatch(0);
             filename = (author == null || author.trim().length() != 0 ? author : "unknown") + " - " + title;
+            if (filename != null && extension != null) {
+                filename += extension;
+            }
         } else {
             filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
             filesize = br.getRegex(">size\\(bytes\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
