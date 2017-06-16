@@ -161,6 +161,7 @@ public class Keep2ShareCc extends K2SApi {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
         link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2s.cc/"));
         link.setUrlDownload(link.getDownloadURL().replace("k2s.cc/", "keep2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "keep2s.cc/"));
     }
 
     public void followRedirectNew(Browser br) throws Exception {
@@ -499,6 +500,8 @@ public class Keep2ShareCc extends K2SApi {
         return dllink;
     }
 
+    private final String cookiesProperty = "cookies2";
+
     @SuppressWarnings("unchecked")
     private HashMap<String, String> login(final Account account, final boolean force, AtomicBoolean validateCookie) throws Exception {
         synchronized (ACCLOCK) {
@@ -506,7 +509,7 @@ public class Keep2ShareCc extends K2SApi {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
-                final Object ret = account.getProperty("cookies", null);
+                final Object ret = account.getProperty(cookiesProperty, null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -613,10 +616,10 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty(cookiesProperty, cookies);
                 return cookies;
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.setProperty(cookiesProperty, Property.NULL);
                 throw e;
             }
         }
@@ -717,7 +720,7 @@ public class Keep2ShareCc extends K2SApi {
             boolean fresh = false;
             Object after = null;
             synchronized (ACCLOCK) {
-                Object before = account.getProperty("cookies", null);
+                Object before = account.getProperty(cookiesProperty, null);
                 after = login(account, false, null);
                 fresh = before != after;
             }
@@ -726,7 +729,7 @@ public class Keep2ShareCc extends K2SApi {
                 logger.info("Redirected to login page, seems cookies are no longer valid!");
                 synchronized (ACCLOCK) {
                     if (after == account.getProperty("cookies", null)) {
-                        account.setProperty("cookies", Property.NULL);
+                        account.setProperty(cookiesProperty, Property.NULL);
                     }
                     if (fresh) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -795,8 +798,8 @@ public class Keep2ShareCc extends K2SApi {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                         }
                         synchronized (ACCLOCK) {
-                            if (after == account.getProperty("cookies", null)) {
-                                account.setProperty("cookies", Property.NULL);
+                            if (after == account.getProperty(cookiesProperty, null)) {
+                                account.setProperty(cookiesProperty, Property.NULL);
                             }
                             if (fresh) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
