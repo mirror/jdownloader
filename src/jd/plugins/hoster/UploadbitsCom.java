@@ -20,6 +20,12 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,14 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbits.com" }, urls = { "https?://(?:www\\.)?uploadbits\\.(?:com|net)/[A-Za-z0-9]+" })
 public class UploadbitsCom extends antiDDoSForHost {
+
     public UploadbitsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -105,6 +106,7 @@ public class UploadbitsCom extends antiDDoSForHost {
     private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 5;
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
+    private static final String            maintenance                                  = "<h1>Maintenance</h1>\\s*We are currently down for maintenance\\. Please try again in a few minutes!\\.";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -213,7 +215,7 @@ public class UploadbitsCom extends antiDDoSForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (enable_embed) {
                 try {
@@ -255,13 +257,13 @@ public class UploadbitsCom extends antiDDoSForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
@@ -271,7 +273,7 @@ public class UploadbitsCom extends antiDDoSForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, link);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -292,11 +294,11 @@ public class UploadbitsCom extends antiDDoSForHost {
                     final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -538,11 +540,13 @@ public class UploadbitsCom extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    getPage("/login." + type);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage("/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML(mainpage)) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                    }
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -551,7 +555,7 @@ public class UploadbitsCom extends antiDDoSForHost {
                         }
                     }
                 }
-                getPage(loginstart + this.getHost() + "/account_home." + type);
+                getPage("/upgrade." + type);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -570,41 +574,34 @@ public class UploadbitsCom extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        // if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
-        if (!br.containsHTML("2.00 TB")) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
-        } else {
-            getPage("/upgrade." + type);
+        final String accountType = br.getRegex("Account Type\\s*:\\s*</td>\\s*<td[^>]*>\\s*<span[^\r\n]+>\\s*(\\w+)").getMatch(0);
+        long expire_milliseconds = -1;
+        String expire = null;
+        if ("Premium".equals(accountType)) {
             /* If the premium account is expired we'll simply accept it as a free account. */
-            String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            expire = br.getRegex("Premium Expiration\\s*:\\s*</td>\\s*<td[^>]*>\\s*<span[^\r\n]+>\\s*(\\d{2}/\\d{2}/\\d{4})").getMatch(0);
             if (expire == null) {
-                /* More wide RegEx to be more language independant */
-                // expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
-                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4})[\t\n\r ]*?<").getMatch(0);
+                /* Wider RegEx to be more language independent */
+                expire = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4})\\s*<").getMatch(0);
             }
             if (expire == null) {
                 account.setValid(false);
                 return ai;
             }
-            long expire_milliseconds = 0;
-            // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy", Locale.ENGLISH);
-            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
-            } else {
-                ai.setValidUntil(expire_milliseconds);
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
-            }
+
+        }
+        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
+        } else {
+            ai.setValidUntil(expire_milliseconds);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
+            ai.setStatus("Premium Account");
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
