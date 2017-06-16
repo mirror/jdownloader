@@ -52,7 +52,6 @@ public class IPConnectionState {
         }
         this.cause = e;
         this.ip = null;
-
     }
 
     /**
@@ -94,14 +93,12 @@ public class IPConnectionState {
             return false;
         }
         return this.ip.equals(currentIP.ip);
-
     }
 
     /**
      *
      * @return the cause that caused this state
      */
-
     public IPCheckException getCause() {
         return this.cause;
     }
@@ -111,7 +108,6 @@ public class IPConnectionState {
      *
      * @return
      */
-
     public IP getExternalIp() {
         return this.ip;
     }
@@ -133,5 +129,4 @@ public class IPConnectionState {
     public boolean isOnline() {
         return this.ip != null;
     }
-
 }

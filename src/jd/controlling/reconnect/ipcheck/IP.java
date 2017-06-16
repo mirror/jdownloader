@@ -47,7 +47,6 @@ public class IP {
                     throw new OfflineException(ip);
                 }
                 if (n1 >= 0 && n1 <= 255 && n2 >= 0 && n2 <= 255 && n3 >= 0 && n3 <= 255 && n4 >= 0 && n4 <= 255) {
-
                     if (!IP.validateIP(ip)) {
                         throw new ForbiddenIPException(ip);
                     }
@@ -58,7 +57,6 @@ public class IP {
             }
         }
         throw new InvalidIPException(ip);
-
     }
 
     /**
@@ -91,11 +89,16 @@ public class IP {
     }
 
     public boolean equals(final Object c) {
-        if (c != null && c instanceof IP) {
+        if (c == null) {
+            return false;
+        } else if (c == this) {
+            return true;
+        } else if (c != null && c instanceof IP) {
             final IP ip = (IP) c;
-            return ip.ip.equals(this.ip);
+            return StringUtils.equals(getIP(), ip.getIP());
+        } else {
+            return false;
         }
-        return false;
     }
 
     public int hashCode() {
@@ -146,10 +149,8 @@ public class IP {
                 if (n1 == 172 && n2 >= 16 && n2 <= 31) {
                     return true;
                 }
-
             }
         }
         return false;
     }
-
 }

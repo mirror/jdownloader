@@ -28,8 +28,8 @@ public class IPController extends ArrayList<IPConnectionState> {
      * true, if the current ip has no use. we need a new one
      */
     private final AtomicBoolean                   invalidFlag  = new AtomicBoolean(false);
-    private IPConnectionState                     latestConnectionState;
-    private IPConnectionState                     invalidState = null;
+    private volatile IPConnectionState            latestConnectionState;
+    private volatile IPConnectionState            invalidState = null;
     private final Object                          LOCK         = new Object();
     /**
      * blacklist for not working ip check providers
@@ -61,9 +61,7 @@ public class IPController extends ArrayList<IPConnectionState> {
             /* new IPConnectionState reached */
             IPConnectionState oldState = latestConnectionState;
             this.latestConnectionState = state;
-
             eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.STATECHANGED, oldState, state));
-
             return super.add(state);
         }
     }
@@ -82,10 +80,8 @@ public class IPController extends ArrayList<IPConnectionState> {
             final IPConnectionState current = this.latestConnectionState;
             /* currently offline = no ip change */
             if (current.isOffline()) {
-
                 return false;
             }
-
             // run back the statelog, until we reached the invalidState. Check
             // all states on the way for a new ip
             for (int index = this.size() - 1; index >= 0; index--) {
@@ -94,7 +90,6 @@ public class IPController extends ArrayList<IPConnectionState> {
                      * we reached the element we began with, so check changed IP and then stop
                      */
                     if (!this.invalidState.equalsLog(current)) {
-
                         eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.IP_CHANGED, invalidState, current));
                         return true;
                     }
@@ -105,7 +100,6 @@ public class IPController extends ArrayList<IPConnectionState> {
                  */
                 if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) {
                     eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.IP_CHANGED, invalidState, current));
-
                     return true;
                 }
             }
@@ -120,8 +114,8 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     protected IP fetchIP() {
         IPConnectionState newIP = null;
-        IPCheckProvider icp = null;
         while (true) {
+            IPCheckProvider icp = null;
             try {
                 icp = this.getIPCheckProvider();
                 newIP = new IPConnectionState(icp.getExternalIP());
@@ -130,24 +124,21 @@ public class IPController extends ArrayList<IPConnectionState> {
             } catch (final InvalidProviderException e) {
                 Log.log(e);
                 // IP check provider is bad.
-                this.badProviders.add(icp);
+                if (icp != null) {
+                    this.badProviders.add(icp);
+                }
             } catch (final IPCheckException e) {
-                // JDLogger.getLogger().info(e.getMessage());
                 newIP = new IPConnectionState(e);
                 break;
             }
         }
-
-        IPConnectionState old = latestConnectionState;
+        final IPConnectionState old = latestConnectionState;
         if (add(newIP)) {
             if (latestConnectionState.isOffline()) {
-
                 eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.OFFLINE));
-
             }
             if ((old == null || old.isOffline()) && !newIP.isOffline()) {
                 eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.ONLINE, newIP));
-
             }
         }
         return this.latestConnectionState.getExternalIp();
@@ -165,13 +156,19 @@ public class IPController extends ArrayList<IPConnectionState> {
         return this.latestConnectionState;
     }
 
+    public synchronized IP getLatestIP() {
+        if (this.latestConnectionState == null) {
+            return null;
+        }
+        return this.latestConnectionState.getExternalIp();
+    }
+
     /**
      * Returns the current external IP. fetches new ip if if is marked as invalid, or is null
      *
      *
      * @return
      */
-
     public IP getIP() {
         return this.getIpState().getExternalIp();
     }
@@ -188,13 +185,10 @@ public class IPController extends ArrayList<IPConnectionState> {
             Log.info(p + " is bad");
             if (!JsonConfig.create(ReconnectConfig.class).isCustomIPCheckEnabled()) {
                 Log.info("Use WebIP Check");
-
                 return new BalancedWebIPCheck();
-
             } else {
                 Log.info("Use Custom");
                 return CustomWebIpCheck.getInstance();
-
             }
         }
         return p;
@@ -295,7 +289,6 @@ public class IPController extends ArrayList<IPConnectionState> {
                     } else if (latestConnectionState.isOffline()) {
                         hasBeenOffline = true;
                     }
-
                     if (this.latestConnectionState.getCause() != null) {
                         try {
                             throw this.latestConnectionState.getCause();
@@ -304,7 +297,6 @@ public class IPController extends ArrayList<IPConnectionState> {
                             // forbidden IP.. no need to wait
                             this.setInvalidated(true);
                             return false;
-
                         } catch (final Throwable e) {
                             // nothing
                         }
@@ -313,7 +305,6 @@ public class IPController extends ArrayList<IPConnectionState> {
                         // break
                         logger.info("Not offline after " + waitForOfflineTime + " seconds");
                         break;
-
                     }
                     if (System.currentTimeMillis() >= endTime) {
                         logger.info("Not reconnected after " + waitForIPTime + " seconds");
@@ -344,7 +335,6 @@ public class IPController extends ArrayList<IPConnectionState> {
             }
             IPController.getInstance().validate();
         }
-
     }
 
     public void waitUntilWeAreOnline() throws InterruptedException {
@@ -354,5 +344,4 @@ public class IPController extends ArrayList<IPConnectionState> {
     public void forceFetchIP() {
         fetchIP();
     }
-
 }
