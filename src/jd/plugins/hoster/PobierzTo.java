@@ -241,6 +241,11 @@ public class PobierzTo extends PluginForHost {
         final long timeBeforeDirectlinkCheck = System.currentTimeMillis();
         long timeBeforeCaptchaInput;
         continue_link = checkDirectLink(link, directlinkproperty);
+        if (maxchunks != 1 && resume) {
+            link.setProperty("oldraf_preferOpenRangeFirst", Boolean.FALSE);
+        } else {
+            link.setProperty("oldraf_preferOpenRangeFirst", Boolean.TRUE);
+        }
         if (continue_link != null) {
             /*
              * Let the server 'calm down' (if it was slow before) otherwise it will thing that we tried to open two connections as we
@@ -732,6 +737,9 @@ public class PobierzTo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty("oldraf_preferOpenRangeFirst");
+        }
     }
 
     @Override
