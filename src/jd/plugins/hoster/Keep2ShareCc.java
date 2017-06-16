@@ -159,8 +159,8 @@ public class Keep2ShareCc extends K2SApi {
             }
         }
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
-        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2share.cc/"));
-        link.setUrlDownload(link.getDownloadURL().replace("k2s.cc/", "keep2share.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("k2s.cc/", "keep2s.cc/"));
     }
 
     public void followRedirectNew(Browser br) throws Exception {
