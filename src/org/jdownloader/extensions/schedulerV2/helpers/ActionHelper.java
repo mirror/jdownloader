@@ -19,6 +19,7 @@ import org.jdownloader.extensions.schedulerV2.actions.EnableAccountAction;
 import org.jdownloader.extensions.schedulerV2.actions.EnableReconnectAction;
 import org.jdownloader.extensions.schedulerV2.actions.PauseDownloadAction;
 import org.jdownloader.extensions.schedulerV2.actions.ReconnectAction;
+import org.jdownloader.extensions.schedulerV2.actions.RestartJDownloaderAction;
 import org.jdownloader.extensions.schedulerV2.actions.SetChunksAction;
 import org.jdownloader.extensions.schedulerV2.actions.SetConnectionsAction;
 import org.jdownloader.extensions.schedulerV2.actions.SetDownloadspeedAction;
@@ -30,7 +31,6 @@ import org.jdownloader.extensions.schedulerV2.model.ScheduleEntryStorable;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class ActionHelper {
-
     public static final List<AbstractScheduleAction> ACTIONS = Collections.unmodifiableList(new ArrayList<AbstractScheduleAction>() {
         {
             if (CFG_SCHEDULER.CFG.isDebugMode()) {
@@ -52,6 +52,7 @@ public class ActionHelper {
             add(new CaptchaServiceAction(null));
             add(new EnableAccountAction(null));
             add(new DisableAccountAction(null));
+            add(new RestartJDownloaderAction(null));
         }
     });
 
@@ -71,7 +72,6 @@ public class ActionHelper {
         HOURLY(T.T.time_option_hourly()),
         SPECIFICDAYS(T.T.time_option_specificDays()),
         CHOOSEINTERVAL(T.T.time_option_choose_interval());
-
         private final String readableName;
 
         public final String getReadableName() {
@@ -91,7 +91,6 @@ public class ActionHelper {
         FRIDAY(T.T.weekday_short_friday()),
         SATURDAY(T.T.weekday_short_saturday()),
         SUNDAY(T.T.weekday_short_sunday());
-
         private final String readableName;
 
         public final String getReadableName() {
@@ -114,5 +113,4 @@ public class ActionHelper {
             put(Calendar.SUNDAY, WEEKDAY.SUNDAY);
         }
     };
-
 }

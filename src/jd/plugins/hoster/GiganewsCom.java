@@ -62,6 +62,12 @@ public class GiganewsCom extends UseNet {
                 login.put("credential_1", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
                 login = br.getFormbyActionRegex("/auth");
+                if (login != null && login.containsHTML("nonce") && login.containsHTML("credential_0") && login.containsHTML("credential_1")) {
+                    login.put("credential_0", Encoding.urlEncode(userName));
+                    login.put("credential_1", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(login);
+                }
+                login = br.getFormbyActionRegex("/auth");
                 if (login != null && login.containsHTML("credential_0") && login.containsHTML("credential_1")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (br.getCookie(getHost(), "sid") == null || br.getCookie(getHost(), "GN::Web::ControlPanel_ControlPanel") == null) {

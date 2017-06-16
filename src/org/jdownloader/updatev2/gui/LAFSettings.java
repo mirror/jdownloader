@@ -9,16 +9,11 @@ import org.appwork.swing.synthetica.SyntheticaSettings;
 
 @StorageHandlerFactoryAnnotation(LAFSettingsStorageHandlerFactory.class)
 public interface LAFSettings extends SyntheticaSettings {
-
     // Static Mappings for interface
-
     // org.jdownloader.settings.GraphicalUserInterfaceSettings
-
     public static final String ALICE_BLUE_APPROX             = "ffF5FCFF";
     public static final String ALPHA_CC_TROPICAL_BLUE_APPROX = "ccCAE8FA";
-
     public static final String BLACK                         = "FF000000";
-
     public static final String GRAY                          = "ffC0C0C0";
     public static final String GREEN                         = "FF00FF00";
     public static final String JAGGED_ICE_APPROX             = "ffD7E7F0";
@@ -30,7 +25,6 @@ public interface LAFSettings extends SyntheticaSettings {
 
     @AboutConfig
     @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
-
     @RequiresRestart("A JDownloader Restart is Required")
     boolean isSpeedmeterAntiAliasingEnabled();
 
@@ -236,7 +230,6 @@ public interface LAFSettings extends SyntheticaSettings {
     // public int[] getInfoPanelContentInsets();
     //
     // public void setInfoPanelContentInsets(int[] insets);
-
     @RequiresRestart("A JDownloader Restart is Required")
     public abstract boolean isPaintStatusbarTopBorder();
 
@@ -295,7 +288,6 @@ public interface LAFSettings extends SyntheticaSettings {
     public abstract void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder);
 
     // public abstract void setPopupBorderInsets(int[] popupBorderInsets);
-
     @DescriptionForConfigEntry("Customized Color for the Progressbar 1/5 in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
@@ -407,7 +399,7 @@ public interface LAFSettings extends SyntheticaSettings {
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Choose the text position in the propgress column.")
+    @DescriptionForConfigEntry("Choose the text position in the progress column.")
     public HorizontalPostion getProgressColumnTextPosition();
 
     public void setProgressColumnTextPosition(HorizontalPostion p);
@@ -432,5 +424,4 @@ public interface LAFSettings extends SyntheticaSettings {
     public int getConfigPanelLeftIndent();
 
     public void setConfigPanelLeftIndent(int i);
-
 }

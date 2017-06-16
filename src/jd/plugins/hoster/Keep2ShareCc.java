@@ -63,7 +63,7 @@ public class Keep2ShareCc extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
-    public final String  MAINPAGE      = "https://keep2share.cc";                       // new.keep2share.cc and keep2share.cc share same
+    public final String  MAINPAGE      = "https://keep2s.cc";                           // new.keep2share.cc and keep2share.cc share same
     // tld
     private final String DOMAINS_PLAIN = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
