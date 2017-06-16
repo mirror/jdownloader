@@ -102,7 +102,7 @@ public class Keep2ShareCc extends K2SApi {
      */
     @Override
     protected String getDomain() {
-        return "keep2share.cc";
+        return "keep2s.cc";
     }
 
     @Override
@@ -851,9 +851,9 @@ public class Keep2ShareCc extends K2SApi {
     private void shareCookies() {
         final Cookies keep2ShareCookies = br.getCookies("http://keep2share.cc");
         if (keep2ShareCookies != null && !keep2ShareCookies.isEmpty()) {
-            br.setCookies("http://k2s.cc", keep2ShareCookies);
+            br.setCookies("http://keep2s.cc", keep2ShareCookies);
         } else {
-            final Cookies k2s = br.getCookies("http://k2s.cc");
+            final Cookies k2s = br.getCookies("http://keep2s.cc");
             if (k2s != null && !k2s.isEmpty()) {
                 br.setCookies("http://keep2share.cc", keep2ShareCookies);
             }
