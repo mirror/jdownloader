@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -40,16 +39,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "https?://(www\\.)?vporn\\.com/(embed/|[a-z0-9\\-_]+/[a-z0-9\\-_]+/)\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "https?://(www\\.)?vporn\\.com/(embed/|[a-z0-9\\-_]+/[a-z0-9\\-_]+/)\\d+" })
 public class VPornCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public VPornCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.vporn.com/register");
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -61,10 +59,10 @@ public class VPornCom extends PluginForHost {
         if (link.getDownloadURL().contains("/embed/")) {
             link.setUrlDownload("http://www.vporn.com/mature/x/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         }
+        link.setUrlDownload(link.getDownloadURL() + "/");
     }
 
     private static final String INVALIDLINKS = "http://(www\\.)?vporn\\.com/(user|favorite|submitted|thumb)/.+";
-
     private static final String NOCHUNKS     = "NOCHUNKS";
 
     @SuppressWarnings("deprecation")
@@ -86,7 +84,7 @@ public class VPornCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video is deleted\\.|This video has been deleted due to Copyright Infringement") || !this.br.containsHTML("id=\"video_player\"")) {
+        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video is deleted\\.|This video has been deleted due to Copyright Infringement")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("videoname = \\'([^<>\"]*?)\\';").getMatch(0);
@@ -107,22 +105,42 @@ public class VPornCom extends PluginForHost {
         /* videoUrlHD2 = usually only available via account, downloadUrl = Only available via account also == videoUrlLow(2) */
         final String[] quals = { "videoUrlHD2", "videoUrlMedium2", "videoUrlLow2", "videoUrlHD", "videoUrlMedium", "videoUrlLow", "downloadUrl" };
         for (final String qual : quals) {
-            DLLINK = br.getRegex("flashvars\\." + qual + "[\r\n\t ]*?=[\r\n\t ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK != null) {
+            dllink = br.getRegex("flashvars\\." + qual + "[\r\n\t ]*?=[\r\n\t ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) {
                 foundlinks++;
-                DLLINK = Encoding.htmlDecode(DLLINK);
+                dllink = Encoding.htmlDecode(dllink);
                 try {
                     if (isJDStable()) {
                         /* @since JD2 */
-                        con = br2.openHeadConnection(DLLINK);
+                        con = br2.openHeadConnection(dllink);
                     } else {
                         /* Not supported in old 0.9.581 Stable */
-                        con = br2.openGetConnection(DLLINK);
+                        con = br2.openGetConnection(dllink);
                     }
                     if (!con.getContentType().contains("html")) {
                         failed = false;
                         downloadLink.setDownloadSize(con.getLongContentLength());
                         break;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+        }
+        if (foundlinks == 0) { // 20170617
+            dllink = br.getRegex("<source src=\"(http[^\"]+)\"").getMatch(0);
+            logger.info("dllink: " + dllink);
+            if (dllink != null) {
+                foundlinks++;
+                dllink = Encoding.htmlDecode(dllink);
+                try {
+                    con = br2.openHeadConnection(dllink);
+                    if (!con.getContentType().contains("html")) {
+                        failed = false;
+                        downloadLink.setDownloadSize(con.getLongContentLength());
                     }
                 } finally {
                     try {
@@ -158,8 +176,7 @@ public class VPornCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
