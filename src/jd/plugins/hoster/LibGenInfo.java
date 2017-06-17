@@ -15,11 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,15 +29,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me|pw)|golibgen\\.io)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?(?:libgen\\.(?:net|io|me|pw)|golibgen\\.io)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
+
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
-        return new String[] { "libgen.me", "libgen.net", "libgen.io", "golibgen.io" };
+        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io", "golibgen.io" };
     }
 
     public LibGenInfo(PluginWrapper wrapper) {
@@ -45,8 +44,8 @@ public class LibGenInfo extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "libgen.me".equals(host) || "libgen.info".equals(host)) {
-            return "libgen.me";
+        if (host == null || "libgen.pw".equals(host) || "libgen.me".equals(host) || "libgen.info".equals(host)) {
+            return "libgen.pw";
         }
         return super.rewriteHost(host);
     }
@@ -66,7 +65,7 @@ public class LibGenInfo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         allow_html_download = false;
         this.setBrowserExclusive();
@@ -147,7 +146,7 @@ public class LibGenInfo extends PluginForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             } else {
                 final String dlUrl = br.getRegex("href=(\"|')((?:https?:)?(?://[\\w\\-\\.]+)?/download\\.php.*?)\\1").getMatch(1);
                 if (dlUrl != null) {
@@ -161,10 +160,10 @@ public class LibGenInfo extends PluginForHost {
                     logger.info("Could not find download form");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, FREE_RESUME, FREE_MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, download, FREE_RESUME, FREE_MAXCHUNKS);
             }
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         }
         if (dl.getConnection().getContentType().contains("html") && !allow_html_download) {
             br.followConnection();

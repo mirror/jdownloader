@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,7 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "http://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "http://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org|b-ok\\.org)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
 public class BookFiOrg extends antiDDoSForHost {
 
     // DEV NOTES
@@ -44,11 +45,13 @@ public class BookFiOrg extends antiDDoSForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches("http://(?:www\\.)?bookfi\\.(?:net|org)/dl/\\d+.+")) {
-            final String fid = new Regex(link.getDownloadURL(), "bookfi\\.(?:net|org)/dl/(\\d+)").getMatch(0);
-            link.setUrlDownload("http://bookfi.net/book/" + fid);
-        } else {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("(?:www\\.)?(?:[a-z]{2}\\.)?bookfi.org/", "en.bookfi.net/"));
+        if (link.getDownloadURL().contains("bookfi.")) {
+            if (link.getDownloadURL().matches("http://(?:www\\.)?bookfi\\.(?:net|org)/dl/\\d+.+")) {
+                final String fid = new Regex(link.getDownloadURL(), "bookfi\\.(?:net|org)/dl/(\\d+)").getMatch(0);
+                link.setUrlDownload("http://bookfi.net/book/" + fid);
+            } else {
+                link.setUrlDownload(link.getDownloadURL().replaceFirst("(?:www\\.)?(?:[a-z]{2}\\.)?bookfi.org/", "en.bookfi.net/"));
+            }
         }
     }
 
@@ -131,7 +134,7 @@ public class BookFiOrg extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("There are more then \\d+ downloads from this IP during last")) {
