@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,17 +36,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfs_shorturlscript", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }) 
+/**
+ * This class supports, http://mfscripts.com/short_url_script.html template.
+ *
+ * @author raztoki
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfs_shorturlscript", "gourl.us", "shori.xyz" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?shori\\.xyz/([a-zA-Z0-9_\\-]+)$" })
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
-    /**
-     * This class supports, http://mfscripts.com/short_url_script.html template.
-     *
-     * @author raztoki
-     */
     public MFS_ShortUrlScript(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,6 +62,9 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         final String host = Browser.getHost(link.toString());
         if (host == null || "".equalsIgnoreCase(host)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if ("shori.xyz".equals(host)) {
+            supportsHTTPS = false;
         }
     }
 
