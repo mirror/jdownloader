@@ -19,9 +19,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,9 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://(?:www\\.)?hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(?:/scraps)?(?:/\\d+)?|https?://(?:www\\.)?hentai\\-foundry\\.com/user/[A-Za-z0-9\\-_]+/faves/pictures" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "https?://(?:www\\.)?hentai-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(?:/scraps)?(?:/\\d+)?|https?://(?:www\\.)?hentai-foundry\\.com/user/[A-Za-z0-9\\-_]+/faves/pictures" })
 public class HentaiFoundryComGallery extends PluginForDecrypt {
 
     public HentaiFoundryComGallery(PluginWrapper wrapper) {
@@ -54,10 +55,10 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter + "?enterAgree=1&size=0");
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (this.br.containsHTML("class=\"empty\"")) {
+        } else if (br.containsHTML("class=\"empty\"")) {
             /* User has not uploaded any content */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -74,7 +75,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             if (page > 1) {
                 br.getPage(next);
             }
-            String[] links = br.getRegex("<[^<>]+class=\\'thumb_square\\'.*?</").getColumn(-1);
+            String[] links = br.getRegex("<[^<>]+class='thumb_square'.*?</").getColumn(-1);
             if (links == null || links.length == 0) {
                 return null;
             }
@@ -90,7 +91,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                 final String pic_id = jd.plugins.hoster.HentaiFoundryCom.getFID(url);
                 title = pic_id + "_" + Encoding.htmlDecode(title).trim();
                 title = encodeUnicode(title);
-                final DownloadLink dl = createDownloadlink("http://www.hentai-foundrydecrypted.com" + url);
+                final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
                 dl.setName(title);
                 dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 dl.setAvailable(true);
@@ -116,7 +117,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             return false;
         }
         try {
-            jd.plugins.hoster.HentaiFoundryCom.login(this.br, aa, force);
+            jd.plugins.hoster.HentaiFoundryCom.login(br, aa, force);
         } catch (final PluginException e) {
             logger.warning("Login failed - continuing without login");
             aa.setValid(false);
