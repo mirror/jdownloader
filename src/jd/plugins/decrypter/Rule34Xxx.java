@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -42,7 +41,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "https?://(?:www\\.)?rule34\\.xxx/index\\.php\\?page=post\\&s=(view\\&id=\\d+|list\\&tags=.+)" })
 public class Rule34Xxx extends PluginForDecrypt {
-
     private final String prefixLinkID = getHost().replaceAll("[\\.\\-]+", "") + "://";
 
     public Rule34Xxx(PluginWrapper wrapper) {
@@ -64,10 +62,16 @@ public class Rule34Xxx extends PluginForDecrypt {
         }
         if (parameter.contains("&s=view&")) {
             // from list to post page
-            String image = br.getRegex("<img[^>]+\\s+src=('|\")([^>]+)\\1 id=('|\")image\\3").getMatch(1);
-            // can be video (Webm)
-            if (image == null) {
-                image = br.getRegex("<source\\s+[^>]*src=('|\"|)(.*?)\\1").getMatch(1);
+            final String imageParts[] = br.getRegex("'domain'\\s*:\\s*'(.*?)'\\s*,.*?'dir'\\s*:\\s*(\\d+).*?'img'\\s*:\\s*'(.*?)'.*?'base_dir'\\s*:\\s*'(.*?)'").getRow(0);
+            String image = null;
+            if (imageParts != null) {
+                image = imageParts[0] + "/" + imageParts[3] + "/" + imageParts[1] + "/" + imageParts[2];
+            } else {
+                image = br.getRegex("<img[^>]+\\s+src=('|\")([^>]+)\\1 id=('|\")image\\3").getMatch(1);
+                // can be video (Webm)
+                if (image == null) {
+                    image = br.getRegex("<source\\s+[^>]*src=('|\"|)(.*?)\\1").getMatch(1);
+                }
             }
             if (image != null) {
                 // these should linkcheck as single event... but if from list its available = true.
@@ -92,7 +96,6 @@ public class Rule34Xxx extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-
         String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
         FilePackage fp = null;
         if (fpName != null) {
@@ -147,5 +150,4 @@ public class Rule34Xxx extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Danbooru;
     }
-
 }

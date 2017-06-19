@@ -278,14 +278,18 @@ public abstract class K2SApi extends PluginForHost {
      */
     protected void setFUID(final DownloadLink downloadLink) throws PluginException {
         if (downloadLink.getSetLinkID() == null) {
-            String linkID = getFUID(downloadLink);
+            final String linkID = getFUID(downloadLink);
             if (linkID != null) {
-                linkID = getDomain() + "://" + linkID;
-                downloadLink.setLinkID(linkID);
+                // do not use getDomain as it may change. use something static like getHost
+                downloadLink.setLinkID(getLinkIDDomain() + "://" + linkID);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+    }
+
+    protected String getLinkIDDomain() {
+        return getHost();
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {

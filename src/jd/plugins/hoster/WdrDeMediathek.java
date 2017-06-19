@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -23,6 +22,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Scanner;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,7 +41,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class WdrDeMediathek extends PluginForHost {
-
     public WdrDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -56,11 +55,11 @@ public class WdrDeMediathek extends PluginForHost {
 
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
     private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
-
     public static final String  FAST_LINKCHECK  = "FAST_LINKCHECK";
     private static final String Q_LOW           = "Q_LOW";
     private static final String Q_MEDIUM        = "Q_MEDIUM";
     private static final String Q_HIGH          = "Q_HIGH";
+    private static final String Q_720           = "Q_720";
     private static final String Q_BEST          = "Q_BEST";
     private static final String Q_SUBTITLES     = "Q_SUBTITLES";
 
@@ -80,21 +79,17 @@ public class WdrDeMediathek extends PluginForHost {
         br.setFollowRedirects(true);
         final String startLink = downloadLink.getStringProperty("mainlink");
         br.getPage(startLink);
-
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         if (startLink.matches(TYPE_ROCKPALAST)) {
             return requestRockpalastFileInformation(downloadLink);
         }
-
         if (br.getURL().contains("/fehler.xml")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = downloadLink.getStringProperty("plain_filename", null);
         DLLINK = downloadLink.getStringProperty("direct_link", null);
-
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
@@ -169,18 +164,15 @@ public class WdrDeMediathek extends PluginForHost {
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         BufferedWriter dest;
         try {
             dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
         } catch (IOException e1) {
             return false;
         }
-
         final StringBuilder xml = new StringBuilder();
         int counter = 1;
         final String lineseparator = System.getProperty("line.separator");
-
         Scanner in = null;
         try {
             in = new Scanner(new FileReader(source));
@@ -200,11 +192,9 @@ public class WdrDeMediathek extends PluginForHost {
                 final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
                 for (String[] match : matches) {
                     dest.write(counter++ + lineseparator);
-
                     final Double start = Double.valueOf(match[0]);
                     final Double end = Double.valueOf(match[1]);
                     dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-
                     String text = match[2].trim();
                     text = text.replaceAll(lineseparator, " ");
                     text = text.replaceAll("&amp;", "&");
@@ -214,7 +204,6 @@ public class WdrDeMediathek extends PluginForHost {
                     text = text.replaceAll("<br />", lineseparator);
                     text = text.replace("</p>", "");
                     text = text.replace("<span ", "").replace("</span>", "");
-
                     final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
                     if (textReplaces != null && textReplaces.length != 0) {
                         for (final String[] singleText : textReplaces) {
@@ -226,7 +215,6 @@ public class WdrDeMediathek extends PluginForHost {
                     } else {
                         dest.write(text + lineseparator + lineseparator);
                     }
-
                 }
             } else {
                 /* Find hex color text --> code assignments */
@@ -245,7 +233,6 @@ public class WdrDeMediathek extends PluginForHost {
                     final String start = startInfo.getMatch(0) + "," + startInfo.getMatch(1);
                     final String end = endInfo.getMatch(0) + "," + endInfo.getMatch(1);
                     dest.write(start + " --> " + end + lineseparator);
-
                     final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
                     String text = "";
                     int line_counter = 1;
@@ -271,9 +258,7 @@ public class WdrDeMediathek extends PluginForHost {
             } catch (IOException e) {
             }
         }
-
         source.delete();
-
         return true;
     }
 
@@ -289,9 +274,7 @@ public class WdrDeMediathek extends PluginForHost {
         String minute = "00";
         String second = "00";
         String millisecond = "0";
-
         Integer itime = Integer.valueOf(time.intValue());
-
         // Hour
         Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
         if (timeHour < 10) {
@@ -299,7 +282,6 @@ public class WdrDeMediathek extends PluginForHost {
         } else {
             hour = timeHour.toString();
         }
-
         // Minute
         Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
         if (timeMinute < 10) {
@@ -307,7 +289,6 @@ public class WdrDeMediathek extends PluginForHost {
         } else {
             minute = timeMinute.toString();
         }
-
         // Second
         Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
         if (timeSecond < 10) {
@@ -315,7 +296,6 @@ public class WdrDeMediathek extends PluginForHost {
         } else {
             second = timeSecond.toString();
         }
-
         // Millisecond
         millisecond = String.valueOf(time - itime).split("\\.")[1];
         if (millisecond.length() == 1) {
@@ -327,10 +307,8 @@ public class WdrDeMediathek extends PluginForHost {
         if (millisecond.length() > 2) {
             millisecond = millisecond.substring(0, 3);
         }
-
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
-
         return result;
     }
 
@@ -356,6 +334,7 @@ public class WdrDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.wdrdemediathek.loadlow", "Load 512x280 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.wdrdemediathek.loadmedium", "Load 640x360 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.wdrdemediathek.loadhigh", "Load 960x544 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_720, JDL.L("plugins.hoster.wdrdemediathek.load720", "Load 1280x720 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.wdr.fastlinkcheck", "Schnellen Linkcheck aktivieren?\r\n<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>")).setDefaultValue(defaultFAST_LINKCHECK));
     }
 
@@ -370,5 +349,4 @@ public class WdrDeMediathek extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

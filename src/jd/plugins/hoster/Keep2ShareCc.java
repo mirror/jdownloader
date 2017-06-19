@@ -63,9 +63,8 @@ public class Keep2ShareCc extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
-    public final String  MAINPAGE      = "https://keep2s.cc";                           // new.keep2share.cc and keep2share.cc share same
-    // tld
-    private final String DOMAINS_PLAIN = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
+    public final String MAINTLD  = "k2s.cc";
+    public final String MAINPAGE = "https://" + MAINTLD; // new.keep2share.cc and keep2share.cc share same
 
     // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
     @Override
@@ -90,9 +89,9 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
         if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
-            return "http://keep2share.cc/file/" + getFUID(downloadLink);
+            return "http://keep2share.cc/file/" + getFUID(downloadLink);// do not change
         } else {
-            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+            return getProtocol() + getDomain() + "/file/" + getFUID(downloadLink);
         }
     }
 
@@ -102,7 +101,7 @@ public class Keep2ShareCc extends K2SApi {
      */
     @Override
     protected String getDomain() {
-        return "keep2s.cc";
+        return MAINTLD;
     }
 
     @Override
@@ -158,10 +157,8 @@ public class Keep2ShareCc extends K2SApi {
             } catch (PluginException e) {
             }
         }
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
-        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2s.cc/"));
-        link.setUrlDownload(link.getDownloadURL().replace("k2s.cc/", "keep2s.cc/"));
-        link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "keep2s.cc/"));
+        final String linkID = getFUID(link);
+        link.setUrlDownload(getProtocol() + getDomain() + "/file/" + linkID);
     }
 
     public void followRedirectNew(Browser br) throws Exception {
@@ -181,7 +178,7 @@ public class Keep2ShareCc extends K2SApi {
         correctDownloadLink(link);
         br.setFollowRedirects(true);
         super.prepBrowserForWebsite(this.br);
-        getPage(link.getDownloadURL());
+        getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
         if (this.isNewLayout2017()) {
             return this.requestFileInformationNew2017(link);
@@ -230,7 +227,7 @@ public class Keep2ShareCc extends K2SApi {
         correctDownloadLink(link);
         br.setFollowRedirects(true);
         super.prepBrowserForWebsite(this.br);
-        getPage(link.getDownloadURL());
+        getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
         /*
          * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a
@@ -431,7 +428,7 @@ public class Keep2ShareCc extends K2SApi {
                 }
             }
             logger.info("dllink = " + dllink);
-            shareCookies();
+            shareCookies(dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -728,7 +725,7 @@ public class Keep2ShareCc extends K2SApi {
             if (br.getURL().contains("login.html")) {
                 logger.info("Redirected to login page, seems cookies are no longer valid!");
                 synchronized (ACCLOCK) {
-                    if (after == account.getProperty("cookies", null)) {
+                    if (!fresh) {
                         account.setProperty(cookiesProperty, Property.NULL);
                     }
                     if (fresh) {
@@ -740,7 +737,7 @@ public class Keep2ShareCc extends K2SApi {
             }
             if (account.getType() == AccountType.FREE) {
                 setConstants(account);
-                getPage(link.getDownloadURL());
+                getPage(buildExternalDownloadURL(link, this));
                 followRedirectNew(br);
                 doFree(link, account);
             } else {
@@ -765,7 +762,8 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 if (dllink == null) {
                     br.setFollowRedirects(false);
-                    getPage(link.getDownloadURL());
+                    final String url = buildExternalDownloadURL(link, this);
+                    getPage(url);
                     followRedirectNew(br);
                     handleGeneralErrors(account);
                     // Set cookies for other domain if it is changed via redirect
@@ -774,6 +772,9 @@ public class Keep2ShareCc extends K2SApi {
                     dllink = br.getRedirectLocation();
                     if (inValidate(dllink)) {
                         dllink = getDllinkPremium();
+                    }
+                    if (dllink == null && br.containsHTML("class=\"btn-download\".*?>\\s*Download blocked")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     String possibleDomain = getDomain(dllink);
                     if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
@@ -784,7 +785,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (newDomain != null) {
                         resetCookies(account, currentDomain, newDomain);
                         if (dllink == null) {
-                            getPage(link.getDownloadURL().replace(currentDomain, newDomain));
+                            getPage(url.replace(currentDomain, newDomain));
                             followRedirectNew(br);
                             dllink = br.getRedirectLocation();
                             if (dllink == null) {
@@ -798,7 +799,7 @@ public class Keep2ShareCc extends K2SApi {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                         }
                         synchronized (ACCLOCK) {
-                            if (after == account.getProperty(cookiesProperty, null)) {
+                            if (!fresh) {
                                 account.setProperty(cookiesProperty, Property.NULL);
                             }
                             if (fresh) {
@@ -809,7 +810,7 @@ public class Keep2ShareCc extends K2SApi {
                         }
                     }
                     logger.info("dllink = " + dllink);
-                    shareCookies();
+                    shareCookies(dllink);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
                     if (!isValidDownloadConnection(dl.getConnection())) {
                         dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -851,12 +852,12 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     // share cookies between keep2share.cc and k2s.cc domain
-    private void shareCookies() {
-        final Cookies keep2ShareCookies = br.getCookies("http://keep2share.cc");
+    private void shareCookies(final String url) {
+        final Cookies keep2ShareCookies = br.getCookies(MAINPAGE);
         if (keep2ShareCookies != null && !keep2ShareCookies.isEmpty()) {
-            br.setCookies("http://keep2s.cc", keep2ShareCookies);
+            br.setCookies("http://keep2share.cc", keep2ShareCookies);
         } else {
-            final Cookies k2s = br.getCookies("http://keep2s.cc");
+            final Cookies k2s = br.getCookies(MAINPAGE);
             if (k2s != null && !k2s.isEmpty()) {
                 br.setCookies("http://keep2share.cc", keep2ShareCookies);
             }
