@@ -51,7 +51,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         if (new Regex(parameter, Pattern.compile(".+/pictures/user/[A-Za-z0-9\\-_]+/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("hentai-foundry.com/", "hentai-foundrydecrypted.com/")));
+            decryptedLinks.add(createDownloadlink(parameter));
             return decryptedLinks;
         }
         br.getPage(parameter + "?enterAgree=1&size=0");
