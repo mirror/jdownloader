@@ -13,12 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,15 +28,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(?:www\\.)?anilinkz\\.(?:com|tv|io)/[^<>\"/]+(/[^<>\"/]+)?" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
 /**
  * @author raztoki
  */
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends antiDDoSForDecrypt {
-
     private final String            supported_hoster = "(4shared\\.com|4vid\\.me|aniupload\\.com|animegg\\.tv|animeultima\\.tv|arkvid\\.tv|bakavideo\\.tv|byzoo\\.org|chia\\-anime\\.com|cheesestream\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|easyvideo\\.me|facebook\\.com/video|gogoanime\\.com|gorillavid\\.in|mp4star\\.com|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|playbb\\.me|playpanda\\.net|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|uploadcrazy\\.net|veevr\\.com|veoh\\.com|vidbox\\.yt|vidcrazy\\.net|video44\\.net|videobb\\.com|videobam\\.com|videobull\\.com|videodrive\\.tv|videofun\\.me|videonest\\.net|videous\\.tv|videoweed\\.com|videowing\\.me|vidzur\\.com|videozoo\\.me|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
-    private final String            invalid_links    = "http://(?:www\\.)?anilinkz\\.(?:com|tv|io)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private final String            invalid_links    = "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                  parameter        = null;
     private String                  fpName           = null;
     private String                  escapeAll        = null;
@@ -66,17 +64,14 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
         escapeAll = null;
         spart = -1;
         spart_count = 0;
-
-        parameter = param.toString().replaceFirst("anilinkz\\.com/", "anilinkz.tv/");
+        parameter = param.toString().replaceFirst("anilinkz\\..*?/", "anilinkz.to/");
         if (parameter.matches(invalid_links)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         // only allow one thread! To minimise/reduce loads.
         synchronized (LOCK) {
-
             getPage(parameter);
-
             boolean offline = false;
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
                 logger.info("Incorrect Link! Redirecting to search page...");
@@ -100,7 +95,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 }
                 return decryptedLinks;
             }
-            if (parameter.matches(".+\\.(?:com|tv|io)/series/.+")) {
+            if (parameter.matches(".+\\.(?:com|tv|io|to)/series/.+")) {
                 int p = 1;
                 String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
                 if (page != null) {
@@ -147,7 +142,6 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                     logger.warning("Please report issue to JDownloader Development team!");
                     return null;
                 }
-
                 if (parameter.matches(".+\\?src=\\d+")) {
                     // if the user imports src link, just return that link
                     br2 = br.cloneBrowser();
@@ -217,7 +211,6 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 return false;
             }
         }
-
         // embed links that are not found by generic's
         String link = new Regex(escapeAll, "((?:https?:)?//(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
         // with stagevu they are directly imported finallink and not embed player. We want the image for the uid, return to hoster.
@@ -236,7 +229,6 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 // error
             }
         }
-
         // generic fail overs
         if (inValidate(link)) {
             link = new Regex(escapeAll, "<iframe src=\"((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
@@ -252,7 +244,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 link = "http:" + link;
             }
             decryptedLinks.add(createDownloadlink(link));
-        } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.(?:com|tv|io)/get/|chia-anime\\.com/|myvideo\\.de/)").matches()) {
+        } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.(?:com|tv|io|to)/get/|chia-anime\\.com/|myvideo\\.de/)").matches()) {
             String[] aLinks = new Regex(escapeAll, "((?:https?:)?[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
             if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) {
@@ -266,7 +258,6 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 for (String aLink : aLinks) {
                     DownloadLink downloadLink = createDownloadlink("directhttp://" + aLink);
                     downloadLink.setFinalFileName(fpName + aLink.substring(aLink.lastIndexOf(".")));
-
                     Browser br2 = br.cloneBrowser();
                     // In case the link redirects to the finallink
                     br2.setFollowRedirects(true);
@@ -288,7 +279,6 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                         } catch (Throwable e) {
                         }
                     }
-
                 }
             }
         }
@@ -316,5 +306,4 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

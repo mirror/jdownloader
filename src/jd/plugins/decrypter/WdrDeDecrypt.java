@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
@@ -40,13 +39,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class WdrDeDecrypt extends PluginForDecrypt {
-
     private static final String Q_LOW           = "Q_LOW";
     private static final String Q_MEDIUM        = "Q_MEDIUM";
     private static final String Q_HIGH          = "Q_HIGH";
+    private static final String Q_720           = "Q_720";
     private static final String Q_BEST          = "Q_BEST";
     private static final String Q_SUBTITLES     = "Q_SUBTITLES";
-
     private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
 
@@ -67,23 +65,19 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         final String url_name = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
         final String tvStationName = new Regex(parameter, "https?://(?:www\\.)?([^\\.]+)\\.").getMatch(0);
         br.setFollowRedirects(true);
-
         if (parameter.matches(TYPE_ROCKPALAST)) {
             final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
             dl.setProperty("mainlink", parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
         br.getPage(parameter);
-
         /* Are we on a video-information/overview page? We have to access the url which contains the player! */
         String videourl_forward = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
         if (videourl_forward != null) {
             videourl_forward = fixVideourl(videourl_forward);
             this.br.getPage(videourl_forward);
         }
-
         /* fernsehen/.* links |mediathek/.* links */
         if (parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38) {
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -91,7 +85,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
         final String json_api_url;
         String date = null;
         String sendung = null;
@@ -157,9 +150,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(json_api_url);
-
         final String finallink_audio = PluginJSonUtils.getJsonValue(this.br, "audioURL");
-
         /* Check for audio stream */
         if (finallink_audio != null && !finallink_audio.equals("")) {
             final DownloadLink audio = createDownloadlink("http://wdrdecrypted.de/?format=mp3&quality=0x0&hash=" + JDHash.getMD5(parameter));
@@ -175,6 +166,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             boolean grab_low = cfg.getBooleanProperty(Q_LOW, true);
             boolean grab_medium = cfg.getBooleanProperty(Q_MEDIUM, true);
             boolean grab_high = cfg.getBooleanProperty(Q_HIGH, true);
+            boolean grab_720 = cfg.getBooleanProperty(Q_720, true);
             boolean grab_best = cfg.getBooleanProperty(Q_BEST, true);
             final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.WdrDeMediathek.FAST_LINKCHECK, jd.plugins.hoster.WdrDeMediathek.defaultFAST_LINKCHECK);
             ArrayList<String> selected_qualities = new ArrayList<String>();
@@ -263,7 +255,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                     break;
                 }
             }
-
             if (grab_best) {
                 /* Nothing to do here (yet) */
             } else {
@@ -276,11 +267,15 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 if (grab_high) {
                     selected_qualities.add(Q_HIGH);
                 }
+                if (grab_720) {
+                    selected_qualities.add(Q_720);
+                }
                 /* User deselected all --> Add all */
-                if (!grab_low && !grab_medium && !grab_high) {
+                if (!grab_low && !grab_medium && !grab_high && !grab_720) {
                     grab_low = true;
                     grab_medium = true;
                     grab_high = true;
+                    grab_720 = true;
                 }
             }
             /* Finally add user selected qualities */
@@ -439,5 +434,4 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
