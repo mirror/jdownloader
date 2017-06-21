@@ -3,13 +3,6 @@ package org.jdownloader.captcha.v2.solver.browser;
 import java.awt.Rectangle;
 import java.io.IOException;
 
-import org.appwork.remoteapi.exceptions.RemoteAPIException;
-import org.appwork.utils.net.httpserver.requests.GetRequest;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
-import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
-
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -21,9 +14,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
-    private Plugin    plugin;
-    protected Browser pluginBrowser;
+    protected final Plugin  plugin;
+    protected final Browser pluginBrowser;
 
     public Plugin getPlugin() {
         return plugin;
@@ -38,16 +38,25 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         return results != null && results.getValue() != null;
     }
 
-    public AbstractBrowserChallenge(final String method, final Plugin plugin) {
+    protected AbstractBrowserChallenge(final String method, final Plugin plugin, Browser pluginBrowser) {
         super(method, null);
         this.plugin = plugin;
+        this.pluginBrowser = pluginBrowser;
+    }
+
+    public AbstractBrowserChallenge(final String method, final Plugin plugin) {
+        super(method, null);
         if (plugin == null) {
             this.plugin = getPluginFromThread();
+        } else {
+            this.plugin = plugin;
         }
         if (this.plugin instanceof PluginForHost) {
             this.pluginBrowser = ((PluginForHost) this.plugin).getBrowser();
         } else if (this.plugin instanceof PluginForDecrypt) {
             this.pluginBrowser = ((PluginForDecrypt) this.plugin).getBrowser();
+        } else {
+            this.pluginBrowser = null;
         }
     }
 
@@ -98,8 +107,8 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
     public String getHttpPath() {
         if (plugin != null) {
             return plugin.getHost();
+        } else {
+            return "jd";
         }
-        Thread th = Thread.currentThread();
-        return "jd";
     }
 }

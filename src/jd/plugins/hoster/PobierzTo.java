@@ -160,19 +160,24 @@ public class PobierzTo extends PluginForHost {
             if (filename != null) {
                 link.setName(Encoding.htmlDecode(filename).trim());
             }
-            String filesize = br.getRegex("<!--<filesize>(.*?)</filesize>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            String filesize = br.getRegex("<!--<filesize>\\s*(\\d+)\\s*</filesize>").getMatch(0);
+            if (filesize != null) {
+                link.setVerifiedFileSize(Long.parseLong(filesize));
+            } else {
+                filesize = br.getRegex("<!--<filesize>\\s*(.*?)\\s*</filesize>").getMatch(0);
                 if (filesize == null) {
-                    try {
-                        /* Language-independant attempt ... */
-                        filesize = tableData[1];
-                    } catch (final Throwable e) {
+                    filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                    if (filesize == null) {
+                        try {
+                            /* Language-independant attempt ... */
+                            filesize = tableData[1];
+                        } catch (final Throwable e) {
+                        }
                     }
                 }
-            }
-            if (filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+                }
             }
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
