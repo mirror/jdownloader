@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -44,7 +43,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)" })
 public class WebShareCz extends PluginForHost {
-
     public WebShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://webshare.cz/#/vip-benefits");
@@ -157,19 +155,19 @@ public class WebShareCz extends PluginForHost {
                 final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
                 final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
                 br.postPage("https://webshare.cz/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
+                if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 final String token = getXMLtagValue("token");
                 if (token == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.setProperty("token", token);
@@ -242,26 +240,25 @@ public class WebShareCz extends PluginForHost {
 
     /*
      * Copyright (c) 1999 University of California. All rights reserved.
-     * 
+     *
      * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
      * are met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following
      * disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
      * disclaimer in the documentation and/or other materials provided with the distribution. 3. Neither the name of the author nor the
      * names of any co-contributors may be used to endorse or promote products derived from this software without specific prior written
      * permission.
-     * 
+     *
      * THIS SOFTWARE IS PROVIDED BY CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
      * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL CONTRIBUTORS BE LIABLE FOR ANY
      * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
      * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
      * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
      * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-     * 
+     *
      * $FreeBSD: src/lib/libcrypt/misc.c,v 1.1 1999/09/20 12:45:49 markm Exp $
      */
-
     static char[] itoa64 = /* 0 ... 63 => ascii - 64 */
-                         "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+            "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
 
     private static String cryptTo64(long v, int n) {
         StringBuilder result = new StringBuilder();
@@ -277,12 +274,12 @@ public class WebShareCz extends PluginForHost {
      * <phk@login.dknet.dk> wrote this file. As long as you retain this notice you can do whatever you want with this stuff. If we meet some
      * day, and you think this stuff is worth it, you can buy me a beer in return. Poul-Henning Kamp
      * ----------------------------------------------------------------------------
-     * 
+     *
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
     private static String magic    = "$1$"; /*
-                                             * This string is magic for this algorithm. Having it this way, we can get get better later on
-                                             */
+     * This string is magic for this algorithm. Having it this way, we can get get better later on
+     */
     private static int    MD5_SIZE = 16;
 
     private static void memset(byte[] array) {
@@ -298,21 +295,17 @@ public class WebShareCz extends PluginForHost {
         StringBuilder passwd = new StringBuilder();
         String sp, ep;
         byte[] finalState = new byte[MD5_SIZE];
-
         int sl, pl, i;
         MessageDigest ctx = MessageDigest.getInstance("MD5");
         MessageDigest ctx1 = MessageDigest.getInstance("MD5");
         long l;
-
         /* Refine the Salt first */
         sp = salt;
-
         /* If it starts with the magic string, then skip that */
         if (sp.startsWith(magic)) {
             sp = sp.substring(magic.length() - 1);
         }
         byte[] saltBytes = sp.getBytes("UTF8");
-
         /* It stops at the first '$', max 8 chars */
         ep = sp;
         if (ep != null) {
@@ -327,7 +320,6 @@ public class WebShareCz extends PluginForHost {
         } else {
             sl = 0;
         }
-
         ctx.reset();
         /* The password first, since that is what is most unknown */
         ctx.update(pw, 0, pw.length);
@@ -335,21 +327,17 @@ public class WebShareCz extends PluginForHost {
         ctx.update(magic.getBytes("UTF8"), 0, magic.length());
         /* Then the raw salt */
         ctx.update(saltBytes, 0, sl);
-
         /* Then just as many characters of the MD5(pw,salt,pw) */
         ctx1.reset();
         ctx1.update(pw, 0, pw.length);
         ctx1.update(saltBytes, 0, sl);
         ctx1.update(pw, 0, pw.length);
         finalState = ctx1.digest();
-
         for (pl = pw.length; pl > 0; pl -= MD5_SIZE) {
             ctx.update(finalState, 0, pl > MD5_SIZE ? MD5_SIZE : pl);
         }
-
         /* Don't leave anything around in vm they could use. */
         memset(finalState);
-
         /* Then something really weird... */
         for (i = pw.length; i != 0; i >>>= 1) {
             if ((i & 1) != 0) {
@@ -358,44 +346,35 @@ public class WebShareCz extends PluginForHost {
                 ctx.update(pw, 0, 1);
             }
         }
-
         /* Now make the output string */
         passwd.append(magic);
         passwd.append(sp.substring(0, sl));
         passwd.append("$");
-
         finalState = ctx.digest();
-
         /*
          * and now, just to make sure things don't run too fast On a 60 Mhz Pentium this takes 34 msec, so you would need 30 seconds to
          * build a 1000 entry dictionary...
          */
         for (i = 0; i < 1000; i++) {
             ctx1.reset();
-
             if ((i & 1) != 0) {
                 ctx1.update(pw, 0, pw.length);
             } else {
                 ctx1.update(finalState, 0, MD5_SIZE);
             }
-
             if ((i % 3) != 0) {
                 ctx1.update(saltBytes, 0, sl);
             }
-
             if ((i % 7) != 0) {
                 ctx1.update(pw, 0, pw.length);
             }
-
             if ((i & 1) != 0) {
                 ctx1.update(finalState, 0, MD5_SIZE);
             } else {
                 ctx1.update(pw, 0, pw.length);
             }
-
             finalState = ctx1.digest();
         }
-
         l = (byteToUnsigned(finalState[0]) << 16) | (byteToUnsigned(finalState[6]) << 8) | byteToUnsigned(finalState[12]);
         passwd.append(cryptTo64(l, 4));
         l = (byteToUnsigned(finalState[1]) << 16) | (byteToUnsigned(finalState[7]) << 8) | byteToUnsigned(finalState[13]);
@@ -408,10 +387,8 @@ public class WebShareCz extends PluginForHost {
         passwd.append(cryptTo64(l, 4));
         l = byteToUnsigned(finalState[11]);
         passwd.append(cryptTo64(l, 2));
-
         /* Don't leave anything around in vm they could use. */
         memset(finalState);
-
         return passwd.toString();
     }
 
@@ -431,5 +408,4 @@ public class WebShareCz extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
