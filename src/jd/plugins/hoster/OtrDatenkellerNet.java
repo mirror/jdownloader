@@ -19,6 +19,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +52,15 @@ public class OtrDatenkellerNet extends PluginForHost {
     private static final String APIVERSION        = "1";
 
     private String              api_waitaws_url   = null;
+
+    public static interface OtrDatenKellerInterface extends PluginConfigInterface {
+        @AboutConfig
+        @DefaultIntValue(10 * 60)
+        @DescriptionForConfigEntry("Wait for Ticket (min)")
+        int getWaitForTicket();
+
+        void setWaitForTicket(int min);
+    }
 
     public OtrDatenkellerNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -204,8 +219,9 @@ public class OtrDatenkellerNet extends PluginForHost {
 
                 br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
                 downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
-                /* Try up to 10 hours */
-                final int maxloops = 2250;
+                final int minutes = PluginJsonConfig.get(OtrDatenKellerInterface.class).getWaitForTicket();
+                /* Try up to 10 hours = 2250 loops */
+                final int maxloops = 2250 / 10 * minutes / 60; // wait x minutes
                 for (int i = 1; i <= maxloops; i++) {
                     br2 = br.cloneBrowser();
 
