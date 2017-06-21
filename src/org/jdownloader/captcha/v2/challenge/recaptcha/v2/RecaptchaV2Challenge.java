@@ -8,6 +8,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -38,10 +42,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
@@ -49,9 +49,8 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     private volatile BasicCaptchaChallenge basicChallenge;
     private final String                   siteDomain;
     private final String                   secureToken;
-    private Browser                        br;
-    private boolean                        localhost;
-    private boolean                        boundToDomain;
+    private final boolean                  localhost;
+    private final boolean                  boundToDomain;
 
     public String getSiteKey() {
         return siteKey;
@@ -159,9 +158,8 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     public RecaptchaV2Challenge(String siteKey, String secureToken, boolean boundToDomain, Plugin pluginForHost, Browser br, String siteDomain) {
-        super(RECAPTCHAV2, pluginForHost);
+        super(RECAPTCHAV2, pluginForHost, br);
         this.secureToken = secureToken;
-        this.pluginBrowser = br;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
         this.boundToDomain = boundToDomain;
@@ -493,6 +491,8 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         // Dialog.getInstance().showMessageDialog("DUPE: " + file);
         // }
     }
+
+    private Browser br;
 
     private void ensureBrowser() {
         if (this.br == null) {
