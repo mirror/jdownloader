@@ -55,7 +55,6 @@ import jd.plugins.components.UserAgents.BrowserName;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
-
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -78,7 +77,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
     private static AtomicReference<BrowserName>   browserName           = new AtomicReference<BrowserName>(null);
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
-
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
@@ -113,7 +111,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Pragma", null);
-
         // we now set
         browserPrepped.put(prepBr, Boolean.TRUE);
         return prepBr;
@@ -488,14 +485,17 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         final Form cloudflare = getCloudflareChallengeForm(ibr);
         if (responseCode == 403 && cloudflare != null) {
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_FATAL);
-            }
+            // if (true) {
+            // throw new PluginException(LinkStatus.ERROR_FATAL);
+            // }
             a_captchaRequirement = true;
             // recapthcha v2
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                 final Form cf = cloudflare;
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
+                    {
+                        boundToDomain = true;
+                    }
 
                     @Override
                     public String getSiteKey() {
@@ -506,7 +506,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     public String getSecureToken() {
                         return getSecureToken(cf.getHtmlCode());
                     }
-
                 }.getToken();
                 // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
                 final String rayId = getRayID(ibr);
@@ -598,7 +597,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
             sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
             sb.append(line2);
-
             ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
             long answer = ((Number) engine.eval(sb.toString())).longValue();
@@ -656,7 +654,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 // set ckies as current cookies
                 ibr.getHttpConnection().getRequest().setCookies(ckies);
             }
-
             Thread.sleep(2500);
             // effectively refresh page!
             try {
@@ -691,7 +688,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             // new sendRequest saves cookie session
             return;
-
             // new code here...
             // <script type="text/javascript">
             // //<![CDATA[
@@ -699,7 +695,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
             // //]]>
             // </script>
-
         } else if (responseCode == 200 && ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
             final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
             if (phishing == null) {
@@ -715,7 +710,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // commenting out return prevents caching of cookies per request
             // return;
         }
-
         // get cookies we want/need.
         // refresh these with every getPage/postPage/submitForm?
         final Cookies add = ibr.getCookies(ibr.getHost());
@@ -761,9 +755,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // nslookup 103.28.250.173
         // Name: 103.28.250.173.ip.incapdns.net
         // Address: 103.28.250.173
-
         // they also have additional header response, X-Iinfo or ("X-CDN", "Incapsula")**. ** = optional
-
         // not sure if this is the best way to detect this. could be done via line count (13) or html tag count (13 also including
         // closing tags)..
         final String functionz = ibr.getRegex("function\\(\\)\\s*\\{\\s*var z\\s*=\\s*\"\";.*?\\}\\)\\(\\);").getMatch(-1);
@@ -803,7 +795,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // written support based on logged output from JDownloader.. not the best, but here goes! refine if it fails!
         // recaptcha events are loaded from iframe,
         // z reference is within the script src url (contains md5checksum), once decoded their is no magic within, unlike above.
-
         // on a single line
         if (crudeyes != null && crudeyes.length == 1) {
             // xinfo in the iframe is the same as header info...
@@ -854,7 +845,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 }
             }
         }
-
         // get cookies we want/need.
         // refresh these with every getPage/postPage/submitForm?
         final Cookies add = ibr.getCookies(ibr.getHost());
@@ -880,7 +870,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             String decode = Encoding.Base64Decode(base64);
             decode = decode.replace("location.reload();", "").replace("document.cookie", "y");
-
             Object result = new Object();
             if (base64 != null) {
                 try {
@@ -1085,5 +1074,4 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         return result != null ? result.toString() : null;
     }
-
 }

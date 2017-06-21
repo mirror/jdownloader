@@ -70,7 +70,7 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
 
                     @Override
                     protected org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge createChallenge(jd.plugins.PluginForDecrypt plugin) {
-                        return new RecaptchaV2Challenge(lsiteKey, stoken, null, this.br, this.getSiteDomain()) {
+                        return new RecaptchaV2Challenge(lsiteKey, stoken, false, null, this.br, this.getSiteDomain()) {
                             @Override
                             public org.jdownloader.DomainInfo getDomainInfo() {
                                 return DomainInfo.getInstance(domain);

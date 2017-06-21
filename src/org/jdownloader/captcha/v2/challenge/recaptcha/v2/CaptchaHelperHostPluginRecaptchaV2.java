@@ -2,19 +2,6 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -34,14 +21,27 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
-    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final String secureToken) {
-        super(plugin, br, siteKey, secureToken);
+    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
+        super(plugin, br, siteKey, secureToken, boundToDomain);
     }
 
     /* Most likely used for login captchas. */
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey) {
-        this(plugin, br, siteKey, null);
+        this(plugin, br, siteKey, null, false);
     }
 
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br) {
@@ -74,7 +74,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 link.addPluginProgress(progress);
             }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, plugin, br, getSiteDomain());
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, boundToDomain, plugin, br, getSiteDomain());
             try {
                 c.setTimeout(plugin.getCaptchaTimeout());
                 if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {

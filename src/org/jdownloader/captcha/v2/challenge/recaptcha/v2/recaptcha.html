@@ -7,6 +7,11 @@
 <!--<![endif]-->
 <head>
 <meta charset="utf-8">
+<meta name="sitekey" content="%%%sitekey%%%"/>
+<meta name="optionals" content="%%%optionals%%%"/>
+<meta name="boundToDomain" content="%%%boundToDomain%%%"/>
+<meta name="siteDomain" content="%%%siteDomain%%%"/>
+<meta name="sToken" content="%%%sToken%%%"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <title>JDownloader - Download everything from everywhere</title>
 
@@ -79,7 +84,7 @@ iframe {
 	<div id=main>
 
 		<div class=wrap style="height: 350px">
-			<article>
+			<article style="display:%%%display%%%">
 				<h2>Please solve this Captcha challenge:</h2>
 				<div class="sample-form"">
 
@@ -99,6 +104,11 @@ iframe {
 					</form>
 				</div>
 			</article>
+			<article class="no_extension">
+				<h2>Important:</h2>
+					<div>%%%no_extension%%%</div>
+			</article>
+		
 		</div>
 	</div>
 	<footer style="height: 20px"> </footer>

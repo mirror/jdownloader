@@ -1,12 +1,12 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected T            plugin;
@@ -14,6 +14,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected Browser      br;
     protected String       siteKey;
     protected String       secureToken;
+    protected boolean      boundToDomain;
 
     public String getSecureToken() {
         return getSecureToken(br != null ? br.toString() : null);
@@ -41,7 +42,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     private final String siteDomain;
 
-    public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken) {
+    public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         this.plugin = plugin;
         this.br = br.cloneBrowser();
         this.siteDomain = Browser.getHost(br.getURL(), true);
@@ -51,6 +52,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         }
         this.siteKey = siteKey;
         this.secureToken = secureToken;
+        this.boundToDomain = boundToDomain;
     }
 
     protected void createFallbackLogger() {
