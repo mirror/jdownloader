@@ -8,10 +8,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -42,6 +38,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
@@ -51,6 +51,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     private final String                   secureToken;
     private Browser                        br;
     private boolean                        localhost;
+    private boolean                        boundToDomain;
 
     public String getSiteKey() {
         return siteKey;
@@ -86,8 +87,17 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             this.contextUrl = contextUrl;
         }
 
-        private String siteKey;
-        private String contextUrl;
+        private String  siteKey;
+        private String  contextUrl;
+        private boolean boundToDomain;
+
+        public boolean isBoundToDomain() {
+            return boundToDomain;
+        }
+
+        public void setBoundToDomain(boolean boundToDomain) {
+            this.boundToDomain = boundToDomain;
+        }
     }
 
     @Override
@@ -109,6 +119,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             ret.setSiteKey(getSiteKey());
             ret.setContextUrl("http://" + siteDomain);
             ret.setStoken(getSecureToken());
+            ret.setBoundToDomain(isBoundToDomain());
             return ret;
         }
         BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
@@ -147,19 +158,24 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
-    public RecaptchaV2Challenge(String siteKey, String secureToken, Plugin pluginForHost, Browser br, String siteDomain) {
+    public RecaptchaV2Challenge(String siteKey, String secureToken, boolean boundToDomain, Plugin pluginForHost, Browser br, String siteDomain) {
         super(RECAPTCHAV2, pluginForHost);
         this.secureToken = secureToken;
         this.pluginBrowser = br;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
+        this.boundToDomain = boundToDomain;
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
         }
         localhost = true;
-        if ("pgorelease.nianticlabs.com".equals(siteDomain)) {
-            localhost = false;
-        }
+        // if ("pgorelease.nianticlabs.com".equals(siteDomain)) {
+        // localhost = false;
+        // }
+    }
+
+    public boolean isBoundToDomain() {
+        return boundToDomain;
     }
 
     public String getSecureToken() {
@@ -407,6 +423,26 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 });
                 return true;
             }
+            if (pDo.startsWith("https://www.google.com/recaptcha/api2/bframe?")) {
+                ensureBrowser();
+                jd.http.requests.GetRequest r = new jd.http.requests.GetRequest(pDo);
+                r.getHeaders().put("Referer", ref);
+                forward(request, response, br, r, new Modifier() {
+                    public byte[] onData(byte[] bytes) {
+                        String str;
+                        try {
+                            str = new String(bytes, "UTF-8");
+                            str = str.replaceAll(Pattern.quote(getSiteDomain()) + "(:\\d+)?", request.getRequestHeaders().getValue("Host"));
+                            str = modifyRecaptchaJS(brRef, str);
+                            str = replace(brRef, str);
+                            return str.getBytes("UTF-8");
+                        } catch (UnsupportedEncodingException e) {
+                            throw new WTFException(e);
+                        }
+                    }
+                });
+                return true;
+            }
             if ("solve".equals(pDo)) {
                 String responsetoken = request.getParameterbyKey("response");
                 brRef.onResponse(responsetoken);
@@ -421,6 +457,11 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     protected String modifyRecaptchaJS(BrowserReference brRef, String js2) {
         try {
+            check("(([a-zA-Z0-9]+)=([a-zA-Z0-9]+)\\[3\\]==([a-zA-Z0-9]+)\\[3\\]&&([a-zA-Z0-9]+)\\[1\\]==([a-zA-Z0-9]+)\\[1\\]&&([a-zA-Z0-9]+)\\[4\\]==([a-zA-Z0-9]+)\\[4\\])", js2);
+            check("(var ([a-zA-Z0-9]+)=[a-zA-Z0-9]+\\(\"anchor\"\\);)([a-zA-Z0-9]+\\.[a-zA-Z0-9]+\\.anchor=)", js2);
+            check("([a-zA-Z0-9]+\\.prototype\\.send=function\\([a-zA-Z0-9]+,[a-zA-Z0-9]+,[a-zA-Z0-9]+\\)\\{([a-zA-Z0-9]+)=this\\.[a-zA-Z0-9]+\\[[a-zA-Z0-9]+\\];)", js2);
+            check("var ([a-zA-z0-9]+)\\s*=\\s*new ([a-zA-z0-9]+)\\(window\\.location\\)\\;", js2);
+            check("([a-zA-z0-9]+\\.prototype\\.toString=function\\(\\)\\{var [a-zA-z0-9]+=\\[\\]\\,[a-zA-z0-9]+=this.[a-zA-z0-9]+\\;.*[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?[a-zA-z0-9]+\\.push.*?;)return ([a-zA-z0-9]+)\\.join\\(\"\"\\)\\}", js2);
             String js = js2.replaceAll("(([a-zA-Z0-9]+)=([a-zA-Z0-9]+)\\[3\\]==([a-zA-Z0-9]+)\\[3\\]&&([a-zA-Z0-9]+)\\[1\\]==([a-zA-Z0-9]+)\\[1\\]&&([a-zA-Z0-9]+)\\[4\\]==([a-zA-Z0-9]+)\\[4\\])", "$2=$3;$1");
             js = js.replaceAll("(var ([a-zA-Z0-9]+)=[a-zA-Z0-9]+\\(\"anchor\"\\);)([a-zA-Z0-9]+\\.[a-zA-Z0-9]+\\.anchor=)", "$1$2=\"%%%baseUrl%%%/proxy\";$3");
             js = js.replaceAll("([a-zA-Z0-9]+\\.prototype\\.send=function\\([a-zA-Z0-9]+,[a-zA-Z0-9]+,[a-zA-Z0-9]+\\)\\{([a-zA-Z0-9]+)=this\\.[a-zA-Z0-9]+\\[[a-zA-Z0-9]+\\];)", "$0$2.path=\"*\";");
@@ -431,6 +472,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private void check(String string, String js2) {
+        if (js2.replaceAll(string, "AFFENKOPF").equals(js2)) {
+            System.out.println("DOES NOT MATCH: " + string);
+        }
     }
 
     protected void saveTile(byte[] bytes, String url) throws IOException {
@@ -506,13 +553,24 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         try {
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
+            html = html.replace("%%%siteDomain%%%", siteDomain);
             html = html.replace("%%%sitekey%%%", siteKey);
+            if (isBoundToDomain()) {
+                html = html.replace("%%%display%%%", "none");
+                html = html.replace("%%%no_extension%%%", _GUI.T.extension_required());
+            } else {
+                html = html.replace("%%%display%%%", "block");
+                html = html.replace("%%%no_extension%%%", _GUI.T.extension_recommended());
+            }
             html = html.replace("%%%session%%%", id);
             html = html.replace("%%%namespace%%%", getHttpPath());
+            html = html.replace("%%%boundToDomain%%%", String.valueOf(isBoundToDomain()));
             String stoken = getSecureToken();
             if (StringUtils.isNotEmpty(stoken)) {
+                html = html.replace("%%%sToken%%%", stoken);
                 html = html.replace("%%%optionals%%%", "data-stoken=\"" + stoken + "\"");
             } else {
+                html = html.replace("%%%sToken%%%", "");
                 html = html.replace("%%%optionals%%%", "");
             }
             return html;
