@@ -1,4 +1,5 @@
 action_Reconnect=Riconnetti
+action_Restart_JDownloader=Riavvia JDownloader
 action_addAllDownloads=Aggiungi tutti i download
 action_captcha_none=Nulla
 action_captcha_service=Servizio

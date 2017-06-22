@@ -6,6 +6,7 @@ config_toolbarbutton=Barra strumenti visibile
 gui_config_jdshutdown_close=Chiudi JD
 gui_config_jdshutdown_forceshutdown=Forza l'arresto (non per tutti i S.O.)
 gui_config_jdshutdown_hibernate=Iberna (non in tutti i S.O.)
+gui_config_jdshutdown_logoff=Disconnetti
 gui_config_jdshutdown_mode=Modo:
 gui_config_jdshutdown_shutdown=Spegnimento
 gui_config_jdshutdown_standby=Standby (non in tutti i S.O.)
@@ -14,10 +15,12 @@ install_msg=Preparare il sistema per la funzione spegnimento forzato?
 install_title=Installa spegnimento forzato
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader verrà chiuso!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Il sistema verra posto in ibernazione!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">L'utente verrà disconnesso!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Il sistema verrà spento!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Il sistema verrà posto in standby!</font></h2>
 interaction_shutdown_dialog_title_closejd=Chiudere JD?
 interaction_shutdown_dialog_title_hibernate=Ibernare?
+interaction_shutdown_dialog_title_logoff=Disconnettersi?
 interaction_shutdown_dialog_title_shutdown=Spegnere?
 interaction_shutdown_dialog_title_standby=Standby?
 jd_plugins_optional_jdshutdown=Chiusura JD

@@ -1,5 +1,8 @@
+gui_config_antistandby_whilecrawl=Crawling in corso
 gui_config_antistandby_whiledl2=Il download è in corso
+gui_config_antistandby_whiledl2orcrawl=Download o crawling in corso
 gui_config_antistandby_whilejd2=JDownloader è in esecuzione
 jd_plugins_optional_antistandby_jdantistandby=Antistandby
 jd_plugins_optional_antistandby_jdantistandby_description=Impedisce al computer di andare in standby o in modo sleep per mantenere i download attivi.
 mode=Evita standby/sleep quando
+prevent_screensaver=Previeni salvaschermo
