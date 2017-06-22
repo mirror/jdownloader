@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +24,14 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,14 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
@@ -99,7 +98,7 @@ public class DepfileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         // Set English language
@@ -219,19 +218,14 @@ public class DepfileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("document\\.getElementById\\(\"wait_input\"\\)\\.value= unescape\\('(.*?)'\\);").getMatch(0);
-        if (dllink == null) {
-            logger.warning("dllink is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.deepHtmlDecode(dllink).trim();
+        final String dllink = getDllink();
         int wait = 60;
         final String regexedWaittime = br.getRegex("var sec=(\\d+);").getMatch(0);
         if (regexedWaittime != null) {
             wait = Integer.parseInt(regexedWaittime);
         }
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         /*
          * The download attempt triggers reconnect waittime (if the user stops downloads before this step, no limit will be set!)! Save
          * timestamp here to calculate correct remaining waittime later!
@@ -251,6 +245,17 @@ public class DepfileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() throws PluginException {
+        String dllink = br.getRegex("document\\.getElementById\\(\"wait_input\"\\)\\.value= unescape\\('(.*?)'\\);").getMatch(0);
+        if (dllink != null) {
+            dllink = Encoding.deepHtmlDecode(dllink).trim();
+            return dllink;
+        }
+        // base64,
+        dllink = Encoding.Base64Decode(br.getRegex("('|\")(aHR0[a-zA-Z0-9_/\\+\\=\\-%]+)\\1").getMatch(1));
+        return dllink;
     }
 
     private AccountInfo login(final Account account, final boolean force) throws Exception {
@@ -395,7 +400,7 @@ public class DepfileCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
             }
