@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -37,9 +36,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twojlimit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twojlimit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class TwojLimitPl extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private String                                         Info               = null;
     private String                                         validUntil         = null;
@@ -76,10 +74,12 @@ public class TwojLimitPl extends PluginForHost {
         if (GetTrasferLeft(br.toString()) > 10) {
             expired = false;
         }
-
     }
 
     private void handleErrors(Browser br) throws PluginException {
+        if (br.containsHTML("1003|Access from your country is not allowed")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccess from your country is not allowed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (br.containsHTML("0=Nieprawidlowa nazwa uzytkownika/haslo")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -90,7 +90,6 @@ public class TwojLimitPl extends PluginForHost {
         if (br.toString().trim().equals("80=Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany")) {
             // Too many login attempts - access has been temporarily blocked
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access has been temporarily blocked.", 30 * 60 * 1000l);
-
         }
     }
 
@@ -111,9 +110,7 @@ public class TwojLimitPl extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         String hosts;
         login(account);
-
         ac.setTrafficLeft(GetTrasferLeft(Info));
-
         ArrayList<String> supportedHosts = new ArrayList<String>();
         hosts = br.getPage("https://www.twojlimit.pl/clipboard.php");
         if (hosts != null) {
@@ -141,7 +138,6 @@ public class TwojLimitPl extends PluginForHost {
                     ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
                 }
             }
-
         }
         ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Account valid");
@@ -169,7 +165,6 @@ public class TwojLimitPl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -185,7 +180,6 @@ public class TwojLimitPl extends PluginForHost {
                 }
             }
         }
-
         showMessage(link, "Phase 1/3: Login");
         login(account);
         if (expired) {
@@ -202,7 +196,6 @@ public class TwojLimitPl extends PluginForHost {
         String postData = "username=" + username + "&password=" + JDHash.getMD5(account.getPass()) + "&info=0&url=" + url + "&site=twojlimit";
         showMessage(link, "Phase 2/3: Generating Link");
         String genlink = br.postPage("http://crypt.twojlimit.pl", postData);
-
         // link.setProperty("apilink", response);
         if (!(genlink.startsWith("http://") || genlink.startsWith("https://"))) {
             logger.severe("Twojlimit.pl(Error): " + genlink);
@@ -220,7 +213,6 @@ public class TwojLimitPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
         br.setFollowRedirects(true);
@@ -232,7 +224,7 @@ public class TwojLimitPl extends PluginForHost {
          * is offline
          */
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
@@ -258,7 +250,6 @@ public class TwojLimitPl extends PluginForHost {
                 tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
             }
         }
-
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline (?) */
             dl.getConnection().disconnect();
@@ -301,5 +292,4 @@ public class TwojLimitPl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
