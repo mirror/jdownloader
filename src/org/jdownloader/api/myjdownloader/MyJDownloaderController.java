@@ -124,14 +124,15 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                         while (true) {
                             cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
                             email = cd.ask("Please Enter your MyJDownloader Email:");
-                            password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
-                            if (validateLogins(email, password)) {
-                                CFG_MYJD.EMAIL.setValue(email);
-                                CFG_MYJD.PASSWORD.setValue(password);
-                                break;
-                            } else {
-                                cd.println("Invalid Logins");
+                            if (new Regex(email, "..*?@.*?\\..+").matches()) {
+                                password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
+                                if (validateLogins(email, password)) {
+                                    CFG_MYJD.EMAIL.setValue(email);
+                                    CFG_MYJD.PASSWORD.setValue(password);
+                                    break;
+                                }
                             }
+                            cd.println("Invalid Logins");
                         }
                     } catch (DialogNoAnswerException e) {
                         ShutdownController.getInstance().requestShutdown();
@@ -142,7 +143,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             }
         }
         if (validateLogins(email, password)) {
-            MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
+            final MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
             lthread.setEmail(email);
             lthread.setPassword(password);
             lthread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
@@ -276,19 +277,20 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                             while (true) {
                                 cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
                                 final String email = cd.ask("Please Enter your MyJDownloader Email:");
-                                final String password = cd.askHidden("Please Enter your MyJDownloader Password:");
-                                if (validateLogins(email, password)) {
-                                    CFG_MYJD.EMAIL.setValue(email);
-                                    CFG_MYJD.PASSWORD.setValue(password);
-                                    new Thread() {
-                                        public void run() {
-                                            connect();
-                                        }
-                                    }.start();
-                                    return;
-                                } else {
-                                    cd.println("Invalid Logins");
+                                if (new Regex(email, "..*?@.*?\\..+").matches()) {
+                                    final String password = cd.askHidden("Please Enter your MyJDownloader Password:");
+                                    if (validateLogins(email, password)) {
+                                        CFG_MYJD.EMAIL.setValue(email);
+                                        CFG_MYJD.PASSWORD.setValue(password);
+                                        new Thread() {
+                                            public void run() {
+                                                connect();
+                                            }
+                                        }.start();
+                                        return;
+                                    }
                                 }
+                                cd.println("Invalid Logins");
                             }
                         } catch (DialogNoAnswerException e) {
                             ShutdownController.getInstance().requestShutdown();
@@ -425,6 +427,4 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             ct.terminateSession(connectToken);
         }
     }
-   
-
 }
