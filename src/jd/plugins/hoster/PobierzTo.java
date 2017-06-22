@@ -200,15 +200,20 @@ public class PobierzTo extends PluginForHost {
             if (filename != null) {
                 link.setName(Encoding.htmlDecode(filename).trim());
             }
-            String filesize = br.getRegex("<!--<filesize>(.*?)</filesize>").getMatch(0);
-            if (filesize == null) {
-                filesize = fInfo.getMatch(1);
-                if (filesize == null) {
-                    filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
-                }
-            }
+            String filesize = br.getRegex("<!--<filesize>\\s*(\\d+)\\s*</filesize>").getMatch(0);
             if (filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+                link.setVerifiedFileSize(Long.parseLong(filesize));
+            } else {
+                filesize = br.getRegex("<!--<filesize>(.*?)</filesize>").getMatch(0);
+                if (filesize == null) {
+                    filesize = fInfo.getMatch(1);
+                    if (filesize == null) {
+                        filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
+                    }
+                }
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+                }
             }
             if (new Regex(br.getURL(), Pattern.compile("Musisz\\+poczeka%C4%87\\+1\\+godzin%C4%99\\+pomi%C4%99dzy", Pattern.CASE_INSENSITIVE)).matches()) {
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
