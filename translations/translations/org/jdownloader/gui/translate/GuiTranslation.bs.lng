@@ -1708,6 +1708,8 @@ downloadview_skipped=Preskočeni Download-i
 downloadview_successful=Uspješni Download-i
 downloadview_todo=Downloadi koji slijede
 extensionManager_title=Moduli Dodataka
+extension_recommended=<p>Da bi dobili čitljive i lakše rješive captcha-e, preporučujemo da instalirate zvanični <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader Browser dodatak.</a></p>
+extension_required=<b><p style='color:#ff0000'>Za rješavanje ove vrsta captcha, morate koristiti <a href='https://my.jdownloader.org/apps' target='_blank'>Android aplikaciju preko 'my.jdownloader'</a>, ili naš <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader browser dodatak.</a></p></b>
 ffmpeg_install_now=Sada instaliraj FFmpeg™
 file_exists_want_to_overwrite_question=Dokument %s1 postoji. Želite li ga prepisati?
 filecolumn_title=Ime
