@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,7 +53,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(?:dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(?:dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" })
 public class OneFichierCom extends PluginForHost {
 
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
@@ -198,7 +197,7 @@ public class OneFichierCom extends PluginForHost {
 
     /* Old linkcheck removed AFTER revision 29396 */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         /* Offline links should also get nice filenames. */
         correctDownloadLink(link);
@@ -237,7 +236,7 @@ public class OneFichierCom extends PluginForHost {
         /* The following code will cover saved hotlinks */
         String dllink = downloadLink.getStringProperty(PROPERTY_HOTLINK, null);
         if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
             if (dl.getConnection().getContentType().contains("html")) {
                 dl.getConnection().disconnect();
                 // link has expired... but it could be for any reason! dont care!
@@ -255,7 +254,7 @@ public class OneFichierCom extends PluginForHost {
         // retry/resume of cached free link!
         dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, null);
         if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
             if (dl.getConnection().getContentType().contains("html")) {
                 dl.getConnection().disconnect();
                 // link has expired... but it could be for any reason! dont care!
@@ -272,7 +271,7 @@ public class OneFichierCom extends PluginForHost {
         }
         // this covers virgin downloads which end up been hot link-able...
         dllink = getDownloadlinkNEW(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
         if (!dl.getConnection().getContentType().contains("html")) {
             /* resume download */
             downloadLink.setProperty(PROPERTY_HOTLINK, dllink);
@@ -373,7 +372,7 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -636,7 +635,7 @@ public class OneFichierCom extends PluginForHost {
         if (dllink != null) {
             try {
                 logger.info("Connecting to cached dllink: " + dllink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
             } catch (final ConnectException c) {
                 logger.info("Download failed because connection timed out, NOT a JD issue!");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
@@ -711,7 +710,7 @@ public class OneFichierCom extends PluginForHost {
             if (dl == null || i > 0) {
                 try {
                     logger.info("Connecting to dllink: " + dllink);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
                 } catch (final ConnectException c) {
                     logger.info("Download failed because connection timed out, NOT a JD issue!");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
@@ -745,7 +744,7 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicReference<String> lastSessionPassword = new AtomicReference<String>(null);
 
-    private void handlePassword() throws IOException, PluginException {
+    private void handlePassword() throws Exception {
         synchronized (lastSessionPassword) {
             logger.info("This link seems to be password protected, continuing...");
             final String url = br.getURL();
@@ -821,9 +820,9 @@ public class OneFichierCom extends PluginForHost {
     /**
      * Makes sure that we're allowed to download a link. This function will also find out of a link is password protected.
      *
-     * @throws IOException
+     * @throws Exception
      */
-    private void checkDownloadable() throws PluginException, IOException {
+    private void checkDownloadable() throws Exception {
         if (this.currDownloadLink.getBooleanProperty("privatelink", false)) {
             logger.info("Link is PRIVATE --> Checking whether it really is PRIVATE or just password protected");
             br.getPage(this.getDownloadlinkNEW(this.currDownloadLink));
