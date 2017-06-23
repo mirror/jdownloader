@@ -230,7 +230,7 @@ public class ProxyController implements ProxySelectorInterface {
             for (int i = 0; i < entries.length; i++) {
                 final String entry = entries[i] == null ? "" : entries[i].trim();
                 if (entry.length() == 0 || entry.startsWith("//") || entry.startsWith("#")) {
-                    /**
+                    /*
                      * empty/comment lines
                      */
                     continue;
