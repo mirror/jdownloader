@@ -13,15 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.multi;
 
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -77,9 +73,7 @@ import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExists
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class Multi extends IExtraction {
-
     private volatile int               crack = 0;
-
     private SevenZipArchiveWrapper     inArchive;
     private IInStream                  inStream;
     private Closeable                  closable;
@@ -198,41 +192,6 @@ public class Multi extends IExtraction {
         }
     }
 
-    private static boolean useARMPiLibrary() {
-        if (CrossSystem.isRaspberryPi()) {
-            return true;
-        }
-        if (CrossSystem.isUnix() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily())) {
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream("/proc/cpuinfo");
-                final BufferedReader is = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
-                try {
-                    String line = null;
-                    while ((line = is.readLine()) != null) {
-                        if (line.contains("Oxsemi NAS")) {
-                            return true;
-                        } else if (line.contains("ARM926EJ-S")) {
-                            return true;
-                        }
-                    }
-                } finally {
-                    is.close();
-                }
-            } catch (final Throwable e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (fis != null) {
-                        fis.close();
-                    }
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return false;
-    }
-
     private boolean initLibrary(final String libID) {
         File tmp = null;
         try {
@@ -346,7 +305,7 @@ public class Multi extends IExtraction {
                     if (Application.is64BitJvm()) {
                         libIDs.add("Linux-aarch64");
                     } else {
-                        if (useARMPiLibrary()) {
+                        if (CrossSystem.isRaspberryPi()) {
                             libIDs.add("Linux-armpi");
                             libIDs.add("Linux-armpi2");
                         } else {
@@ -540,7 +499,6 @@ public class Multi extends IExtraction {
                     ctrl.setCurrentActiveItem(new Item(item.getPath(), size, extractTo));
                     try {
                         final MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig()) {
-
                             @Override
                             public int write(final byte[] data) throws SevenZipException {
                                 if (ctrl.gotKilled()) {
@@ -800,9 +758,7 @@ public class Multi extends IExtraction {
             propIDLastWriteTime = propID;
             final boolean slowDownWorkaroundNeeded = propID != null && !"LAST_MODIFICATION_TIME".equals(propID.name());
             final Method extract = archive.getClass().getMethod("extract", new Class[] { int[].class, boolean.class, IArchiveExtractCallback.class });
-
             return new SevenZipArchiveWrapper() {
-
                 private final AtomicBoolean closedFlag = new AtomicBoolean(false);
 
                 @Override
@@ -927,7 +883,6 @@ public class Multi extends IExtraction {
                 public Object getArchiveProperty(PropID propID) {
                     return invoke(getArchiveProperty, propID);
                 }
-
             };
         } catch (NoSuchMethodException e) {
             throw new SevenZipException(e);
@@ -1172,7 +1127,6 @@ public class Multi extends IExtraction {
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
-
                         final int headerByte1 = Integer.parseInt(headerBitFlags1, 16);
                         // final int headerByte2 = Integer.parseInt(headerBitFlags2, 16);
                         if (BinaryLogic.containsAll(headerByte1, 1 << 7) && !format.name().startsWith("RAR5")) {
@@ -1212,7 +1166,6 @@ public class Multi extends IExtraction {
             } catch (Throwable e) {
                 getLogger().log(e);
             }
-
             final IArchiveOpenCallback callBack;
             if (archive.getArchiveFiles().size() == 1) {
                 final RandomAccessFile raf = new RandomAccessFile(firstArchiveFile.getFilePath(), "r");
