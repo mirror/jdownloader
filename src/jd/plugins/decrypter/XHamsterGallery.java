@@ -86,24 +86,14 @@ public class XHamsterGallery extends PluginForDecrypt {
         if (fpname == null) {
             fpname = br.getRegex("<title>(.*?)\\s*>\\s*").getMatch(0);
         }
-        int pageMax = 1;
-        final String[] pagesTemp = br.getRegex("\\?page=(\\d+)").getColumn(0);
-        if (pagesTemp != null && pagesTemp.length != 0) {
-            int pageTmp = 1;
-            for (final String aPage_str : pagesTemp) {
-                pageTmp = Integer.parseInt(aPage_str);
-                if (pageTmp > pageMax) {
-                    pageMax = pageTmp;
-                }
-            }
-        }
-        for (int pageCurrent = 1; pageCurrent <= pageMax; pageCurrent++) {
+        int pageIndex = 1;
+        while (true) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
-                return decryptedLinks;
+                break;
             }
-            if (pageCurrent > 1) {
-                br.getPage(urlWithoutPageParameter + "?page=" + pageCurrent);
+            if (pageIndex > 1) {
+                br.getPage(urlWithoutPageParameter + "/" + pageIndex);
             }
             String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
@@ -112,14 +102,19 @@ public class XHamsterGallery extends PluginForDecrypt {
             // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
             final String[][] thumbNails = new Regex(allLinks, "(\"|')(https?://(?:ept|upt|ep\\d+)\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_(?:160|1000)\\.(je?pg|gif|png))\\1").getMatches();
             if (thumbNails == null || thumbNails.length == 0) {
-                logger.warning("Decrypter failed on page " + pageCurrent);
-                return null;
+                if (pageIndex == 0) {
+                    logger.warning("Decrypter failed on page " + pageIndex);
+                    return null;
+                } else {
+                    break;
+                }
             }
             for (final String[] thumbNail : thumbNails) {
                 DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)(160|1000)\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
+            pageIndex++;
         }
         if (fpname != null) {
             FilePackage fp = FilePackage.getInstance();
