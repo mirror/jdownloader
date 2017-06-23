@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,10 +34,8 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
 public class YouPornCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
     String DLLINK = null;
 
     public YouPornCom(PluginWrapper wrapper) {
@@ -104,7 +101,7 @@ public class YouPornCom extends PluginForHost {
         if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos \\- YouPorn</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) Video \\- Youporn\\.com</title>").getMatch(0);
         }
@@ -196,5 +193,4 @@ public class YouPornCom extends PluginForHost {
 
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
