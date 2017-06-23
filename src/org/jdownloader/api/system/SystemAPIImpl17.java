@@ -59,7 +59,7 @@ public class SystemAPIImpl17 {
                 if (!customPath && (store.isReadOnly() || filterList.contains(store.type()))) {
                     continue;
                 }
-                storage.setPath(root.toString() + "'Type:" + store.type() + "'");
+                storage.setPath(root.toString());
                 storage.setSize(store.getTotalSpace());
                 storage.setFree(store.getUsableSpace());
             } catch (final IOException e) {
