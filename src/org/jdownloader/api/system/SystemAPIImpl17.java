@@ -20,7 +20,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 
 public class SystemAPIImpl17 {
-
     public static List<StorageInformationStorable> getStorageInfos(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
         final List<String> filterList;
@@ -60,7 +59,7 @@ public class SystemAPIImpl17 {
                 if (!customPath && (store.isReadOnly() || filterList.contains(store.type()))) {
                     continue;
                 }
-                storage.setPath(root.toString());
+                storage.setPath(root.toString() + "'Type:" + store.type() + "'");
                 storage.setSize(store.getTotalSpace());
                 storage.setFree(store.getUsableSpace());
             } catch (final IOException e) {
@@ -73,5 +72,4 @@ public class SystemAPIImpl17 {
         }
         return ret;
     }
-
 }
