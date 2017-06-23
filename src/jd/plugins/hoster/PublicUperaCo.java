@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -41,7 +40,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "public.upera.co" }, urls = { "https?://(?:www\\.)?public\\.upera\\.co/[A-Za-z0-9]+" })
 public class PublicUperaCo extends PluginForHost {
-
     public PublicUperaCo(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -132,7 +130,7 @@ public class PublicUperaCo extends PluginForHost {
             }
             dllink = br.getRegex("\"(https?://s\\.\\d+\\.upera\\.co/\\d+/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(http[^<>\"]+)\" class=\"btn btn\\-lg btn\\-danger\">Download Link</a>").getMatch(0);
+                dllink = br.getRegex("\"(http[^<>\"]+)\"[^<>]+>Download Link").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -296,5 +294,4 @@ public class PublicUperaCo extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
