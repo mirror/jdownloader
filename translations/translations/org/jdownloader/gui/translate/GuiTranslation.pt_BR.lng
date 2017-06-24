@@ -1708,6 +1708,8 @@ downloadview_skipped=Downloads ignorados
 downloadview_successful=Downloads Bem Sucedidos
 downloadview_todo=Downloads pendentes
 extensionManager_title=Módulos de Extensão
+extension_recommended=<p>Para ter captchas mais legíveis e mais fáceis de solucionar, recomendamos instalar a <a href='https://my.jdownloader.org/apps' target='_blank'>extensão My.JDownloader para navegadores.</a></p>
+extension_required=<b><p style='color:#ff0000'>Para solucionar este tipo de captcha, você deve usar o <a href='https://my.jdownloader.org/apps' target='_blank'>App do Android via 'my.jdownloader'</a>, ou nossa <a href='https://my.jdownloader.org/apps' target='_blank'>Extensão My.JDownloader para navegadores.</a></p></b>
 ffmpeg_install_now=Instalar FFmpeg™ agora
 file_exists_want_to_overwrite_question=O arquivo %s1 já existe. Deseja substituí-lo?
 filecolumn_title=Nome
