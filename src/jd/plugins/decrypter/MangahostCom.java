@@ -17,8 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -57,9 +59,9 @@ public class MangahostCom extends antiDDoSForDecrypt {
         String[] links = null;
         if (br.containsHTML("var images")) {
             if (br.containsHTML("(jpe?g|png)\\.webp")) {
-                links = br.getRegex("(https?://img\\." + Pattern.quote(host) + "/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
+                links = br.getRegex("(https?://(?:img\\." + Pattern.quote(host) + "|img-host\\.filestatic\\.xyz)/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
             } else {
-                links = br.getRegex("(https?://img\\." + Pattern.quote(host) + "/br/mangas_files/[^<>\"\\']+(jpe?g|png))").getColumn(0);
+                links = br.getRegex("(https?://(?:img\\." + Pattern.quote(host) + "|img-host\\.filestatic\\.xyz)/br/mangas_files/[^<>\"\\']+(jpe?g|png))").getColumn(0);
             }
         } else {
             // this is JSON, DO NOT universally unescape it.
