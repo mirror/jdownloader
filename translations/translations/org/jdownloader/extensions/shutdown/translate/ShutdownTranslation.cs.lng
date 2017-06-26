@@ -6,6 +6,7 @@ config_toolbarbutton=Zobrazit tlačítko na Nástrojové liště
 gui_config_jdshutdown_close=Zavřít JDownloader
 gui_config_jdshutdown_forceshutdown=Vynutit vypnutí (Ne pro všechny OS)
 gui_config_jdshutdown_hibernate=Hibernovat (ne na všech OS)
+gui_config_jdshutdown_logoff=Odhlásit?
 gui_config_jdshutdown_mode=Režim:
 gui_config_jdshutdown_shutdown=Vypnutí
 gui_config_jdshutdown_standby=Spánek (ne ve všech OS)
@@ -14,10 +15,12 @@ install_msg=Chcete připravit váš systém pro funkci vynuceného vypnutí?
 install_title=Nainstalovat Vynucené vypnutí
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader se zavře!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systém se přepne do režimu spánku!</font></h2>
+interaction_shutdown_dialog_msg_logoff=<h2><font color="red">Uživatel bude odhlášen!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Systém se vypne!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Systém se přepne do úsporného režimu!</font></h2>
 interaction_shutdown_dialog_title_closejd=Zavřít JDownloader?
 interaction_shutdown_dialog_title_hibernate=Hibernovat?
+interaction_shutdown_dialog_title_logoff=Odhlásit?
 interaction_shutdown_dialog_title_shutdown=Vypnout?
 interaction_shutdown_dialog_title_standby=Úsporný režim?
 jd_plugins_optional_jdshutdown=JD Vypnutí
