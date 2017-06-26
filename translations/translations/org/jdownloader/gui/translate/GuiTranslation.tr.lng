@@ -1708,6 +1708,8 @@ downloadview_skipped=Atlanmış İndirmeler
 downloadview_successful=Başarılı İndirmeler
 downloadview_todo=Bekleyen İndirmeler
 extensionManager_title=Uzantı Modülleri
+extension_recommended=<p>Daha okunabilir ve daha iyi çözülebilir captcha'lar almak için resmi <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader Tarayıcı uzantısını</a> yüklemenizi son derece öneriyoruz.</p>
+extension_required=<b><p style='color:#ff0000'>Bu tür captcha'yı çözmek için ya <a href='https://my.jdownloader.org/apps' target='_blank'>'My.jdownloader' aracılığıyla Android uygulaması</a> kullanmalı, ya da <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader tarayıcı uzantımızı</a> kullanmalısınız.</p></b>
 ffmpeg_install_now=Şimdi FFmpeg™ yükle
 file_exists_want_to_overwrite_question=%s1 dosyası var. Üzerine yazmak istiyor musunuz?
 filecolumn_title=Adı
