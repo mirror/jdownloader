@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -52,11 +51,9 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myimg.club" }, urls = { "https?://(www\\.)?myimg\\.club/(embed\\-)?[a-z0-9]{12}" })
 public class MyimgClub extends PluginForHost {
-
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED        = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE         = ">This server is in maintenance mode";
-
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
     private static final String            COOKIE_HOST                   = "http://myimg.club";
@@ -75,8 +72,7 @@ public class MyimgClub extends PluginForHost {
     private static final boolean           VIDEOHOSTER_2                 = false;
     /* Enable this for imagehosts */
     private static final boolean           IMAGEHOSTER                   = true;
-
-    private static final boolean           SUPPORTS_HTTPS                = true;
+    private static final boolean           SUPPORTS_HTTPS                = false;
     private static final boolean           SUPPORTS_HTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT   = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE = false;
@@ -97,7 +93,6 @@ public class MyimgClub extends PluginForHost {
     private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
-
     /* Linktypes */
     private static final String            TYPE_EMBED                    = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            TYPE_NORMAL                   = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
@@ -105,12 +100,10 @@ public class MyimgClub extends PluginForHost {
     private static final String            USERTEXT_MAINTENANCE          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            USERTEXT_PREMIUMONLY1         = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            USERTEXT_PREMIUMONLY2         = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-
     /* Used variables */
     private String                         correctedBR                   = "";
     private String                         fuid                          = null;
     private String                         passCode                      = null;
-
     private static AtomicReference<String> agent                         = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -128,7 +121,6 @@ public class MyimgClub extends PluginForHost {
     // captchatype: null 4dignum solvemedia recaptcha
     // other:
     // TODO: Add case maintenance + alternative filesize check
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -263,7 +255,6 @@ public class MyimgClub extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
-
         /* standard traits from base page */
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -512,7 +503,6 @@ public class MyimgClub extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -678,14 +668,11 @@ public class MyimgClub extends PluginForHost {
     private void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -734,26 +721,21 @@ public class MyimgClub extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -1290,7 +1272,6 @@ public class MyimgClub extends PluginForHost {
     // /* workaround for free/premium issue on stable 09581 */
     // return maxPrem.get();
     // }
-
     @Override
     public void reset() {
     }
@@ -1303,5 +1284,4 @@ public class MyimgClub extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
