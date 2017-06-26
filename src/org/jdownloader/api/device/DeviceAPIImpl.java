@@ -39,22 +39,31 @@ public class DeviceAPIImpl implements DeviceAPI {
         final List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
         final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
         if (localIPs != null) {
+            try {
+                // check dns rebind protection
+                final InetAddress[] localhost = HTTPConnectionUtils.resolvHostIP("127-0-0-1.mydns.jdownloader.org");
+                if (localhost == null || localhost.length != 1 || !"127.0.0.1".equals(localhost[0])) {
+                    ret.setRebindProtectionDetected(true);
+                } else {
+                    for (final InetAddress localIP : localIPs) {
+                        if ((localIP.getAddress()[0] == 192 && localIP.getAddress()[1] == 168) || (localIP.getAddress()[0] == 172 && localIP.getAddress()[1] == 16)) {
+                            // only check 192.168.x.y and 172.16.x.y
+                            final InetAddress[] resolv = HTTPConnectionUtils.resolvHostIP(localIP.getHostAddress().replace(".", "-") + ".mydns.jdownloader.org");
+                            if (resolv == null || resolv.length != 1 || !resolv[0].equals(localIP)) {
+                                ret.setRebindProtectionDetected(true);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (final Throwable e) {
+                ret.setRebindProtectionDetected(true);
+            }
             for (final InetAddress localIP : localIPs) {
                 final DirectConnectionInfo info = new DirectConnectionInfo();
                 info.setPort(directServer.getLocalPort());
                 info.setIp(localIP.getHostAddress());
                 infos.add(info);
-                if (!localIP.isLoopbackAddress() && !ret.isRebindProtectionDetected()) {
-                    final String mydns = localIP.getHostAddress().replace(".", "-") + ".mydns.jdownloader.org";
-                    try {
-                        final InetAddress[] resolves = HTTPConnectionUtils.resolvHostIP(mydns);
-                        if (resolves == null || resolves.length != 1 || !resolves[0].equals(localIP)) {
-                            ret.setRebindProtectionDetected(true);
-                        }
-                    } catch (final Throwable e) {
-                        ret.setRebindProtectionDetected(true);
-                    }
-                }
             }
         }
         if (directServer.getRemotePort() > 0) {

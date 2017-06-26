@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -42,7 +41,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" })
 public class PanBaiduCom extends PluginForHost {
-
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -60,17 +58,13 @@ public class PanBaiduCom extends PluginForHost {
     // private static final String USER_AGENT =
     // "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
     private static final String  APPID                                      = "250528";
-
     private static final String  NICE_HOST                                  = "pan.baidu.com";
     private static final String  NICE_HOSTproperty                          = "panbaiducom";
-
     public static final long     trust_cookie_age                           = 300000l;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                                = true;
     private static final int     FREE_MAXCHUNKS                             = 1;
     private static final int     FREE_MAXDOWNLOADS                          = 20;
-
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload               = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
@@ -160,7 +154,6 @@ public class PanBaiduCom extends PluginForHost {
             if (br.containsHTML("id=\"share_nofound_des\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             /* Experimental code */
             String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
             if (i_frame == null) {
@@ -172,7 +165,6 @@ public class PanBaiduCom extends PluginForHost {
             } else {
                 logger.info("Found no i_frame");
             }
-
             /* Fallback handling if the password cookie didn't work */
             if (link_password != null && br.getURL().matches(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
                 postPage(this.br, "http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
@@ -277,7 +269,6 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
         br.setFollowRedirects(true);
         final int maxchunks;
         if (this.getPluginConfig().getBooleanProperty("ALLOW_UNLIMITED_CHUNKS", false)) {
@@ -384,7 +375,6 @@ public class PanBaiduCom extends PluginForHost {
             /* Should only happen in case they detect- and block us. */
             /* 2016-12-15: Which error_msg will this be?? */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 31326", 30 * 60 * 1000l);
-
         }
         String url_to_check = br.getRedirectLocation();
         if (url_to_check == null) {
@@ -460,7 +450,6 @@ public class PanBaiduCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 final String getdata = "tpl=pp&callback=bdPass.api.login._needCodestringCheckCallback&index=0&logincheck=&time=0&username=" + Encoding.urlEncode(account.getUser());
                 this.br.getPage("https://passport.baidu.com/v2/api/?logincheck&" + getdata);
-
                 /* Get captcha if required. */
                 String captchaCode = "";
                 final String codestring = PluginJSonUtils.getJson(this.br, "codestring");
@@ -469,9 +458,7 @@ public class PanBaiduCom extends PluginForHost {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
                     captchaCode = getCaptchaCode(captchaurl, dummyLink);
                 }
-
                 this.br.getPage("https://passport.baidu.com/v2/api/?getapi&class=login&tpl=pp&tangram=false");
-
                 final String logintoken = this.br.getRegex("login_token=\\'([^<>\"\\']+)\\'").getMatch(0);
                 if (logintoken == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

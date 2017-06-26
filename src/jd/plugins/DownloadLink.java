@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.io.File;
@@ -83,13 +82,11 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
  * @author astaldo
  */
 public class DownloadLink extends Property implements Serializable, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
-
     public static enum AvailableStatus {
         UNCHECKED(_GUI.T.linkgrabber_onlinestatus_unchecked()),
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
-
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -124,9 +121,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                          PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
     public static final String                          PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
     public static final String                          PROPERTY_MIME_HINT                  = "MIME_HINT";
-
     private static final long                           serialVersionUID                    = 1981079856214268373L;
-
     private static final String                         UNKNOWN_FILE_NAME                   = "unknownFileName";
     private static final String                         PROPERTY_CHUNKS                     = "CHUNKS";
     private static final String                         URL_ORIGIN                          = "URL_ORIGIN";
@@ -136,47 +131,31 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                         URL_CUSTOM                          = "URL_CUSTOM";
     private static final String                         VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
     public static final String                          PROPERTY_JOB_ID                     = "JOB_ID";
-
     private transient volatile AvailableStatus          availableStatus                     = AvailableStatus.UNCHECKED;
-
     @Deprecated
     private long[]                                      chunksProgress                      = null;
-
     /** Aktuell heruntergeladene Bytes der Datei */
     private long                                        downloadCurrent                     = 0;
-
     private transient volatile SingleDownloadController downloadLinkController              = null;
-
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
     private long                                        downloadMax                         = -1;
-
     private FilePackage                                 filePackage;
-
     /** Hoster des Downloads */
     private String                                      host;
-
     private boolean                                     isEnabled;
-
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
     private String                                      name;
-
     private transient PluginForHost                     defaultplugin;
-
     private transient PluginForHost                     liveplugin;
-
     /**
      * Do not rename urlDownload. We need this field to restore old downloadlinks from the jd09 database
      */
     private String                                      urlDownload;
-
     private transient volatile List<PluginProgress>     pluginProgress                      = null;
-
     private long                                        created                             = -1l;
-
     private transient UniqueAlltimeID                   uniqueID                            = null;
     private transient AbstractNodeNotifier              propertyListener;
-
     private transient DomainInfo                        domainInfo                          = null;
     private transient volatile SkipReason               skipReason                          = null;
     private transient volatile ConditionalSkipReason    conditionalSkipReason               = null;
@@ -186,15 +165,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient Property                          tempProperties                      = null;
     private transient DownloadLinkView                  view                                = null;
     private transient LinkInfo                          linkInfo                            = null;
-
     private transient volatile long                     lastAvailableStatusChange           = -1;
-
     private transient volatile FilePackage              lastValidFilePackage                = null;
     private transient volatile String[]                 cachedName                          = null;
-
     private transient UrlProtection                     urlProtection                       = UrlProtection.UNSET;
     private transient List<HistoryEntry>                history                             = null;
-
     private transient Boolean                           partOfAnArchive                     = null;
     private transient List<String>                      sourcePluginPasswordList            = null;
     public static final String                          RELATIVE_DOWNLOAD_FOLDER_PATH       = "subfolderbyplugin";
@@ -336,7 +311,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
         try {
             final Object sourcePluginPasswordList = fields.get("sourcePluginPasswordList", null);
             if (sourcePluginPasswordList != null && sourcePluginPasswordList instanceof List && ((List) sourcePluginPasswordList).size() > 0) {
@@ -357,7 +331,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
         try {
             this.created = fields.get("created", -1l);
         } catch (final Throwable e) {
@@ -377,7 +350,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             downloadCurrent = 0;
             e.printStackTrace();
         }
-
         try {
             this.downloadMax = fields.get("downloadMax", -1l);
         } catch (final Throwable e) {
@@ -481,7 +453,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
         }
-
     }
 
     public void setCustomSpeedLimit(int limit) {
@@ -532,7 +503,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         }
         return getDownloadCurrentRaw();
-
     }
 
     /**
@@ -985,7 +955,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 return name + "." + cust;
             }
             return name.substring(0, index + 1) + cust;
-
         }
         return name;
     }
@@ -1312,7 +1281,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         // sync is not required. this method is only called from the downloadwatchdog queue
         old = this.downloadLinkController;
         this.downloadLinkController = downloadLinkController;
-
         if (old != null && old != downloadLinkController) {
             old.onDetach(this);
         }
@@ -1680,7 +1648,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return getName().concat("@").concat(getHost());
         }
         return getName().concat("@").concat(getHost()).concat(" previousParentNode:").concat(lPreviousParentNodeID.toString());
-
     }
 
     /**
@@ -2058,6 +2025,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.propertyListener = propertyListener;
     }
 
+    public AbstractNodeNotifier getNodeChangeListener() {
+        return propertyListener;
+    }
+
     public void setPriorityEnum(Priority priority) {
         if (priority == null) {
             priority = Priority.DEFAULT;
@@ -2167,7 +2138,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static <T extends DownloadLinkDatabindingInterface> T bindData(final Property property, final String ID, final Class<T> clazz) {
         @SuppressWarnings("unchecked")
         final T ret = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new InvocationHandler() {
-
             public String getKey(Method method) {
                 String key = null;
                 if (method.getName().startsWith("set")) {
@@ -2209,14 +2179,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                     throw new WTFException("Only Setter and getter are allowed");
                 }
                 if (method.getName().startsWith("set")) {
-
                     if (method.getParameterTypes().length != 1) {
                         throw new WTFException("Setter " + method + " should have 1 parameter. instead: " + Arrays.toString(method.getParameterTypes()));
                     }
                     if (!Clazz.isVoid(method.getReturnType())) {
                         throw new WTFException("Setter " + method + " must not have any return type. Has: " + method.getReturnType());
                     }
-
                     Class<?> param = method.getParameterTypes()[0];
                     Object arg = args[0];
                     if (Clazz.isPrimitiveWrapper(param) && arg == null) {
@@ -2240,7 +2208,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                     if (Clazz.isVoid(method.getReturnType())) {
                         throw new WTFException("Getter " + method + " must have a return type. is Void.");
                     }
-
                     Object value = property.getProperty(key);
                     if (Clazz.isBoolean(returnType)) {
                         if (value == null) {
@@ -2408,7 +2375,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         }
         return null;
-
     }
 
     public boolean isGenericVariantSupport() {
@@ -2441,7 +2407,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 final ArrayList<Object> basic = JSonStorage.restoreFromString(variantsID, new TypeRef<ArrayList<Object>>() {
                 });
                 for (Object o : basic) {
-
                     T restored = JSonStorage.convert(o, new TypeRef<T>() {
                         @Override
                         public Type getType() {
@@ -2449,7 +2414,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                         }
                     });
                     ret.add(restored);
-
                 }
                 getTempProperties().setProperty("VARIANTS", ret);
                 return ret;
@@ -2467,7 +2431,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (!StringUtils.equals(old, extension) && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, extension));
         }
-
     }
 
     public String getCustomExtension() {
@@ -2520,5 +2483,4 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return history.get(history.size() - 1);
         }
     }
-
 }

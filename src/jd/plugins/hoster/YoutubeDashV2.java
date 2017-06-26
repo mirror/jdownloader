@@ -25,6 +25,44 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
@@ -99,43 +137,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -1999,6 +2000,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         if (variant == null) {
             return;
         }
+        final AbstractNodeNotifier nodeChangeListener = downloadLink.getNodeChangeListener();
         downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "#variant=" + Encoding.urlEncode(Base64.encode(((AbstractVariant) variant).getStorableString())));
         if (variant instanceof AbstractVariant) {
             AbstractVariant v = (AbstractVariant) variant;
@@ -2029,8 +2031,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 downloadLink.getTempProperties().removeProperty(YoutubeHelper.YT_VARIANTS);
             }
             YoutubeHelper.writeVariantToDownloadLink(downloadLink, v);
-            String filename;
-            downloadLink.setFinalFileName(filename = new YoutubeHelper(br, getLogger()).createFilename(downloadLink));
+            final String filename = new YoutubeHelper(br, getLogger()).createFilename(downloadLink);
+            downloadLink.setFinalFileName(filename);
+            if (nodeChangeListener instanceof CrawledLink && ((CrawledLink) nodeChangeListener).isNameSet()) {
+                final CrawledLink cl = (CrawledLink) nodeChangeListener;
+                final String oldName = cl.getName();
+                final String newExt = Files.getExtension(filename);
+                final String oldExt = Files.getExtension(oldName);
+                if (newExt != null && oldExt != null) {
+                    cl.setName(oldName.replaceFirst("(\\." + oldExt + ")$", "." + newExt));
+                }
+            }
             downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));
             downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "#variant=" + Encoding.urlEncode(Base64.encode(v.getStorableString())));
             downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant, Arrays.asList(getVariantsIDList(downloadLink))));

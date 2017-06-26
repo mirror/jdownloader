@@ -27,15 +27,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
-
     private Pair             duration;
     private Pair             links;
-
     private Pair             offline;
     private Pair             status;
     private Pair             statusQueue;
     private Pair             listQueue;
-
     private Pair             packages;
     private Pair             online;
     private final long       CLOSETIMEOUT = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay();
@@ -81,6 +78,9 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 case ADD_LINKS_DIALOG:
                 case DRAG_DROP_ACTION:
                     iconKey = IconKey.ICON_ADD;
+                    break;
+                case EXTENSION:
+                    iconKey = IconKey.ICON_FOLDER_ADD;
                     break;
                 default:
                     iconKey = IconKey.ICON_LINKGRABBER;
@@ -150,7 +150,6 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 }
             }
         }
-
         boolean changes = false;
         final int linksCnt = jlc.getCrawledLinksFoundCounter();
         changes |= onlineCount != onlineCnt;
