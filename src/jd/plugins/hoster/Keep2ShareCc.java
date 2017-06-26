@@ -889,14 +889,18 @@ public class Keep2ShareCc extends K2SApi {
         oldDomain = "http://" + oldDomain;
         newDomain = "http://" + newDomain;
         br.clearCookies(oldDomain);
-        final Object ret = account.getProperty("cookies", null);
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-            final String key = cookieEntry.getKey();
-            final String value = cookieEntry.getValue();
-            this.br.setCookie(newDomain, key, value);
+        final Object ret = account.getProperty(cookiesProperty, null);
+        if (ret != null && ret instanceof Map) {
+            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final String value = cookieEntry.getValue();
+                this.br.setCookie(newDomain, key, value);
+            }
+            return true;
+        } else {
+            return false;
         }
-        return true;
     }
 
     @Override
