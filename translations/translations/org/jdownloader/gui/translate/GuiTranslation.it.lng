@@ -1708,6 +1708,8 @@ downloadview_skipped=Download saltati
 downloadview_successful=Download completati
 downloadview_todo=Download in attesa
 extensionManager_title=Moduli estensione
+extension_recommended=<p>Per ottenere captcha più facilmente leggibili e risolvibili, si consiglia l'installazione dell'<a href='https://my.jdownloader.org/apps' target='_blank'>estensione browse my.jdownloader</a>.</p>
+extension_required=<b><p style='color:#ff0000'>Per risolvere questa tipologia di captcha devi usare l'applicazione <a href='https://my.jdownloader.org/apps' target='_blank'>MyJDownloader</a>, oppure la nostra <a href='https://my.jdownloader.org/apps' target='_blank'>estensione browser my.jdownloader</a>.</p></b>
 ffmpeg_install_now=Installa FFMpeg ora
 file_exists_want_to_overwrite_question=Il file %s1 esiste. Vuoi sovrascrivere?
 filecolumn_title=Nome
