@@ -5,7 +5,15 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
+
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.InitialDirContext;
 
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IP;
@@ -23,6 +31,39 @@ import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
 public class DeviceAPIImpl implements DeviceAPI {
+    private final InetAddress[] lookup(final String hostName) throws IOException {
+        final Hashtable<String, String> env = new Hashtable<String, String>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
+        env.put("com.sun.jndi.dns.timeout.initial", "1000");
+        env.put("com.sun.jndi.dns.timeout.retries", "3");
+        InitialDirContext ictx = null;
+        try {
+            ictx = new InitialDirContext(env);
+            final Attributes attrs = ictx.getAttributes(hostName, new String[] { "A", "AAAA" });
+            final List<InetAddress> ret = new ArrayList<InetAddress>();
+            for (final String ipV : new String[] { "A", "AAAA" }) {
+                final Attribute attr = attrs.get(ipV);
+                if (attr != null) {
+                    final NamingEnumeration<?> it = attr.getAll();
+                    while (it.hasMoreElements()) {
+                        final Object next = it.next();
+                        ret.add(InetAddress.getByName(next.toString()));
+                    }
+                }
+            }
+            return ret.toArray(new InetAddress[0]);
+        } catch (NamingException e) {
+            return HTTPConnectionUtils.resolvHostIP(hostName);
+        } finally {
+            try {
+                if (ictx != null) {
+                    ictx.close();
+                }
+            } catch (final Throwable ignore) {
+            }
+        }
+    }
+
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
         final DirectConnectionInfos ret = new DirectConnectionInfos();
@@ -41,14 +82,13 @@ public class DeviceAPIImpl implements DeviceAPI {
         if (localIPs != null) {
             try {
                 // check dns rebind protection
-                final InetAddress[] localhost = HTTPConnectionUtils.resolvHostIP("127-0-0-1.mydns.jdownloader.org");
-                if (localhost == null || localhost.length != 1 || !"127.0.0.1".equals(localhost[0])) {
+                final InetAddress[] localhost = lookup("127-0-0-1.mydns.jdownloader.org");
+                if (localhost == null || localhost.length != 1 || !"127.0.0.1".equals(localhost[0].getHostAddress())) {
                     ret.setRebindProtectionDetected(true);
                 } else {
                     for (final InetAddress localIP : localIPs) {
-                        if ((localIP.getAddress()[0] == 192 && localIP.getAddress()[1] == 168) || (localIP.getAddress()[0] == 172 && localIP.getAddress()[1] == 16)) {
-                            // only check 192.168.x.y and 172.16.x.y
-                            final InetAddress[] resolv = HTTPConnectionUtils.resolvHostIP(localIP.getHostAddress().replace(".", "-") + ".mydns.jdownloader.org");
+                        if (localIP.isSiteLocalAddress()) {
+                            final InetAddress[] resolv = lookup(localIP.getHostAddress().replace(".", "-") + ".mydns.jdownloader.org");
                             if (resolv == null || resolv.length != 1 || !resolv[0].equals(localIP)) {
                                 ret.setRebindProtectionDetected(true);
                                 break;
