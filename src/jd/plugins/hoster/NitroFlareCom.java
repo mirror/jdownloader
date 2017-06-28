@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -60,13 +59,11 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
-
-    private final String         language                     = System.getProperty("user.language");
-    private final String         baseURL                      = "https://nitroflare.com";
-    private final String         apiURL                       = "http://nitroflare.com/api/v2";
-
+    private final String         language = System.getProperty("user.language");
+    private final String         baseURL  = "https://nitroflare.com";
+    private final String         apiURL   = "http://nitroflare.com/api/v2";
     /* don't touch the following! */
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxFree  = new AtomicInteger(1);
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -166,11 +163,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 getPage(br, apiURL + "/getFileInfo?" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
-
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later");
                         dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-
                     }
                     return true;
                 }
@@ -349,21 +344,24 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
+        if (!dl.getConnection().getContentType().contains("html")) {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, dllink);
+            }
+            try {
+                /* add a download slot */
+                controlFree(+1);
+                /* start the dl */
+                dl.startDownload();
+            } finally {
+                /* remove download slot */
+                controlFree(-1);
+            }
+        } else {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+            }
             handleDownloadErrors(account, downloadLink, true);
-        }
-        if (directlinkproperty != null) {
-            downloadLink.setProperty(directlinkproperty, dllink);
-        }
-        try {
-            /* add a download slot */
-            controlFree(+1);
-            /* start the dl */
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlFree(-1);
         }
     }
 
@@ -463,7 +461,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                 // return "user=&premiumKey=" + pass;
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
-
                         @Override
                         public void run() {
                             try {
@@ -482,7 +479,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                     });
                 } catch (Throwable e) {
                 }
-
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (inValidate(user) || !user.matches(".+@.+")) {
@@ -643,7 +639,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                 } else {
                     fullLogin = true;
                 }
-
                 if (fullLogin) {
                     getPage("https://nitroflare.com/login");
                     Form f = br.getFormbyProperty("id", "login");
@@ -674,7 +669,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCould not find Account Cookie", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-
                 final AccountInfo ai = new AccountInfo();
                 getPage("https://nitroflare.com/member?s=premium");
                 // status
@@ -771,20 +765,32 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (!inValidate(dllink)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (dl.getConnection().isContentDisposition()) {
-                downloadLink.setProperty(directlinkproperty, dllink);
+                if (directlinkproperty != null) {
+                    downloadLink.setProperty(directlinkproperty, dllink);
+                }
                 dl.startDownload();
                 return;
+            } else {
+                if (directlinkproperty != null) {
+                    downloadLink.setProperty(directlinkproperty, Property.NULL);
+                }
+                handleDownloadErrors(account, downloadLink, false);
             }
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            handleDownloadErrors(account, downloadLink, false);
         }
         // could be directlink
         dllink = downloadLink.getDownloadURL();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, dllink);
+            }
             dl.startDownload();
             return;
+        } else {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+            }
+            br.followConnection();
         }
         if (br.containsHTML(">This download exceeds the daily download limit\\. You can purchase")) {
             // not enough traffic to download file, doesn't mean 0 traffic left.
@@ -800,11 +806,17 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, dllink);
+            }
             dl.startDownload();
             return;
+        } else {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+            }
+            handleDownloadErrors(account, downloadLink, true);
         }
-        handleDownloadErrors(account, downloadLink, true);
     }
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
@@ -863,12 +875,17 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (!dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
+        if (dl.getConnection().isContentDisposition()) {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, dllink);
+            }
+            dl.startDownload();
+        } else {
+            if (directlinkproperty != null) {
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+            }
             handleDownloadErrors(account, downloadLink, true);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
     }
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
@@ -906,7 +923,6 @@ public class NitroFlareCom extends antiDDoSForHost {
         // 8 => ﻿{"type":"error","message":"Wrong login","code":8}
         if (br.containsHTML("In these moments we are upgrading the site system")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Nitroflare.com is maintenance mode. Try again later", 60 * 60 * 1000);
-
         }
         final String type = PluginJSonUtils.getJsonValue(br, "type");
         final String code = PluginJSonUtils.getJsonValue(br, "code");
@@ -1076,5 +1092,4 @@ public class NitroFlareCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
         }
     }
-
 }
