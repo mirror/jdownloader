@@ -276,6 +276,7 @@ public class PanBaiduCom extends PluginForHost {
         } else {
             maxchunks = FREE_MAXCHUNKS;
         }
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             if (dl.getConnection().getResponseCode() == 403) {
