@@ -26,12 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -51,9 +45,14 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.ZeveraApiTracker;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
-
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
@@ -402,23 +401,27 @@ public class ZeveraCom extends antiDDoSForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         getPage("https://www.zevera.com/members/dashboard");
-        final String expire = br.getRegex(">Expiration date:</span>.+?txExpirationDate\">(.*?)</span").getMatch(0);
+        final String expire = br.getRegex(">Expiration date:</span>.+?txExpirationDate\">\\s*(.*?)\\s*</span").getMatch(0);
         if (expire != null) {
-            final String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
-            long eTime = -1;
-            if (expireTime != null) {
-                eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
-                if (eTime == -1) {
-                    eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
-                }
-            }
-            if (eTime >= 0) {
-                // standard account
-                ai.setValidUntil(eTime, br);
-            } else if (StringUtils.endsWithCaseInsensitive(expire, "NEVER")) {
-                // life time account
+            if (StringUtils.equalsIgnoreCase(expire, "Expired")) {
+                ai.setExpired(true);
             } else {
-                logger.warning("unknown expire");
+                final String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
+                long eTime = -1;
+                if (expireTime != null) {
+                    eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
+                    if (eTime == -1) {
+                        eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
+                    }
+                }
+                if (eTime >= 0) {
+                    // standard account
+                    ai.setValidUntil(eTime, br);
+                } else if (StringUtils.endsWithCaseInsensitive(expire, "NEVER")) {
+                    // life time account
+                } else {
+                    logger.warning("unknown expire");
+                }
             }
         }
         final String traffic = br.getRegex(">Traffic Left:\\s*</span>(?:<[^>]+>\\s*){2,}(.*?)</a></span>").getMatch(0);
