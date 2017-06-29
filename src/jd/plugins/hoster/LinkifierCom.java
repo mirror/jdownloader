@@ -26,7 +26,6 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
-
     private static MultiHosterManagement mhm     = new MultiHosterManagement("linkifier.com");
     private static final String          API_KEY = "d046c4309bb7cabd19f49118a2ab25e0";
 
@@ -125,12 +124,12 @@ public class LinkifierCom extends PluginForHost {
         downloadJson.put("md5Pass", Hash.getMD5(account.getPass()));
         downloadJson.put("apiKey", API_KEY);
         downloadJson.put("url", downloadLink.getDefaultPlugin().buildExternalDownloadURL(downloadLink, this));
-        final PostRequest downloadRequest = new PostRequest("https://api.linkifier.com/downloadapi.svc/download");
+        final PostRequest downloadRequest = new PostRequest("https://api.linkifier.com/downloadapi.svc/stream");
         downloadRequest.setContentType("application/json; charset=utf-8");
         downloadRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(downloadJson));
         final HashMap<String, Object> downloadResponse = JSonStorage.restoreFromString(br.getPage(downloadRequest), TypeRef.HASHMAP);
         if (Boolean.FALSE.equals(downloadResponse.get("hasErrors"))) {
-            final String url = downloadResponse.get("url") != null ? String.valueOf(downloadResponse.get("url")) : null;
+            String url = downloadResponse.get("url") != null ? String.valueOf(downloadResponse.get("url")) : null;
             if (StringUtils.isEmpty(url)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -208,5 +207,4 @@ public class LinkifierCom extends PluginForHost {
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
-
 }
