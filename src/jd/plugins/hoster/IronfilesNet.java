@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -37,9 +36,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ironfiles.net" }, urls = { "http://(www\\.)?ironfiles\\.net/file/download/id/\\d+(?:/key/[a-z0-9]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ironfiles.net" }, urls = { "http://(www\\.)?ironfiles\\.net/file/download/id/\\d+(?:/key/[a-z0-9]+)?" })
 public class IronfilesNet extends PluginForHost {
-
     public IronfilesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://ironfiles.net");
@@ -60,12 +58,9 @@ public class IronfilesNet extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    private static final String  API_ENDPOINT                 = "http://ironfiles.net/api";
-
+    private static final String  API_ENDPOINT                 = "https://ironfiles.net/api";
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
     private boolean              privatefile                  = false;
 
     @Override
@@ -246,5 +241,4 @@ public class IronfilesNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
