@@ -7,6 +7,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -165,6 +166,8 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 throw new ConnectException("No available connection for: " + url);
                             }
                         }
+                    } catch (ClosedByInterruptException ignore) {
+                        // SocketChannel Socket-> Interrupted
                     } catch (Throwable throwable) {
                         try {
                             connectThread.log(throwable);
