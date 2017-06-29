@@ -118,6 +118,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     Socket socket = null;
                     SocketStreamInterface socketStream = null;
                     request.getConnectionHelper().mark();
+                    boolean closeSocket = true;
                     try {
                         connectThread.log("Connect " + addr);
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURL(url, false, false);
@@ -157,6 +158,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             socketStream.getOutputStream().flush();
                             final int validToken = socketStream.getInputStream().read();
                             status = DeviceConnectionStatus.parse(validToken);
+                            closeSocket = false;
                         } else {
                             synchronized (connectionRequest) {
                                 try {
@@ -166,26 +168,24 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 throw new ConnectException("No available connection for: " + url);
                             }
                         }
-                    } catch (ClosedByInterruptException ignore) {
+                    } catch (ClosedByInterruptException interrupted) {
                         // SocketChannel Socket-> Interrupted
                     } catch (Throwable throwable) {
-                        try {
-                            connectThread.log(throwable);
-                            e = throwable;
-                            if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
-                                ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
-                            }
-                        } finally {
-                            try {
-                                if (socket != null) {
-                                    socket.close();
-                                    socket = null;
-                                }
-                            } catch (final Throwable ignore) {
-                            }
+                        connectThread.log(throwable);
+                        e = throwable;
+                        if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
+                            ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
                         }
                     } finally {
                         request.getConnectionHelper().unmark();
+                        if (closeSocket && socket != null) {
+                            try {
+                                socket.close();
+                            } catch (final Throwable ignore) {
+                            } finally {
+                                socket = null;
+                            }
+                        }
                     }
                     final MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, status, socketStream, e);
                     if (connectThread.putResponse(response) == false) {
