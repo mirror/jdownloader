@@ -1659,6 +1659,10 @@ public abstract class K2SApi extends PluginForHost {
                         this.setDownloadLink(dllink);
                         final Form cf = cloudflare;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+                            {
+                                boundToDomain = true;
+                            }
+
                             @Override
                             public String getSiteKey() {
                                 return getSiteKey(cf.getHtmlCode());
