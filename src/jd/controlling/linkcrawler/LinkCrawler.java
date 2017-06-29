@@ -1720,23 +1720,25 @@ public class LinkCrawler {
                             final Boolean deeperOrFollow = distributeDeeperOrMatchingRule(generation, url, possibleCryptedLink);
                             if (Boolean.FALSE.equals(deeperOrFollow)) {
                                 return;
-                            } else if (Boolean.TRUE.equals(deeperOrFollow)) {
-                                continue mainloop;
-                            }
-                            synchronized (loopPreventionEmbedded) {
-                                if (!loopPreventionEmbedded.containsKey(possibleCryptedLink)) {
-                                    final DISTRIBUTE ret = distributeEmbeddedLink(generation, url, possibleCryptedLink, null);
-                                    switch (ret) {
-                                    case STOP:
-                                        return;
-                                    case SKIP:
-                                        continue mainloop;
-                                    case NEXT:
-                                        loopPreventionEmbedded.put(possibleCryptedLink, this);
-                                        continue mainloop;
-                                    default:
-                                        break;
+                            } else {
+                                synchronized (loopPreventionEmbedded) {
+                                    if (!loopPreventionEmbedded.containsKey(possibleCryptedLink)) {
+                                        final DISTRIBUTE ret = distributeEmbeddedLink(generation, url, possibleCryptedLink, null);
+                                        switch (ret) {
+                                        case STOP:
+                                            return;
+                                        case SKIP:
+                                            continue mainloop;
+                                        case NEXT:
+                                            loopPreventionEmbedded.put(possibleCryptedLink, this);
+                                            continue mainloop;
+                                        default:
+                                            break;
+                                        }
                                     }
+                                }
+                                if (Boolean.TRUE.equals(deeperOrFollow)) {
+                                    continue mainloop;
                                 }
                             }
                         }

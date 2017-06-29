@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.folderwatchV2;
 
 import java.io.File;
@@ -53,6 +52,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.simplejson.mapper.ClassCache;
 import org.appwork.storage.simplejson.mapper.Setter;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -75,7 +75,6 @@ import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderWatchTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Long> {
-
     private FolderWatchConfigPanel   configPanel;
     private ScheduledExecutorService scheduler;
     private final Object             lock                      = new Object();
@@ -226,9 +225,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     public void run() {
-        if (isDebugEnabled()) {
-            getLogger().info("RUN");
-        }
+        final StringBuilder sb = new StringBuilder();
+        sb.append("RUN");
+        boolean log = false;
         try {
             String[] folders = getSettings().getFolders();
             if (folders != null) {
@@ -238,37 +237,37 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         if (!folder.isAbsolute()) {
                             folder = Application.getResource(s);
                         }
-                        if (isDebugEnabled()) {
-                            getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
-                            getLogger().info("exists: " + folder.exists());
-                            getLogger().info("isDirectory: " + folder.isDirectory());
-                        }
                         if (folder.exists() && folder.isDirectory()) {
+                            sb.append("Scan " + s + " - " + folder.getAbsolutePath()).append("\r\n");
                             final File[] files = folder.listFiles();
-                            if (isDebugEnabled()) {
-                                getLogger().info(Arrays.asList(files).toString());
-                            }
-                            for (final File file : files) {
-                                if (file.isFile() && file.length() > 0) {
-                                    final String name = file.getName();
-                                    if (StringUtils.endsWithCaseInsensitive(name, ".crawljob")) {
-                                        try {
-                                            addCrawlJob(file);
-                                        } catch (Exception e) {
-                                            getLogger().log(e);
-                                        } finally {
-                                            move(file);
-                                        }
-                                    } else {
-                                        for (final PluginsC pCon : ContainerPluginController.getInstance().list()) {
-                                            if (pCon.canHandle(file.toURI().toString())) {
-                                                try {
-                                                    addContainerFile(file);
-                                                    break;
-                                                } catch (Exception e) {
-                                                    getLogger().log(e);
-                                                } finally {
-                                                    move(file);
+                            if (files != null && files.length > 0) {
+                                sb.append(Arrays.asList(files).toString()).append("\r\n");
+                                for (final File file : files) {
+                                    if (file.isFile() && file.length() > 0) {
+                                        final String name = file.getName();
+                                        if (StringUtils.endsWithCaseInsensitive(name, ".crawljob")) {
+                                            log = true;
+                                            try {
+                                                addCrawlJob(file);
+                                            } catch (Exception e) {
+                                                log = true;
+                                                sb.append(Exceptions.getStackTrace(e)).append("\r\n");
+                                            } finally {
+                                                move(file);
+                                            }
+                                        } else {
+                                            for (final PluginsC pCon : ContainerPluginController.getInstance().list()) {
+                                                if (pCon.canHandle(file.toURI().toString())) {
+                                                    log = true;
+                                                    try {
+                                                        addContainerFile(file);
+                                                        break;
+                                                    } catch (Exception e) {
+                                                        log = true;
+                                                        sb.append(Exceptions.getStackTrace(e)).append("\r\n");
+                                                    } finally {
+                                                        move(file);
+                                                    }
                                                 }
                                             }
                                         }
@@ -280,10 +279,12 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 }
             }
         } catch (Exception e) {
-            getLogger().log(e);
+            log = true;
+            sb.append(Exceptions.getStackTrace(e)).append("\r\n");
         } finally {
-            if (isDebugEnabled()) {
-                getLogger().info("DONE");
+            sb.append("DONE");
+            if (isDebugEnabled() && log) {
+                getLogger().info(sb.toString());
             }
         }
     }
@@ -456,7 +457,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         stringValue = value;
                     }
                     final Object setValue = JSonStorage.restoreFromString(stringValue, new TypeRef<Object>(setter.getType()) {
-
                     });
                     setter.setValue(entry, setValue);
                     return;
@@ -466,7 +466,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 }
             }
             final Object setValue = JSonStorage.restoreFromString(value, new TypeRef<Object>(setter.getType()) {
-
             });
             setter.setValue(entry, setValue);
         } catch (Throwable e) {
@@ -488,7 +487,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             final LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
             job.setDeepAnalyse(j.isDeepAnalyseEnabled());
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
                     if (StringUtils.isNotEmpty(j.getPackageName())) {
@@ -630,6 +628,5 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 job = scheduler.scheduleAtFixedRate(this, 0, getSettings().getCheckInterval(), TimeUnit.MILLISECONDS);
             }
         }
-
     }
 }
