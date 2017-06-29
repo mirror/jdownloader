@@ -17,7 +17,6 @@ import org.jdownloader.controlling.hosterrule.AccountGroup;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 
 public class AccountCache implements Iterable<CachedAccount> {
-
     public static enum ACCOUNTTYPE {
         /* DO NOT CHANGE ORDER HERE, we use compareTo which uses ordinal */
         ORIGINAL,
@@ -133,10 +132,8 @@ public class AccountCache implements Iterable<CachedAccount> {
     }
 
     protected final static AccountCache      NA = new AccountCache(null) {
-
         public java.util.Iterator<CachedAccount> iterator() {
             return new Iterator<AccountCache.CachedAccount>() {
-
                 @Override
                 public boolean hasNext() {
                     return false;
@@ -151,12 +148,9 @@ public class AccountCache implements Iterable<CachedAccount> {
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
-
             };
-
         };
     };
-
     protected final ArrayList<CachedAccount> cache;
     protected final ArrayList<Rules>         rules;
     protected final boolean                  customized;
@@ -210,25 +204,32 @@ public class AccountCache implements Iterable<CachedAccount> {
         }
         ArrayList<CachedAccount> orderedCache = new ArrayList<AccountCache.CachedAccount>(cache);
         int startRandom = -1;
-        for (int index = 0; index < orderedCache.size(); index++) {
-            Rules rule = rules.get(index);
+        int cacheIndex = -1;
+        for (int ruleIndex = 0; ruleIndex < rules.size(); ruleIndex++) {
+            final Rules rule = rules.get(ruleIndex);
             if (rule == null) {
                 if (startRandom >= 0) {
-                    Collections.shuffle(orderedCache.subList(startRandom, index));
+                    Collections.shuffle(orderedCache.subList(startRandom, cacheIndex + 1));
                     startRandom = -1;
                 }
                 continue;
+            } else {
+                cacheIndex++;
             }
             switch (rule) {
+            case ORDER:
+                startRandom = -1;
+                break;
+            case BALANCED:
+                // unsupported
+                startRandom = -1;
+                break;
             case RANDOM:
                 if (startRandom < 0) {
-                    startRandom = index;
+                    startRandom = cacheIndex;
                 }
                 break;
             default:
-                if (startRandom >= 0 && index - startRandom > 1) {
-                    Collections.shuffle(orderedCache.subList(startRandom, index));
-                }
                 startRandom = -1;
                 break;
             }
@@ -242,7 +243,6 @@ public class AccountCache implements Iterable<CachedAccount> {
     @Override
     public Iterator<CachedAccount> iterator() {
         return new Iterator<AccountCache.CachedAccount>() {
-
             Iterator<CachedAccount>                it   = getRuleAwareIterator();
             NullsafeAtomicReference<CachedAccount> next = new NullsafeAtomicReference<AccountCache.CachedAccount>(null);
 
