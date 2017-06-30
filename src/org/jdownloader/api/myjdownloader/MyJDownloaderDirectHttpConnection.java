@@ -6,12 +6,12 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpserver.EmptyRequestException;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.myjdownloader.RequestLineParser;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderDirectHttpConnection extends MyJDownloaderHttpConnection {
-
     public MyJDownloaderDirectHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(clientConnection, api);
     }
@@ -21,25 +21,13 @@ public class MyJDownloaderDirectHttpConnection extends MyJDownloaderHttpConnecti
     }
 
     @Override
-    protected String parseRequestLine() throws IOException {
-        try {
-            return super.parseRequestLine();
-        } catch (IOException e) {
-            if (clientSocket != null) {
-                clientSocket.close();
-            }
-            throw e;
-        }
-    }
-
-    @Override
     protected String preProcessRequestLine(String requestLine) throws IOException {
+        if (StringUtils.isEmpty(requestLine)) {
+            throw new EmptyRequestException();
+        }
         final RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes("UTF-8"));
         if (parser == null || parser.getSessionToken() == null || !StringUtils.equals(CFG_MYJD.CFG.getUniqueDeviceIDV2(), parser.getDeviceID())) {
-            if (clientSocket != null) {
-                clientSocket.close();
-            }
-            throw new IOException("Invalid direct my.jdownloader.org request: " + requestLine);
+            throw new InvalidMyJDownloaderRequest();
         }
         return super.preProcessRequestLine(requestLine);
     }

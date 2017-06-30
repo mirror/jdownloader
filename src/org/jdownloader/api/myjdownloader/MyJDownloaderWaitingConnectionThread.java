@@ -11,10 +11,12 @@ import java.nio.channels.ClosedByInterruptException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.proxy.ProxyController;
 import jd.http.SocketConnectionFactory;
 
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -83,10 +85,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         }
     }
 
-    protected final AtomicBoolean                                           running           = new AtomicBoolean(true);
-    protected final NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
+    protected final AtomicBoolean                                           running            = new AtomicBoolean(true);
+    protected final AtomicReference<Boolean>                                pendingConnectFlag = new AtomicReference<Boolean>(null);
+    protected final NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest  = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
     protected final MyJDownloaderConnectThread                              connectThread;
-    private final static AtomicInteger                                      THREADID          = new AtomicInteger(0);
+    private final static AtomicInteger                                      THREADID           = new AtomicInteger(0);
 
     public MyJDownloaderWaitingConnectionThread(MyJDownloaderConnectThread connectThread) {
         this.setDaemon(true);
@@ -97,15 +100,24 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     @Override
     public void run() {
         try {
-            while (running.get()) {
+            while (isRunning()) {
                 MyJDownloaderConnectionRequest request = null;
                 synchronized (connectionRequest) {
                     if ((request = connectionRequest.getAndSet(null)) == null) {
-                        if (running.get() == false) {
+                        if (!isRunning()) {
                             return;
+                        } else {
+                            try {
+                                connectionRequest.wait();
+                            } catch (InterruptedException e) {
+                                if (isRunning()) {
+                                    throw e;
+                                } else {
+                                    return;
+                                }
+                            }
+                            request = connectionRequest.getAndSet(null);
                         }
-                        connectionRequest.wait();
-                        request = connectionRequest.getAndSet(null);
                     }
                 }
                 if (request != null) {
@@ -124,59 +136,74 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURL(url, false, false);
                         if (list != null && list.size() > 0) {
                             proxy = list.get(0);
-                            socket = SocketConnectionFactory.createSocket(proxy);
-                            socket.setReuseAddress(true);
-                            socket.setSoTimeout(180000);
-                            socket.setTcpNoDelay(true);
-                            socket.connect(addr, 30000);
-                            final Socket finalSocket = socket;
-                            socketStream = new SocketStreamInterface() {
-                                @Override
-                                public Socket getSocket() {
-                                    return finalSocket;
-                                }
+                            if (pendingConnectFlag.compareAndSet(null, Boolean.TRUE)) {
+                                socket = SocketConnectionFactory.createSocket(proxy);
+                                socket.setReuseAddress(true);
+                                socket.setSoTimeout(180000);
+                                socket.setTcpNoDelay(true);
+                                socket.connect(addr, 30000);
+                                final Socket finalSocket = socket;
+                                socketStream = new SocketStreamInterface() {
+                                    @Override
+                                    public Socket getSocket() {
+                                        return finalSocket;
+                                    }
 
-                                @Override
-                                public OutputStream getOutputStream() throws IOException {
-                                    return finalSocket.getOutputStream();
-                                }
+                                    @Override
+                                    public OutputStream getOutputStream() throws IOException {
+                                        return finalSocket.getOutputStream();
+                                    }
 
-                                @Override
-                                public InputStream getInputStream() throws IOException {
-                                    return finalSocket.getInputStream();
-                                }
+                                    @Override
+                                    public InputStream getInputStream() throws IOException {
+                                        return finalSocket.getInputStream();
+                                    }
 
-                                @Override
-                                public void close() throws IOException {
-                                    finalSocket.close();
+                                    @Override
+                                    public void close() throws IOException {
+                                        finalSocket.close();
+                                    }
+                                };
+                                if (addr.getPort() == 443) {
+                                    socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true);
                                 }
-                            };
-                            if (addr.getPort() == 443) {
-                                socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true);
+                                socketStream.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
+                                socketStream.getOutputStream().flush();
+                                final int validToken = socketStream.getInputStream().read();
+                                status = DeviceConnectionStatus.parse(validToken);
+                                closeSocket = false;
                             }
-                            socketStream.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
-                            socketStream.getOutputStream().flush();
-                            final int validToken = socketStream.getInputStream().read();
-                            status = DeviceConnectionStatus.parse(validToken);
-                            closeSocket = false;
                         } else {
                             synchronized (connectionRequest) {
                                 try {
                                     connectionRequest.wait(5000);
                                 } catch (final InterruptedException ignore) {
+                                    if (isRunning()) {
+                                        throw ignore;
+                                    } else {
+                                        return;
+                                    }
                                 }
                                 throw new ConnectException("No available connection for: " + url);
                             }
                         }
-                    } catch (ClosedByInterruptException interrupted) {
-                        // SocketChannel Socket-> Interrupted
                     } catch (Throwable throwable) {
-                        connectThread.log(throwable);
-                        e = throwable;
-                        if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
-                            ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
+                        if (Exceptions.containsInstanceOf(throwable, ClosedByInterruptException.class)) {
+                            // SocketChannel Socket-> Interrupted
+                            if (isRunning()) {
+                                connectThread.log(throwable);
+                            } else {
+                                return;
+                            }
+                        } else {
+                            connectThread.log(throwable);
+                            e = throwable;
+                            if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
+                                ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
+                            }
                         }
                     } finally {
+                        pendingConnectFlag.compareAndSet(Boolean.TRUE, null);
                         request.getConnectionHelper().unmark();
                         if (closeSocket && socket != null) {
                             try {
@@ -189,12 +216,14 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     }
                     final MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, status, socketStream, e);
                     if (connectThread.putResponse(response) == false) {
-                        connectThread.log("putResponse failed, maybe connectThread is closed/interrupted.");
                         try {
                             if (socket != null) {
                                 socket.close();
                             }
                         } catch (final Throwable ignore) {
+                        }
+                        if (!isRunning()) {
+                            connectThread.log("putResponse failed!");
                         }
                     }
                 }
@@ -227,6 +256,9 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         synchronized (connectionRequest) {
             running.set(false);
             connectionRequest.notifyAll();
+            if (pendingConnectFlag.compareAndSet(null, Boolean.FALSE)) {
+                interrupt();
+            }
         }
     }
 }
