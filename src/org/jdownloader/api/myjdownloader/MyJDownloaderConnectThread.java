@@ -500,11 +500,14 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     usedConnection.reset();
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                     return connectionStatus;
+                default:
+                    log("FIXME:" + connectionStatus);
+                    usedConnection.requestbackoff();
+                    return null;
                 }
+            } else {
+                return null;
             }
-            log("Something else!?!?! WTF!");
-            usedConnection.requestbackoff();
-            return null;
         } catch (ProxyEndpointConnectException e) {
             log("Could not connect! Server down?", e);
             setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_DOWN);
@@ -638,7 +641,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                                         return;
                                     }
                                     if (waitingConnections.size() > minimumWaitingConnections) {
-                                        response.getThread().interrupt();
+                                        response.getThread().abort();
                                         waitingConnections.remove(response.getThread());
                                     }
                                 }
@@ -871,8 +874,8 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
             copy = new ArrayList<MyJDownloaderWaitingConnectionThread>(waitingConnections);
             waitingConnections.clear();
         }
-        for (MyJDownloaderWaitingConnectionThread thread : copy) {
-            thread.interrupt();
+        for (final MyJDownloaderWaitingConnectionThread thread : copy) {
+            thread.abort();
         }
         synchronized (responses) {
             MyJDownloaderConnectionResponse next = null;
