@@ -68,6 +68,7 @@ public class DeviceAPIImpl implements DeviceAPI {
     public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
         final DirectConnectionInfos ret = new DirectConnectionInfos();
         ret.setMode(DIRECTMODE.NONE.name());
+        ret.setInfos(new ArrayList<DirectConnectionInfo>());
         final MyJDownloaderConnectThread thread = MyJDownloaderController.getInstance().getConnectThread();
         if (thread == null) {
             return ret;
