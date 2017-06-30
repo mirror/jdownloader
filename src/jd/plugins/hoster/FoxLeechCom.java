@@ -17,40 +17,42 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class FoxLeechCom extends antiDDoSForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            MAINPAGE           = "http://foxleech.com";
-    private static final String                            NICE_HOST          = MAINPAGE.replaceAll("https?://", "");
-    private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("https?://|\\.|\\-", "");
-    private static final String                            USE_API            = "USE_API";
+    private static MultiHosterManagement mhm       = new MultiHosterManagement("foxleech.com");
+    private static final String          NOCHUNKS  = "NOCHUNKS";
+    private static final String          MAINPAGE  = "http://foxleech.com";
+    private static final String          NICE_HOST = MAINPAGE.replaceAll("https?://", "");
+    private static final String          USE_API   = "USE_API";
 
     public FoxLeechCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,8 +67,8 @@ public class FoxLeechCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ac = new AccountInfo();
-        if (false && this.useAPI()) {
+        final AccountInfo ac;
+        if (true || this.useAPI()) {
             ac = api_fetchAccountInfo(account);
         } else {
             ac = site_fetchAccountInfo(account);
@@ -90,44 +92,28 @@ public class FoxLeechCom extends antiDDoSForHost {
     }
 
     /* no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
-
-        String dllink = checkDirectLink(link, NICE_HOST + "directlink");
+    public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
+        mhm.runCheck(account, downloadLink);
+        String dllink = checkDirectLink(downloadLink, NICE_HOST + "directlink");
         if (dllink == null) {
-            if (false && this.useAPI()) {
-                dllink = api_get_dllink(link, account);
+            if (true || this.useAPI()) {
+                dllink = api_get_dllink(downloadLink, account);
             } else {
-                dllink = site_get_dllink(link, account);
+                dllink = site_get_dllink(downloadLink, account);
             }
         }
         int maxChunks = 0;
-        if (link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false)) {
+        if (downloadLink.getBooleanProperty(FoxLeechCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(NICE_HOST + "directlink", dllink);
+        downloadLink.setProperty(NICE_HOST + "directlink", dllink);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -137,48 +123,22 @@ public class FoxLeechCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false) == false) {
-                    link.setProperty(FoxLeechCom.NOCHUNKS, Boolean.valueOf(true));
+                if (downloadLink.getBooleanProperty(FoxLeechCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(FoxLeechCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             if (maxChunks == 1) {
-                link.setProperty(NICE_HOST + "directlink", Property.NULL);
+                downloadLink.setProperty(NICE_HOST + "directlink", Property.NULL);
             }
             // New V2 chunk errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false) == false) {
-                link.setProperty(FoxLeechCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(FoxLeechCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(FoxLeechCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
-        }
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by retry a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param dl
-     *            : The DownloadLink
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handlePluginBroken(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
         }
     }
 
@@ -198,58 +158,32 @@ public class FoxLeechCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        getPage("http://www.foxleech.com/account");
-        /* No downloads possible throuh free accounts --> Supporting them makes no sense! */
-        if (br.containsHTML(">Free Member <span>")) {
-            logger.info("Free accounts are not supported!");
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+        // post login you are taken to /mydashboard, here they show days left
+        final String expireinfo = br.getRegex("<h4>(\\d+)</h4>\\s*<span>Premium\\s*Days</span>").getMatch(0);
+        if (expireinfo == null) {
+            throw new AccountInvalidException("Unsupported account type");
         }
-        final String[] hosts = br.getRegex("title=\"([^<>\"]*?)\" data-placement=\"bottom\"\\s*><img class=\"host-cool\"").getColumn(0);
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final String host : hosts) {
-            supportedHosts.add(host);
-        }
-        // final String traffic_downloaded = br.getRegex("<li>Download : <a>([^<>\"]*?) / Unlimited</a>").getMatch(0);
-        final String uploaded_size = br.getRegex("<li>Upload : <a>([^<>\"]*?) / \\d+ GB</a>").getMatch(0);
+        ac.setValidUntil(System.currentTimeMillis() + Long.parseLong(expireinfo) * 24 * 60 * 60 * 1000);
+        // this url gives you the api url
+        getPage("/account");
         final String api_url = br.getRegex("\"(https?://(www\\.)?foxleech\\.com/api/[^<>\"]*?)\"").getMatch(0);
-        long expire = System.currentTimeMillis();
-        String months, days, hours, minutes, seconds;
-        final Regex expireinfo = br.getRegex("type=\"text\"[^<>]+ value=\"((\\d{1,2})Months )?((\\d{1,2})Days )?((\\d{1,2})Hours )?((\\d{1,2})Minutes )?((\\d{1,2})Seconds )?\"");
-        months = expireinfo.getMatch(1);
-        days = expireinfo.getMatch(3);
-        hours = expireinfo.getMatch(5);
-        minutes = expireinfo.getMatch(7);
-        seconds = expireinfo.getMatch(9);
-        if (months != null) {
-            expire += Long.parseLong(months) * 30 * 24 * 60 * 60 * 1000;
-        }
-        if (days != null) {
-            expire += Long.parseLong(days) * 24 * 60 * 60 * 1000;
-        }
-        if (hours != null) {
-            expire += Long.parseLong(hours) * 60 * 60 * 1000;
-        }
-        if (minutes != null) {
-            expire += Long.parseLong(minutes) * 60 * 1000;
-        }
-        if (seconds != null) {
-            expire += Long.parseLong(seconds) * 1000;
-        }
-        ac.setValidUntil(expire);
         if (api_url != null) {
             account.setProperty("api_url", api_url);
-        }
-        if (uploaded_size != null) {
-            ac.setUsedSpace(SizeFormatter.getSize(uploaded_size));
         }
         /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
+        // this url gives you host map
+        getPage("/hosts");
+        final String[][] hosts = br.getRegex("<img class=\"host-cool[^>]+></img>\\s*<b>\\s*(.*?)\\s*</b>\\s*</td>\\s*<td[^>]*>\\s*<a[^>]*>\\s*(.*?)</a>").getMatches();
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        for (final String host[] : hosts) {
+            if (!"Online".equalsIgnoreCase(host[1])) {
+                continue;
+            }
+            supportedHosts.add(host[0]);
+        }
         ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium Account");
         return ac;
@@ -276,8 +210,8 @@ public class FoxLeechCom extends antiDDoSForHost {
                         }
                         /* Avoid login captcha on forced login */
                         if (force) {
-                            getPage("http://www.foxleech.com/downloader");
-                            if (br.containsHTML("foxleech\\.com/logout\">Logout</a>")) {
+                            getPage("http://www.foxleech.com/mydashboard");
+                            if (br.containsHTML(">\\s*Logout\\s*</a>")) {
                                 return true;
                             } else {
                                 /* Foced login (check) failed - clear cookies and perform a full login! */
@@ -292,7 +226,7 @@ public class FoxLeechCom extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 getPage("http://www.foxleech.com/login");
                 // ALWAYS USE FORMS!
-                final Form login = br.getFormbyProperty("name", "login-form");
+                final Form login = br.getFormbyProperty("class", "login");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -329,55 +263,99 @@ public class FoxLeechCom extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
+    private String site_get_dllink(final DownloadLink downloadLink, final Account account) throws Exception {
         String dllink;
-        final String api_url = acc.getStringProperty("api_url", null);
-        final String url = Encoding.urlEncode(link.getDownloadURL());
-        site_login(acc, false);
+        final String api_url = account.getStringProperty("api_url", null);
+        final String url = Encoding.urlEncode(downloadLink.getDownloadURL());
+        site_login(account, false);
         if (api_url != null) {
             /* Actually there is no reason to use this but whatever ... */
             postPage(api_url, "link=" + url);
         } else {
             getPage("http://www.foxleech.com/Generate.php?link=" + url);
         }
-        final String error = PluginJSonUtils.getJsonValue(br, "error");
-        if (error != null) {
-            if (error.contains("You have reached the daily limit for")) {
-                /* Daily limit of a single host is reached */
-                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
-            } else if (error.equals("You don't have enough bandwidth to download this link")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "not enough quota left to download this link", 30 * 60 * 1000l);
-            }
-            handlePluginBroken(acc, link, "error_unknown", 10);
-        }
+        handleErrorsGenerateLink(downloadLink, account);
         dllink = PluginJSonUtils.getJsonValue(br, "link");
         if (dllink == null) {
-            handlePluginBroken(acc, link, "dllink_null", 10);
+            mhm.handleErrorGeneric(account, downloadLink, "dllink_null", 10);
         }
         return dllink;
     }
 
+    private void handleErrorsGenerateLink(final DownloadLink downloadLink, final Account account) throws PluginException, InterruptedException {
+        handleErrorsGenerateLink(downloadLink, account, null);
+    }
+
+    private void handleErrorsGenerateLink(final DownloadLink downloadLink, final Account account, String inputError) throws PluginException, InterruptedException {
+        final String error = inputError != null ? inputError : PluginJSonUtils.getJsonValue(br, "error");
+        if (error != null) {
+            if (error.contains("You have reached the daily limit for")) {
+                /* Daily limit of a single host is reached */
+                mhm.putError(account, downloadLink, 3 * 60 * 60 * 1000l, "Download limit reached for this host");
+            } else if (error.equals("You don't have enough bandwidth to download this link")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "not enough quota left to download this link", 30 * 60 * 1000l);
+            }
+            mhm.handleErrorGeneric(account, downloadLink, "error_unknown", 10);
+        }
+    }
+
     private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
-        if (!api_login(account, true)) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (LOCK) {
+            final AccountInfo ai = new AccountInfo();
+            postPage("http://www.foxleech.com/api/jdownloader", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final String accountType = (String) entries.get("account");
+            if (!"premium".equalsIgnoreCase(accountType)) {
+                // unsupported account type
+                throw new AccountInvalidException("Unsupported account type");
+            }
+            final String expire = (String) entries.get("expire_time");
+            if (expire != null) {
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire), br);
+            }
+            final String apiurl = (String) entries.get("api_url");
+            if (apiurl != null) {
+                account.setProperty("api_url", apiurl);
+            }
+            final String trafficLeft = (String) entries.get("traffic_left_bytes");
+            if (trafficLeft != null) {
+                ai.setTrafficLeft(Long.parseLong(trafficLeft));
+            }
+            final String trafficMax = (String) entries.get("traffic_bytes");
+            if (trafficLeft != null) {
+                ai.setTrafficMax(Long.parseLong(trafficMax));
+            }
+            final String hosts = (String) entries.get("hosts");
+            if (hosts != null) {
+                ai.setMultiHostSupport(this, Arrays.asList(hosts.split(",")));
+            }
+            ai.setStatus("Premium Account");
+            return ai;
+        }
+    }
+
+    private String api_get_dllink(final DownloadLink downloadLink, final Account account) throws Exception {
+        String api = account.getStringProperty("api_url", null);
+        if (api == null) {
+            account.setAccountInfo(api_fetchAccountInfo(account));
+            account.getStringProperty("api_url", null);
+            // not possible!
+            if (api == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        return null;
-    }
-
-    private boolean api_login(final Account account, final boolean force) throws Exception {
-        return false;
-    }
-
-    private String api_get_dllink(final DownloadLink link, final Account acc) throws Exception {
-        return null;
+        postPage(api, "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final String dllink = (String) entries.get("link");
+        if (dllink == null) {
+            handleErrorsGenerateLink(downloadLink, account, (String) entries.get("error"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dllink;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        String dllink = downloadLink.getStringProperty(property, null);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
@@ -394,22 +372,6 @@ public class FoxLeechCom extends antiDDoSForHost {
             }
         }
         return dllink;
-    }
-
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     @Override
