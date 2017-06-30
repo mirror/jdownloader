@@ -97,7 +97,7 @@ public class MultiHosterManagement {
         if (timesFailed <= maxRetries) {
             timesFailed++;
             downloadLink.setProperty(errorID, timesFailed);
-            // we should apply some grace period here since JD2 core does not apply a wait time parameter with the retry exception.
+            // we will apply some grace period here since JD2 core does not apply the wait time parameter with the retry exception.
             long waitPeriod = 5 * timesFailed;
             do {
                 downloadLink.getLinkStatus().setStatusText("Small wait: " + waitPeriod + " secs");
@@ -111,12 +111,5 @@ public class MultiHosterManagement {
             this.putError(account, downloadLink, 1 * 60 * 60 * 1000l, "Excausted retry count");
         }
     }
-
-    /***
-     * PREMISE
-     *
-     * JD retry does not wait between retries.. this is flawed logic. ensure a small retry is then done within runcheck
-     *
-     */
 
 }
