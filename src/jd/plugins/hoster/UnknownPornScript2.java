@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,11 +35,10 @@ import jd.plugins.components.SiteType.SiteTemplate;
         "smartgirlstube.com", "facialcumtube.com", "throatfucktube.com", "freeyogaporn.com", "domsubtube.com", "bdsmpornflix.com", "machinefucked.me", "toyspornmovies.com", "tastypussytube.com", "mylesbianporn.com", "inkedgirlsporn.com", "freedptube.com", "tinydicktube.com", "buttsextube.com", "gropingtube.com", "naughtyhighschoolporn.com", "realityxxxtube.com", "onlyhairyporn.com" }, urls = { "http://(?:www\\.)?pornmaki\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?amalandtube\\.com/free/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?recordedcams\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?trannyx\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?429tube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?nakedtube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html",
         "http://(?:www\\.)?shockingmovies\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?fapbox\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?preggoporn\\.tv/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?rookiepornvideos\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?chickswithdicks\\.video/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?amateurgaymovies\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?watchtwinks\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?sextube\\.desi/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?chopsticktube\\.com/video/\\d+/[A-Za-z0-9\\-]+\\.html", "http://(?:www\\.)?tubechica\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?blacktubeporn\\.net/video/[A-Za-z0-9\\-]+\\-\\d+\\.html",
         "http://(?:www\\.)?bisexualmantube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?gaybearflix\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?realthaisluts\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?realteenmovies\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?voyeurtubevideos\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?ridemycocktube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?habibiporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?xlactating\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?tubeenema\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?straponfuckvideos\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?3dtube\\.xxx/video/[A-Za-z0-9\\-]+\\-\\d+\\.html",
-        "http://(?:www\\.)?bigblackcocktube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?fishnetfucking\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?milf\\.dk/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?sluttywifelovers\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?kingsizetits\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?cumloadedgirls\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?skeetporntube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?acuptube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?chubbycut\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?nopixeljaps\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?pinaysmut\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html",
+        "http://(?:www\\.)?bigblackcocktube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?fishnetfucking\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?milf\\.dk/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?sluttywifelovers\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?kingsizetits\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?cumloadedgirls\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?skeetporntube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?acuptube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?chubbycut\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?nopixeljaps\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?pinaysmut\\.com/videos?/[A-Za-z0-9\\-]+\\-\\d+\\.html",
         "http://(?:www\\.)?sexyfeet\\.tv/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?dirtypantyporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?xxxuniformporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?smartgirlstube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?facialcumtube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?throatfucktube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?freeyogaporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?domsubtube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?bdsmpornflix\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?machinefucked\\.me/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?toyspornmovies\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html",
         "http://(?:www\\.)?tastypussytube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?mylesbianporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?inkedgirlsporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?freedptube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?tinydicktube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?buttsextube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?gropingtube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?naughtyhighschoolporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?realityxxxtube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?onlyhairyporn\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html" })
 public class UnknownPornScript2 extends PluginForHost {
-
     public UnknownPornScript2(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,18 +47,14 @@ public class UnknownPornScript2 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     // other:
-
     /* Extension which will be used if no correct extension is found */
-
-    private static final String  type_1            = "^http://(?:www\\.)?[^/]+/(?:video|free)/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
+    private static final String  type_1            = "^http://(?:www\\.)?[^/]+/(?:videos?|free)/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
     /* E.g. chopsticktube.com */
     private static final String  type_2            = "^http://(?:www\\.)?[^/]+/video/\\d+/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -80,7 +74,7 @@ public class UnknownPornScript2 extends PluginForHost {
         }
         String url_filename = null;
         if (downloadLink.getDownloadURL().matches(type_1)) {
-            url_filename = new Regex(downloadLink.getDownloadURL(), "/(?:video|free)/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
+            url_filename = new Regex(downloadLink.getDownloadURL(), "/(?:videos?|free)/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
         } else {
             url_filename = new Regex(downloadLink.getDownloadURL(), "/video/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
         }
