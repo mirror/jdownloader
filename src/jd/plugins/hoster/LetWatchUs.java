@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.SortedMap;
@@ -25,6 +24,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,12 +50,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movyo.to", "letwatch.us" }, urls = { "https?://(?:www\\.)?(?:movyo\\.to)/(embed\\-|video/)[a-z0-9]{12}", "https?://(www\\.)?(?:letwatch\\.us(?:\\.com)?|letwatch\\.to)/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "letwatch.us" }, urls = { "https?://(www\\.)?(?:letwatch\\.us(?:\\.com)?|letwatch\\.to)/(embed\\-)?[a-z0-9]{12}" })
 public class LetWatchUs extends antiDDoSForHost {
 
     private String                         correctedBR                  = "";
@@ -105,10 +104,8 @@ public class LetWatchUs extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("movyo.to".equals(getHost())) {
-            if (host == null || "movyo.to".equals(host)) {
-                return "letwatch.us";
-            }
+        if (host == null || "letwatch.us".equals(host)) {
+            return "letwatch.us";
         }
         return super.rewriteHost(host);
     }
@@ -289,7 +286,7 @@ public class LetWatchUs extends antiDDoSForHost {
         return fileInfo;
     }
 
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
@@ -503,7 +500,7 @@ public class LetWatchUs extends antiDDoSForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);

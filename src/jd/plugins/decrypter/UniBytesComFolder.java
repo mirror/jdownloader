@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -28,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/folder/[a-zA-Z0-9\\-\\.\\_]{11}B" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/folder/[a-zA-Z0-9\\-\\.\\_]{11}B" })
 public class UniBytesComFolder extends PluginForDecrypt {
 
     // https not currently available
@@ -44,15 +43,19 @@ public class UniBytesComFolder extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String id = new Regex(parameter, "\\.com/folder/([a-zA-Z0-9\\-\\.\\_]{12})").getMatch(0);
+        String id = new Regex(parameter, "\\.com/folder/([a-zA-Z0-9\\-\\._]{12})").getMatch(0);
         if (br.getURL().contains("unibytes.com/upload")) {
             logger.warning("Invalid URL or the folder no longer exists: " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<h3 style=\"font\\-size: 2em\\;\">(.*?)</h3>").getMatch(0);
-        if (fpName == null) br.getRegex("<title>Download (.*?) \\- Unibytes.com</title>").getMatch(0);
-        parsePage(decryptedLinks, id);
-        parseNextPage(decryptedLinks, id);
+        String fpName = br.getRegex("<h3 style=\"font-size: 2em;\">(.*?)</h3>").getMatch(0);
+        if (fpName == null) {
+            br.getRegex("<title>Download (.*?) - Unibytes.com</title>").getMatch(0);
+        }
+        do {
+            parsePage(decryptedLinks, id);
+        } while (hasNextPage(id));
+
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -63,19 +66,20 @@ public class UniBytesComFolder extends PluginForDecrypt {
 
     private void parsePage(ArrayList<DownloadLink> ret, String id) {
         String[] links = br.getRegex("<li><a href=\"(http://(www\\.)?unibytes\\.com/[a-zA-Z0-9\\-\\.\\_ ]+)").getColumn(0);
-        if (links == null || links.length == 0) return;
+        if (links == null || links.length == 0) {
+            return;
+        }
         if (links != null && links.length != 0) {
-            for (String dl : links)
+            for (String dl : links) {
                 ret.add(createDownloadlink(dl));
+            }
         }
     }
 
-    private boolean parseNextPage(ArrayList<DownloadLink> ret, String id) throws IOException {
+    private boolean hasNextPage(final String id) throws Exception {
         String nextPage = br.getRegex("<a href=\"(/folder/" + id + "\\?page=\\d+)\">Следующая →</a>").getMatch(0);
         if (nextPage != null) {
-            br.getPage("http://www.unibytes.com" + nextPage);
-            parsePage(ret, id);
-            parseNextPage(ret, id);
+            br.getPage(nextPage);
             return true;
         }
         return false;

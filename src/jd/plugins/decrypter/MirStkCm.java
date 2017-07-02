@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -36,7 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "filemack.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})", "https?://(?:www\\.)?filemack\\.com/(?:en/)?([a-zA-Z0-9]{12}|[a-z0-9]{2}_[a-zA-Z0-9]{16})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})" })
 public class MirStkCm extends antiDDoSForDecrypt {
 
     @Override
@@ -218,10 +217,10 @@ public class MirStkCm extends antiDDoSForDecrypt {
      *
      * @param parameter
      * @param singleLinks
-     * @throws IOException
+     * @throws Exception
      */
     @SuppressWarnings("unused")
-    private void notused(String parameter, String[] singleLinks) throws IOException {
+    private void notused(String parameter, String[] singleLinks) throws Exception {
         // all links still found on main page
         singleLinks = br.getRegex("<a href='" + regexSingleLink + "'").getColumn(0);
         if (singleLinks == null || singleLinks.length == 0) {
