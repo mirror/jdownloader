@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -142,7 +143,7 @@ public class UploadgigCom extends antiDDoSForHost {
             br2.getHeaders().put("Accept", "*/*");
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postPage(br2, "/file/free_dl", postData);
-            errorhandlingFree();
+            errorhandlingFree(br2);
             if (br2.getHttpConnection().getResponseCode() == 403) {
                 /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
@@ -175,10 +176,11 @@ public class UploadgigCom extends antiDDoSForHost {
     }
 
     private String getDllink(final Browser br) throws PluginException {
+        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         final String js = br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+'\">Download now</a>');").getMatch(0);
         if (js != null) {
             String dllink = PluginJSonUtils.getJsonValue(br, js);
-            if (testLink(dllink)) {
+            if (dupe.add(dllink) && testLink(dllink)) {
                 return dllink;
             }
         }
@@ -188,7 +190,7 @@ public class UploadgigCom extends antiDDoSForHost {
             final List<String> list = Arrays.asList(jokesonyou);
             Collections.shuffle(list);
             for (final String link : list) {
-                if (testLink(link)) {
+                if (dupe.add(link) && testLink(link)) {
                     return link;
                 }
             }
@@ -235,7 +237,7 @@ public class UploadgigCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private void errorhandlingFree() throws PluginException {
+    private void errorhandlingFree(final Browser br) throws PluginException {
         if ("m".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit for the hour", 1 * 60 * 60 * 1000l);
         } else if ("rfd".equals(br.toString()) || "fl".equals(br.toString())) {
