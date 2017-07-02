@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -33,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,6 +46,11 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
 public class UploadgigCom extends antiDDoSForHost {
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -129,44 +138,81 @@ public class UploadgigCom extends antiDDoSForHost {
             if (csrf_tester != null) {
                 postData += "&csrf_tester=" + csrf_tester;
             }
-            postPage("/file/free_dl", postData);
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("Accept", "*/*");
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            postPage(br2, "/file/free_dl", postData);
             errorhandlingFree();
-            if (br.getHttpConnection().getResponseCode() == 403) {
+            if (br2.getHttpConnection().getResponseCode() == 403) {
                 /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
-            String urlj = br.getRegex("\"(url[^\"]*)\"").getMatch(0);
-            dllink = PluginJSonUtils.getJsonValue(br, urlj);
-            if (dllink == null || !dllink.startsWith("http")) {
-                // not always within url* look for the pattern.. they been putting strings with messages in.
-                dllink = br.getRegex("https?://[a-zA-Z0-9_\\-.]*uploadgig\\.com/dl/[a-zA-Z0-9]+/dlfile").getMatch(-1);
-            }
-            if (dllink == null || !dllink.startsWith("http")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            // they use javascript to determine finallink...
+            dllink = getDllink(br2);
             int wait = 60;
-            final String waittime_str = PluginJSonUtils.getJsonValue(br, "cd");
+            final String waittime_str = PluginJSonUtils.getJsonValue(br2, "cd");
             if (waittime_str != null) {
                 wait = Integer.parseInt(waittime_str);
             }
             this.sleep(wait * 1001l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             /* E.g. "The download link has expired, please buy premium account or start download file from the beginning." */
-            if (br.containsHTML("The download link has expired")) {
+            else if (br.containsHTML("The download link has expired")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The download link has expired'", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    private String getDllink(final Browser br) throws PluginException {
+        final String js = br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+'\">Download now</a>');").getMatch(0);
+        if (js != null) {
+            String dllink = PluginJSonUtils.getJsonValue(br, js);
+            if (testLink(dllink)) {
+                return dllink;
+            }
+        }
+        // fail over
+        final String[] jokesonyou = br.getRegex("https?://[a-zA-Z0-9_\\-.]*uploadgig\\.com/dl/[a-zA-Z0-9]+/dlfile").getColumn(-1);
+        if (jokesonyou != null) {
+            final List<String> list = Arrays.asList(jokesonyou);
+            Collections.shuffle(list);
+            for (final String link : list) {
+                if (testLink(link)) {
+                    return link;
+                }
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private boolean testLink(String dllink) {
+        URLConnectionAdapter con = null;
+        try {
+            final Browser br2 = this.br.cloneBrowser();
+            con = br2.openHeadConnection(dllink);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                return false;
+            }
+            return true;
+        } catch (final Exception e) {
+            return false;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     private String getFID(final DownloadLink dl) {
@@ -176,22 +222,9 @@ public class UploadgigCom extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
+            if (!testLink(dllink)) {
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                return null;
             }
         }
         return dllink;
@@ -203,13 +236,12 @@ public class UploadgigCom extends antiDDoSForHost {
     }
 
     private void errorhandlingFree() throws PluginException {
-        if (br.toString().equalsIgnoreCase("m")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1001l);
-        } else if (br.containsHTML("fl")) {
-            /* Premiumonly */
-            /* Errormessage in browser: "This file is available with Premium only Because the file's owner disabled free downloads." */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if ("m".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit for the hour", 1 * 60 * 60 * 1000l);
+        } else if ("rfd".equals(br.toString()) || "fl".equals(br.toString())) {
+            throw new AccountRequiredException();
         }
+        // "0" and "e" shouldn't happen
     }
 
     private static Object LOCK = new Object();
@@ -330,14 +362,20 @@ public class UploadgigCom extends antiDDoSForHost {
                     dllink = link.getDownloadURL();
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
+                    // some blocked message here
+                    if (br.containsHTML(">Blocked")) {
+                        // TODO:
+                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else if (br.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
+                    account.setNextDayAsTempTimeout(br);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
