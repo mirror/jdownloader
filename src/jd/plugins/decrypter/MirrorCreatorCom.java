@@ -79,9 +79,11 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 br.submitForm(click);
             }
         }
-        String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
-        if (continuelink != null) {
-            br.getPage(continuelink);
+        {
+            final String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
+            if (continuelink != null) {
+                br.getPage(continuelink);
+            }
         }
         /* Error handling */
         if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<)")) {
@@ -106,7 +108,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             Browser br2 = br.cloneBrowser();
             br2.getPage(link);
             // adware for some users!
-            String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
+            final String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 // not redirects but final download link in html.
                 String finallink = br2.getRegex("<a href=([^ ]+) TARGET='_blank'").getMatch(0);

@@ -41,7 +41,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadid.net", "shortenurl.pw", "hwba.ch", "888.xirkle.com", "gempixel.com", "susutin.com" }, urls = { "https?://(?:www\\.)?uploadid\\.net/[a-zA-Z0-9]+", "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+", "https?://(?:www\\.)?susutin\\.com/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadid.net", "shortenurl.pw", "888.xirkle.com", "gempixel.com", "susutin.com" }, urls = { "https?://(?:www\\.)?uploadid\\.net/[a-zA-Z0-9]+", "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+", "https?://(?:www\\.)?susutin\\.com/[a-zA-Z0-9]+" })
 public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
 
     public GemPixelPremiumURLShortener(PluginWrapper wrapper) {
