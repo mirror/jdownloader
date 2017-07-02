@@ -30,12 +30,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "https?://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com|destyy\\.com|festyy\\.com|corneey\\.com)/[^<>\r\n\t]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "https?://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com|clkme\\.in|destyy\\.com|festyy\\.com|corneey\\.com|gestyy\\.com)/[^<>\r\n\t]+" })
 public class ShorteSt extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "destyy.com", "festyy.com", "corneey.com" };
+        return new String[] { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "clkme.in", "destyy.com", "festyy.com", "corneey.com", "gestyy.com" };
     }
 
     public ShorteSt(PluginWrapper wrapper) {
@@ -111,4 +111,10 @@ public class ShorteSt extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
+
+    // @Override
+    // public SiteTemplate siteTemplateType() {
+    // return SiteTemplate.ShorteSt_ShorteSt;
+    // }
+
 }
