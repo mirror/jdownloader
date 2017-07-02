@@ -34,6 +34,7 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
@@ -367,9 +368,9 @@ public class AdfLy extends antiDDoSForDecrypt {
         return false;
     }
 
-    // @Override
-    // public SiteTemplate siteTemplateType() {
-    // return SiteTemplate.AdfLy_AdfLy;
-    // }
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.AdfLy_AdfLy;
+    }
 
 }
