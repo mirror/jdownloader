@@ -29,7 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "https?://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com|clkme\\.in|destyy\\.com|festyy\\.com|corneey\\.com|gestyy\\.com)/[^<>\r\n\t]+" })
 public class ShorteSt extends antiDDoSForDecrypt {
@@ -113,9 +112,9 @@ public class ShorteSt extends antiDDoSForDecrypt {
         return false;
     }
 
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.ShorteSt_ShorteSt;
-    }
+    // @Override
+    // public SiteTemplate siteTemplateType() {
+    // return SiteTemplate.ShorteSt_ShorteSt;
+    // }
 
 }
