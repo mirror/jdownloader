@@ -15,18 +15,21 @@ public class SiteType {
          * examples <a href="http:/palcomix.com/">palcomix.com</a>
          */
         ArlesImageWebPageCreator,
+
         /**
          * File host script first used for: <a href="http://www.chomikuj.pl/">chomikuj.pl</a><br />
          * examples <a href="http:/diskokosmiko.mx/">diskokosmiko.mx</a>
          */
         ChomikujPlScript,
+
         /**
          * File host script: <a href="http://www.daddyscripts.com/products.php?name=daddys_file_host">Daddy's File Host</a><br />
          * example: <a href="http://dosya.tc/">dosya.tc</a>
          */
         DaddyScripts_FileHostV2,
         /**
-         * Link protector script: <a href="http://www.daddyscripts.com/products.php?name=daddys_link_protector">Daddy's Link Protector</a><br />
+         * Link protector script: <a href="http://www.daddyscripts.com/products.php?name=daddys_link_protector">Daddy's Link
+         * Protector</a><br />
          * example: <a href="http://protect-link.org/">protect-link.org</a>
          */
         DaddyScripts_DaddysLinkProtector,
@@ -60,11 +63,13 @@ public class SiteType {
 
         /**
          * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
-         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
-         * >http://codecanyon.net/item/imgshot-image-hosting- script/2558257</a>.<br />
+         * Can be bought e.g. from here:
+         * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
+         * script/2558257</a>.<br />
          * <b>Main decrypter class:</b> ImgShotDecrypt<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
-         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a> <br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a>
+         * <br />
          * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
@@ -104,8 +109,8 @@ public class SiteType {
         OuoIoCryptor,
 
         /**
-         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by <a
-         * href="http://pimproll.com/">pimproll.com</a>
+         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by
+         * <a href="http://pimproll.com/">pimproll.com</a>
          */
         PimpRoll_HostedTube,
 
@@ -248,7 +253,17 @@ public class SiteType {
          * Old link crypt script e.g. <a href="http://save-link.info">save-link.info</a> <br />
          * <b>Main decrypter class:</b> Zro10BasicDecrypt. <br />
          */
-        Zero10BasicDecrypt;
+        Zero10BasicDecrypt,
+
+        /**
+         * <a href="https://shorte.st/">shorte.st</a> plugin, used to detect new/old domains that are using their service.
+         */
+        ShorteSt_ShorteSt,
+
+        /**
+         * <a href="https://adf.ly/">adf.ly</a> plugin, used to detect new/old domains that are using their service.
+         */
+        AdfLy_AdfLy;
 
     }
 
