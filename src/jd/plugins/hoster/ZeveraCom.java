@@ -37,6 +37,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -485,6 +486,9 @@ public class ZeveraCom extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 getPage(mServ + "/");
                 getPage("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (StringUtils.contains(br.getURL(), "/GetOrExtendPremium")) {
+                    throw new AccountInvalidException();
+                }
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
                     // they can make more steps here.
                     final Form more = getMoreForm(account);
