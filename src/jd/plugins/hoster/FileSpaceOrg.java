@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-space.org" }, urls = { "http://(www\\.)?file\\-space\\.org/files/(free|new)?get/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-space.org" }, urls = { "http://(www\\.)?file\\-space\\.org/files/(free|new)?get/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" })
 public class FileSpaceOrg extends PluginForHost {
 
     public FileSpaceOrg(PluginWrapper wrapper) {
@@ -50,18 +48,26 @@ public class FileSpaceOrg extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File Link Error<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("id=\"name\"><nobr>([^<>\"]*?)</nobr>").getMatch(0);
-        final String filesize = br.getRegex("<span id=\"size\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("File Link Error<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex(">Имя файла:</td>\\s*<td[^>]*><span[^>]*>([^<>\"]+)\\s*</span").getMatch(0);
+        final String filesize = br.getRegex(">Размер:</td>\\s*<td[^>]*><span[^>]*>([^<>\"]+)\\s*</span").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        final String md5 = br.getRegex("<span id=\"md5\">([a-f0-9]{32})</span>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String md5 = br.getRegex(">MD5:</td>\\s*<td[^>]*><span[^>]*>([a-f0-9]{32})\\s*</span").getMatch(0);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -73,16 +79,19 @@ public class FileSpaceOrg extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL().replace("/get/", "/freeget/"));
             int wait = 30;
             final String waittime = br.getRegex("var time_load_link = (\\d+);").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             sleep(wait * 1001l, downloadLink);
             final String fid = new Regex(downloadLink.getDownloadURL(), "/get/([A-Za-z0-9\\-_]+)").getMatch(0);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://file-space.org/files/getlink/" + fid + ".html");
-            dllink = br.getRegex("\\&url=([A-Za-z0-9%=]+)\\&").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = Encoding.Base64Decode(dllink);
+            br.getPage("/files/getlink2/" + fid + ".html");
+            dllink = br.getRegex("<a [^>]*href=\"([^\"]+)\"[^>]*>СКАЧАТЬ ФАЙЛ БЕСПЛАТНО").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
