@@ -71,7 +71,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com/", "filesmonster.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com/", "filesmonster.com/").replace("http://", "https://"));
     }
 
     @Override
@@ -94,6 +94,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        correctDownloadLink(downloadLink);
         prepBR();
         br.setFollowRedirects(false);
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
@@ -178,7 +179,7 @@ public class FilesMonsterCom extends PluginForHost {
         return new Regex(mainlink, "filesmonster\\.com/(?:download\\.php\\?id=|dl/)([^/]+)").getMatch(0);
     }
 
-    private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws IOException, PluginException {
+    private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws Exception {
         /* Find a new temporary link */
         final String mainlinkpart = getMainLinkID(mainlink);
         String temporaryLink = null;
@@ -343,7 +344,7 @@ public class FilesMonsterCom extends PluginForHost {
             }
             downloadLink.setProperty("directlink", dllink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The downloadlink doesn't seem to refer to a file, following the connection...");
             br.followConnection();
@@ -574,14 +575,14 @@ public class FilesMonsterCom extends PluginForHost {
         }
         dllink = dllink.replaceAll("\\\\/", "/");
         /* max chunks to 1 , because each chunk gets calculated full size */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
         }
         dl.startDownload();
     }
 
-    private AccountInfo trafficUpdate(final AccountInfo importedAi, final Account account) throws IOException {
+    private AccountInfo trafficUpdate(final AccountInfo importedAi, final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         if (importedAi == null) {
             ai = account.getAccountInfo();
@@ -616,7 +617,7 @@ public class FilesMonsterCom extends PluginForHost {
         br.setCookie("http://filesmonster.com/", "yab_ulanguage", "en");
     }
 
-    private String[] getTempLinks() throws IOException {
+    private String[] getTempLinks() throws Exception {
         String[] decryptedStuff = null;
         final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
