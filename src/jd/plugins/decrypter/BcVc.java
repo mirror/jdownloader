@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -28,6 +29,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
@@ -58,7 +60,7 @@ public class BcVc extends antiDDoSForDecrypt {
      */
     // NOTE: Similar plugins: BcVc, AdliPw, AdcrunCh
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         {
             final String linkInsideLink = new Regex(parameter, "bc\\.vc/\\d+/(.+)").getMatch(0);
@@ -104,44 +106,86 @@ public class BcVc extends antiDDoSForDecrypt {
             logger.info("Link can't be decrypted because of server problems: " + parameter);
             return decryptedLinks;
         }
-        final String[] matches = br.getRegex("aid\\s*:\\s*(.*?)\\s*,\\s*lid\\s*:\\s*(.*?)\\s*,\\s*oid:\\s*(.*?)\\s*,\\s*ref\\s*:\\s*\\'(.*?)\\'\\s*\\}").getRow(0);
-        if (matches == null || matches.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        {
+            // old method
+            final String[] matches = br.getRegex("aid\\s*:\\s*(.*?)\\s*,\\s*lid\\s*:\\s*(.*?)\\s*,\\s*oid:\\s*(.*?)\\s*,\\s*ref\\s*:\\s*\\'(.*?)\\'\\s*\\}").getRow(0);
+            if (matches != null) {
+                final LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
+                // first
+                data.put("opt", "checks_log");
+                ajaxPostPage("/fly/ajax.fly.php", data);
+
+                // second repeated twice
+                data.put("opt", "check_log");
+                data.put(Encoding.urlEncode("args[aid]"), matches[0]);
+                data.put(Encoding.urlEncode("args[lid]"), matches[1]);
+                data.put(Encoding.urlEncode("args[oid]"), matches[2]);
+                data.put(Encoding.urlEncode("args[ref]"), "");
+                ajaxPostPage("/fly/ajax.fly.php", data);
+                ajaxPostPage("/fly/ajax.fly.php", data);
+
+                // waittime is 5 seconds. but somehow this often results in an error.
+                // we use 5.5 seconds to avoid them
+                sleep(5500, param);
+
+                // third
+                data.put("opt", "make_log");
+                data.put(Encoding.urlEncode("args[nok]"), "no");
+                ajaxPostPage("/fly/ajax.fly.php", data);
+                String url = PluginJSonUtils.getJsonValue(ajax, "url");
+                if (url == null) {
+                    // maybe we have to wait even longer?
+                    sleep(2000, param);
+                    ajaxPostPage("/fly/ajax.fly.php", data);
+                    url = PluginJSonUtils.getJsonValue(ajax, "url");
+                }
+                if (url != null) {
+                    decryptedLinks.add(createDownloadlink(url));
+                }
+            } else {
+                // new method, way less requests.. really should use inhouse js
+                String javascript = br.getRegex("(\\$\\.post\\('https?://bc\\.vc/fly/ajax\\.php\\?.*?\\}),\\s*function").getMatch(0);
+                if (javascript == null) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                // from here we have construct some ajax request
+                javascript = javascript.replaceFirst(":\\s*tZ(,?)", ": '480'$1");
+                javascript = javascript.replaceFirst(":\\s*cW(,?)", ": '1920'$1");
+                javascript = javascript.replaceFirst(":\\s*cH(,?)", ": '984'$1");
+                javascript = javascript.replaceFirst(":\\s*sW(,?)", ": '1920'$1");
+                javascript = javascript.replaceFirst(":\\s*sH(,?)", ": '1080'$1");
+                // last figure time from clicking button and some x and y math
+                String url = new Regex(javascript, "'(http://bc\\.vc/fly/.*?)'").getMatch(0);
+                url += "1845,30:71.01:20:1457";
+                final LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
+                // enter all parameters within map
+                final Regex regex = new Regex(javascript, "(\\w+):\\s*\\{(.*?)\\},?");
+                final String[] parm = regex.getRow(0);
+                if (parm != null) {
+                    final String[][] keyValue = new Regex(parm[1], "\\s*(\\w+):\\s*'(.*?)',?\\s*").getMatches();
+                    if (keyValue == null) {
+                        throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    }
+                    for (final String[] kV : keyValue) {
+                        data.put(parm[0] + Encoding.urlEncode("[" + kV[0] + "]"), Encoding.urlEncode(kV[1]));
+                    }
+                }
+                javascript = javascript.replaceAll(Pattern.quote(regex.getMatch(-1)), "");
+                // others
+                final String[][] other = new Regex(javascript, "\\s*(\\w+):\\s*'(.*?)',?\\s*").getMatches();
+                for (final String[] o : other) {
+                    data.put(Encoding.urlEncode(o[0]), Encoding.urlEncode(o[1]));
+                }
+                // sleep(6000, param);
+                ajaxPostPage(url, data);
+                final String link = PluginJSonUtils.getJsonValue(ajax, "url");
+                if (link != null) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
+            }
+
         }
-        LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
-        // first
-        data.put("opt", "checks_log");
-        ajaxPostPage("/fly/ajax.fly.php", data);
 
-        // second repeated twice
-        data.put("opt", "check_log");
-        data.put(Encoding.urlEncode("args[aid]"), matches[0]);
-        data.put(Encoding.urlEncode("args[lid]"), matches[1]);
-        data.put(Encoding.urlEncode("args[oid]"), matches[2]);
-        data.put(Encoding.urlEncode("args[ref]"), "");
-        ajaxPostPage("/fly/ajax.fly.php", data);
-        ajaxPostPage("/fly/ajax.fly.php", data);
-
-        // waittime is 5 seconds. but somehow this often results in an error.
-        // we use 5.5 seconds to avoid them
-        sleep(5500, param);
-
-        // third
-        data.put("opt", "make_log");
-        data.put(Encoding.urlEncode("args[nok]"), "no");
-        ajaxPostPage("/fly/ajax.fly.php", data);
-
-        String url = PluginJSonUtils.getJsonValue(ajax, "url");
-        if (url == null) {
-            // maybe we have to wait even longer?
-            sleep(2000, param);
-            ajaxPostPage("/fly/ajax.fly.php", data);
-            url = PluginJSonUtils.getJsonValue(ajax, "url");
-        }
-        if (url != null) {
-            decryptedLinks.add(createDownloadlink(url));
-        }
         return decryptedLinks;
     }
 
