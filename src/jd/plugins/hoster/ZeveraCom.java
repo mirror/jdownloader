@@ -26,6 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -37,7 +43,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,14 +51,9 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.ZeveraApiTracker;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
+
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
@@ -152,7 +152,7 @@ public class ZeveraCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         final boolean checked = checkLinks(new DownloadLink[] { link });
         // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
         if (!checked && hasAntiddosCaptchaRequirement()) {
@@ -226,7 +226,7 @@ public class ZeveraCom extends antiDDoSForHost {
         }
         try {
             logger.info("Connecting to " + new URL(dllink).getHost());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks, true);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxchunks, true);
         } catch (final PluginException e) {
             if ("Redirectloop".equals(e.getMessage())) {
                 logger.info("Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
@@ -486,9 +486,6 @@ public class ZeveraCom extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 getPage(mServ + "/");
                 getPage("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (StringUtils.contains(br.getURL(), "/GetOrExtendPremium")) {
-                    throw new AccountInvalidException();
-                }
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
                     // they can make more steps here.
                     final Form more = getMoreForm(account);
