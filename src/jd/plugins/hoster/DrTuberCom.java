@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -24,6 +23,10 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,13 +46,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "http://(www\\.|m\\.)?drtuber\\.com/(video/\\d+|player/config_embed3\\.php\\?vkey=[a-z0-9]+|embed/\\d+)" })
 public class DrTuberCom extends PluginForHost {
+
     public DrTuberCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.drtuber.com/signup?track=top_menu");
@@ -72,7 +74,9 @@ public class DrTuberCom extends PluginForHost {
         link.setUrlDownload(newlink);
     }
 
-    /* IMPORTANT: This can be used as a workaround if the normal handling fails and there is no time to fix it or it's not easily fixable... */
+    /*
+     * IMPORTANT: This can be used as a workaround if the normal handling fails and there is no time to fix it or it's not easily fixable...
+     */
     private boolean              use_mobile                   = false;
     /*
      * Allow usage of uncrypted finallinks - quality might be lower than when using the complicated way but overall it might stability..
@@ -82,7 +86,7 @@ public class DrTuberCom extends PluginForHost {
     private static final String  mobileUA                     = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile";
     private final String         type_embed                   = "https?://(?:www\\.)?drtuber\\.com/embed/\\d+";
     private final String         type_normal                  = "https?://(?:www\\.)?drtuber\\.com/video/\\d+(?:/[a-z0-9\\-_]+)?";
-    private String               DLLINK                       = null;
+    private String               dllink                       = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
@@ -120,8 +124,8 @@ public class DrTuberCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        DLLINK = null;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBR(this.br);
@@ -173,7 +177,7 @@ public class DrTuberCom extends PluginForHost {
             filename = br.getRegex("<title>Download Free Mobile Porn \\- ([^<>\"]*?) \\- DrTuber\\.com</title>").getMatch(0);
             br.getPage("http://m.drtuber.com/play/" + fid + "?from=video_bottom");
             filename = br.getRegex("<title>Download Free Mobile Porn \\-([^<>\"]*?)\\- Download Preview \\- DrTuber\\.com</title>").getMatch(0);
-            DLLINK = br.getRegex("\"(https?://[a-z0-9\\.\\-]+/(mp4|3gp)/[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[a-z0-9\\.\\-]+/(mp4|3gp)/[^<>\"]*?)\"").getMatch(0);
         } else {
             /* 2016-04-29: They're playing games with us with their embed html --> Avoid that! */
             if (downloadLink.getDownloadURL().matches(type_embed)) {
@@ -200,9 +204,9 @@ public class DrTuberCom extends PluginForHost {
                     filename = br.getRegex("<title>([^<>\"]*?) \\- \\d+ \\- DrTuber\\.com</title>").getMatch(0);
                 }
                 if (allow_uncrypted_downloadlink) {
-                    DLLINK = getUncryptedFinallink();
+                    dllink = getUncryptedFinallink();
                 }
-                if (DLLINK == null) {
+                if (dllink == null) {
                     final boolean new_handling = true;
                     if (new_handling) {
                         /*
@@ -257,27 +261,27 @@ public class DrTuberCom extends PluginForHost {
                 }
                 filename = br.getRegex("<title>(.*?)\\s+\\-\\s+Free Porn Videos").getMatch(0);
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 if (continueLink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getPage(continueLink);
-                DLLINK = br.getRegex("<video_file>(<\\!\\[CDATA\\[)?(http://.*?)(\\]\\]>)?</video_file>").getMatch(1);
+                dllink = br.getRegex("<video_file>(<\\!\\[CDATA\\[)?(http://.*?)(\\]\\]>)?</video_file>").getMatch(1);
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             if (br.containsHTML("<video_file><\\!\\[CDATA\\[\\]\\]></video_file>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK.trim());
+        dllink = Encoding.htmlDecode(dllink.trim());
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         String ext;
-        if (DLLINK.contains(".flv")) {
+        if (dllink.contains(".flv")) {
             ext = ".flv";
-        } else if (DLLINK.contains(".mp4")) {
+        } else if (dllink.contains(".mp4")) {
             ext = ".mp4";
         } else {
             /* Should usually not happen. */
@@ -292,7 +296,7 @@ public class DrTuberCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors();
             br.followConnection();
@@ -358,6 +362,18 @@ public class DrTuberCom extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("http://www.drtuber.com/ajax/popup_forms?form=login");
                 br.postPage("/ajax/login", "submit_login=true&login_remember=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "success")) && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "captcha"))) {
+                    // recaptchav2
+                    final DownloadLink orig = this.getDownloadLink();
+                    try {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
+                        this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lel6CQUAAAAANRfiz7Kh8rdyzHgh4An39DbHb67").getToken();
+                        br.postPage("/ajax/login", "submit_login=true&login_remember=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(orig);
+                    }
+                }
                 if (br.getCookie(MAINPAGE, "remember") == null || !br.containsHTML("\"success\":true")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -444,20 +460,20 @@ public class DrTuberCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (account.getBooleanProperty("free", false)) {
             /* Try not to waste new link generation as we can only download 3 videos a day... */
-            DLLINK = this.checkDirectLink(link, "account_free_directlink");
-            if (DLLINK == null) {
-                DLLINK = getUncryptedFinallink();
+            dllink = this.checkDirectLink(link, "account_free_directlink");
+            if (dllink == null) {
+                dllink = getUncryptedFinallink();
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 /* Only 'use the download button' if we cannot find any stream URL as filesizes/video quality should be the same. */
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("http://www.drtuber.com/video/download/" + getFID(link));
                 if (br.containsHTML("you have reached the download limit")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-                DLLINK = "http://www.drtuber.com/video/download/save/" + getFID(link);
+                dllink = "http://www.drtuber.com/video/download/save/" + getFID(link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
                 br.followConnection();
@@ -470,15 +486,15 @@ public class DrTuberCom extends PluginForHost {
             link.setProperty("account_free_directlink", dl.getConnection().getURL().toString());
             dl.startDownload();
         } else {
-            DLLINK = this.checkDirectLink(link, "premium_directlink");
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("").getMatch(0);
-                if (DLLINK == null) {
+            dllink = this.checkDirectLink(link, "premium_directlink");
+            if (dllink == null) {
+                dllink = br.getRegex("").getMatch(0);
+                if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
