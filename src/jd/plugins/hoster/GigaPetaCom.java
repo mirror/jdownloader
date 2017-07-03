@@ -38,7 +38,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "http://[\\w\\.]*?gigapeta\\.com/dl/\\w+" })
 public class GigaPetaCom extends PluginForHost {
-
     // Gehört zu tenfiles.com/tenfiles.info
     public GigaPetaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,7 +62,6 @@ public class GigaPetaCom extends PluginForHost {
         }
         downloadLink.setName(fileName.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim()));
-
         return AvailableStatus.TRUE;
     }
 
@@ -169,7 +167,6 @@ public class GigaPetaCom extends PluginForHost {
     }
 
     // do not add @Override here to keep 0.* compatibility
-
     private AccountInfo login(Account account, boolean fromFetchAccount) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://gigapeta.com", "lang", "us");
@@ -199,6 +196,7 @@ public class GigaPetaCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         final String expire = br.getRegex("You have <b>premium</b> account till(.*?)</p>").getMatch(0);
         if (expire != null) {
+            account.setType(AccountType.PREMIUM);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm", null));
             if (!ai.isExpired()) {
                 account.setMaxSimultanDownloads(-1);
