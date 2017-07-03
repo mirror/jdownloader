@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -21,11 +20,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,9 +39,13 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class FoxLeechCom extends antiDDoSForHost {
-
     private static MultiHosterManagement mhm       = new MultiHosterManagement("foxleech.com");
     private static final String          NOCHUNKS  = "NOCHUNKS";
     private static final String          MAINPAGE  = "http://foxleech.com";
@@ -106,7 +104,6 @@ public class FoxLeechCom extends antiDDoSForHost {
         if (downloadLink.getBooleanProperty(FoxLeechCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -307,23 +304,23 @@ public class FoxLeechCom extends antiDDoSForHost {
             final String accountType = (String) entries.get("account");
             if (!"premium".equalsIgnoreCase(accountType)) {
                 // unsupported account type
-                throw new AccountInvalidException("Unsupported account type");
+                throw new AccountInvalidException("Unsupported account type:" + accountType);
             }
-            final String expire = (String) entries.get("expire_time");
+            final Object expire = entries.get("expire_time");
             if (expire != null) {
-                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire), br);
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire.toString()), br);
             }
             final String apiurl = (String) entries.get("api_url");
             if (apiurl != null) {
                 account.setProperty("api_url", apiurl);
             }
-            final String trafficLeft = (String) entries.get("traffic_left_bytes");
+            final Object trafficLeft = entries.get("traffic_left_bytes");
             if (trafficLeft != null) {
-                ai.setTrafficLeft(Long.parseLong(trafficLeft));
+                ai.setTrafficLeft(Long.parseLong(trafficLeft.toString()));
             }
-            final String trafficMax = (String) entries.get("traffic_bytes");
+            final Object trafficMax = entries.get("traffic_bytes");
             if (trafficLeft != null) {
-                ai.setTrafficMax(Long.parseLong(trafficMax));
+                ai.setTrafficMax(Long.parseLong(trafficMax.toString()));
             }
             final String hosts = (String) entries.get("hosts");
             if (hosts != null) {
@@ -398,5 +395,4 @@ public class FoxLeechCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

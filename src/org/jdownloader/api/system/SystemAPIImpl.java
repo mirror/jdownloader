@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -23,9 +26,6 @@ import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
 
 public class SystemAPIImpl implements SystemAPI {
     private final long startupTimeStamp = System.currentTimeMillis();
@@ -91,7 +91,7 @@ public class SystemAPIImpl implements SystemAPI {
     }
 
     public List<StorageInformationStorable> getStorageInfos(final String path) {
-        if (Application.getJavaVersion() >= Application.JAVA17 && DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().isSupported()) {
+        if (Application.getJavaVersion() >= Application.JAVA17 && Application.getJavaVersion() < Application.JAVA19 && DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().isSupported()) {
             return SystemAPIImpl17.getStorageInfos(path);
         } else {
             final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
