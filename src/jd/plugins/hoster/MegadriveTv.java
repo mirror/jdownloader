@@ -56,7 +56,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrive.tv" }, urls = { "https?://(?:www\\.)?megadrive\\.tv/(?:embed(?:\\-|/))?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrive.co" }, urls = { "https?://(?:www\\.)?megadrive\\.(?:tv|co)/(?:embed(?:\\-|/))?[a-z0-9]{12}" })
 public class MegadriveTv extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -65,11 +65,11 @@ public class MegadriveTv extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "https://megadrive.tv";
+    private static final String  COOKIE_HOST                        = "https://megadrive.co";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(megadrive\\.tv)";
+    private static final String  DOMAINS                            = "(megadrive\\.(?:tv|co))";
 
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -99,7 +99,7 @@ public class MegadriveTv extends antiDDoSForHost {
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = true;
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = false;
 
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
@@ -143,6 +143,24 @@ public class MegadriveTv extends antiDDoSForHost {
      * captchatype: null<br />
      * other:<br />
      */
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "megadrive.tv", "megadrive.co" };
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return "megadrive.co";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "megadrive.co";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     @SuppressWarnings({ "deprecation" })
     @Override
@@ -680,7 +698,7 @@ public class MegadriveTv extends antiDDoSForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
@@ -1375,7 +1393,7 @@ public class MegadriveTv extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
