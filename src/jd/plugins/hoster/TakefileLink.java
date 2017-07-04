@@ -532,7 +532,7 @@ public class TakefileLink extends PluginForHost {
                     if (method_free_value == null || method_free_value.equals("")) {
                         method_free_value = "Free Download";
                     }
-                    download1.put("method_free", method_free_value);
+                    download1.put("method_free", Encoding.urlEncode(method_free_value));
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -676,7 +676,7 @@ public class TakefileLink extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
@@ -1398,7 +1398,7 @@ public class TakefileLink extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");

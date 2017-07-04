@@ -554,7 +554,7 @@ public class MegadriveTv extends antiDDoSForHost {
                     if (method_free_value == null || method_free_value.equals("")) {
                         method_free_value = "Free Download";
                     }
-                    download1.put("method_free", method_free_value);
+                    download1.put("method_free", Encoding.urlEncode(method_free_value));
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
