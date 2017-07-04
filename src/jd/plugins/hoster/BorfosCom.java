@@ -15,10 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,10 +29,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "borfos.com" }, urls = { "https?://(?:www\\.)?borfos\\.com/embed/\\d+" })
 public class BorfosCom extends PluginForHost {
+
     public BorfosCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,7 +47,6 @@ public class BorfosCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -57,9 +55,9 @@ public class BorfosCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -91,23 +89,31 @@ public class BorfosCom extends PluginForHost {
             filename += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
-            URLConnectionAdapter con = null;
+            // core has bug where it sets referrer.. even when you set to "". this is the only way around!
+            br = new Browser();
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
+            // no referrer either
+            br.getHeaders().put("Referer", "");
             try {
-                con = br.openHeadConnection(dllink);
-                if (con.getLongContentLength() < 100000l) {
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
+                if (dl.getConnection().getLongContentLength() < 100000l) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                } else if (!dl.getConnection().getContentType().contains("html")) {
+                    link.setDownloadSize(dl.getConnection().getLongContentLength());
                     link.setProperty("directlink", dllink);
+                    if (!isDownload) {
+                        dl.getConnection().disconnect();
+                    }
                 } else {
-                    server_issues = true;
+                    br.followConnection();
+                    dl.getConnection().disconnect();
                 }
-            } finally {
+            } catch (final Exception e) {
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable t) {
                 }
             }
         } else {
@@ -117,25 +123,20 @@ public class BorfosCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isDownload = false;
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        isDownload = true;
         requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
