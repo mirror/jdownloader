@@ -43,6 +43,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         final Browser br = this.br.cloneBrowser();
         final DecrypterArrayList<DownloadLink> decryptedLinks = new DecrypterArrayList<DownloadLink>() {
             //
+            //
             @Override
             public boolean add(final String link) {
                 return add(link, br);
