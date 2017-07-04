@@ -1,12 +1,12 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
-
-import jd.http.Browser;
-import jd.plugins.Plugin;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected T            plugin;
@@ -45,6 +45,9 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         this.plugin = plugin;
         this.br = br.cloneBrowser();
+        if (br.getRequest() == null) {
+            throw new IllegalStateException("Browser.getRequest() == null!");
+        }
         this.siteDomain = Browser.getHost(br.getURL(), true);
         logger = plugin == null ? null : plugin.getLogger();
         if (logger == null) {

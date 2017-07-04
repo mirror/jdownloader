@@ -16,6 +16,9 @@ public abstract class AbstractCaptchaHelperConfidentCaptcha<T extends Plugin> {
     public AbstractCaptchaHelperConfidentCaptcha(T plugin, Browser br, final String siteKey) {
         this.plugin = plugin;
         this.br = br;
+        if (br.getRequest() == null) {
+            throw new IllegalStateException("Browser.getRequest() == null!");
+        }
         logger = plugin.getLogger();
         if (logger == null) {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());
@@ -49,5 +52,4 @@ public abstract class AbstractCaptchaHelperConfidentCaptcha<T extends Plugin> {
         final String formData = new Regex(source, "<div[^>]*id=(\"|'|)captcha-dialog\\1[^>]*>.*?</form>\\s*</div>").getMatch(-1);
         return formData;// .replace("confidentincludes/callback.php", "confidentincludes/callback.php");
     }
-
 }
