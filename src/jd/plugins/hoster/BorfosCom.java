@@ -94,8 +94,6 @@ public class BorfosCom extends PluginForHost {
             br = new Browser();
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
-            // no referrer either
-            br.getHeaders().put("Referer", "");
             try {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
                 if (dl.getConnection().getLongContentLength() < 100000l) {
