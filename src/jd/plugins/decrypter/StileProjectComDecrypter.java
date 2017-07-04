@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileproject\\.com/video/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/\\d+" })
 public class StileProjectComDecrypter extends PornEmbedParser {
 
     public StileProjectComDecrypter(PluginWrapper wrapper) {
@@ -32,12 +32,12 @@ public class StileProjectComDecrypter extends PornEmbedParser {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final DownloadLink mainlink = createDownloadlink(parameter.replace("stileproject.com/", "stileprojectdecrypted.com/"));
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
+        final DownloadLink mainlink = createDownloadlink(parameter);
+        final String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
         /* Check if the video is selfhosted */
         final String externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
         if (externID == null && this.br.getHttpConnection().getResponseCode() == 200) {
