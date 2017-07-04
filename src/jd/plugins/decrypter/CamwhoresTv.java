@@ -47,15 +47,14 @@ public class CamwhoresTv extends PornEmbedParser {
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.size() == 0) {
             /* Probably a selfhosted video. */
-            final DownloadLink dl = createDownloadUrlForHostPlugin(this.createDownloadlink(parameter));
+            final DownloadLink dl = createDownloadlink(createDownloadUrlForHostPlugin(parameter));
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
 
-    public static DownloadLink createDownloadUrlForHostPlugin(final DownloadLink dl) {
-        dl.setUrlDownload(dl.getDownloadURL().replace("camwhores.tv/", "camwhoresdecrypted.tv/"));
-        return dl;
+    public static String createDownloadUrlForHostPlugin(final String dl) {
+        return dl.replace("camwhores.tv/", "camwhoresdecrypted.tv/");
     }
 
 }
