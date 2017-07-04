@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,16 +35,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class EightTracksCom extends PluginForDecrypt {
+
+    // NOTE: short link is within Rdrctr.
 
     private static final String  MAINPAGE          = "http://8tracks.com/";
     private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js|explore|auth|settings|mixes|developers|users|job)/.+|[\\w\\-]+/homepage|sets/new|collections/.+|sonos/.+)";
     private static final String  TYPE_GENERAL      = "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
     private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
-    private static final String  TYPE_SHORT        = "http://(www\\.)?8trx\\.com/[A-Za-z0-9]+";
 
     private String               clipData;
     private static final String  TEMP_EXT          = ".mp3";
@@ -76,16 +77,7 @@ public class EightTracksCom extends PluginForDecrypt {
         /* nachfolgender UA sorgt für bessere Audioqualität */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2");
         br.getPage(parameter);
-
-        if (parameter.matches(TYPE_SHORT)) {
-            if (!br.getURL().matches(TYPE_GENERAL)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            parameter = br.getURL();
-        }
-
-        if (br.containsHTML(">Sorry, that page doesn\\'t exist")) {
+        if (br.containsHTML(">Sorry, that page doesn't exist")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
