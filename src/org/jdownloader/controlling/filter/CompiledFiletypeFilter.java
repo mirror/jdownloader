@@ -37,7 +37,6 @@ public class CompiledFiletypeFilter {
         public ExtensionsFilterInterface[] listSameGroup();
 
         public ExtensionsFilterInterface getSource();
-
     }
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
@@ -62,7 +61,6 @@ public class CompiledFiletypeFilter {
         SHA512,
         PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
         PAR("(p\\d+|par)");
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -106,7 +104,6 @@ public class CompiledFiletypeFilter {
         public ExtensionsFilterInterface[] listSameGroup() {
             return values();
         }
-
     }
 
     public static enum DocumentExtensions implements ExtensionsFilterInterface {
@@ -126,7 +123,6 @@ public class CompiledFiletypeFilter {
         NFO,
         SRT,
         USF;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -170,7 +166,6 @@ public class CompiledFiletypeFilter {
         public ExtensionsFilterInterface[] listSameGroup() {
             return values();
         }
-
     }
 
     public static enum AudioExtensions implements ExtensionsFilterInterface {
@@ -199,7 +194,6 @@ public class CompiledFiletypeFilter {
         OMG,
         OMF,
         SND;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -243,7 +237,6 @@ public class CompiledFiletypeFilter {
         public ExtensionsFilterInterface[] listSameGroup() {
             return values();
         }
-
     }
 
     public static enum VideoExtensions implements ExtensionsFilterInterface {
@@ -269,7 +262,6 @@ public class CompiledFiletypeFilter {
         WMV,
         GP3,
         WEBM;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -341,7 +333,7 @@ public class CompiledFiletypeFilter {
         R_NUM("r\\d{1,4}"),
         NUM("\\d{1,4}"),
         MultiZip("z\\d{1,4}"),
-        ACE,
+        ACE("(ace|c\\d{2,4})"),
         TAR,
         GZ,
         AR,
@@ -356,7 +348,6 @@ public class CompiledFiletypeFilter {
         TGZ,
         LZH,
         LHA;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -415,7 +406,6 @@ public class CompiledFiletypeFilter {
         SVG,
         ICO,
         WEBP;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -565,5 +555,4 @@ public class CompiledFiletypeFilter {
         }
         return ret.toArray(new Pattern[ret.size()]);
     }
-
 }
