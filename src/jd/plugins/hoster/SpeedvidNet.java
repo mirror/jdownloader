@@ -26,6 +26,15 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,15 +55,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "speedvid.net" }, urls = { "https?://(?:www\\.)?speedvid\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class SpeedvidNet extends antiDDoSForHost {
@@ -169,6 +169,8 @@ public class SpeedvidNet extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            prepBr.setConnectTimeout(30000);
+            prepBr.setReadTimeout(30000);
         }
         return prepBr;
     }
@@ -544,7 +546,7 @@ public class SpeedvidNet extends antiDDoSForHost {
                     if (method_free_value == null || method_free_value.equals("")) {
                         method_free_value = "Free Download";
                     }
-                    download1.put("method_free", method_free_value);
+                    download1.put("method_free", Encoding.urlEncode(method_free_value));
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -717,7 +719,7 @@ public class SpeedvidNet extends antiDDoSForHost {
                 controlFree(-1);
             }
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
@@ -1424,7 +1426,7 @@ public class SpeedvidNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
