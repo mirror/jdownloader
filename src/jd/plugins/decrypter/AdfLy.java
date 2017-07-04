@@ -24,9 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,8 +32,8 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|ay\\.gy|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|adf\\.acb\\.im|packs\\d*\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee|babblecase\\.com|riffhold\\.com|microify\\.com|pintient\\.com|tinyium\\.com|atominik\\.com|bluenik\\.com|bitigee\\.com|atomcurve\\.com|picocurl\\.com)/[^<>\r\n\t]+" })
 @SuppressWarnings("deprecation")
@@ -88,12 +86,10 @@ public class AdfLy extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
 
-        // imported protocol choice
-        protocol = new Regex(parameter, "(https?://)").getMatch(0);
-        // poll plugin setting for default protocol, if not set ask the user.
+        // poll plugin setting for default protocol
         protocol = getDefaultProtocol();
         if (!parameter.contains("adf.ly/") && protocol.equalsIgnoreCase("https://")) {
-            logger.info("sorry, HTTPS option is not aviable for this host '" + new Regex(parameter, "://([^/]+)").getMatch(0) + "'");
+            logger.info("sorry, HTTPS option is not aviable for this host '" + Browser.getHost(parameter) + "'");
             protocol = "http://";
         }
         br.setFollowRedirects(false);
@@ -305,49 +301,7 @@ public class AdfLy extends antiDDoSForDecrypt {
      * @author raztoki
      */
     private String getDefaultProtocol() {
-        if (true) {
-            return "https://";
-        } else {
-            if (!supportsHTTPS) {
-                defaultProtocol.set("http://");
-            } else {
-                SubConfiguration config = null;
-                synchronized (LOCK) {
-                    try {
-                        config = SubConfiguration.getConfig("adf.ly", false);
-                        defaultProtocol.set(config.getStringProperty("savedDefaultProtocol", null));
-                        if (defaultProtocol.get() != null) {
-                            return defaultProtocol.get();
-                        }
-                        if (defaultProtocol.get() == null) {
-                            String lng = System.getProperty("user.language");
-                            String message = null;
-                            String title = null;
-                            if ("de".equalsIgnoreCase(lng)) {
-                                title = "Wähle bitte Dein Standard Request Protokoll aus.";
-                                message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu adf.ly.";
-                            } else {
-                                title = "Please select your default Request Protocol.";
-                                message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to adf.ly.";
-                            }
-                            String[] select = new String[] { "http (insecure)", "https (secure)" };
-                            int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
-                            if (userSelect != -1) {
-                                defaultProtocol.set(userSelect == 0 ? "http://" : "https://");
-
-                                config.setProperty("savedDefaultProtocol", defaultProtocol.get());
-                                config.save();
-                            } else {
-                                // 'cancelled/closed/time outed' dialog, returns import protocol.
-                                return protocol;
-                            }
-                        }
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-            return defaultProtocol.get();
-        }
+        return "https://";
     }
 
     /**
@@ -367,9 +321,9 @@ public class AdfLy extends antiDDoSForDecrypt {
         return false;
     }
 
-    // @Override
-    // public SiteTemplate siteTemplateType() {
-    // return SiteTemplate.AdfLy_AdfLy;
-    // }
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.AdfLy_AdfLy;
+    }
 
 }
