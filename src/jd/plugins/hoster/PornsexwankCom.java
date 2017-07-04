@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "pornsexwankdecrypted://.+" })
 public class PornsexwankCom extends PluginForHost {
-
     public PornsexwankCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,14 +37,12 @@ public class PornsexwankCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -100,7 +96,7 @@ public class PornsexwankCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (false) {
+        if (true) {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
