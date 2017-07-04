@@ -16,7 +16,6 @@ import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
-
     public PornEmbedParser(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,7 +42,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     public final ArrayList<DownloadLink> findEmbedUrls(String title) throws Exception {
         final Browser br = this.br.cloneBrowser();
         final DecrypterArrayList<DownloadLink> decryptedLinks = new DecrypterArrayList<DownloadLink>() {
-
+            //
             @Override
             public boolean add(final String link) {
                 return add(link, br);
@@ -54,7 +53,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 final String url = Request.getLocation(link, br.getRequest());
                 return add(createDownloadlink(url));
             }
-
         };
         // use plugin regex where possible... this means less maintaince required.
         Plugin plugin = null;
