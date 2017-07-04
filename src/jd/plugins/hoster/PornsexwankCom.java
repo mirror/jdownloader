@@ -16,9 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,8 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "pornsexwankdecrypted://.+" })
 public class PornsexwankCom extends PluginForHost {
@@ -64,7 +61,8 @@ public class PornsexwankCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -94,21 +92,20 @@ public class PornsexwankCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, default_extension);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        link.setFinalFileName(filename);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (false) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
             try {
-                con = br.openHeadConnection(dllink);
+                con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -121,9 +118,6 @@ public class PornsexwankCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -133,10 +127,8 @@ public class PornsexwankCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
