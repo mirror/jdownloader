@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -29,6 +26,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -36,12 +34,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 /**
  * @author raztoki
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" })
 public class BatoTo extends PluginForDecrypt {
-
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
         /* Prevent server response 503! */
@@ -77,7 +76,6 @@ public class BatoTo extends PluginForDecrypt {
         br.getHeaders().put("Accept", "*/*");
         // Access page one
         getPage(url + 1);
-
         if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>|The page you were looking for is no longer available") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter.toString()));
             return decryptedLinks;
@@ -88,8 +86,7 @@ public class BatoTo extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter.toString()));
             return decryptedLinks;
         }
-
-        String title_comic = br.getRegex("<li style=\"display: inline-block; margin-right: \\d+px;\"><a href=\"http://bato\\.to/comic/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
+        String title_comic = br.getRegex("<li style=\"display: inline-block; margin-right: \\d+px;\"><a href=\"https?://bato\\.to/comic/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
         // We get the title
         String title_tag = br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
         // group
@@ -102,14 +99,17 @@ public class BatoTo extends PluginForDecrypt {
             /* Fallback if everything else fails! */
             title_tag = id;
         }
-
         title_tag = Encoding.htmlDecode(title_tag);
         title_tag = title_tag.replace(": ", " - ");
         final FilePackage fp = FilePackage.getInstance();
         // may as well set this globally. it used to belong inside 2 of the formatting if statements
         fp.setProperty("CLEANUP_NAME", false);
+        if (title_comic == null || title_tag == null || title_group == null) {
+            logger.info(br.toString());
+            logger.info(title_comic + "|" + title_tag + "|" + title_group);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
+        }
         fp.setName(Encoding.htmlDecode(title_comic).trim() + (title_comic != null ? " - " : "") + title_tag + (title_group != null ? " - " + title_group : ""));
-
         final String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         if (pages == null) {
             // even though the cookie is set... they don't always respect this for small page count
@@ -144,7 +144,6 @@ public class BatoTo extends PluginForDecrypt {
         } else if (numberOfPages > 99) {
             df_page = new DecimalFormat("000");
         }
-
         for (int i = 1; i <= numberOfPages; i++) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
@@ -162,7 +161,6 @@ public class BatoTo extends PluginForDecrypt {
             distribute(link);
             decryptedLinks.add(link);
         }
-
         return decryptedLinks;
     }
 
@@ -191,5 +189,4 @@ public class BatoTo extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
