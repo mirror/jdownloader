@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -50,7 +48,7 @@ public class BornCashOrg extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL() + "&lang=en");
@@ -59,7 +57,7 @@ public class BornCashOrg extends PluginForHost {
         }
         // meta redirect
         if (br.containsHTML("<meta http-equiv=")) {
-            final String redirect = br.getRegex("<meta http-equiv=('|\")refresh\\1\\s*[^>]*url=(.*?)'").getMatch(1);
+            final String redirect = br.getRegex("<meta http-equiv=('|\")refresh\\1\\s*content=(\"|')\\d+;url=(.*?)\\2").getMatch(2);
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -101,7 +99,7 @@ public class BornCashOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Скачивать файлы без VIP доступа Вы можете не чаще")) {
