@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Locale;
@@ -41,7 +40,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+|http://seedrdecrypted\\.cc/\\d+" })
 public class SeedrCc extends PluginForHost {
-
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.seedr.cc/premium");
@@ -62,10 +60,8 @@ public class SeedrCc extends PluginForHost {
     private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
     private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -8;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private static final String TYPE_DIRECTLINK              = "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+";
     private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/\\d+";
-
     private boolean             server_issues                = false;
     private String              dllink                       = null;
 
@@ -166,6 +162,7 @@ public class SeedrCc extends PluginForHost {
                 if (dlinkbefore == null) {
                     this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                 }
+                br.getPage("https://www." + this.getHost());
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfhAyMTAAAAAJD3uGiFfUcoXSiVsRKJedWSrSmv").getToken();
                 if (dlinkbefore != null) {
                     this.setDownloadLink(dlinkbefore);
@@ -289,5 +286,4 @@ public class SeedrCc extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
