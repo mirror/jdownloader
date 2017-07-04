@@ -26,6 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,16 +57,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mexashare.com" }, urls = { "https?://(?:www\\.)?mexashare\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class MexashareCom extends PluginForHost {
+
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode|>The service is currently under maintenance";
@@ -406,7 +407,7 @@ public class MexashareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -517,7 +518,7 @@ public class MexashareCom extends PluginForHost {
                     if (method_free_value == null || method_free_value.equals("")) {
                         method_free_value = "Free Download";
                     }
-                    download1.put("method_free", method_free_value);
+                    download1.put("method_free", Encoding.urlEncode(method_free_value));
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -665,7 +666,7 @@ public class MexashareCom extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
@@ -1320,7 +1321,7 @@ public class MexashareCom extends PluginForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1346,7 +1347,7 @@ public class MexashareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, -10);
+            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
