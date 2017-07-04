@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "borncash.org" }, urls = { "http://(www\\.)?borncash\\.org/(load/|download/\\?a=|dw/\\?a=)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "borncash.org" }, urls = { "http://(www\\.)?(?:borncash\\.org|vipbill\\.ru)/(load/|download/\\?a=|dw/\\?a=)\\d+" })
 public class BornCashOrg extends PluginForHost {
 
     public BornCashOrg(PluginWrapper wrapper) {
@@ -52,12 +52,12 @@ public class BornCashOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL() + "&lang=en");
-        if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) {
+        if (br.containsHTML("(?:borncash\\.org|vipbill\\.ru)/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // meta redirect
         if (br.containsHTML("<meta http-equiv=")) {
-            final String redirect = br.getRegex("<meta http-equiv=('|\")refresh\\1\\s*content=(\"|')\\d+;url=(.*?)\\2").getMatch(2);
+            final String redirect = getMetaRedirect();
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -75,26 +75,33 @@ public class BornCashOrg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getMetaRedirect() {
+        final String result = br.getRegex("<meta http-equiv=('|\")refresh\\1\\s*content=(\"|')\\d+\\s*;\\s*url=(.*?)\\2").getMatch(2);
+        return result;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            br.postPage(br.getURL(), "form_1=");
-            // br.postPage(br.getURL(), "form_3=");
-            br.postPage(br.getURL(), "off_free=");
+            br.postPage(br.getURL(), "form_2=");
+            dllink = getMetaRedirect();
+            if (dllink != null) {
+                br.getPage(dllink);
+            }
             int wait = 60;
             final String waittime = br.getRegex("sec=(\\d+);").getMatch(0);
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
             }
-            dllink = br.getRegex("\"(http://(www\\.)?borncash\\.org/dw/zagruska\\.php\\?url=http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"((?:https?:)?//(www\\.)?(?:borncash\\.org|vipbill\\.ru)/dw/zagruska\\.php\\?url=(?:https?:)?//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // sleep(wait * 1001l, downloadLink);
+            sleep(wait * 1001l, downloadLink);
             br.getPage(dllink);
-            dllink = br.getRegex("HTTP\\-EQUIV=\\'Refresh\\' CONTENT=\\'\\d+; URL=(http://[^<>\"]*?)\\'>").getMatch(0);
+            dllink = getMetaRedirect();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
