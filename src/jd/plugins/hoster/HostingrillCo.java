@@ -17,9 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,10 +40,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hostingrill.co" }, urls = { "https?://(?:www\\.)?hostingrill\\.co/[A-Za-z0-9]+" })
 public class HostingrillCo extends PluginForHost {
 
@@ -53,6 +52,7 @@ public class HostingrillCo extends PluginForHost {
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareBasic Version 0.7.6-psp<br />
      * mods: doFree[Minor changes in solvemedia post-parameters]<br />
+     * mods: cleanup required due to inserting cloudflare html from another website <br/>
      * limit-info:<br />
      * protocol: no https<br />
      * captchatype: solvemedia<br />
@@ -116,7 +116,7 @@ public class HostingrillCo extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
@@ -125,7 +125,7 @@ public class HostingrillCo extends PluginForHost {
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -151,7 +151,7 @@ public class HostingrillCo extends PluginForHost {
                 filename = fid;
             }
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -206,10 +206,10 @@ public class HostingrillCo extends PluginForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             handleErrors();
             /* Passwords are usually before waittime. */
@@ -234,7 +234,7 @@ public class HostingrillCo extends PluginForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
@@ -242,7 +242,7 @@ public class HostingrillCo extends PluginForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
@@ -254,7 +254,7 @@ public class HostingrillCo extends PluginForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -277,13 +277,13 @@ public class HostingrillCo extends PluginForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "g-recaptcha-response=1&submit=Submit&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "g-recaptcha-response=1&submit=Submit&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -291,6 +291,7 @@ public class HostingrillCo extends PluginForHost {
                     break;
                 }
                 br.followConnection();
+                cleanup();
                 handleErrors();
                 if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Wrong captcha");
@@ -301,6 +302,7 @@ public class HostingrillCo extends PluginForHost {
         checkResponseCodeErrors(dl.getConnection());
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            cleanup();
             if (captcha && !success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -310,6 +312,21 @@ public class HostingrillCo extends PluginForHost {
         continue_link = dl.getConnection().getURL().toString();
         link.setProperty(directlinkproperty, continue_link);
         dl.startDownload();
+    }
+
+    private void getPage(String downloadURL) throws Exception {
+        br.getPage(downloadURL);
+        cleanup();
+    }
+
+    private void cleanup() {
+        String toClean = br.toString();
+        // inserted cloudflare crap
+        final String cf = br.getRegex("\\s+<!DOCTYPE html>.*?</body>\\s*</html>\\s+").getMatch(-1);
+        if (cf != null) {
+            toClean = toClean.replace(cf, "");
+            br.getRequest().setHtmlCode(toClean);
+        }
     }
 
     private String getContinueLink() {
@@ -338,7 +355,7 @@ public class HostingrillCo extends PluginForHost {
         return isdownloadlink;
     }
 
-    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
             String passCode = dl.getStringProperty("pass", null);
@@ -453,7 +470,7 @@ public class HostingrillCo extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -522,11 +539,15 @@ public class HostingrillCo extends PluginForHost {
     // if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
     // if ("de".equalsIgnoreCase(lang)) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your
+    // password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without
+    // copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -540,11 +561,15 @@ public class HostingrillCo extends PluginForHost {
     // if (!br.containsHTML("\"login_status\":\"success\"")) {
     // if ("de".equalsIgnoreCase(lang)) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your
+    // password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without
+    // copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -589,7 +614,8 @@ public class HostingrillCo extends PluginForHost {
     // br.getPage("http://" + this.getHost() + "/upgrade." + type);
     // /* If the premium account is expired we'll simply accept it as a free account. */
     // String expire =
-    // br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+    // br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4}
+    // \\d{2}:\\d{2}:\\d{2})").getMatch(0);
     // if (expire == null) {
     // /* More wide RegEx to be more language independant */
     // expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
@@ -632,7 +658,7 @@ public class HostingrillCo extends PluginForHost {
     // doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
     // } else {
     // String dllink = link.getDownloadURL();
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+    // dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
     // checkResponseCodeErrors(dl.getConnection());
     // if (!dl.getConnection().isContentDisposition()) {
     // logger.warning("The final dllink seems not to be a file, checking for errors...");
@@ -645,7 +671,7 @@ public class HostingrillCo extends PluginForHost {
     // handleErrors();
     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+    // dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
     // checkResponseCodeErrors(dl.getConnection());
     // }
     // if (!dl.getConnection().isContentDisposition()) {
