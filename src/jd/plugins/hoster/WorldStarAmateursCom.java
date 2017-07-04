@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,8 +28,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstaramateurs.com" }, urls = { "http://(www\\.)?worldstaramateurs\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theyfuckwewatch.com" }, urls = { "http://(?:www\\.)?(?:worldstaramateurs\\.com|theyfuckwewatch\\.com)/\\d+" })
 public class WorldStarAmateursCom extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "worldstaramateurs.com", "theyfuckwewatch.com" };
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return "theyfuckwewatch.com";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "theyfuckwewatch.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     public WorldStarAmateursCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,11 +57,11 @@ public class WorldStarAmateursCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.worldstaramateurs.com/static/terms/";
+        return "http://www." + getHost() + "/static/terms/";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -53,17 +69,17 @@ public class WorldStarAmateursCom extends PluginForHost {
         if (br.containsHTML(">We\\&#039;re sorry, the page you requested|>404 Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1 class=\"title\">([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1(?:\\s*class=\"title\")?>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = linkid;
         }
-        br.getPage("http://www.worldstaramateurs.com/modules/video/player/nuevo/config.php?id=" + linkid);
+        br.getPage("/modules/video/player/nuevo/config.php?id=" + linkid);
         dllink = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<file><\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]></file>").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
@@ -92,7 +108,7 @@ public class WorldStarAmateursCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
