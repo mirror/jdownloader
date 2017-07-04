@@ -44,7 +44,19 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.openGetConnection(parameter);
+        if (!br.getHttpConnection().getContentType().contains("text/html") || br.getHttpConnection().getContentLength() > br.getLoadLimit()) {
+            br.getHttpConnection().disconnect();
+            // direct downloadable
+            final DownloadLink dl = createDownloadlink(parameter);
+            dl.setProperty("directDownload", true);
+            dl.setName(getFileNameFromHeader(br.getHttpConnection()));
+            dl.setVerifiedFileSize(br.getHttpConnection().getContentLength());
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        br.followConnection();
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Not found<|>We couldn't find the file you requested|>This folder is empty\\.<|This file/folder has been disabled")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
