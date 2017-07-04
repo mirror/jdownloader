@@ -1,13 +1,13 @@
 package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.logging.LogController;
-
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Plugin;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperSweetCaptcha<T extends Plugin> {
     protected T            plugin;
@@ -19,6 +19,9 @@ public abstract class AbstractCaptchaHelperSweetCaptcha<T extends Plugin> {
     public AbstractCaptchaHelperSweetCaptcha(T plugin, Browser br, final String siteKey, final String appKey) {
         this.plugin = plugin;
         this.br = br;
+        if (br.getRequest() == null) {
+            throw new IllegalStateException("Browser.getRequest() == null!");
+        }
         logger = plugin.getLogger();
         if (logger == null) {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());

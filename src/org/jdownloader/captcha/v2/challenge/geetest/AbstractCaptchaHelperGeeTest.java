@@ -1,14 +1,14 @@
 package org.jdownloader.captcha.v2.challenge.geetest;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.logging.LogController;
-
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperGeeTest<T extends Plugin> {
     protected T            plugin;
@@ -19,6 +19,9 @@ public abstract class AbstractCaptchaHelperGeeTest<T extends Plugin> {
     public AbstractCaptchaHelperGeeTest(T plugin, Browser br, String siteKey) {
         this.plugin = plugin;
         this.br = br;
+        if (br.getRequest() == null) {
+            throw new IllegalStateException("Browser.getRequest() == null!");
+        }
         logger = plugin.getLogger();
         if (logger == null) {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());
@@ -88,5 +91,4 @@ public abstract class AbstractCaptchaHelperGeeTest<T extends Plugin> {
         final String geeTestApiKey = getGeeTestApiKey(string);
         return geeTestApiKey != null ? true : false;
     }
-
 }

@@ -16,6 +16,9 @@ public abstract class AbstractCaptchaHelperAreYouHuman<T extends Plugin> {
     public AbstractCaptchaHelperAreYouHuman(T plugin, Browser br, String siteKey) {
         this.plugin = plugin;
         this.br = br;
+        if (br.getRequest() == null) {
+            throw new IllegalStateException("Browser.getRequest() == null!");
+        }
         logger = plugin.getLogger();
         if (logger == null) {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());
@@ -61,5 +64,4 @@ public abstract class AbstractCaptchaHelperAreYouHuman<T extends Plugin> {
         }
         return null;
     }
-
 }
