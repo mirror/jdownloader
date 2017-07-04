@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
+
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -30,10 +34,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
@@ -79,7 +79,11 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         job.getLogger().info("Fire MyJDownloader Captcha Event");
         if (challenge instanceof RecaptchaV2Challenge) {
             // create fallback challenge here. we do not want to block later
-            ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+            try {
+                ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+            } catch (final Throwable e) {
+                job.getLogger().log(e);
+            }
         }
         eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
             @Override

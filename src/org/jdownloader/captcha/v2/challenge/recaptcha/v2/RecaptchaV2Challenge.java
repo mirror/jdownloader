@@ -103,29 +103,34 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
         if (RAWTOKEN.equals(resultFormat) || "extension".equals(resultFormat)) {
             return new CaptchaResponse(this, solver, result, 100);
+        } else {
+            if (hasBasicCaptchaChallenge()) {
+                final BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
+                if (basic != null) {
+                    return basic.parseAPIAnswer(result, resultFormat, solver);
+                }
+            }
+            return super.parseAPIAnswer(result, resultFormat, solver);
         }
-        BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
-        if (basic != null) {
-            return basic.parseAPIAnswer(result, resultFormat, solver);
-        }
-        return super.parseAPIAnswer(result, resultFormat, solver);
     }
 
     @Override
     public Object getAPIStorable(String format) throws Exception {
         if (RAWTOKEN.equals(format)) {
-            RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
+            final RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
             ret.setSiteKey(getSiteKey());
             ret.setContextUrl("http://" + siteDomain);
             ret.setStoken(getSecureToken());
             ret.setBoundToDomain(isBoundToDomain());
             return ret;
+        } else {
+            final BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
+            if (basic != null) {
+                return basic.getAPIStorable(format);
+            } else {
+                return super.getAPIStorable(format);
+            }
         }
-        BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
-        if (basic != null) {
-            return basic.getAPIStorable(format);
-        }
-        return super.getAPIStorable(format);
     }
 
     @Override
@@ -614,6 +619,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (basicChallenge != null) {
             basicChallenge.onHandled();
         }
+    }
+
+    public synchronized boolean hasBasicCaptchaChallenge() {
+        return basicChallenge != null;
     }
 
     public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge() {
