@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +27,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "borfos.com" }, urls = { "https?://(?:www\\.)?borfos\\.com/embed/\\d+" })
 public class BorfosCom extends PluginForHost {
-
     public BorfosCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -90,8 +89,8 @@ public class BorfosCom extends PluginForHost {
         }
         if (!StringUtils.isEmpty(dllink)) {
             link.setFinalFileName(filename);
-            // core has bug where it sets referrer.. even when you set to "". this is the only way around!
-            br = new Browser();
+            dllink = br.getURL(dllink).toString();
+            br.setRequest(null);
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
             try {
