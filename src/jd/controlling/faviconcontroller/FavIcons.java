@@ -55,7 +55,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FavIcons {
-
     private static final ThreadPoolExecutor                                      THREAD_POOL;
     private static final AtomicInteger                                           THREADCOUNTER   = new AtomicInteger(0);
     private static final Object                                                  LOCK            = new Object();
@@ -64,28 +63,21 @@ public class FavIcons {
     private static final HashSet<String>                                         REFRESHED_ICONS = new HashSet<String>();
     private static final HashMap<String, ImageIcon>                              DEFAULT_ICONS   = new HashMap<String, ImageIcon>();
     private static final LogSource                                               LOGGER;
-
     private static final FavIconsConfig                                          CONFIG          = JsonConfig.create(FavIconsConfig.class);
-
     private static final long                                                    REFRESH_TIMEOUT = 1000l * 60 * 60 * 24 * 7;
     private static final long                                                    RETRY_TIMEOUT   = 1000l * 60 * 60 * 24 * 7;
-
     static {
         LOGGER = LogController.getInstance().getLogger("FavIcons.class");
         int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
         int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
-
         THREAD_POOL = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
-
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
                 t.setDaemon(true);
                 t.setName("FavIconLoader:" + THREADCOUNTER.incrementAndGet());
                 return t;
             }
-
         }, new ThreadPoolExecutor.AbortPolicy()) {
-
             @Override
             protected void beforeExecute(Thread t, Runnable r) {
                 super.beforeExecute(t, r);
@@ -104,7 +96,6 @@ public class FavIcons {
                     }
                 }
             }
-
         };
         THREAD_POOL.allowCoreThreadTimeOut(true);
         /* load failed hosts list */
@@ -224,7 +215,6 @@ public class FavIcons {
             }
             if (enqueueFavIcon) {
                 THREAD_POOL.execute(new Runnable() {
-
                     public void run() {
                         final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
                         if (existingHostPlugin != null && ("jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassName()) || "jd.plugins.hoster.JdLog".equals(existingHostPlugin.getClassName()))) {
@@ -303,7 +293,6 @@ public class FavIcons {
                             }
                         }
                     }
-
                 });
             }
             return icon;
@@ -481,27 +470,21 @@ public class FavIcons {
         try {
             favBr.setFollowRedirects(true);
             favBr.getPage("http://" + host);
-            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?(ico|png))('|\")").getMatch(4);
+            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(4);
             if (StringUtils.isEmpty(url)) {
-                url = favBr.getRegex("href=('|\")([^>'\"]*?(ico|png))('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+                url = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
             }
             if (StringUtils.isEmpty(url)) {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
-                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?(ico|png))('|\")").getMatch(3);
+                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
                     url = "http://" + url;
                 }
             }
             if (url != null && url.equalsIgnoreCase(host)) {
                 url = null;
-            }
-            if (url == null && "rapidshare.com".equalsIgnoreCase(host)) {
-                /*
-                 * hardcoded workaround for rapidshare, they use js to build the favicon path
-                 */
-                url = "http://images3.rapidshare.com/img/favicon.ico";
             }
             if (!StringUtils.isEmpty(url)) {
                 /* favicon tag with ico extension */
@@ -602,5 +585,4 @@ public class FavIcons {
         }
         return null;
     }
-
 }
