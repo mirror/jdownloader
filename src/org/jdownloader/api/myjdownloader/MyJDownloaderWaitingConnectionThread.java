@@ -132,10 +132,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     request.getConnectionHelper().mark();
                     boolean closeSocket = true;
                     try {
-                        connectThread.log("Connect " + addr);
+                        connectThread.log("Connect:" + addr);
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURL(url, false, false);
                         if (list != null && list.size() > 0) {
                             proxy = list.get(0);
+                            connectThread.log("Connect:" + addr + "|" + proxy);
                             if (pendingConnectFlag.compareAndSet(null, Boolean.TRUE)) {
                                 socket = SocketConnectionFactory.createSocket(proxy);
                                 socket.setReuseAddress(true);
@@ -174,6 +175,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 closeSocket = false;
                             }
                         } else {
+                            connectThread.log("Connect:" + addr + "|No available connection!");
                             synchronized (connectionRequest) {
                                 try {
                                     connectionRequest.wait(5000);
