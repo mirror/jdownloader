@@ -425,11 +425,12 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                 setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.CONNECTED, MyJDownloaderError.NONE);
                 switch (connectionStatus) {
                 case UNBOUND:
+                    log("UNBOUND");
                     usedConnection.reset();
-                    log("Unbound");
                     response.getRequest().getSession().setState(SessionInfoWrapper.STATE.INVALID);
                     return connectionStatus;
                 case KEEPALIVE:
+                    log("KEEPALIVE");
                     usedConnection.reset();
                     final Thread keepAlivehandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
@@ -465,6 +466,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     return connectionStatus;
                 case OK_SYNC:
                     usedConnection.reset();
+                    log("OK_SYNC");
                     Thread okHandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
                             boolean closeSocket = true;
@@ -491,12 +493,15 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     closeSocket = false;
                     return connectionStatus;
                 case MAINTENANCE:
+                    log("MAINTENANCE");
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_MAINTENANCE);
                     return connectionStatus;
                 case OVERLOAD:
+                    log("OVERLOAD");
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_OVERLOAD);
                     return connectionStatus;
                 case OUTDATED:
+                    log("OUTDATED");
                     usedConnection.reset();
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                     return connectionStatus;
@@ -506,6 +511,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     return null;
                 }
             } else {
+                log("FIXME:WTF");
                 return null;
             }
         } catch (ProxyEndpointConnectException e) {
