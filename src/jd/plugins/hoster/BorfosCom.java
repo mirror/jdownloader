@@ -61,7 +61,7 @@ public class BorfosCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         br.getPage("https://borfos.com/kt_player/player.php?id=" + videoid);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("video_url: \"\",\\s+video_html5_url: \"\",")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("nullified2017_05_24(.+)nullified2017_05_24").getMatch(0);
