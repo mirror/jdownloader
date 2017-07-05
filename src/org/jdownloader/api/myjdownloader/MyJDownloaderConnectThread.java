@@ -358,7 +358,9 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
             }
         }
         synchronized (responses) {
-            responses.add(response);
+            if (response != null) {
+                responses.add(response);
+            }
             responses.notify();
         }
         return true;
@@ -425,12 +427,12 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                 setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.CONNECTED, MyJDownloaderError.NONE);
                 switch (connectionStatus) {
                 case UNBOUND:
-                    log("UNBOUND");
+                    log("UNBOUND:" + response.getUniqueID());
                     usedConnection.reset();
                     response.getRequest().getSession().setState(SessionInfoWrapper.STATE.INVALID);
                     return connectionStatus;
                 case KEEPALIVE:
-                    log("KEEPALIVE");
+                    log("KEEPALIVE:" + response.getUniqueID());
                     usedConnection.reset();
                     final Thread keepAlivehandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
@@ -440,7 +442,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                                 sync(syncMark, currentSession);
                             } catch (final Throwable e) {
                             } finally {
-                                log("KeepAlive " + syncMark);
+                                log("KEEPALIVE:" + response.getUniqueID() + "|SyncMark:" + syncMark.get());
                                 try {
                                     socket.close();
                                 } catch (final Throwable e) {
@@ -453,26 +455,26 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     closeSocket = false;
                     return connectionStatus;
                 case TOKEN:
+                    log("TOKEN:" + response.getUniqueID());
                     usedConnection.reset();
-                    log("Invalid sessionToken");
                     response.getRequest().getSession().compareAndSetState(SessionInfoWrapper.STATE.VALID, SessionInfoWrapper.STATE.RECONNECT);
                     return connectionStatus;
                 case OK:
+                    log("OK:" + response.getUniqueID());
                     usedConnection.reset();
-                    log("valid connection(old Ok)");
                     response.getThread().putRequest(new MyJDownloaderConnectionRequest(currentSession, usedConnection));
                     handleConnection(socket);
                     closeSocket = false;
                     return connectionStatus;
                 case OK_SYNC:
                     usedConnection.reset();
-                    log("OK_SYNC");
+                    log("OK_SYNC:" + response.getUniqueID());
                     Thread okHandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
                             boolean closeSocket = true;
                             try {
-                                long syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
-                                log("valid connection (Ok: " + syncMark + ")");
+                                final long syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
+                                log("OK_SYNC:" + response.getUniqueID() + "|SyncMark:" + syncMark);
                                 response.getThread().putRequest(new MyJDownloaderConnectionRequest(currentSession, response.getRequest().getConnectionHelper()));
                                 handleConnection(socket);
                                 sync(syncMark, currentSession);
@@ -493,20 +495,20 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     closeSocket = false;
                     return connectionStatus;
                 case MAINTENANCE:
-                    log("MAINTENANCE");
+                    log("MAINTENANCE:" + response.getUniqueID());
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_MAINTENANCE);
                     return connectionStatus;
                 case OVERLOAD:
-                    log("OVERLOAD");
+                    log("OVERLOAD:" + response.getUniqueID());
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_OVERLOAD);
                     return connectionStatus;
                 case OUTDATED:
-                    log("OUTDATED");
+                    log("OUTDATED:" + response.getUniqueID());
                     usedConnection.reset();
                     setConnectionStatus(usedConnection, MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                     return connectionStatus;
                 default:
-                    log("FIXME:" + connectionStatus);
+                    log("FIXME:" + response.getUniqueID() + "|ConnectionStatus:" + connectionStatus);
                     usedConnection.requestbackoff();
                     return null;
                 }

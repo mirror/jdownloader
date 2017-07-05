@@ -1,5 +1,6 @@
 package org.jdownloader.api.myjdownloader;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,9 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.controlling.proxy.ProxyController;
 import jd.http.SocketConnectionFactory;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
@@ -65,6 +66,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         private final Throwable                            throwable;
         private final MyJDownloaderWaitingConnectionThread thread;
         private final MyJDownloaderConnectionRequest       request;
+        private final long                                 uniqueID = UniqueAlltimeID.next();
+
+        public long getUniqueID() {
+            return uniqueID;
+        }
 
         public final MyJDownloaderConnectionRequest getRequest() {
             return request;
@@ -133,7 +139,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     request.getConnectionHelper().mark();
                     boolean closeSocket = true;
                     try {
-                        connectThread.log("Connect:" + addr);
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURL(url, false, false);
                         if (list != null && list.size() > 0) {
                             proxy = list.get(0);
@@ -172,14 +177,20 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 socketStream.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
                                 socketStream.getOutputStream().flush();
                                 final int validToken = socketStream.getInputStream().read();
+                                if (validToken == -1) {
+                                    connectThread.putResponse(null);
+                                    connectThread.log(new EOFException().fillInStackTrace());
+                                    continue;
+                                }
                                 status = DeviceConnectionStatus.parse(validToken);
                                 if (status == null) {
-                                    throw new WTFException("Unknown DeviceConnectionStatus:" + validToken);
+                                    connectThread.putResponse(null);
+                                    connectThread.log(new IllegalStateException("Unknown/Unsupported DeviceConnectionStatus:" + validToken).fillInStackTrace());
+                                    continue;
                                 }
                                 closeSocket = false;
                             }
                         } else {
-                            connectThread.log("Connect:" + addr + "|No available connection!");
                             synchronized (connectionRequest) {
                                 try {
                                     connectionRequest.wait(5000);
@@ -194,7 +205,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             }
                         }
                     } catch (Throwable throwable) {
-                        connectThread.log(throwable);
                         if (Exceptions.containsInstanceOf(throwable, ClosedByInterruptException.class)) {
                             // SocketChannel Socket-> Interrupted
                             if (isRunning()) {
