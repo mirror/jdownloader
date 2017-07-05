@@ -483,9 +483,6 @@ public class FavIcons {
                     url = "http://" + url;
                 }
             }
-            if (url != null && url.equalsIgnoreCase(host)) {
-                url = null;
-            }
             if (!StringUtils.isEmpty(url)) {
                 /* favicon tag with ico extension */
                 favBr.setFollowRedirects(true);
