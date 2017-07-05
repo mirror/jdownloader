@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -28,8 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pimpandhost.com" }, urls = { "https?://(?:www\\.)?pimpandhost\\.com/image/\\d+" })
 public class PimpandhostCom extends PluginForHost {
@@ -60,7 +58,7 @@ public class PimpandhostCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -75,11 +73,17 @@ public class PimpandhostCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        /* Maybe required to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
-        dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(http[^<>\"]+)\"").getMatch(0);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
+        // could be password protected
+        if (br.containsHTML("<h4>Album\\s*'.*?'\\s*is protected with password</h4>")) {
+            // don't know password to implement support
+            link.setName(filename);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported feature");
+        }
+        /* Maybe required to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
+        dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(http[^<>\"]+)\"").getMatch(0);
         final String ext;
         if (dllink != null) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -124,7 +128,7 @@ public class PimpandhostCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
