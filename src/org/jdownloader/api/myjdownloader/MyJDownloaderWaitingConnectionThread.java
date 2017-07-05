@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.controlling.proxy.ProxyController;
 import jd.http.SocketConnectionFactory;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
@@ -172,6 +173,9 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 socketStream.getOutputStream().flush();
                                 final int validToken = socketStream.getInputStream().read();
                                 status = DeviceConnectionStatus.parse(validToken);
+                                if (status == null) {
+                                    throw new WTFException("Unknown DeviceConnectionStatus:" + validToken);
+                                }
                                 closeSocket = false;
                             }
                         } else {
@@ -190,6 +194,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             }
                         }
                     } catch (Throwable throwable) {
+                        connectThread.log(throwable);
                         if (Exceptions.containsInstanceOf(throwable, ClosedByInterruptException.class)) {
                             // SocketChannel Socket-> Interrupted
                             if (isRunning()) {
@@ -224,7 +229,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             }
                         } catch (final Throwable ignore) {
                         }
-                        if (!isRunning()) {
+                        if (isRunning()) {
                             connectThread.log("putResponse failed!");
                         }
                     }
