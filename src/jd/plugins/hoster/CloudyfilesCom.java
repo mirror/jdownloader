@@ -27,6 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,15 +58,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudyfiles.co" }, urls = { "https?://(?:www\\.)?cloudyfiles\\.(?:com|co)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudyfiles.org" }, urls = { "https?://(?:www\\.)?cloudyfiles\\.(?:com|co|org)/(?:embed\\-)?[a-z0-9]{12}" })
 public class CloudyfilesCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -67,11 +67,11 @@ public class CloudyfilesCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://cloudyfiles.co";
-    private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private final String                   primaryDomain                      = "cloudyfiles.org";
+    private final String                   COOKIE_HOST                        = "http://" + primaryDomain;
+    private final String                   NICE_HOSTproperty                  = primaryDomain.replaceAll("(\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(cloudyfiles\\.co|cloudyfiles\\.com)";
+    private static final String            DOMAINS                            = "(cloudyfiles\\.(?:co|com|org))";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -155,9 +155,9 @@ public class CloudyfilesCom extends PluginForHost {
         final String fuid = getFUIDFromURL(link);
         /* link cleanup, prefer https if possible */
         final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+        final String corrected_downloadurl = protocol + primaryDomain + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+            final String url_embed = protocol + primaryDomain + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             link.setContentUrl(url_embed);
         }
@@ -165,10 +165,18 @@ public class CloudyfilesCom extends PluginForHost {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "cloudyfiles.co", "cloudyfiles.com", "cloudyfiles.org" };
+    }
+
+    @Override
     public String rewriteHost(String host) {
-        if ("cloudyfiles.com".equals(getHost())) {
-            if (host == null || "cloudyfiles.com".equals(host)) {
-                return "cloudyfiles.co";
+        if (host == null) {
+            return primaryDomain;
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return primaryDomain;
             }
         }
         return super.rewriteHost(host);
@@ -1257,13 +1265,13 @@ public class CloudyfilesCom extends PluginForHost {
         int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         dl.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            logger.info(error + " -> Retrying");
             timesFailed++;
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
+            logger.info(error + " -> Plugin is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
