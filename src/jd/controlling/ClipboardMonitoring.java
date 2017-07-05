@@ -883,7 +883,7 @@ public class ClipboardMonitoring {
                     final String next = izer.nextToken();
                     if (StringUtils.isNotEmpty(next)) {
                         // file:/ -> not authority -> all fine
-                        // file://xy/ -> xy authority -> java.lang.IllegalArgumentException: URI has an authority component
+                        // file://xy/ -> xy will be authority -> java.lang.IllegalArgumentException: URI has an authority component
                         // file:/// -> empty authority -> all fine
                         sb.append(next.replaceFirst("file:///", "file:/"));
                     }
