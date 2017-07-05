@@ -7,7 +7,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class LinkCollectingJob {
-
     private String                jobContent;
     private String                customSourceUrl;
     private CrawledLinkModifier   crawledLinkModifierPrePackagizer = null;
@@ -24,6 +23,14 @@ public class LinkCollectingJob {
 
     public UniqueAlltimeID getUniqueAlltimeID() {
         return uniqueAlltimeID;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ID:" + getUniqueAlltimeID());
+        sb.append("|Origin:" + getOrigin().getOrigin());
+        return sb.toString();
     }
 
     public CrawledLinkModifier getCrawledLinkModifierPrePackagizer() {
@@ -98,5 +105,4 @@ public class LinkCollectingJob {
     public LinkOriginDetails getOrigin() {
         return origin;
     }
-
 }

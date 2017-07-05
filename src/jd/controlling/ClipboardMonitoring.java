@@ -75,6 +75,14 @@ public class ClipboardMonitoring {
             this.length = length;
         }
 
+        private int getClipboardHash() {
+            return hash;
+        }
+
+        private int getClipboardLength() {
+            return length;
+        }
+
         private ClipboardHash(String string) {
             if (string == null) {
                 this.hash = 0;
@@ -83,6 +91,11 @@ public class ClipboardMonitoring {
                 this.hash = string.hashCode();
                 this.length = string.length();
             }
+        }
+
+        @Override
+        public String toString() {
+            return "ClipboardHash:" + getClipboardHash() + "|ClipboardLength:" + getClipboardLength();
         }
 
         private boolean equals(final HTMLFragment fragment) {
@@ -468,7 +481,15 @@ public class ClipboardMonitoring {
                                         final long round = roundIndex.getAndIncrement();
                                         if (StringUtils.isNotEmpty(handleThisRound) && (round > 0 || !skipFirstRound)) {
                                             clipboardChangeDetector.restart();
-                                            final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound);
+                                            final ClipboardHash stringContent = oldStringContent;
+                                            final ClipboardHash htmlFragment = oldHTMLFragment;
+                                            final ClipboardHash listContent = oldListContent;
+                                            final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
+                                                @Override
+                                                public String toString() {
+                                                    return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
+                                                };
+                                            };
                                             final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
                                             if (pws != null && pws.size() > 0) {
                                                 job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
