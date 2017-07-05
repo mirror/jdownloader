@@ -87,9 +87,9 @@ public class VPornCom extends PluginForHost {
         if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video is deleted\\.|This video has been deleted due to Copyright Infringement")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("videoname = \\'([^<>\"]*?)\\';").getMatch(0);
+        String filename = br.getRegex("videoname = '([^']*?)'").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\- Vporn Video</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) - (Vporn Video|vPorn.com)</title>").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
