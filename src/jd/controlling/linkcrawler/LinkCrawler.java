@@ -927,7 +927,9 @@ public class LinkCrawler {
                 try {
                     processedLinksCounter.incrementAndGet();
                     if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file:/")) {
-                        // workaround for authorities in file uris
+                        // file:/ -> not authority -> all fine
+                        // file://xy/ -> xy authority -> java.lang.IllegalArgumentException: URI has an authority component
+                        // file:/// -> empty authority -> all fine
                         final String currentURI = source.getURL().replaceFirst("file:///?", "file:///");
                         final File file = new File(new URI(currentURI));
                         if (file.exists() && file.isFile()) {
