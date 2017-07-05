@@ -105,7 +105,7 @@ public class PixivNet extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
-                links = br.getRegex("data-filter=\"manga-image\" data-src=\"(http[^<>\"']+)\"").getColumn(0);
+                links = br.getRegex("pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(http[^\"]+)\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
