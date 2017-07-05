@@ -5,15 +5,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
-
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.InitialDirContext;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IP;
@@ -31,36 +24,34 @@ import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
 public class DeviceAPIImpl implements DeviceAPI {
-    private final InetAddress[] lookup(final String hostName) throws IOException {
-        final Hashtable<String, String> env = new Hashtable<String, String>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
-        env.put("com.sun.jndi.dns.timeout.initial", "1000");
-        env.put("com.sun.jndi.dns.timeout.retries", "3");
-        InitialDirContext ictx = null;
+    private static final InetAddress[] lookup(final String hostName) throws IOException {
+        final AtomicReference<Object> ret = new AtomicReference<Object>();
+        final Thread lookup = new Thread("Lookup:" + hostName) {
+            {
+                setDaemon(true);
+            }
+
+            public void run() {
+                try {
+                    ret.set(HTTPConnectionUtils.resolvHostIP(hostName));
+                } catch (IOException e) {
+                    ret.set(e);
+                }
+            };
+        };
+        lookup.start();
         try {
-            ictx = new InitialDirContext(env);
-            final Attributes attrs = ictx.getAttributes(hostName, new String[] { "A", "AAAA" });
-            final List<InetAddress> ret = new ArrayList<InetAddress>();
-            for (final String ipV : new String[] { "A", "AAAA" }) {
-                final Attribute attr = attrs.get(ipV);
-                if (attr != null) {
-                    final NamingEnumeration<?> it = attr.getAll();
-                    while (it.hasMoreElements()) {
-                        final Object next = it.next();
-                        ret.add(InetAddress.getByName(next.toString()));
-                    }
-                }
-            }
-            return ret.toArray(new InetAddress[0]);
-        } catch (NamingException e) {
-            return HTTPConnectionUtils.resolvHostIP(hostName);
-        } finally {
-            try {
-                if (ictx != null) {
-                    ictx.close();
-                }
-            } catch (final Throwable ignore) {
-            }
+            lookup.join(2000);
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
+        final Object result = ret.get();
+        if (result instanceof IOException) {
+            throw (IOException) result;
+        } else if (result instanceof InetAddress[]) {
+            return (InetAddress[]) result;
+        } else {
+            return null;
         }
     }
 
