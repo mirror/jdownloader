@@ -25,6 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,25 +52,19 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.net" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.org" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org)/(?:embed\\-)?[a-z0-9]{12}" })
 public class SuprafilesNet extends PluginForHost {
+
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://suprafiles.co";
-    private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private final String                   primaryDomain                      = "suprafiles.org";
+    private final String                   COOKIE_HOST                        = "http://" + primaryDomain;
+    private final String                   NICE_HOSTproperty                  = primaryDomain.replaceAll("(\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "suprafiles\\.(?:net|co)";
+    private static final String            DOMAINS                            = "suprafiles\\.(?:net|co|org)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -133,7 +134,20 @@ public class SuprafilesNet extends PluginForHost {
      */
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "suprafiles.net", "suprafiles.co" };
+        return new String[] { "suprafiles.net", "suprafiles.co", "suprafiles.org" };
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return primaryDomain;
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return primaryDomain;
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -147,9 +161,9 @@ public class SuprafilesNet extends PluginForHost {
         } else {
             protocol = "http://";
         }
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+        final String corrected_downloadurl = protocol + primaryDomain + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+            final String url_embed = protocol + primaryDomain + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             link.setContentUrl(url_embed);
         }
@@ -352,7 +366,7 @@ public class SuprafilesNet extends PluginForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
+        getPage(br, primaryDomain + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -1215,13 +1229,13 @@ public class SuprafilesNet extends PluginForHost {
         int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         dl.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            logger.info(error + " -> Retrying");
             timesFailed++;
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
+            logger.info(error + " -> Plugin is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
