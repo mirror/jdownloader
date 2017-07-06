@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -34,6 +33,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com", "faptube.com" }, urls = { "https?://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html",
         "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?faptube\\.com/videos/\\d+/[a-z0-9\\-]+/?" })
 public class UnknownPornScript5 extends PluginForHost {
+
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,7 +58,7 @@ public class UnknownPornScript5 extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         final String host = downloadLink.getHost();
         final Browser br2 = new Browser();
@@ -240,7 +240,7 @@ public class UnknownPornScript5 extends PluginForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -260,9 +260,9 @@ public class UnknownPornScript5 extends PluginForHost {
     private String regexStandardTitleWithHost(final String host) {
         final String[] hostparts = host.split("\\.");
         final String host_relevant_part = hostparts[0];
-        String site_title = br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String site_title = br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + Pattern.quote(host) + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (site_title == null) {
-            site_title = br.getRegex(Pattern.compile("<title>([^<>\"]*?) at " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            site_title = br.getRegex(Pattern.compile("<title>([^<>\"]*?) at " + Pattern.quote(host) + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
         if (site_title == null) {
             site_title = br.getRegex(Pattern.compile("<title>([^<>\"]*?) at " + host_relevant_part + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
