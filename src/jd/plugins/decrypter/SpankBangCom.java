@@ -190,6 +190,8 @@ public class SpankBangCom extends PluginForDecrypt {
             return "low";
         } else if (source.contains("480p")) {
             return "medium";
+        } else if (source.contains("hi")) {
+            return "medium";
         } else if (source.contains("720p")) {
             return "high";
         } else if (source.contains("1080p")) {
@@ -203,7 +205,7 @@ public class SpankBangCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available|>this video is under review") || !br.getURL().contains("/video");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is (no longer available|private|under review)") || !br.getURL().contains("/video");
     }
 
     /**
