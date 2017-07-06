@@ -710,8 +710,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     break;
                 case WINDOWS:
                 default:
-                    if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_XP) && file.getAbsolutePath().length() > 259) {
-                        // old windows API does not allow paths longer than that
+                    if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_NT) && file.getAbsolutePath().length() > 259) {
+                        // old windows API does not allow longer paths
                         checking = file;
                         throw new PathTooLongException(file);
                     } else {
@@ -3284,37 +3284,37 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     unSkipAllSkipped();
                     ProxyController.getInstance().getEventSender().addListener(proxyListener = new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
 
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-                                });
-                            }
-                        };
+                                                                  @Override
+                                                                  public boolean isHighPriority() {
+                                                                      return false;
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
