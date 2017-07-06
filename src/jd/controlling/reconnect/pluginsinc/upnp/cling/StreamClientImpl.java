@@ -80,6 +80,7 @@ public class StreamClientImpl implements StreamClient<StreamClientConfigurationI
             }
             if (bodyBytes != null) {
                 urlConnection.setRequestProperty("Content-Length", Integer.toString(bodyBytes.length));
+                urlConnection.connect();
                 urlConnection.getOutputStream().write(bodyBytes);
                 urlConnection.finalizeConnect();
             }
@@ -99,24 +100,24 @@ public class StreamClientImpl implements StreamClient<StreamClientConfigurationI
     protected StreamResponseMessage createResponse(HTTPConnection urlConnection, InputStream inputStream) throws Exception {
         if (urlConnection.getResponseCode() == -1) {
             return null;
+        } else {
+            final UpnpResponse responseOperation = new UpnpResponse(urlConnection.getResponseCode(), urlConnection.getResponseMessage());
+            final StreamResponseMessage responseMessage = new StreamResponseMessage(responseOperation);
+            responseMessage.setHeaders(new UpnpHeaders(urlConnection.getHeaderFields()));
+            byte[] bodyBytes = null;
+            if (inputStream != null) {
+                bodyBytes = IO.readBytes(inputStream);
+            }
+            if (bodyBytes != null && bodyBytes.length > 0 && responseMessage.isContentTypeMissingOrText()) {
+                responseMessage.setBodyCharacters(bodyBytes);
+            } else if (bodyBytes != null && bodyBytes.length > 0) {
+                responseMessage.setBody(UpnpMessage.BodyType.BYTES, bodyBytes);
+            }
+            return responseMessage;
         }
-        final UpnpResponse responseOperation = new UpnpResponse(urlConnection.getResponseCode(), urlConnection.getResponseMessage());
-        final StreamResponseMessage responseMessage = new StreamResponseMessage(responseOperation);
-        responseMessage.setHeaders(new UpnpHeaders(urlConnection.getHeaderFields()));
-        byte[] bodyBytes = null;
-        if (inputStream != null) {
-            bodyBytes = IO.readBytes(inputStream);
-        }
-        if (bodyBytes != null && bodyBytes.length > 0 && responseMessage.isContentTypeMissingOrText()) {
-            responseMessage.setBodyCharacters(bodyBytes);
-        } else if (bodyBytes != null && bodyBytes.length > 0) {
-            responseMessage.setBody(UpnpMessage.BodyType.BYTES, bodyBytes);
-        }
-        return responseMessage;
     }
 
     @Override
     public void stop() {
     }
-
 }

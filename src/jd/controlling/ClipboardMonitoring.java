@@ -370,6 +370,22 @@ public class ClipboardMonitoring {
                     private ClipboardHash    oldListContent   = new ClipboardHash(0, -1);
                     private ClipboardHash    oldHTMLFragment  = new ClipboardHash(0, -1);
 
+                    private String handleThisRound(final String existing, final String add) {
+                        if (existing == null) {
+                            if (StringUtils.isNotEmpty(add)) {
+                                return add;
+                            } else {
+                                return null;
+                            }
+                        } else {
+                            if (StringUtils.isNotEmpty(add)) {
+                                return existing + "\r\n" + add;
+                            } else {
+                                return existing;
+                            }
+                        }
+                    }
+
                     @Override
                     public void run() {
                         try {
@@ -403,7 +419,7 @@ public class ClipboardMonitoring {
                                         final String newListContent = getListTransferData(currentContent, dataFlavors);
                                         try {
                                             if (!oldListContent.equals(newListContent)) {
-                                                handleThisRound = newListContent;
+                                                handleThisRound = handleThisRound(handleThisRound, newListContent);
                                             }
                                         } finally {
                                             oldListContent = new ClipboardHash(newListContent);
@@ -427,7 +443,7 @@ public class ClipboardMonitoring {
                                                 /*
                                                  * we only use normal String Content to detect a change
                                                  */
-                                                handleThisRound = newStringContent;
+                                                handleThisRound = handleThisRound(handleThisRound, newStringContent);
                                                 try {
                                                     /*
                                                      * lets fetch fresh HTML Content if available
@@ -439,7 +455,7 @@ public class ClipboardMonitoring {
                                                          */
                                                         oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
                                                         if (htmlFlavorAllowed) {
-                                                            handleThisRound = handleThisRound + "\r\n" + htmlFragment.getFragment();
+                                                            handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
                                                         }
                                                         browserURL = htmlFragment.getSourceURL();
                                                     } else {
@@ -463,7 +479,7 @@ public class ClipboardMonitoring {
                                                         if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
                                                             oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
                                                             if (htmlFlavorAllowed) {
-                                                                handleThisRound = newStringContent + "\r\n" + htmlFragment.getFragment();
+                                                                handleThisRound = handleThisRound(newStringContent, htmlFragment.getFragment());
                                                             }
                                                             browserURL = htmlFragment.getSourceURL();
                                                         }
@@ -484,23 +500,28 @@ public class ClipboardMonitoring {
                                             final ClipboardHash stringContent = oldStringContent;
                                             final ClipboardHash htmlFragment = oldHTMLFragment;
                                             final ClipboardHash listContent = oldListContent;
-                                            final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
-                                                @Override
-                                                public String toString() {
-                                                    return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
-                                                };
-                                            };
-                                            final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
-                                            if (pws != null && pws.size() > 0) {
-                                                job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+                                            // minimum stringContent length: ftp://a,7 or file:/1,7
+                                            // minimum htmlFragment length: <*>ftp://a</*>
+                                            // minimum listContent length: file:/1,7
+                                            if (stringContent.getClipboardLength() > 7 || htmlFragment.getClipboardLength() > 14 || listContent.getClipboardLength() > 7) {
+                                                final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
                                                     @Override
-                                                    public void modifyCrawledLink(CrawledLink link) {
-                                                        link.getArchiveInfo().getExtractionPasswords().addAll(pws);
-                                                    }
-                                                });
+                                                    public String toString() {
+                                                        return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
+                                                    };
+                                                };
+                                                final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
+                                                if (pws != null && pws.size() > 0) {
+                                                    job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+                                                        @Override
+                                                        public void modifyCrawledLink(CrawledLink link) {
+                                                            link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                                                        }
+                                                    });
+                                                }
+                                                job.setCustomSourceUrl(browserURL);
+                                                LinkCollector.getInstance().addCrawlerJob(job);
                                             }
-                                            job.setCustomSourceUrl(browserURL);
-                                            LinkCollector.getInstance().addCrawlerJob(job);
                                         }
                                     }
                                     if (macOSWorkaroundNeeded) {
