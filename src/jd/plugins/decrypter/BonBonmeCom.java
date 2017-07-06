@@ -20,66 +20,45 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bonbonme.com" }, urls = { "http://((av|dl)\\.)?bonbonme\\.com/(?!makemoney|data/|forum/)[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bonbonme.com" }, urls = { "http://(?:(?:av|dl)\\.)?(?:bonbonme\\.com|jizz99\\.com)/(?!makemoney|data/|forum/)(?:a/)?[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" })
 public class BonBonmeCom extends PornEmbedParser {
 
     public BonBonmeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "bonbonme.com", "jizz99.com" };
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(parameter);
-            if (con.getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
-                return decryptedLinks;
-            }
-            br.followConnection();
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
+            return decryptedLinks;
         }
-        if (this.br.containsHTML("<tr><td>null</td></tr>")) {
+        if (br.containsHTML("<tr><td>null</td></tr>")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
-        String externID = br.getRegex("/player/redtube_\\.php\\?vid=(\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.redtube.com/" + externID));
-            return decryptedLinks;
+        // player url internal. you cant hit this url without having correct referer info
+        final String player = br.getRegex("=('|\")((?:https?:)?(?://(?:www\\.)?(?:bonbonme\\.com|jizz99\\.com))?/player/.*?)\\1").getMatch(1);
+        if (player == null) {
+            return null;
         }
-        externID = br.getRegex("/player/plus\\.php\\?vid=([^<>\"]*?)\\&").getMatch(0);
-        if (externID != null) {
-            /* Double b64 encoded finallink */
-            externID = Encoding.Base64Decode(externID);
-            if (!externID.contains("http")) {
-                externID = Encoding.Base64Decode(externID);
-            }
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
-        /* Open RegEx - should suit most other cases! */
-        externID = br.getRegex("/player/[^<>\"]+\\.php\\?vid=([^<>\"]+)").getMatch(0);
-        if (externID != null) {
-            externID = Encoding.htmlDecode(externID);
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
+        getPage(player);
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
+
     }
 
     /* NO OVERRIDE!! */
