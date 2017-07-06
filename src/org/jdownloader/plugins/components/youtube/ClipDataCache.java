@@ -20,10 +20,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 public class ClipDataCache {
+
     public static final String  THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY = "The Download is not available in your country";
     private static final Object LOCK                                          = new Object();
 
     private static class CachedClipData {
+
         private YoutubeClipData clipData;
         public List<HTTPProxy>  proxyList;
 
@@ -41,9 +43,14 @@ public class ClipDataCache {
             if (proxyListNew == null) {
                 proxyListNew = EMPTY;
             }
-            if (proxyListNew.size() != proxyList.size()) {
-                return false;
-            }
+            // this logic is wrong. just because the size changes, dosn't mean the orginal proxy isn't still within the list!
+            // if (proxyListNew.size() != proxyList.size()) {
+            // return false;
+            // }
+
+            // TODO: confirm this logic is correct, to me it's not!
+            // ideally we need to use the same proxy from last cachedata to download with.
+            // must check USED vs available, if miss match switch browser proxy selector?
             for (int i = 0; i < proxyList.size(); i++) {
                 if (!proxyList.get(i).equals(proxyListNew.get(i))) {
                     return false;
@@ -69,6 +76,7 @@ public class ClipDataCache {
     }
 
     private static MinTimeWeakReferenceCleanup CLEANUP = new MinTimeWeakReferenceCleanup() {
+
         @Override
         public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
             synchronized (LOCK) {
@@ -85,6 +93,12 @@ public class ClipDataCache {
             List<HTTPProxy> proxyListNew = helper.getBr().selectProxies(YOUTUBE_URL);
             if (cachedData != null) {
                 if (!cachedData.hasValidProxyList(proxyListNew)) {
+                    cachedData = null;
+                }
+                if (cachedData != null && StringUtils.isEmpty(cachedData.clipData.title)) {
+                    cachedData = null;
+                }
+                if (cachedData != null && cachedData.clipData.date == 0) {
                     cachedData = null;
                 }
             }
