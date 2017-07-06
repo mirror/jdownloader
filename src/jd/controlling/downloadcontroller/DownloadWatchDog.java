@@ -121,6 +121,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
@@ -709,9 +710,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     break;
                 case WINDOWS:
                 default:
-                    if (file.getAbsolutePath().length() > 259) {
-                        // old windows API does not allow paths longer than that (this api is even used in the windows 7 explorer and other
-                        // tools like ffmpeg)
+                    if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_XP) && file.getAbsolutePath().length() > 259) {
+                        // old windows API does not allow paths longer than that
                         checking = file;
                         throw new PathTooLongException(file);
                     } else {
