@@ -179,21 +179,15 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                     socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true);
                                 }
                                 final OutputStream os = socketStream.getOutputStream();
-                                os.write("DEVICE".getBytes(ISO_8859_1));
-                                os.write(request.getSession().getSessionToken().getBytes(ISO_8859_1));
+                                os.write(("DEVICE" + request.getSession().getSessionToken()).getBytes(ISO_8859_1));
                                 os.flush();
-                                final long timeStamp2 = System.currentTimeMillis();
                                 final int validToken = socketStream.getInputStream().read();
                                 if (validToken == -1) {
-                                    connectThread.putResponse(null);
-                                    connectThread.log(new EOFException("Timeout:" + (System.currentTimeMillis() - timeStamp) + "|" + (System.currentTimeMillis() - timeStamp2)).fillInStackTrace());
-                                    continue;
+                                    throw new EOFException("Timeout:" + (System.currentTimeMillis() - timeStamp));
                                 }
                                 status = DeviceConnectionStatus.parse(validToken);
                                 if (status == null) {
-                                    connectThread.putResponse(null);
-                                    connectThread.log(new IllegalStateException("Unknown/Unsupported DeviceConnectionStatus:" + validToken).fillInStackTrace());
-                                    continue;
+                                    throw new IllegalStateException("Unknown/Unsupported DeviceConnectionStatus:" + validToken);
                                 }
                                 closeSocket = false;
                             }
