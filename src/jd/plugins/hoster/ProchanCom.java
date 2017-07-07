@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prochan.com" }, urls = { "http://(?:www\\.)?prochan\\.com/(view\\?p=|embed\\?f=)[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prochan.com" }, urls = { "https?://(?:\\w+\\.)?prochan\\.com/(view\\?p=|embed\\?f=|v/)[A-Za-z0-9\\-_]+" })
 public class ProchanCom extends PluginForHost {
 
     public ProchanCom(PluginWrapper wrapper) {
@@ -62,19 +63,16 @@ public class ProchanCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* Using embed, we can view mature content without having to log in. */
-        br.getPage("http://www.prochan.com/embed?f=" + fid);
+        br.getPage(Request.getLocation("//www.prochan.com/view?t=" + fid, br.createGetRequest(downloadLink.getPluginPatternMatcher())));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found or deleted") || br.getHttpConnection().getLongContentLength() == 1) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = fid;
-        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("('|\"|\\s*)(?:\\W+file|\\W+url)\\1:(\"|'|\\s*)(http[^\"'<>]*?)\\2").getMatch(2);
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("<source src=('|\"|\\s*)(https?://[^\"'<>]*?)\\1[^>]*type=('|\"|\\s*)video/(?:mp4|flv)\\3").getMatch(1);
             if (dllink == null) {
-                dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-                }
+                dllink = br.getRegex("property=\"og:video\" content=\"(http[^\"'<>]*?)\"").getMatch(0);
             }
         }
         if (filename == null || dllink == null) {
