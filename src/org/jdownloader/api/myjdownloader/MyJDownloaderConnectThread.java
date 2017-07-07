@@ -1294,6 +1294,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         if (api != null && sessionToken != null) {
             try {
                 api.kill(getEmail(), getPassword(), sessionToken);
+            } catch (TokenException ignore) {
             } finally {
                 synchronized (KNOWNSESSIONS) {
                     // not valid for SESSION_REVALIDATE_TIMEOUT
