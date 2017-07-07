@@ -16,7 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -44,7 +48,7 @@ public class VideoHaberturkCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -63,7 +67,16 @@ public class VideoHaberturkCom extends PluginForHost {
             dllink = br.getRegex("\\&path=(http://[^<>\"]*?)\\&").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("url: \"(http:[^<>\"]*?)\"").getMatch(0);
-                dllink = dllink.replaceAll("\\\\/", "/");
+                if (dllink != null) {
+                    dllink = dllink.replaceAll("\\\\/", "/");
+                }
+            }
+        }
+        // hls
+        if (dllink == null) {
+            final String json = br.getRegex("<div class='htplay_video' data-ht='(\\{.*?\\})' style=").getMatch(0);
+            if (json != null) {
+                processJavascript(json);
             }
         }
         if (filename == null || dllink == null) {
@@ -93,10 +106,54 @@ public class VideoHaberturkCom extends PluginForHost {
         }
     }
 
+    private void processJavascript(String json) {
+        try {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final ArrayList<Object> test = (ArrayList<Object>) entries.get("ht_files");
+            // we are still in the order from the website, lets shuffle
+            Collections.shuffle(test);
+            // ok there are hls and web links, lets prefer the web links!
+            // there are also multiple servers. we just want one entry.
+            final String[] key = new String[] { "mp4" /* , "m3u8" */ };
+            int i = 0;
+            for (final Object a : test) {
+                final LinkedHashMap<String, Object> yay1 = (LinkedHashMap<String, Object>) a;
+                if (!yay1.containsKey(key[i])) {
+                    continue;
+                }
+                // another array
+                final ArrayList<Object> yay2 = (ArrayList<Object>) yay1.get(key[i]);
+                int p = 0;
+                String file = null;
+                for (final Object b : yay2) {
+                    final LinkedHashMap<String, Object> yay3 = (LinkedHashMap<String, Object>) b;
+                    // multiple qualities.
+                    final String tmpfile = (String) yay3.get("file");
+                    final String name = (String) yay3.get("name");
+                    final Integer tmpP = Integer.parseInt(name);
+                    // best handling
+                    if (tmpP > p) {
+                        file = tmpfile;
+                        p = tmpP;
+                    }
+                }
+                if (file != null) {
+                    dllink = file;
+                    return;
+                }
+                // should not be here... hls commented out for now...
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // i++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
