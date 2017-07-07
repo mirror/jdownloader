@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -104,6 +105,8 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         this.connectThread = connectThread;
     }
 
+    private final static Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
+
     @Override
     public void run() {
         try {
@@ -175,8 +178,10 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 if (addr.getPort() == 443) {
                                     socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true);
                                 }
-                                socketStream.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
-                                socketStream.getOutputStream().flush();
+                                final OutputStream os = socketStream.getOutputStream();
+                                os.write("DEVICE".getBytes(ISO_8859_1));
+                                os.write(request.getSession().getSessionToken().getBytes(ISO_8859_1));
+                                os.flush();
                                 final long timeStamp2 = System.currentTimeMillis();
                                 final int validToken = socketStream.getInputStream().read();
                                 if (validToken == -1) {
