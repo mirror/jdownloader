@@ -105,7 +105,7 @@ public class FileHorstDe extends PluginForHost {
         }
         // filenames can be .html so using this if statement will be a automatic false positive
         // re: https://svn.jdownloader.org/issues/82929
-        if (!new Regex(downloadLink.getName(), CompiledFiletypeFilter.DocumentExtensions.HTML.getPattern()).matches() && dl.getConnection().getContentType().contains("html")) {
+        if (!new Regex(downloadLink.getName(), CompiledFiletypeFilter.DocumentExtensions.HTML.getPattern() + "$").matches() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Dein Download konnte nicht gefunden werden")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
