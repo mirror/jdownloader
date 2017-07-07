@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,10 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:www\\.)?xvideos\\.com/profiles/[A-Za-z0-9\\-_]+" })
 public class XvideosComProfile extends PluginForDecrypt {
+
     public XvideosComProfile(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,6 +64,10 @@ public class XvideosComProfile extends PluginForDecrypt {
                 br.getPage("/profiles/" + username + "/videos/pornstar/" + pageNum);
             } else {
                 br.getPage("/profiles/" + username + "/videos/best/" + pageNum);
+                // users don't always have profile... as guardo finds links from google... false positive.
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    return decryptedLinks;
+                }
             }
             final String[] links = br.getRegex("(/prof\\-video\\-click/(?:upload|pornstar)/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
             if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort") && (links == null || links.length == 0)) {
