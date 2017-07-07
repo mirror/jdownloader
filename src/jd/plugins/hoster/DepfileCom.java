@@ -50,11 +50,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dipfile.com" }, urls = { "https?://(www\\.)?d[ei]pfile\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?d[ei]pfile\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
 
     private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
-    private static final String            MAINPAGE                     = "https://dipfile.com/";
+    private static final String            MAINPAGE                     = "https://depfile.com/";
     private static Object                  LOCK                         = new Object();
     private static final String            ONLY4PREMIUM                 = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String            ONLY4PREMIUMUSERTEXT         = "Only downloadable for premium users";
@@ -81,7 +81,7 @@ public class DepfileCom extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
         if (host == null || "i-filez.com".equals(host) || "depfile.com".equals(host) || "dipfile.com".equals(host)) {
-            return "dipfile.com";
+            return "depfile.com";
         }
         return super.rewriteHost(host);
     }
@@ -92,7 +92,7 @@ public class DepfileCom extends PluginForHost {
     }
 
     public String correctDownloadLink(final String parameter) {
-        final String result = parameter.replaceFirst("(?:i-filez|depfile)\\.com/", "dipfile.com/").replace("http://", "https://");
+        final String result = parameter.replaceFirst("(?:i-filez|dipfile)\\.com/", "depfile.com/").replace("http://", "https://");
         return result;
     }
 
@@ -583,7 +583,7 @@ public class DepfileCom extends PluginForHost {
 
     private boolean isOfflineHTML() {
         final boolean offline;
-        if (br.containsHTML("(>File was not found in the d[ei]pFile database\\.|It is possible that you provided wrong link\\.<|>Файл не найден в базе depfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
+        if (br.containsHTML("(>File was not found in the d[ei]pFile database\\.|It is possible that you provided wrong link\\.<|>Файл не найден в базе d[ei]pfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
             offline = true;
         } else if (br.containsHTML(">403 Forbidden</")) {
             /* Invalid links */
