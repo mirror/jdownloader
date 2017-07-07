@@ -15,11 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,12 +34,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
 public class PorndigCom extends PluginForHost {
+
     public PorndigCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +61,7 @@ public class PorndigCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -136,31 +138,67 @@ public class PorndigCom extends PluginForHost {
             } catch (final Throwable e) {
                 logger.info("BEST handling for multiple video source failed");
             }
+        } else {
+            // <video> <source
+            int best = 0;
+            String hls = null;
+            final String[] sources = br.getRegex("<source[^>]+>").getColumn(-1);
+            if (sources != null && sources.length > 0) {
+                for (final String source : sources) {
+                    final String url = new Regex(source, "src\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
+                    if (url.contains(".m3u8")) {
+                        // typically this is single entry.
+                        hls = url;
+                        continue;
+                    }
+                    final String label = new Regex(source, "label\\s*=\\s*('|\")(\\d+)p?\\1").getMatch(1);
+                    if (label == null || url == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final int p = Integer.parseInt(label);
+                    if (best < p) {
+                        dllink = url;
+                        best = p;
+                    }
+                }
+                // prefer non hls over hls, as hls core can't chunk at this stage.
+                if (dllink == null && hls != null) {
+                    // hls has multiple qualities....
+                    final Browser br2 = br.cloneBrowser();
+                    br2.getPage(hls);
+                    final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
+                    if (hlsbest == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    dllink = hlsbest.getDownloadurl();
+                }
+            }
+
         }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("m3u8")) {
+        if (dllink.contains("m3u8") || dllink.contains("//ahhls.") || dllink.contains("media=hls")) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, dllink);
             dl.startDownload();
         } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-                if (dl.getConnection().getContentType().contains("html")) {
-                    if (dl.getConnection().getResponseCode() == 403) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                    } else if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                    }
-                    br.followConnection();
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (final Throwable e) {
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                dl.startDownload();
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl.startDownload();
+        }
     }
 
     @Override
