@@ -177,10 +177,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 }
                                 socketStream.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
                                 socketStream.getOutputStream().flush();
+                                final long timeStamp2 = System.currentTimeMillis();
                                 final int validToken = socketStream.getInputStream().read();
                                 if (validToken == -1) {
                                     connectThread.putResponse(null);
-                                    connectThread.log(new EOFException("Timeout:" + (System.currentTimeMillis() - timeStamp)).fillInStackTrace());
+                                    connectThread.log(new EOFException("Timeout:" + (System.currentTimeMillis() - timeStamp) + "|" + (System.currentTimeMillis() - timeStamp2)).fillInStackTrace());
                                     continue;
                                 }
                                 status = DeviceConnectionStatus.parse(validToken);
