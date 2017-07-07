@@ -50,11 +50,11 @@ public class PixivNet extends PluginForDecrypt {
         final String parameter = param.toString();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
-        jd.plugins.hoster.PixivNet.prepBR(this.br);
+        jd.plugins.hoster.PixivNet.prepBR(br);
         boolean loggedIn = false;
         if (aa != null) {
             try {
-                jd.plugins.hoster.PixivNet.login(this.br, aa, false);
+                jd.plugins.hoster.PixivNet.login(br, aa, false);
                 loggedIn = true;
             } catch (PluginException e) {
                 logger.log(e);
@@ -67,7 +67,7 @@ public class PixivNet extends PluginForDecrypt {
             /* Decrypt gallery */
             br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
             String[] links;
-            if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
+            if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
                 /* Not multiple urls --> Switch to single-url view */
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
@@ -76,13 +76,13 @@ public class PixivNet extends PluginForDecrypt {
                 }
                 links = br.getRegex("data-illust-id=\"\\d+\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
                 if (links.length == 0) {
-                    links = this.br.getRegex("data-title=\"registerImage\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
+                    links = br.getRegex("data-title=\"registerImage\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
                 }
                 if (links.length == 0) {
-                    links = this.br.getRegex("data-src=\"(http[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
+                    links = br.getRegex("data-src=\"(http[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
                 }
                 if (links.length == 0) {
-                    links = this.br.getRegex("pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
+                    links = br.getRegex("pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
                 }
                 if (links.length == 0 && isAdultImageLoginRequired() && !loggedIn) {
                     logger.info("Adult content: Account required");
@@ -91,10 +91,10 @@ public class PixivNet extends PluginForDecrypt {
             } else {
                 /* Multiple urls */
                 /* Check for offline */
-                if (isOffline(this.br)) {
+                if (isOffline(br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
-                } else if (isAccountOrRightsRequired(this.br) && !loggedIn) {
+                } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                     logger.info("Account required to crawl this particular content");
                     return decryptedLinks;
                 } else if (isAdultImageLoginRequired() && !loggedIn) {
@@ -130,7 +130,7 @@ public class PixivNet extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("galleryid", lid);
-                dl.setProperty("galleryurl", this.br.getURL());
+                dl.setProperty("galleryurl", br.getURL());
                 dl.setContentUrl(parameter);
                 dl.setFinalFileName(filename);
                 dl.setAvailable(true);
@@ -144,14 +144,14 @@ public class PixivNet extends PluginForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             }
-            if (isOffline(this.br)) {
+            if (isOffline(br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
-            } else if (isAccountOrRightsRequired(this.br) && !loggedIn) {
+            } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                 logger.info("Account required to crawl this particular content");
                 return decryptedLinks;
             }
-            // final String total_numberof_items = this.br.getRegex("class=\"count-badge\">(\\d+) results").getMatch(0);
+            // final String total_numberof_items = br.getRegex("class=\"count-badge\">(\\d+) results").getMatch(0);
             int numberofitems_found_on_current_page = 0;
             final int max_numbeofitems_per_page = 20;
             int page = 0;
@@ -160,9 +160,9 @@ public class PixivNet extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 if (page > 0) {
-                    this.br.getPage(String.format("/member_illust.php?id=%s&type=all&p=%s", lid, Integer.toString(page)));
+                    br.getPage(String.format("/member_illust.php?id=%s&type=all&p=%s", lid, Integer.toString(page)));
                 }
-                if (this.br.containsHTML("No results found for your query")) {
+                if (br.containsHTML("No results found for your query")) {
                     break;
                 }
                 final HashSet<String> dups = new HashSet<String>();
@@ -193,11 +193,11 @@ public class PixivNet extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("この作品は削除されました。|>This work was deleted");
+        return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("この作品は削除されました。|>This work was deleted|>Artist has made their work private\\.");
     }
 
     private boolean isAdultImageLoginRequired() {
-        return this.br.containsHTML("r18=true");
+        return br.containsHTML("r18=true");
     }
 
     public static boolean isAccountOrRightsRequired(final Browser br) {
