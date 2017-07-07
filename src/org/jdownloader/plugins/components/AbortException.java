@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package org.jdownloader.plugins.components;
 
 public class AbortException extends Exception {
 
