@@ -34,136 +34,160 @@ import jd.plugins.components.UserAgents;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
 public class MirrorCreatorCom extends PluginForDecrypt {
 
-    private String userAgent = null;
+    private String                  userAgent      = null;
+    private ArrayList<DownloadLink> decryptedLinks = null;
+    private FilePackage             fp             = null;
+    private String                  uid            = null;
+    private CryptedLink             param          = null;
 
     public MirrorCreatorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
-        final String uid = new Regex(param.toString(), "([A-Z0-9]{8})$").getMatch(0);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (userAgent == null) {
-            userAgent = UserAgents.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", userAgent);
-        final String parameter = "https://www.mirrorcreator.com/download.php?uid=" + uid;
-        param.setCryptedUrl(parameter);
+        try {
+            this.param = param;
+            br = new Browser();
+            uid = new Regex(param.toString(), "([A-Z0-9]{8})$").getMatch(0);
+            decryptedLinks = new ArrayList<DownloadLink>();
+            if (userAgent == null) {
+                userAgent = UserAgents.stringUserAgent();
+            }
+            br.getHeaders().put("User-Agent", userAgent);
+            final String parameter = "https://www.mirrorcreator.com/download.php?uid=" + uid;
+            param.setCryptedUrl(parameter);
 
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        br.setFollowRedirects(false);
-        // set packagename
-        // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
-        String fpName = br.getRegex("<title>Download links for ([^<]+) - Mirrorcreator").getMatch(0);
-        if (fpName != null) {
-            // here we will strip extensions!
-            String ext;
-            do {
-                ext = getFileNameExtensionFromString(fpName);
-                if (ext != null) {
-                    fpName = fpName.replaceFirst(Pattern.quote(ext) + "$", "");
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            br.setFollowRedirects(false);
+            // set packagename
+            // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
+            String fpName = br.getRegex("<title>Download links for ([^<]+) - Mirrorcreator").getMatch(0);
+            if (fpName != null) {
+                // here we will strip extensions!
+                String ext;
+                do {
+                    ext = getFileNameExtensionFromString(fpName);
+                    if (ext != null) {
+                        fpName = fpName.replaceFirst(Pattern.quote(ext) + "$", "");
+                    }
+                } while (ext != null);
+            }
+            fp = fpName != null ? FilePackage.getInstance() : null;
+            if (fp != null) {
+                fp.setName(fpName);
+                fp.setProperty("AllOW_MERGE", true);
+            }
+            // more steps y0! 20170602
+            {
+                final Form click = br.getFormByInputFieldKeyValue("captcha_click", "1");
+                if (click != null) {
+                    br.submitForm(click);
                 }
-            } while (ext != null);
-        }
-        final FilePackage fp = fpName != null ? FilePackage.getInstance() : null;
-        if (fp != null) {
-            fp.setName(fpName);
-            fp.setProperty("AllOW_MERGE", true);
-        }
-        // more steps y0! 20170602
-        {
-            final Form click = br.getFormByInputFieldKeyValue("captcha_click", "1");
-            if (click != null) {
-                br.submitForm(click);
             }
-        }
-        {
-            final String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
-            if (continuelink != null) {
-                br.getPage(continuelink);
+            {
+                final String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
+                if (continuelink != null) {
+                    br.getPage(continuelink);
+                }
             }
-        }
-        /* Error handling */
-        if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<)")) {
-            logger.info("The following link should be offline: " + param.toString());
-            return decryptedLinks;
-        }
-
-        // they comment in fakes, so we will just try them all!
-        String[] links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            links = br.getRegex("\"(/hosts/" + uid + "[^\"]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("A critical error happened! Please inform the support. : " + param.toString());
-                return null;
-            }
-        }
-        for (String link : links) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted...");
+            /* Error handling */
+            if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<)")) {
+                logger.info("The following link should be offline: " + param.toString());
                 return decryptedLinks;
             }
-            Browser br2 = br.cloneBrowser();
-            br2.getPage(link);
-            // adware for some users!
-            final String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
-            if (redirectLinks == null || redirectLinks.length == 0) {
-                // not redirects but final download link in html.
-                String finallink = br2.getRegex("<a href=([^ ]+) TARGET='_blank'").getMatch(0);
-                if (finallink == null) {
-                    finallink = br2.getRegex("<div class=\"highlight redirecturl\">(.*?)</div>").getMatch(0);
+            // lots of forms
+            final Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);
+            if (forms != null && forms.length > 0) {
+                for (final Form form : forms) {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.submitForm(form);
+                    handleLink(br2);
                 }
-                if (finallink != null) {
-                    final DownloadLink dl = createDownloadlink(finallink);
-                    if (fp != null) {
-                        fp.add(dl);
+            } else {
+                // older shit
+                // they comment in fakes, so we will just try them all!
+                String[] links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("\"(/hosts/" + uid + "[^\"]+)\"").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        logger.warning("A critical error happened! Please inform the support. : " + param.toString());
+                        return null;
                     }
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                    continue;
                 }
-                if ((redirectLinks == null || redirectLinks.length == 0) && finallink == null) {
-                    logger.warning("Scanning for redirectLinks && finallinks failed, possible change in html, continuing...");
-                    continue;
+                for (String link : links) {
+                    Browser br2 = br.cloneBrowser();
+                    br2.getPage(link);
+                    handleLink(br2);
                 }
             }
-            logger.info("Found " + redirectLinks.length + " " + this.getHost() + " links to decrypt...");
-            for (String singlelink : redirectLinks) {
-                singlelink = singlelink.replace("\"", "").replace(" ", "");
-                br2 = br.cloneBrowser();
-                String dllink = null;
-                // Handling for links that need to be regexed or that need to be get by redirect
-                if (singlelink.matches("/[^/]+/.*?" + uid + ".*?/.*?")) {
-                    br2.getPage(singlelink.trim());
-                    dllink = br2.getRedirectLocation();
-                    if (dllink == null) {
-                        dllink = br2.getRegex("Please <a href=(\"|')?(http.*?)\\1 ").getMatch(1);
-                        if (dllink == null) {
-                            dllink = br2.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
-                        }
-                    }
-                } else {
-                    // Handling for already regexed final-links
-                    dllink = singlelink;
-                }
-                if (dllink == null || dllink.equals("")) {
-                    // Continue away, randomised pages can cause failures.
-                    logger.warning("Possible plugin error: " + param.toString());
-                    logger.warning("Continuing...");
-                    continue;
-                }
-                final DownloadLink fina = createDownloadlink(dllink);
+            logger.info("Task Complete! : " + parameter);
+        } catch (final AbortException a) {
+            logger.info("User Aborted task!");
+        }
+        return decryptedLinks;
+    }
+
+    private void handleLink(final Browser br) throws Exception {
+        if (this.isAbort()) {
+            logger.info("Decryption aborted...");
+            throw new AbortException();
+        }
+        Browser br2 = br.cloneBrowser();
+        // adware for some users!
+        final String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
+        if (redirectLinks == null || redirectLinks.length == 0) {
+            // not redirects but final download link in html.
+            String finallink = br2.getRegex("<a href=([^ ]+) TARGET='_blank'").getMatch(0);
+            if (finallink == null) {
+                finallink = br2.getRegex("<div class=\"highlight redirecturl\">(.*?)</div>").getMatch(0);
+            }
+            if (finallink != null) {
+                final DownloadLink dl = createDownloadlink(finallink);
                 if (fp != null) {
-                    fp.add(fina);
+                    fp.add(dl);
                 }
-                distribute(fina);
-                decryptedLinks.add(fina);
+                distribute(dl);
+                decryptedLinks.add(dl);
+                return;
+            }
+            if ((redirectLinks == null || redirectLinks.length == 0) && finallink == null) {
+                logger.warning("Scanning for redirectLinks && finallinks failed, possible change in html, continuing...");
+                return;
             }
         }
-        logger.info("Task Complete! : " + parameter);
-        return decryptedLinks;
+        logger.info("Found " + redirectLinks.length + " " + this.getHost() + " links to decrypt...");
+        for (String singlelink : redirectLinks) {
+            singlelink = singlelink.replace("\"", "").replace(" ", "");
+            br2 = br.cloneBrowser();
+            String dllink = null;
+            // Handling for links that need to be regexed or that need to be get by redirect
+            if (singlelink.matches("/[^/]+/.*?" + uid + ".*?/.*?")) {
+                br2.getPage(singlelink.trim());
+                dllink = br2.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = br2.getRegex("Please <a href=(\"|')?(http.*?)\\1 ").getMatch(1);
+                    if (dllink == null) {
+                        dllink = br2.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
+                    }
+                }
+            } else {
+                // Handling for already regexed final-links
+                dllink = singlelink;
+            }
+            if (dllink == null || dllink.equals("")) {
+                // Continue away, randomised pages can cause failures.
+                logger.warning("Possible plugin error: " + param.toString());
+                logger.warning("Continuing...");
+                continue;
+            }
+            final DownloadLink fina = createDownloadlink(dllink);
+            if (fp != null) {
+                fp.add(fina);
+            }
+            distribute(fina);
+            decryptedLinks.add(fina);
+        }
     }
 
     /* NO OVERRIDE!! */
