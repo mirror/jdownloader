@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblrdecrypted\\.com/post/\\d+" })
 public class TumblrCom extends PluginForHost {
-
     public static final long trust_cookie_age = 300000l;
     private String           dllink           = null;
 
@@ -60,9 +58,9 @@ public class TumblrCom extends PluginForHost {
 
     private void getDllink() throws IOException {
         br.setFollowRedirects(false);
-        dllink = br.getRegex("\"><img src=\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
+        dllink = br.getRegex("\"><img src=\"(( +)?https?://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.(jpg|gif|png))\"").getMatch(0);
+            dllink = br.getRegex("\"(( +)?https?://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.(jpg|gif|png))\"").getMatch(0);
         }
     }
 
@@ -100,7 +98,7 @@ public class TumblrCom extends PluginForHost {
             }
             filename = filename.trim();
             if (br.containsHTML(">renderVideo\\(")) {
-                dllink = br.getRegex("\\'(http://[^<>\"/]*?\\.tumblr\\.com/video_file/\\d+/[^<>\"/]*?)\\'").getMatch(0);
+                dllink = br.getRegex("\\'(https?://[^<>\"/]*?\\.tumblr\\.com/video_file/\\d+/[^<>\"/]*?)\\'").getMatch(0);
                 downloadLink.setFinalFileName(filename + ".mp4");
             } else if (br.containsHTML("class=\"audio_player\"")) {
                 dllink = br.getRegex("\\?audio_file=(http[^<>\"]*?)\\&color").getMatch(0);
@@ -260,5 +258,4 @@ public class TumblrCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

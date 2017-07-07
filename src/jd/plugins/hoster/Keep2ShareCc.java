@@ -680,7 +680,7 @@ public class Keep2ShareCc extends K2SApi {
                 } else {
                     ai.setStatus("Premium Account");
                     // Expired but actually we still got one day ('today')
-                    if (br.containsHTML("\\(1 day\\)")) {
+                    if (br.containsHTML("1 day")) {
                         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
                     } else {
                         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
