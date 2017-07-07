@@ -149,6 +149,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 socket.setSoTimeout(180000);
                                 socket.setTcpNoDelay(true);
                                 socket.connect(addr, 30000);
+                                final long timeStamp = System.currentTimeMillis();
                                 final Socket finalSocket = socket;
                                 socketStream = new SocketStreamInterface() {
                                     @Override
@@ -179,7 +180,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 final int validToken = socketStream.getInputStream().read();
                                 if (validToken == -1) {
                                     connectThread.putResponse(null);
-                                    connectThread.log(new EOFException().fillInStackTrace());
+                                    connectThread.log(new EOFException("Timeout:" + (System.currentTimeMillis() - timeStamp)).fillInStackTrace());
                                     continue;
                                 }
                                 status = DeviceConnectionStatus.parse(validToken);
