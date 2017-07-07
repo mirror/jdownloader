@@ -16,11 +16,13 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehorst.de" }, urls = { "https?://(?:www\\.)?filehorst\\.de/(?:d/|download\\.php\\?file=)[A-Za-z0-9]+" })
 public class FileHorstDe extends PluginForHost {
@@ -48,12 +48,12 @@ public class FileHorstDe extends PluginForHost {
     private String fid = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         /* 2016-08-31: New linkformat - directly access new url to avoid redirect --> It's a bit faster */
-        br.getPage("http://" + this.getHost() + "/download.php?file=" + fid);
+        br.getPage(Request.getLocation("/download.php?file=" + fid, br.createGetRequest(link.getPluginPatternMatcher())));
         if (br.containsHTML("Fehler: Die angegebene Datei wurde nicht gefunden") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -85,7 +85,7 @@ public class FileHorstDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-            br.getPage("http://filehorst.de/downloadQueue.php?file=" + fid + "&fhuid=" + id);
+            br.getPage("/downloadQueue.php?file=" + fid + "&fhuid=" + id);
             if (br.containsHTML(">Bitte versuche es nochmal")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
@@ -93,17 +93,19 @@ public class FileHorstDe extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://filehorst.de/" + dllink.replace("&amp;", "&");
+            dllink = dllink.replace("&amp;", "&");
         } else {
             /* Wait some time before we can access link again */
             this.sleep(5 * 1000l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         /* Should never happen */
         if (dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        // filenames can be .html so using this if statement will be a automatic false positive
+        // re: https://svn.jdownloader.org/issues/82929
+        if (!new Regex(downloadLink.getName(), CompiledFiletypeFilter.DocumentExtensions.HTML.getPattern()).matches() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Dein Download konnte nicht gefunden werden")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
