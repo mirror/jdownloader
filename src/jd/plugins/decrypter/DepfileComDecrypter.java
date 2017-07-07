@@ -101,7 +101,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     private PluginForHost plugin = null;
 
     private String correctDownloadLink(String parameter) {
-        plugin = JDUtilities.getPluginForHost("dipfile.com");
+        plugin = JDUtilities.getPluginForHost("depfile.com");
         return ((jd.plugins.hoster.DepfileCom) plugin).correctDownloadLink(parameter);
     }
 
