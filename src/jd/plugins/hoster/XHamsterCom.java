@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -54,7 +53,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html))" })
 public class XHamsterCom extends PluginForHost {
-
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
         // Actually only free accounts are supported
@@ -64,10 +62,8 @@ public class XHamsterCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean  default_allow_multihoster_usage = false;
-
     private static final String   HTML_PASSWORD_PROTECTED         = "id=\\'videoPass\\'";
     private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
     private static final String   DOMAIN_CURRENT                  = "xhamster.com";
@@ -139,7 +135,6 @@ public class XHamsterCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public String getDllink() throws IOException, PluginException {
         String dllink = null;
-
         final SubConfiguration cfg = getPluginConfig();
         final int selected_format = cfg.getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
         boolean q240 = false;
@@ -163,7 +158,6 @@ public class XHamsterCom extends PluginForHost {
             q720 = true;
             q480 = true;
             break;
-
         }
         final LinkedHashMap<String, Boolean> fq = new LinkedHashMap<String, Boolean>();
         fq.put("720p", q720);
@@ -174,7 +168,7 @@ public class XHamsterCom extends PluginForHost {
         for (String key : fq.keySet()) {
             logger.info(key + ":\t" + fq.get(key));
             if (fq.get(key)) {
-                dllink = new Regex(video, key + "\":\"(http:[^\"]+)\"").getMatch(0);
+                dllink = new Regex(video, key + "\":\"(https?:[^\"]+)\"").getMatch(0);
                 if (dllink != null) {
                     vq = key;
                     dllink = dllink.replace("\\/", "/");
@@ -185,7 +179,6 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         logger.info("Video quality selection failed.");
-
         int urlmodeint = 0;
         final String urlmode = br.getRegex("url_mode=(\\d+)").getMatch(0);
         if (urlmode != null) {
@@ -306,13 +299,10 @@ public class XHamsterCom extends PluginForHost {
                     br.getPage(br.getURL());
                 }
             }
-
             if (br.containsHTML("(403 Forbidden|>This video was deleted<)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             filename = getSiteTitle();
-
             final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
             if (onlyfor != null) {
                 downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
@@ -419,10 +409,8 @@ public class XHamsterCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NORESUME, false)) {
             resume = false;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Response code 416 --> Handling it");
                 if (downloadLink.getBooleanProperty(NORESUME, false)) {
@@ -433,7 +421,6 @@ public class XHamsterCom extends PluginForHost {
                 downloadLink.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 416");
             }
-
             br.followConnection();
             if (br.containsHTML(">Video not found<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
