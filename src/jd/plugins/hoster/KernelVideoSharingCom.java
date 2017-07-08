@@ -142,6 +142,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             filename_url = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?").getMatch(0);
             filename = br.getRegex("<title>([^<>\"]*?) / Embed Player</title>").getMatch(0);
             if (inValidate(filename)) {
+                /* Filename from decrypter */
+                filename = downloadLink.getProperty("filename").toString();
+            }
+            if (inValidate(filename)) {
                 filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
             }
         } else {
