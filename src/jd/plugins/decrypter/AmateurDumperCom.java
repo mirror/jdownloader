@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,19 +20,18 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amateurdumper.com" }, urls = { "http://(www\\.)?amateurdumper\\.com/(index\\.php\\?ctr=view\\&id=\\d+|\\d+/.*?\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amateurdumper.com" }, urls = { "http://(www\\.)?amateurdumper\\.com/(index\\.php\\?ctr=view\\&id=\\d+|\\d+/.*?\\.html)" })
 public class AmateurDumperCom extends PornEmbedParser {
-
     public AmateurDumperCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -53,7 +51,7 @@ public class AmateurDumperCom extends PornEmbedParser {
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>Homemade Sex :: (.*?)</title>").getMatch(0);
+                filename = br.getRegex("<title>(?:Homemade Sex :: )?(.*?)( - Videos - Amateur Dumper)?</title>").getMatch(0);
             }
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
@@ -61,8 +59,7 @@ public class AmateurDumperCom extends PornEmbedParser {
             return decryptedLinks;
         }
         if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         filename = filename.trim();
         externID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"(\\&)?file=([^<>\"]*?)\\&").getMatch(1);
@@ -78,7 +75,6 @@ public class AmateurDumperCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
         if (externID != null) {
@@ -98,7 +94,6 @@ public class AmateurDumperCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
         if (externID == null) {
@@ -109,19 +104,23 @@ public class AmateurDumperCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         if (br.containsHTML("\"http://(www\\.)?seemybucks\\.com/flvexporter/flvplayer\\.swf\"")) {
             logger.info("Link broken: " + parameter);
             return decryptedLinks;
         }
-        logger.warning("Decrypter broken for link: " + parameter);
-        return null;
+        externID = br.getRegex("<iframe[^<>]*?src=\"(https?://.*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            dl.setProperty("filename", filename);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        throw new DecrypterException("Decrypter broken for link: " + parameter);
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
