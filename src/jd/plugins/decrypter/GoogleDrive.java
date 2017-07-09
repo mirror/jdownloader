@@ -18,8 +18,10 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -69,7 +71,7 @@ public class GoogleDrive extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(plg);
         boolean loggedin = false;
         if (aa != null) {
-            loggedin = jd.plugins.hoster.GoogleDrive.login(this.br, aa);
+            loggedin = jd.plugins.hoster.GoogleDrive.login(br, aa);
         }
         if (parameter.contains("open?id")) {
             br.getPage(parameter);
@@ -117,8 +119,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     }
                 }
             }
-            retry++;
-        } while (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500 && retry <= 3);
+        } while (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500 && retry++ <= 3);
         if (br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -144,12 +145,23 @@ public class GoogleDrive extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        String json_src = this.br.getRegex("window\\[\\'_DRIVE_ivd\\'\\]\\s*?=\\s*?\\'\\[(.*?)\\';").getMatch(0);
         String[] results = null;
+        // old type
+        String json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'\\[(.*?)';").getMatch(0);
         if (json_src != null) {
             // json_src = JSonUtils.unescape(json_src);
             results = json_src.split("\\\\n,\\[\\\\x22");
         }
+        // new type 20170709-raz
+        if (json_src == null) {
+            json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'(.*?)';").getMatch(0);
+            // hex encoded
+            if (json_src != null) {
+                json_src = Encoding.unicodeDecode(json_src);
+                results = json_src.split("\\][\r\n]+,\\[");
+            }
+        }
+
         if (results != null && results.length != 0) {
             /* Handle the json way. */
             /* TODO: Find out how the "pageToken" can be generated. */
@@ -161,9 +173,9 @@ public class GoogleDrive extends PluginForDecrypt {
                 key = keys[0];
             } else {
                 /* Old fallback */
-                key = this.br.getRegex("\"([A-Za-z0-9\\-_]+)\",{1,}1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
+                key = br.getRegex("\"([A-Za-z0-9\\-_]+)\",{1,}1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
             }
-            // final String eof = this.br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
+            // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
             String nextPageToken = null;
             boolean firstRequest = true;
             int addedlinks;
@@ -196,7 +208,8 @@ public class GoogleDrive extends PluginForDecrypt {
                     for (final Object item : items) {
                         addedlinks++;
                         entries = (LinkedHashMap<String, Object>) item;
-                        final String kind = (String) entries.get("kind");
+                        // kind within entries, returns false positives 20170709-raz
+                        final String kind = entries.get("mimeType") != null && ((String) entries.get("mimeType")).contains(".folder") ? "folder" : (String) entries.get("kind");
                         final String title = (String) entries.get("title");
                         final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
                         final String id = (String) entries.get("id");
