@@ -64,11 +64,11 @@ public class ProchanCom extends PluginForHost {
         br.setFollowRedirects(true);
         /* Using embed, we can view mature content without having to log in. */
         br.getPage(Request.getLocation("//www.prochan.com/view?t=" + fid, br.createGetRequest(downloadLink.getPluginPatternMatcher())));
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found or deleted") || br.getHttpConnection().getLongContentLength() == 1) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getLongContentLength() == 1 || "thing not found".equals(br.toString()) || br.containsHTML("File not found or deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = fid;
-        dllink = br.getRegex("('|\"|\\s*)(?:\\W+file|\\W+url)\\1:(\"|'|\\s*)(http[^\"'<>]*?)\\2").getMatch(2);
+        dllink = br.getRegex("('|\"|\\s*)(?:\\W*file|\\W*url)\\1:(\"|'|\\s*)(http[^\"'<>]*?)\\2").getMatch(2);
         if (dllink == null) {
             dllink = br.getRegex("<source src=('|\"|\\s*)(https?://[^\"'<>]*?)\\1[^>]*type=('|\"|\\s*)video/(?:mp4|flv)\\3").getMatch(1);
             if (dllink == null) {
