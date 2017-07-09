@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,13 +31,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/d/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/(?:d|v)/[a-z0-9]+" })
 public class VshareIo extends PluginForHost {
 
     public VshareIo(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/v/", "/d/"));
     }
 
     @Override
@@ -62,14 +65,15 @@ public class VshareIo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
+        correctDownloadLink(link);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404/") || br.containsHTML(">We are sorry,")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404/") || br.containsHTML(">We are sorry,")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = this.br.getRegex("<p>([^<>\"]+) \\- (\\d{1,4}(?:\\.\\d{1,2})? [A-Za-z]{1,5})</p>");
+        final Regex finfo = br.getRegex("<p>([^<>\"]+) - (\\d{1,4}(?:\\.\\d{1,2})? [A-Za-z]{1,5})</p>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
         if (filename == null) {
@@ -95,7 +99,7 @@ public class VshareIo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("style=\"text\\-decoration:none;\" href=\"(http[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("style=\"text-decoration:none;\" href=\"(http[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/[^<>\"]+)\"").getMatch(0);
             }
@@ -103,7 +107,7 @@ public class VshareIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
