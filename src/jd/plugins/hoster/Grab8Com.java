@@ -49,6 +49,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
@@ -61,20 +62,20 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" })
 public class Grab8Com extends antiDDoSForHost {
 
-    private final String                                   NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
-    private final String                                   NOCHUNKS                       = NICE_HOSTproperty + "_NOCHUNKS";
-    private final String                                   NORESUME                       = NICE_HOSTproperty + "_NORESUME";
-    private static final String                            CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
-    private final boolean                                  default_clear_download_history = false;
+    private final String                 NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
+    private final String                 NOCHUNKS                       = NICE_HOSTproperty + "_NOCHUNKS";
+    private final String                 NORESUME                       = NICE_HOSTproperty + "_NORESUME";
+    private static final String          CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
+    private final boolean                default_clear_download_history = false;
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME         = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS      = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS   = 20;
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc                        = null;
-    private DownloadLink                                   currDownloadLink               = null;
-    private static Object                                  LOCK                           = new Object();
-    private Browser                                        ajax                           = null;
+    private static final boolean         ACCOUNT_PREMIUM_RESUME         = true;
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS      = 0;
+    private static final int             ACCOUNT_PREMIUM_MAXDOWNLOADS   = 20;
+    private static MultiHosterManagement mhm                            = new MultiHosterManagement("grab8.com");
+    private Account                      currAcc                        = null;
+    private DownloadLink                 currDownloadLink               = null;
+    private static Object                LOCK                           = new Object();
+    private Browser                      ajax                           = null;
 
     public Grab8Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -193,64 +194,95 @@ public class Grab8Com extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         br = new Browser();
         setConstants(account, link);
         login(true, false);
+        final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(url));
             dllink = PluginJSonUtils.getJsonValue(ajax, "linkdown");
             final boolean transload = StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "message"), "Transloading in progress") || PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
-            if (transload || StringUtils.isEmpty(dllink)) {
-                if (transload) {
-                    /* We have to wait until the file is downloaded to to the multihoster so that we can download it. */
-                    logger.info("Processing transload URL");
-                    final String transload_key = PluginJSonUtils.getJsonValue(ajax, "key");
-                    if (StringUtils.isEmpty(transload_key)) {
-                        handleErrorRetries("transload_key_null", 10, 5 * 60 * 1000l);
-                    }
-                    logger.info("Entering transload loop");
-                    short counter = 0;
-                    do {
-                        logger.info(String.format("Loop %d", counter));
-                        this.sleep(3000, link);
-                        postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(url));
-                        dllink = PluginJSonUtils.getJsonValue(ajax, "linkdown");
-                        counter++;
-                    } while (counter <= 99 && StringUtils.isEmpty(dllink));
-                    if (StringUtils.isEmpty(dllink)) {
-                        logger.info("Transload failed");
-                        handleErrorRetries("dllink_null", 10, 5 * 60 * 1000l);
-                    } else {
-                        logger.info("Transload succeeded");
-                    }
-                } else if ("captcha".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "status"))) {
+            if (transload && StringUtils.isEmpty(dllink)) {
+                dllink = handleTransload(link, url);
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                // TODO: api error handling.
+                if ("captcha".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "status"))) {
                     // {"status":"captcha","message":"","cid":17021,"src":"http:\/\/p7.grab8.com\/new\/images\/depfile.com_captcha.png?rand=4137","server":"http:\/\/p7.grab8.com\/new\/","link":"https:\/\/depfile.com\/uid","runtime":3.5580089092255}
                     // the multihoster is trying to pass the captcha back to this user.... we don't want a bar of that
-                    handleErrorRetries("captcha", 10, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "captcha", 10, 5 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
         handleDL(account, link, dllink);
+    }
+
+    private String handleTransload(final DownloadLink downloadLink, final String url) throws Exception {
+        String dllink = null;
+        final boolean mode1 = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
+        if (mode1) {
+            // some uid/hash
+            final String key = PluginJSonUtils.getJson(ajax, "key");
+            // http://p6.grab8.com/new/status.php?key=KEY
+            final String transloadUrl = PluginJSonUtils.getJson(ajax, "tstatus_url");
+            // seems to be same host as what's used for download and tstatus requests.
+            final String server = PluginJSonUtils.getJson(ajax, "server");
+            if (transloadUrl == null || key == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // some counter
+            int counter = 0;
+            final long waitInt = 10000l;
+            do {
+                // wait between polling
+                sleep(waitInt, downloadLink);
+                getAPISafe(transloadUrl);
+                // {"step":"finished","percent":"100.00","key":"bejIj01ightb","filename":"Game.of.Thrones.S05E01.720p.BluRay.x264.ShAaNiG.mkv.","urlid":"0","info":"449.11MB\/449.11MB"}
+                final String step = PluginJSonUtils.getJson(ajax, "step");
+                if ("finished".equals(step)) {
+                    // construct url? or goto /account and parse?
+                    // return constructUrl(server, key);
+                    return getDllinkFromAccount(key);
+                }
+                // it can also give error
+                final String error = PluginJSonUtils.getJson(ajax, "error");
+                // this error to tstatus_url
+                if ("Your information request not found...".equalsIgnoreCase(error)) {
+                    // this means that the file has been removed from /account
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                // this error to /ajax/action.php?action=get_status&key=KEY
+                // {"status":"error","message":"File not found","step":"error","runtime":0.000271081924438}
+                logger.info("Transloading Wait: " + (++counter * waitInt) + " @ " + PluginJSonUtils.getJson(ajax, "percent") + "% complete");
+            } while (dllink == null);
+            return dllink;
+
+        }
+
+        return null;
+    }
+
+    // construct doesn't work the id on generated link is not the same, they change some of the last chars
+    private String constructUrl(final String server, final String key) {
+        final String filename = PluginJSonUtils.getJson(ajax, "filename");
+        final String dllink = server + "dl/" + key + "/" + (filename.endsWith(".") ? filename.replaceFirst("\\.$", "") : filename);
+        return dllink;
+    }
+
+    private String getDllinkFromAccount(final String key) throws Exception {
+        final Browser br = this.br.cloneBrowser();
+        getPage(br, "/account");
+        String filter = br.getRegex("<a [^>]*\\W+class=(?:'|\")linkfile-" + key + "[^>]+>").getMatch(-1);
+        if (filter == null) {
+            filter = br.getRegex("<a [^>]*\\W+data-key=(?:'|\")" + key + "\\1[^>]+>").getMatch(-1);
+        }
+        final String dllink = new Regex(filter, "href=('|\")(.*?)\\1").getMatch(1);
+        return dllink;
     }
 
     @SuppressWarnings("deprecation")
@@ -269,7 +301,7 @@ public class Grab8Com extends antiDDoSForHost {
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume impossible, disabling it for the next try");
                 link.setChunksProgress(null);
@@ -286,7 +318,7 @@ public class Grab8Com extends antiDDoSForHost {
                 }
                 br.followConnection();
                 handleErrors(br);
-                handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "unknowndlerror", 50, 2 * 60 * 1000l);
             }
             try {
                 if (this.dl.startDownload()) {
@@ -600,20 +632,12 @@ public class Grab8Com extends antiDDoSForHost {
         }
     }
 
-    private void tempUnavailableHoster(final long timeout) throws PluginException {
-        if (this.currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(this.currAcc, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
+    private void getAPISafe(final String url) throws Exception {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        getPage(ajax, url);
+        handleErrors(ajax);
     }
 
     private void postAPISafe(final String accesslink, final String postdata) throws Exception {
@@ -652,15 +676,17 @@ public class Grab8Com extends antiDDoSForHost {
      * Handles API and old html error for failover (might be needed for download servers)
      *
      * @throws PluginException
+     * @throws InterruptedException
      */
-    private void handleErrors(final Browser br) throws PluginException {
+    private void handleErrors(final Browser br) throws PluginException, InterruptedException {
         final String error = "error".equals(PluginJSonUtils.getJsonValue(br, "status")) ? PluginJSonUtils.getJsonValue(br, "message") : br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
         if (error != null) {
             if (StringUtils.containsIgnoreCase(error, "Wrong captcha")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (StringUtils.containsIgnoreCase(error, "No premium account working")) {
                 logger.warning("'No premium account working' --> Host is temporarily disabled");
-                tempUnavailableHoster(1 * 60 * 60 * 1000l);
+                // multihoster wide
+                mhm.putError(null, this.currDownloadLink, 1 * 60 * 60 * 1000l, "No premium account working");
             } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid")) {
                 /* Invalid logindata */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -672,17 +698,17 @@ public class Grab8Com extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (StringUtils.containsIgnoreCase(error, "the daily download limit of")) {
                 logger.warning("Exceeded daily limit of host");
-                tempUnavailableHoster(1 * 60 * 60 * 1000l);
+                mhm.putError(this.currAcc, this.currDownloadLink, 1 * 60 * 60 * 1000l, "Daily download limit reached");
             } else if (StringUtils.containsIgnoreCase(error, "Host limit of")) {
                 final String time = new Regex(error, "\\((.*?) remaining to get next link").getMatch(0);
                 if (time != null) {
-                    tempUnavailableHoster(parseTime(time));
+                    mhm.putError(this.currAcc, this.currDownloadLink, parseTime(time), "Host limit reached");
                 }
                 logger.warning("Handling broken!");
-                tempUnavailableHoster(20 * 60 * 1000l);
+                mhm.putError(this.currAcc, this.currDownloadLink, 20 * 60 * 1000l, "Host limit reached");
             } else if (StringUtils.containsIgnoreCase(error, "Error generating link") || StringUtils.containsIgnoreCase(error, "Get link download error")) {
                 logger.warning("'Get link' error");
-                handleErrorRetries("getlinkerror", 10, 2 * 60 * 1000l);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "getlinkerror", 10, 2 * 60 * 1000l);
             } else if (StringUtils.equalsIgnoreCase(error, "Login to generate link")) {
                 logger.warning("apparently cookies are no longer valid");
                 currAcc.setProperty("cookies", Property.NULL);
@@ -690,7 +716,7 @@ public class Grab8Com extends antiDDoSForHost {
             } else {
                 /* Unknown error */
                 logger.warning("Unknown API error");
-                handleErrorRetries("unknownAPIerror", 50, 2 * 60 * 1000l);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "unknownAPIerror", 50, 2 * 60 * 1000l);
             }
         }
     }
@@ -722,32 +748,6 @@ public class Grab8Com extends antiDDoSForHost {
         }
         final long expires = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
         return expires;
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
-        if (currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        if (timesFailed <= maxRetries) {
-            logger.info(error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime);
-        }
     }
 
     @Override
