@@ -303,22 +303,21 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // pornhub handling number #3
         externID = br.getRegex("name=\"FlashVars\" value=\"options=((?:https?:)?//(?:www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
-            getPage(br, externID);
-            if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
+            final Browser ph = br.cloneBrowser();
+            getPage(ph, externID);
+            if (ph.containsHTML("<link_url>N/A</link_url>") || ph.containsHTML("No htmlCode read") || ph.containsHTML(">404 Not Found<")) {
                 decryptedLinks.add(createOfflinelink("//www.pornhub.com/view_video.php?viewkey=" + new Random().nextInt(10000000), externID));
                 if (!processAll) {
                     return decryptedLinks;
                 }
-            }
-            externID = br.getRegex("<link_url>((?:https?:)?//[^<>\"]*?)</link_url>").getMatch(0);
-            if (externID == null) {
-                if (!processAll) {
-                    return decryptedLinks;
+            } else {
+                externID = ph.getRegex("<link_url>((?:https?:)?//[^<>\"]*?)</link_url>").getMatch(0);
+                if (externID != null) {
+                    decryptedLinks.add(externID);
+                    if (!processAll) {
+                        return decryptedLinks;
+                    }
                 }
-            }
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
             }
         }
         // myxvids.com 1
@@ -332,16 +331,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // myxvids.com 2
         externID = br.getRegex("('|\")((?:https?:)?//(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)\\1").getMatch(1);
         if (externID != null) {
-            getPage(externID);
-            final String finallink = br.getRegex("\"((?:https?:)?//(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-            if (finallink == null) {
+            final Browser mv = br.cloneBrowser();
+            getPage(mv, externID);
+            final String finallink = mv.getRegex("\"((?:https?:)?//(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
+            if (finallink != null) {
+                decryptedLinks.add(finallink);
                 if (!processAll) {
                     return decryptedLinks;
                 }
-            }
-            decryptedLinks.add(finallink);
-            if (!processAll) {
-                return decryptedLinks;
             }
         }
         // empflix.com 1
@@ -785,8 +782,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         externID = br.getRegex("src=\"(?:https?:)?//videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
         if (externID != null) {
-            getPage(br, "http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
-            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            final Browser al = br.cloneBrowser();
+            getPage(al, "http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
+            externID = al.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             if (externID != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setFinalFileName(title + ".flv");
@@ -799,42 +797,43 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // youporn.com handling 2
         externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)&").getMatch(0);
         if (externID != null) {
-            br.setCookie("http://youporn.com/", "age_verified", "1");
-            br.setCookie("http://youporn.com/", "is_pc", "1");
-            br.setCookie("http://youporn.com/", "language", "en");
-            getPage(br, Encoding.htmlDecode(externID));
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            final Browser yp = br.cloneBrowser();
+            yp.setCookie("http://youporn.com/", "age_verified", "1");
+            yp.setCookie("http://youporn.com/", "is_pc", "1");
+            yp.setCookie("http://youporn.com/", "language", "en");
+            getPage(yp, Encoding.htmlDecode(externID));
+            if (yp.getRequest().getHttpConnection().getResponseCode() == 404) {
                 if (!processAll) {
                     return decryptedLinks;
                 }
-            }
-            if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
+            } else if (yp.containsHTML("download\\.youporn\\.com/agecheck")) {
                 if (!processAll) {
                     return decryptedLinks;
                 }
-            }
-            externID = br.getRegex("\"((?:https?:)?//(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
-            if (externID == null) {
+            } else {
+                externID = yp.getRegex("\"((?:https?:)?//(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
+                if (externID == null) {
+                    if (!processAll) {
+                        return decryptedLinks;
+                    }
+                }
+                getPage(yp, externID);
+                final String finallink = yp.getRegex("<location>((?:https?:)?//.*?)</location>").getMatch(0);
+                if (finallink == null) {
+                    if (!processAll) {
+                        return decryptedLinks;
+                    }
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + Request.getLocation(Encoding.htmlDecode(finallink), br.getRequest()));
+                String type = yp.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
+                if (type == null) {
+                    type = "flv";
+                }
+                dl.setFinalFileName(title + "." + type);
+                decryptedLinks.add(dl);
                 if (!processAll) {
                     return decryptedLinks;
                 }
-            }
-            getPage(br, externID);
-            final String finallink = br.getRegex("<location>((?:https?:)?//.*?)</location>").getMatch(0);
-            if (finallink == null) {
-                if (!processAll) {
-                    return decryptedLinks;
-                }
-            }
-            final DownloadLink dl = createDownloadlink("directhttp://" + Request.getLocation(Encoding.htmlDecode(finallink), br.getRequest()));
-            String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-            if (type == null) {
-                type = "flv";
-            }
-            dl.setFinalFileName(title + "." + type);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
             }
         }
         externID = br.getRegex("((?:https?:)?//(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))").getMatch(0);
