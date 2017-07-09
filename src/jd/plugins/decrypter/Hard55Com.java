@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "https?://(?:www\\.)?hard55\\.com/post/list/[^/]+/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "https?://(?:www\\.)?hard55\\.com/post/list/[^/]+/\\d+" })
 public class Hard55Com extends PluginForDecrypt {
 
     public Hard55Com(PluginWrapper wrapper) {
@@ -39,9 +39,9 @@ public class Hard55Com extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        jd.plugins.hoster.Hard55Com.prepBR(this.br);
+        jd.plugins.hoster.Hard55Com.prepBR(br);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">No images were found to match the search criteria<")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -59,9 +59,9 @@ public class Hard55Com extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (counter > 1) {
-                this.br.getPage(url_part + counter);
+                br.getPage(url_part + counter);
             }
-            logger.info("Decrypting: " + this.br.getURL());
+            logger.info("Decrypting: " + br.getURL());
             final String[] linkids = br.getRegex("/post/view/(\\d+)").getColumn(0);
             if (linkids == null || linkids.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
