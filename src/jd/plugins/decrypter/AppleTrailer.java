@@ -145,7 +145,7 @@ public class AppleTrailer extends PluginForDecrypt {
     private void processItunes(final Browser br) throws Exception {
         if (title == null) {
             // when coming from other methods this is already determined.
-            title = br.getRegex("<title>(.*) - Movie Trailers - iTunes</title>").getMatch(0);
+            title = br.getRegex("<title>(.*)\\s*-\\s*Movie Trailers\\s*-\\s*iTunes</title>").getMatch(0);
             // title can have htmlEntities
             if (title == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
@@ -234,7 +234,7 @@ public class AppleTrailer extends PluginForDecrypt {
     // only ever seen this as a single trailer result, not named within souce either. some times within the image.
     // this method and layout is a lot like divposter. this ive seen hd, though not in div.
     private void processAreaPoster() throws Exception {
-        title = br.getRegex("<title>Apple - Trailers - (.*?)</title>").getMatch(0);
+        title = br.getRegex("<title>Apple\\s*-\\s*Trailers\\s*-\\s*(.*?)</title>").getMatch(0);
         // title can have htmlEntities
         if (title == null) {
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
@@ -275,7 +275,7 @@ public class AppleTrailer extends PluginForDecrypt {
     }
 
     private void processDropdownTrigger() throws Exception {
-        title = br.getRegex("<title>Apple - Trailers - (.*?)</title>").getMatch(0);
+        title = br.getRegex("<title>Apple\\s*-\\s*Trailers\\s*-\\s*(.*?)</title>").getMatch(0);
         if (title == null) {
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
@@ -399,7 +399,7 @@ public class AppleTrailer extends PluginForDecrypt {
         final String[] results = getDivPoster();
         Browser br2 = br.cloneBrowser();
         final ArrayList<DownloadLink> temp = new ArrayList<DownloadLink>();
-        String name = br2.getRegex("<title>Apple - Trailers - .*? - (.*?)( - (low|medium|high|small|medium|large))?</title>").getMatch(0);
+        String name = br2.getRegex("<title>Apple\\s*-\\s*Trailers\\s*-\\s*.*? - (.*?)( - (low|medium|high|small|medium|large))?</title>").getMatch(0);
         if (name != null && name.matches("(?i-)(low|medium|high|small|medium|large)") || name == null) {
             name = "Trailer";
         }
@@ -439,7 +439,7 @@ public class AppleTrailer extends PluginForDecrypt {
     }
 
     private void processPoster() throws Exception {
-        title = br.getRegex("<title>Apple - Trailers - (.*?)( - In Theaters.*)?</title>").getMatch(0);
+        title = br.getRegex("<title>Apple\\s*-\\s*Trailers\\s*-\\s*(.*?)( - In Theaters.*)?</title>").getMatch(0);
         if (title == null) {
             title = br.getRegex("<meta name=\"Keywords\" content=\"(.*?) Trailer").getMatch(0);
             // final fail over
@@ -458,7 +458,7 @@ public class AppleTrailer extends PluginForDecrypt {
         title = HTMLEntities.unhtmlentities(title);
         // once agian no reference to video name, the new code for determinign best, requires to be run in arraylist of there own titles...
         // otherwise just one video shows.
-        String[] results = getPoster();
+        final String[] results = getPoster();
         if (results != null && results.length != 0) {
             final HashMap<String, ArrayList<DownloadLink>> temp = new HashMap<String, ArrayList<DownloadLink>>();
             for (String result : results) {
