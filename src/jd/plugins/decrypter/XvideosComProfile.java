@@ -67,9 +67,12 @@ public class XvideosComProfile extends PluginForDecrypt {
                 // users don't always have profile... as guardo finds links from google... false positive.
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     return decryptedLinks;
+                } else if (br.toString().matches("<h4 class=\"text-center\">[^<]+  hat keine hochgeladene Videos</h4>\\s*")) {
+                    logger.info("This user does not have any videos");
+                    return decryptedLinks;
                 }
             }
-            final String[] links = br.getRegex("(/prof\\-video\\-click/(?:upload|pornstar)/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
+            final String[] links = br.getRegex("(/prof-video-click/(?:upload|pornstar)/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
             if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort") && (links == null || links.length == 0)) {
                 if (pornStar) {
                     logger.info("This user does not have any videos");
@@ -88,7 +91,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
-                final String linkid = new Regex(singleLink, "prof\\-video\\-click/(?:upload|pornstar)/[^/]+/(\\d+)").getMatch(0);
+                final String linkid = new Regex(singleLink, "prof-video-click/(?:upload|pornstar)/[^/]+/(\\d+)").getMatch(0);
                 /* Only add new URLs */
                 if (!dupeList.contains(linkid)) {
                     singleLink = "http://www." + this.getHost() + singleLink;
