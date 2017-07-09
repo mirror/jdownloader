@@ -19,6 +19,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.google.GoogleHelper;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -316,8 +317,8 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         while (true) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
+            if (dl.getConnection().getContentType().equals("text/html")) {
                 if (dl.getConnection().getResponseCode() == 416) {
                     dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
