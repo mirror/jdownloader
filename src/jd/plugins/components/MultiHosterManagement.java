@@ -80,6 +80,10 @@ public class MultiHosterManagement {
         }
     }
 
+    public void handleErrorGeneric(final Account account, final DownloadLink downloadLink, final String error, final int maxRetries) throws PluginException, InterruptedException {
+        this.handleErrorGeneric(account, downloadLink, error, maxRetries, 1 * 60 * 60 * 1000l);
+    }
+
     /**
      * Intended to handle errors which warrant a series of retries before 'putError' called.
      *
@@ -91,7 +95,7 @@ public class MultiHosterManagement {
      *            : Max retries
      * @throws InterruptedException
      */
-    public void handleErrorGeneric(final Account account, final DownloadLink downloadLink, final String error, final int maxRetries) throws PluginException, InterruptedException {
+    public void handleErrorGeneric(final Account account, final DownloadLink downloadLink, final String error, final int maxRetries, final long errorWait) throws PluginException, InterruptedException {
         final String errorID = hsFailed + error;
         int timesFailed = downloadLink.getIntegerProperty(errorID, 0);
         if (timesFailed <= maxRetries) {
@@ -108,7 +112,7 @@ public class MultiHosterManagement {
         } else {
             downloadLink.setProperty(errorID, Property.NULL);
             // default of 1 hour wait.
-            this.putError(account, downloadLink, 1 * 60 * 60 * 1000l, "Excausted retry count");
+            this.putError(account, downloadLink, errorWait, "Excausted retry count: " + error);
         }
     }
 
