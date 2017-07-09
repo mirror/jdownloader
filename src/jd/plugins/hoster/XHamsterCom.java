@@ -24,6 +24,9 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,10 +51,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,7 +64,7 @@ public class XHamsterCom extends PluginForHost {
     /* Porn_plugin */
     private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean  default_allow_multihoster_usage = false;
-    private static final String   HTML_PASSWORD_PROTECTED         = "id=\\'videoPass\\'";
+    private static final String   HTML_PASSWORD_PROTECTED         = "id='videoPass'";
     private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
     private static final String   DOMAIN_CURRENT                  = "xhamster.com";
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
@@ -118,13 +118,16 @@ public class XHamsterCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        final String fid;
+        String fid;
         if (dl.getDownloadURL().matches(TYPE_EMBED)) {
             fid = new Regex(dl.getDownloadURL(), "(\\d+)").getMatch(0);
         } else if (dl.getDownloadURL().matches(TYPE_MOBILE)) {
             fid = new Regex(dl.getDownloadURL(), TYPE_MOBILE).getMatch(0);
         } else {
             fid = new Regex(dl.getDownloadURL(), "movies/(\\d+)/").getMatch(0);
+            if (fid == null) {
+                fid = new Regex(dl.getDownloadURL(), "videos/[\\w\\-]+-(\\d+)").getMatch(0);
+            }
         }
         return fid;
     }
@@ -409,7 +412,7 @@ public class XHamsterCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NORESUME, false)) {
             resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Response code 416 --> Handling it");
