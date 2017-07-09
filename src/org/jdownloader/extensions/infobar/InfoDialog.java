@@ -143,26 +143,16 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         prgTotal.setMinimum(0);
         prgTotal.setStringPainted(true);
 
-        lblHelp = new JLabel(T.T.jd_plugins_optional_infobar_InfoDialog_help());
-        lblHelp.setIcon(new AbstractIcon(IconKey.ICON_CLIPBOARD, 16));
+        lblHelp = new JLabel();
+        if (Boolean.TRUE.equals(CFG_INFOBAR.DRAGNDROP_ICON_DISPLAYED.getValue())) {
+            lblHelp = new JLabel(T.T.jd_plugins_optional_infobar_InfoDialog_help());
+            lblHelp.setIcon(new AbstractIcon(IconKey.ICON_CLIPBOARD, 16));
+        }
         lblHelp.setHorizontalTextPosition(JLabel.LEADING);
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
         lblHelp.setToolTipText(T.T.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
 
-        JLabel lblCrawler = new JLabel(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title());
-        lblCrawler.setIcon(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
-        lblCrawler.setHorizontalTextPosition(JLabel.LEADING);
-        lblCrawler.setHorizontalAlignment(JLabel.CENTER);
-        lblCrawler.setToolTipText(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip());
-        lblCrawler.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
-                JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-            }
-        });
-
-        JPanel panel = new JPanel(new MigLayout("ins 6, wrap 1", "[grow,fill,250]"));
+        final JPanel panel = new JPanel(new MigLayout("ins 6, wrap 1", "[grow,fill,250]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
 
@@ -170,8 +160,22 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         panel.add(lblETA);
         panel.add(prgTotal);
         panel.add(lblHelp, "hidemode 3");
-        panel.add(lblCrawler);
+        if (Boolean.TRUE.equals(CFG_INFOBAR.LINKGRABBER_BUTTON_DISPLAYED.getValue())) {
+            final JLabel lblCrawler = new JLabel(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title());
+            lblCrawler.setIcon(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
+            lblCrawler.setHorizontalTextPosition(JLabel.LEADING);
+            lblCrawler.setHorizontalAlignment(JLabel.CENTER);
+            lblCrawler.setToolTipText(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip());
+            lblCrawler.addMouseListener(new MouseAdapter() {
 
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+                    JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                }
+            });
+            panel.add(lblCrawler);
+        }
         this.setLayout(new MigLayout("ins 0", "[grow,fill]"));
         this.add(panel);
 
@@ -205,6 +209,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void setEnableDropLocation(final boolean enableDropLocation) {
         new EDTHelper<Object>() {
+
             @Override
             public Object edtRun() {
                 if (enableDropLocation) {
