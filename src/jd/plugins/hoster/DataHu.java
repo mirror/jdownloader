@@ -19,6 +19,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,12 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" })
 public class DataHu extends antiDDoSForHost {
@@ -187,7 +187,7 @@ public class DataHu extends antiDDoSForHost {
         }
         final String expiredate = PluginJSonUtils.getJsonValue(br, "expiration_date");
         if (expiredate != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH), br);
         }
         ai.setStatus("Premium Account");
         account.setValid(true);
@@ -231,7 +231,7 @@ public class DataHu extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             handleServerErrors();
@@ -259,7 +259,7 @@ public class DataHu extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             handleServerErrors();
