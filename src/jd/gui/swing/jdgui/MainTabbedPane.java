@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui;
 
 import java.awt.AWTKeyStroke;
@@ -47,13 +46,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
-import jd.gui.swing.jdgui.maintab.CustomTabHeader;
-import jd.gui.swing.jdgui.maintab.TabHeader;
-import jd.gui.swing.jdgui.views.ClosableView;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -69,16 +61,20 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
+import jd.gui.swing.jdgui.maintab.CustomTabHeader;
+import jd.gui.swing.jdgui.maintab.TabHeader;
+import jd.gui.swing.jdgui.views.ClosableView;
+
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
-
     private static final long     serialVersionUID               = -1531827591735215594L;
-
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
     protected Component           latestSelectionTabHeader;
     public static AtomicBoolean   SPECIAL_DEALS_ENABLED          = new AtomicBoolean(false);
     public static AtomicBoolean   SPECIAL_DEALS_REMINDER_ENABLED = new AtomicBoolean(false);
-
     //
     // private AbstractIcon specialDealIcon;
     //
@@ -86,11 +82,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     // private Color specialDealColor;
     private Rectangle             specialDealBounds              = null;
     private boolean               specialDealMouseOver           = false;
-
     private View                  donatePanel;
-
     private DonateTabHeader       donateHeader;
-
     protected int                 rightest                       = -1;
 
     public synchronized static MainTabbedPane getInstance() {
@@ -131,10 +124,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                 index = i;
                 break;
             }
-
         }
         removeTabAt(index);
-
         if (view != null) {
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
         }
@@ -163,36 +154,29 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                 header.setShown();
             }
             view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-
         }
     }
 
     private void setupTabTraversalKeys() {
         KeyStroke ctrlTab = KeyStroke.getKeyStroke("ctrl TAB");
         KeyStroke ctrlShiftTab = KeyStroke.getKeyStroke("ctrl shift TAB");
-
         // Remove ctrl-tab from normal focus traversal
         Set<AWTKeyStroke> forwardKeys = new HashSet<AWTKeyStroke>(getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS));
         forwardKeys.remove(ctrlTab);
         setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, forwardKeys);
-
         // Remove ctrl-shift-tab from normal focus traversal
         Set<AWTKeyStroke> backwardKeys = new HashSet<AWTKeyStroke>(getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS));
         backwardKeys.remove(ctrlShiftTab);
         setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, backwardKeys);
-
         // Add keys to the tab's input map
         InputMap inputMap = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         inputMap.put(ctrlTab, "navigateNext");
         inputMap.put(ctrlShiftTab, "navigatePrevious");
-
         // add new actions to skip the donatetab
         getActionMap().put("navigatePrevious", new AbstractAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 int index = getSelectedIndex();
-
                 index--;
                 if (index < 0) {
                     index = getTabCount() - 1;
@@ -204,12 +188,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             }
         });
         getActionMap().put("navigateNext", new AbstractAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 int index = getSelectedIndex();
                 index++;
-
                 if (index > getTabCount() - 1 || getTabComponentAt(index) instanceof PromotionTabHeader) {
                     index = 0;
                 }
@@ -219,7 +201,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     }
 
     private void addClosableTab(ClosableView view) {
-
         // super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
         int index = getTabCount();
         while (index > 0 && getTabComponentAt(index - 1) instanceof PromotionTabHeader) {
@@ -228,10 +209,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         super.insertTab(view.getTitle(), view.getIcon(), view, view.getTooltip(), index);
         ClosableTabHeader header;
         this.setTabComponentAt(index, header = new ClosableTabHeader(view));
-
         this.setFocusable(false);
         view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-
     }
 
     private void updateDonateButton() {
@@ -239,7 +218,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (isVisible) {
             if (donatePanel == null) {
                 donatePanel = new View() {
-
                     @Override
                     protected void onShow() {
                     }
@@ -281,9 +259,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         this.setMinimumSize(new Dimension(300, 100));
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.setOpaque(false);
-
         // specialDealFont = dummyLbl.getFont();
-
         // Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
         // fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
         // specialDealFont = (specialDealFont.deriveFont(specialDealFont.getStyle() ^
@@ -294,18 +270,14 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         // we need this init BEFORE the event listener below.Else we would get a init-loop problem resulting in a nullpointer
         DonationManager.getInstance();
         CFG_GUI.DONATE_BUTTON_STATE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         updateDonateButton();
                     }
-
                 };
-
             }
 
             @Override
@@ -315,23 +287,18 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         updateDonateButton();
         this.setFocusable(false);
         TabHeader header;
-
         this.addChangeListener(new ChangeListener() {
-
             public void stateChanged(ChangeEvent e) {
                 if (JDGui.getInstance() != null) {
                     JDGui.getInstance().setWaiting(true);
                 }
                 try {
-
                     View comp = (View) getSelectedComponent();
                     if (comp == donatePanel) {
                         if (latestSelection != null) {
                             // Do not select. this should act as a button
                             setSelectedComponent(latestSelection);
-
                             return;
-
                         }
                     }
                     Component tabComp = getTabComponentAt(getSelectedIndex());
@@ -340,7 +307,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     }
                     if (latestSelection != null) {
                         latestSelection.setHidden();
-
                     }
                     if (latestSelectionTabHeader != null && latestSelectionTabHeader instanceof CustomTabHeader) {
                         ((CustomTabHeader) latestSelectionTabHeader).setHidden();
@@ -353,13 +319,11 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     }
                     comp.setShown();
                     revalidate();
-
                 } catch (Exception e2) {
                     e2.printStackTrace();
                 }
             }
         });
-
         addComponentListener(new ComponentListener() {
             @Override
             public void componentShown(ComponentEvent e) {
@@ -414,7 +378,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     public void notifyCurrentTab() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 View comp = (View) getSelectedComponent();
@@ -541,7 +504,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     //
     // public void mouseReleased(MouseEvent e) {
     // }
-
     @Override
     public void mouseDragged(MouseEvent e) {
     }
@@ -587,5 +549,4 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     @Override
     public void mouseExited(MouseEvent e) {
     }
-
 }
