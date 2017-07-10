@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,7 +66,7 @@ public class U115Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.setFollowRedirects(true);
@@ -72,6 +74,8 @@ public class U115Com extends PluginForHost {
         if (br.getURL().equals(UNDERMAINTENANCEURL)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
             return AvailableStatus.UNCHECKABLE;
+        } else if (br._getURL().getPath().equals("/lb/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>|/resource\\?r=404|>视听类文件暂时不支持分享，给您带来的不便深表歉意。<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -344,7 +348,7 @@ public class U115Com extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -2);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
