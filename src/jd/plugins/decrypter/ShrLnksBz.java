@@ -76,9 +76,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return true;
     }
 
-    private final HashSet<String> dupe  = new HashSet<String>();
-    private int                   count = -1;
-
     @Override
     protected Browser prepBrowser(Browser prepBr, String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -249,6 +246,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
+        final HashSet<String> dupe = new HashSet<String>();
+        int count = -1;
         {
             final String c = br.getRegex("Count of secured links:\\s*<span>(\\d+)").getMatch(0);
             if (c != null) {
