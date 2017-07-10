@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +29,7 @@ import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safeadultsite.com", "eroticretina.com" }, urls = { "https?://(?:www\\.)?safeadultsite\\.com/(?:pic|video)/.*?\\.html", "https?://(?:www\\.)?eroticretina\\.com/pic/.*?\\.html" })
 public class SafeadultsiteCom extends PornEmbedParser {
+
     public SafeadultsiteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,17 +43,23 @@ public class SafeadultsiteCom extends PornEmbedParser {
             return decryptedLinks;
         }
         if (parameter.contains("/video/")) {
-            decryptedLinks.addAll(findEmbedUrls(null));
+            cleanup();
+            // lets try and find a nice filename
+            String title = br.getRegex("<title>(.*?)\\s+\\|\\s+").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            }
+            decryptedLinks.addAll(findEmbedUrls(title));
         } else {
             String fpName = br.getRegex("<H1>(.*?)</H1>").getMatch(0);
-            final String html_gallery = this.br.getRegex("<div class=\"gallery\">(.*?)</div>").getMatch(0);
+            final String html_gallery = br.getRegex("<div class=\"gallery\">(.*?)</div>").getMatch(0);
             final String[] thumbnails = new Regex(html_gallery, "decodeURIComponent\\(\\'([^<>\"\\']+)\\'").getColumn(0);
             if (thumbnails == null || thumbnails.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             final String full_url_host;
-            if (this.br.getHost().equalsIgnoreCase("safeadultsite.com")) {
+            if (br.getHost().equalsIgnoreCase("safeadultsite.com")) {
                 full_url_host = "saspic";
             } else {
                 full_url_host = "erpic";
@@ -74,5 +82,20 @@ public class SafeadultsiteCom extends PornEmbedParser {
             }
         }
         return decryptedLinks;
+    }
+
+    private void cleanup() {
+        String notsoclean = br.toString();
+        final HashSet<String> dupe = new HashSet<String>();
+        final String[] u = br.getRegex("decodeURIComponent\\('(.*?)'\\)").getColumn(0);
+        if (u != null && u.length > 0) {
+            for (final String b : u) {
+                if (dupe.add(b)) {
+                    final String suck = Encoding.urlDecode(b, false);
+                    notsoclean = notsoclean.replace("decodeURIComponent('" + b + "')", suck);
+                }
+            }
+        }
+        br.getRequest().setHtmlCode(notsoclean);
     }
 }
