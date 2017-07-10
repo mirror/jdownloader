@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/.*?\\.html|link/\\d+/|\\d+/\\w+\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/.*?\\.html|link/\\d+/|\\d+/\\w+\\.html)" })
 public class DreamAmateursCom extends PornEmbedParser {
 
     public DreamAmateursCom(PluginWrapper wrapper) {
@@ -52,12 +52,9 @@ public class DreamAmateursCom extends PornEmbedParser {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<div class=\"hed\"><h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"title\">\\s*(.*?)\\s*</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>Amateur Porn :: (.*?)</title>").getMatch(0);
-            }
+            filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {

@@ -393,10 +393,24 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // mofo 1
         externID = br.getRegex("((?:https?:)?//(www\\.)?mofosex\\.com/(embed_player\\.php\\?id=|embed\\?videoid=)\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        // # mofo 2 embed
+        externID = br.getRegex("<embed\\s+[^>]+mofos\\.com/embed_player/[^>]+>").getMatch(-1);
+        if (externID != null) {
+            // now you can't seem to find the uid, just direct link
+            externID = new Regex(externID, "&file=([^&]+)").getMatch(0);
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            if (title != null) {
+                dl.setFinalFileName(title + getFileNameExtensionFromString(externID, ""));
+            }
             if (!processAll) {
                 return decryptedLinks;
             }
