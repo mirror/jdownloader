@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,10 +24,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -44,16 +53,9 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
+
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
 
@@ -73,6 +75,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
     protected boolean useRUA() {
         return true;
     }
+
+    private final HashSet<String> dupe  = new HashSet<String>();
+    private int                   count = -1;
 
     @Override
     protected Browser prepBrowser(Browser prepBr, String host) {
@@ -108,7 +113,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br = new Browser();
         String parameter = param.toString();
         if (parameter.contains("s2l.biz")) {
@@ -226,7 +231,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 while (br.getRedirectLocation() != null) {
                     getPage(br.getRedirectLocation());
                 }
-                if (br.containsHTML("> Your choice was wrong\\.<")) {
+                if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<")) {
                     getPage(parameter);
                     if (i == max && auto) {
                         i = 0;
@@ -244,8 +249,14 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
+        {
+            final String c = br.getRegex("Count of secured links:\\s*<span>(\\d+)").getMatch(0);
+            if (c != null) {
+                count = Integer.parseInt(c);
+            }
+        }
         /* use cnl2 button if available */
-        if (br.containsHTML("/cnl2/") || this.br.containsHTML("/cnl2_add\\.png")) {
+        if (br.containsHTML("/cnl2/") || br.containsHTML("/cnl2_add\\.png")) {
             if (getPluginConfig().getBooleanProperty(NO_CNL, false) == false) {
                 String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
                 if (flashVars == null) {
@@ -273,10 +284,19 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                             infos.put("package", pkgName);
                         }
                         String json = JSonStorage.toString(infos);
-                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                        distribute(dl);
-                        decryptedLinks.add(dl);
-                        if (!decryptedLinks.isEmpty()) {
+                        final LinkCrawler lc = LinkCrawler.newInstance();
+                        lc.crawl("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                        lc.waitForCrawling();
+                        final ArrayList<CrawledLink> crawledLinks = (ArrayList<CrawledLink>) lc.getCrawledLinks();
+                        // we need to extract the respective DownloadLinks...
+                        for (final CrawledLink cl : crawledLinks) {
+                            final DownloadLink dl = cl.getDownloadLink();
+                            if (dupe.add(dl.getPluginPatternMatcher())) {
+                                decryptedLinks.add(dl);
+                                distribute(dl);
+                            }
+                        }
+                        if (decryptedLinks.size() == count) {
                             return decryptedLinks;
                         }
                     }
@@ -287,8 +307,13 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
             if (getPluginConfig().getBooleanProperty(NO_DLC, false) == false) {
-                decryptedLinks = loadcontainer(br, "/get/dlc/" + dlclink);
-                if (!decryptedLinks.isEmpty()) {
+                for (final DownloadLink dl : loadcontainer(br, "/get/dlc/" + dlclink)) {
+                    if (dupe.add(dl.getPluginPatternMatcher())) {
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    }
+                }
+                if (decryptedLinks.size() == count) {
                     return decryptedLinks;
                 }
             }
@@ -330,13 +355,15 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                         br.setFollowRedirects(false);
                         getPage(result);
                         result = br.getRedirectLocation() != null ? br.getRedirectLocation() : null;
-                        if (result == null) {
+                        if (result == null || result.trim().length() == 0) {
                             continue;
                         }
                     }
-                    final DownloadLink dl = createDownloadlink(result);
-                    distribute(dl);
-                    decryptedLinks.add(dl);
+                    if (dupe.add(result)) {
+                        final DownloadLink dl = createDownloadlink(result);
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                    }
                 } else {
                     continue;
                 }
@@ -369,47 +396,42 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return hit;
     }
 
-    /** by jiaz */
-    private ArrayList<DownloadLink> loadcontainer(final Browser br, final String dlclinks) throws IOException, PluginException {
-        final Browser brc = br.cloneBrowser();
-        if (dlclinks == null) {
-            return new ArrayList<DownloadLink>();
-        }
-        String test = Encoding.htmlDecode(dlclinks);
-        File file = null;
-        URLConnectionAdapter con = null;
-        try {
-            con = brc.openGetConnection(dlclinks);
-            if (con.getResponseCode() == 200) {
-                if (con.isContentDisposition()) {
-                    test = Plugin.getFileNameFromDispositionHeader(con);
-                } else {
-                    test = test.replaceAll("(https?://share-links\\.biz/|/|\\?)", "") + ".dlc";
-                }
-                file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
-                if (file == null) {
-                    return new ArrayList<DownloadLink>();
-                }
-                file.deleteOnExit();
-                brc.downloadConnection(file, con);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (file != null && file.exists() && file.length() > 100) {
-                final List<DownloadLink> decryptedLinks = loadContainerFile(file);
-                if (decryptedLinks.size() > 0) {
-                    return new ArrayList<DownloadLink>(decryptedLinks);
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            return new ArrayList<DownloadLink>();
-        } finally {
+    /**
+     * by jiaz
+     *
+     * @throws Exception
+     */
+    private ArrayList<DownloadLink> loadcontainer(final Browser br, final String dlclinks) throws Exception {
+        if (dlclinks != null) {
+            String test = Encoding.htmlDecode(dlclinks);
+            File file = null;
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                final Browser brc = br.cloneBrowser();
+                con = brc.openGetConnection(dlclinks);
+                if (con.getResponseCode() == 200) {
+                    if (con.isContentDisposition()) {
+                        test = Plugin.getFileNameFromDispositionHeader(con);
+                    } else {
+                        test = test.replaceAll("(https?://share-links\\.biz/|/|\\?)", "") + ".dlc";
+                    }
+                    file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
+                    if (file != null) {
+                        file.deleteOnExit();
+                        brc.downloadConnection(file, con);
+                        if (file.exists() && file.length() > 100) {
+                            return (ArrayList<DownloadLink>) loadContainerFile(file);
+                        }
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return new ArrayList<DownloadLink>();
     }
 
     private String unpackJS(final String fun, final int value) throws Exception {
