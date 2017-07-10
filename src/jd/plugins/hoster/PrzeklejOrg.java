@@ -16,14 +16,13 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,36 +30,49 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "przeklej.org" }, urls = { "http://(www\\.)?przeklej\\.org/file/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "przeklej.org" }, urls = { "https?" + "://(www\\.)?(?:przeklej\\.org|easypaste\\.org)/file/[A-Za-z0-9]+" })
 public class PrzeklejOrg extends PluginForHost {
 
     public PrzeklejOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private final String domains = "(?:przeklej\\.org|easypaste\\.org)";
+
     @Override
-    public String getAGBLink() {
-        return "http://przeklej.org/regulamin";
+    public String[] siteSupportedNames() {
+        return new String[] { "przeklej.org", "easypaste.org" };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("przeklej.org/", "easypaste.org/").replaceAll("http://", "https://"));
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://www.easypaste.org/terms-of-use?lang=en";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Wygląda na to, że wybrany plik został skasowany") || !this.br.containsHTML("class=\"fileData\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher() + "?lang=en");
+        if (br.containsHTML(">\\s*file was removed\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String jsredirect = br.getRegex("<script>location\\.href=\"(https?://(www\\.)?przeklej\\.org/file/[^<>\"]*?)\"</script>").getMatch(0);
+        final String jsredirect = br.getRegex("<script>location\\.href=\"(https?://(www\\.)?" + domains + "/file/[^<>\"]*?)\"</script>").getMatch(0);
         if (jsredirect != null) {
             br.getPage(jsredirect);
         }
-        final String filename = br.getRegex("<title>([^<>\"]*?) \\- Przeklej\\.org</title>").getMatch(0);
-        String filesize = br.getRegex(">Rozmiar[\t\n\r ]*?:</div>[\t\n\r ]*?<div class=\"right\">([^<>\"]*?)<").getMatch(0);
+        String filename = br.getRegex("\"name\":\\s*\"(.*?)\",").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*-\\s*(?:file on\\s*)" + domains + "\\s*</title>").getMatch(0);
+        }
+        final String filesize = br.getRegex("\"contentSize\":\\s*\"(\\d+)\",").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -76,44 +88,12 @@ public class PrzeklejOrg extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-            final String downloadkey = br.getRegex("name=\"downloadKey\" value=\"([^<>\"]*?)\"").getMatch(0);
-            boolean failed = true;
-            if (downloadkey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final boolean captcha_needed = false;
-            if (captcha_needed) {
-                for (int i = 1; i <= 3; i++) {
-                    final String code = this.getCaptchaCode("http://przeklej.org/application/library/token.php?url=" + fid + "_code", downloadLink);
-                    br.postPage("http://przeklej.org/file/captachaValidate", "captacha=" + Encoding.urlEncode(code) + "&downloadKey=" + downloadkey + "&shortUrl=" + fid + "_code");
-                    if (br.toString().equals("err")) {
-                        continue;
-                    }
-                    failed = false;
-                    break;
-                }
-                if (failed) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            } else {
-                br.postPage("http://przeklej.org/file/captachaValidate", "&downloadKey=" + downloadkey + "&shortUrl=" + fid + "_code");
-            }
-            final String ad_url = this.br.getRegex("Kliknij <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (ad_url != null) {
-                this.br.getHeaders().put("Referer", ad_url);
-                this.br.getPage("/file/download/" + downloadkey);
-            }
-            if (br.containsHTML("Przykro nam, ale wygląda na to, że plik nie jest|Wygląda na to, że wybrany plik został skasowany z naszych serwerów")) {
+            dllink = br.getRegex("<a href=\"(/file/download/\\w+.*?)\"").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = br.getRegex("<script>location\\.href=\"(http[^<>\"]*?)\"</script>").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
