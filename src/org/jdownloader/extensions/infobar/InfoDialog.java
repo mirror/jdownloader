@@ -17,6 +17,12 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.JDProgressBar;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.nutils.Formatter;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -39,32 +45,18 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.JDProgressBar;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.nutils.Formatter;
-import net.miginfocom.swing.MigLayout;
-
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener, GenericConfigEventListener<Integer>, WindowListener {
-
     private static final long               serialVersionUID = 4715904261105562064L;
-
     private static final int                DOCKING_DISTANCE = 25;
-
     private final DragDropHandler           ddh;
-
     private NullsafeAtomicReference<Thread> updater          = new NullsafeAtomicReference<Thread>(null);
     private Point                           point;
-
     private JDProgressBar                   prgTotal;
     private JLabel                          lblProgress;
     private JLabel                          lblETA;
     private JLabel                          lblHelp;
-
     private SpeedMeterPanel                 speedmeter;
-
     private InfoBarExtension                extension;
-
     private RememberAbsoluteLocator         locator;
 
     public InfoDialog(InfoBarExtension infoBarExtension) {
@@ -74,17 +66,13 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         locator = new RememberAbsoluteLocator("InfoDialog");
         this.setName("INFODIALOG");
         this.setAlwaysOnTop(true);
-
         initGui();
-
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         hideDialog();
@@ -134,40 +122,34 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private void initGui() {
         lblProgress = new JLabel(" ~ ");
         lblProgress.setHorizontalAlignment(JLabel.LEADING);
-
         lblETA = new JLabel(" ~ ");
         lblETA.setHorizontalAlignment(JLabel.TRAILING);
-
         prgTotal = new JDProgressBar();
         prgTotal.setMaximum(1);
         prgTotal.setMinimum(0);
         prgTotal.setStringPainted(true);
-
         lblHelp = new JLabel();
-        if (Boolean.TRUE.equals(CFG_INFOBAR.DRAGNDROP_ICON_DISPLAYED.getValue())) {
+        if (CFG_INFOBAR.DRAGNDROP_ICON_DISPLAYED.isEnabled()) {
             lblHelp = new JLabel(T.T.jd_plugins_optional_infobar_InfoDialog_help());
             lblHelp.setIcon(new AbstractIcon(IconKey.ICON_CLIPBOARD, 16));
         }
         lblHelp.setHorizontalTextPosition(JLabel.LEADING);
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
         lblHelp.setToolTipText(T.T.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
-
         final JPanel panel = new JPanel(new MigLayout("ins 6, wrap 1", "[grow,fill,250]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
-
         panel.add(lblProgress, "split 2");
         panel.add(lblETA);
         panel.add(prgTotal);
         panel.add(lblHelp, "hidemode 3");
-        if (Boolean.TRUE.equals(CFG_INFOBAR.LINKGRABBER_BUTTON_DISPLAYED.getValue())) {
+        if (CFG_INFOBAR.LINKGRABBER_BUTTON_DISPLAYED.isEnabled()) {
             final JLabel lblCrawler = new JLabel(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title());
             lblCrawler.setIcon(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
             lblCrawler.setHorizontalTextPosition(JLabel.LEADING);
             lblCrawler.setHorizontalAlignment(JLabel.CENTER);
             lblCrawler.setToolTipText(_GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip());
             lblCrawler.addMouseListener(new MouseAdapter() {
-
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
@@ -178,7 +160,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         }
         this.setLayout(new MigLayout("ins 0", "[grow,fill]"));
         this.add(panel);
-
         this.pack();
     }
 
@@ -209,7 +190,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void setEnableDropLocation(final boolean enableDropLocation) {
         new EDTHelper<Object>() {
-
             @Override
             public Object edtRun() {
                 if (enableDropLocation) {
@@ -226,14 +206,12 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     private final class InfoUpdater extends Thread implements Runnable {
-
         @Override
         public void run() {
             final Thread thread = Thread.currentThread();
             while (thread == updater.get()) {
                 final DownloadLinkAggregator dla = new DownloadLinkAggregator(DownloadsTable.getInstance().getSelectionInfo(false, false));
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         if (isVisible()) {
@@ -262,7 +240,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             JMenuItem mi = new JMenuItem(T.T.jd_plugins_optional_infobar_InfoDialog_hideWindow());
             mi.setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
             mi.addActionListener(this);
-
             JPopupMenu popup = new JPopupMenu();
             popup.add(mi);
             popup.show(this, e.getPoint().x, e.getPoint().y);
@@ -283,14 +260,10 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void mouseDragged(MouseEvent e) {
-
         Point window = this.getLocation();
-
         int x = window.x + e.getPoint().x - point.x;
         int y = window.y + e.getPoint().y - point.y;
-
         this.setLocation(x, y);
-
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -298,7 +271,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void actionPerformed(ActionEvent e) {
         extension.setGuiEnable(false);
-
     }
 
     @Override
@@ -308,7 +280,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     @Override
     public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 updateTransparency();
@@ -322,7 +293,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     @Override
     public void windowClosing(WindowEvent e) {
-
     }
 
     @Override
@@ -345,5 +315,4 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     @Override
     public void windowDeactivated(WindowEvent e) {
     }
-
 }

@@ -24,14 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,9 +45,16 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
-
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
 
@@ -252,6 +251,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             final String c = br.getRegex("Count of secured links:\\s*<span>(\\d+)").getMatch(0);
             if (c != null) {
                 count = Integer.parseInt(c);
+            } else {
+                count = -1;
             }
         }
         /* use cnl2 button if available */
@@ -286,7 +287,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                         final LinkCrawler lc = LinkCrawler.newInstance();
                         lc.crawl("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
                         lc.waitForCrawling();
-                        final ArrayList<CrawledLink> crawledLinks = (ArrayList<CrawledLink>) lc.getCrawledLinks();
+                        final List<CrawledLink> crawledLinks = lc.getCrawledLinks();
                         // we need to extract the respective DownloadLinks...
                         for (final CrawledLink cl : crawledLinks) {
                             final DownloadLink dl = cl.getDownloadLink();
@@ -306,7 +307,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
             if (getPluginConfig().getBooleanProperty(NO_DLC, false) == false) {
-                for (final DownloadLink dl : loadcontainer(br, "/get/dlc/" + dlclink)) {
+                for (final DownloadLink dl : loadContainer(br, "/get/dlc/" + dlclink)) {
                     if (dupe.add(dl.getPluginPatternMatcher())) {
                         decryptedLinks.add(dl);
                         distribute(dl);
@@ -400,7 +401,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
      *
      * @throws Exception
      */
-    private ArrayList<DownloadLink> loadcontainer(final Browser br, final String dlclinks) throws Exception {
+    private List<DownloadLink> loadContainer(final Browser br, final String dlclinks) throws Exception {
         if (dlclinks != null) {
             String test = Encoding.htmlDecode(dlclinks);
             File file = null;
@@ -416,17 +417,22 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                     }
                     file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
                     if (file != null) {
-                        file.deleteOnExit();
+                        file.getParentFile().mkdirs();
                         brc.downloadConnection(file, con);
                         if (file.exists() && file.length() > 100) {
-                            return (ArrayList<DownloadLink>) loadContainerFile(file);
+                            return loadContainerFile(file);
                         }
                     }
                 }
             } finally {
                 try {
-                    con.disconnect();
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 } catch (final Throwable e) {
+                }
+                if (file != null && file.exists() && !file.delete()) {
+                    file.deleteOnExit();
                 }
             }
         }
