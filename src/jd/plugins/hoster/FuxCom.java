@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,8 +27,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "http://(www\\.)?fux\\.com/(video|embed)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "https?://(www\\.)?fux\\.com/(video|embed)/\\d+" })
 public class FuxCom extends PluginForHost {
+
     public FuxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,16 +52,16 @@ public class FuxCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>|class='videoNotAvailable')") || br.getURL().matches(".+/video\\?error=\\d+")) {
+        if (br.containsHTML("(<title>Fux - Error - Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>|class='videoNotAvailable')") || br.getURL().matches(".+/video\\?error=\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- FUX</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) - FUX</title>").getMatch(0);
         }
         final String mediaID = jd.plugins.hoster.PornTubeCom.getMediaid(this.br);
         String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
@@ -121,7 +120,7 @@ public class FuxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getStringProperty("DDLink"), true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadLink.getStringProperty("DDLink"), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -142,7 +141,7 @@ public class FuxCom extends PluginForHost {
         }
         /* Hm probably this is only needed if only one quality exists */
         if (finallink == null) {
-            finallink = br.getRegex("\"token\":\"(http://[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("\"token\":\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         return finallink;
     }
