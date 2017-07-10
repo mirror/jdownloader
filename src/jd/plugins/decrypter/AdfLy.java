@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|ay\\.gy|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|adf\\.acb\\.im|packs\\d*\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee|babblecase\\.com|riffhold\\.com|microify\\.com|pintient\\.com|tinyium\\.com|atominik\\.com|bluenik\\.com|bitigee\\.com|atomcurve\\.com|picocurl\\.com)/[^<>\r\n\t]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|ay\\.gy|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|adf\\.acb\\.im|packs\\d*\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee|babblecase\\.com|riffhold\\.com|microify\\.com|pintient\\.com|tinyium\\.com|atominik\\.com|bluenik\\.com|bitigee\\.com|atomcurve\\.com|picocurl\\.com|tinyical\\.com)/[^<>\r\n\t]+" })
 @SuppressWarnings("deprecation")
 public class AdfLy extends antiDDoSForDecrypt {
 
@@ -49,14 +49,14 @@ public class AdfLy extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com",
-                "picocurl.com", /** <-- full domains & subdomains --> */
+        return new String[] { "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com",
+                "tinyical.com", /** <-- full domains & subdomains --> */
                 "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
     }
 
     private static final String adfPre        = "https?://(?:www\\.)?";
     // belongs to adfly group
-    private static final String adfDomains    = "adf\\.ly|j\\.gs|q\\.gs|ay\\.gy|zo\\.ee|babblecase\\.com|riffhold\\.com|microify\\.com|pintient\\.com|tinyium\\.com|atominik\\.com|bluenik\\.com|bitigee\\.com|atomcurve\\.com|picocurl\\.com";
+    private static final String adfDomains    = "adf\\.ly|j\\.gs|q\\.gs|ay\\.gy|zo\\.ee|babblecase\\.com|riffhold\\.com|microify\\.com|pintient\\.com|tinyium\\.com|atominik\\.com|bluenik\\.com|bitigee\\.com|atomcurve\\.com|picocurl\\.com|tinyical\\.com";
     // belongs to other people who use subdomains and use adf.ly service
     private static final String subDomains    = "chathu\\.apkmania\\.co|alien\\.apkmania\\.co|adf\\.acb\\.im|packs\\d*\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net";
     // builds final String for method calling (no need to edit).
