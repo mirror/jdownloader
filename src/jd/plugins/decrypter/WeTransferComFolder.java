@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,11 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((?:wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-f0-9]{46}/[a-f0-9]{4,12}(?:/[a-f0-9]{46})?)" })
 public class WeTransferComFolder extends PluginForDecrypt {
+
     public WeTransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,7 +76,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("files");
+        final ArrayList<Object> ressourcelist = entries.get("files") != null ? (ArrayList<Object>) entries.get("files") : (ArrayList) entries.get("items");
         /* TODO: Handle this case */
         final boolean per_file_download_available = ((Boolean) entries.get("per_file_download_available")).booleanValue();
         /* TODO: Handle this case */
