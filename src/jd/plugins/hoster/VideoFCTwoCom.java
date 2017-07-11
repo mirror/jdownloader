@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -48,10 +47,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
@@ -60,7 +58,11 @@ public class VideoFCTwoCom extends PluginForHost {
         setConfigElements();
     }
 
-    private final String  cookieHost            = "fc2.com";
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "video.fc2.com", "xiaojiadianvideo.asia", "jinniumovie.be" };
+    }
+
     private String        finalURL              = null;
     private final boolean fastLinkCheck_default = true;
     private final String  fastLinkCheck         = "fastLinkCheck";
@@ -71,19 +73,11 @@ public class VideoFCTwoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, JDL.L("plugins.hoster.videofcttwocom.fastlinkcheck", "Enable fast linkcheck, doesn't perform filesize checks! Filesize will be updated when download starts.")).setDefaultValue(fastLinkCheck_default));
     }
 
-    private final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
-
     private Browser prepareBrowser(Browser prepBr) {
         if (prepBr == null) {
             prepBr = new Browser();
         }
-        if (userAgent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
-        prepBr.getHeaders().put("User-Agent", userAgent.get());
-        prepBr.setCookie(cookieHost, "language", "en");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
         prepBr.setCustomCharset("utf-8");
         return prepBr;
     }
@@ -105,7 +99,8 @@ public class VideoFCTwoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://video.fc2.com/en/content/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
+        final boolean subContent = new Regex(link.getDownloadURL(), "/a/content/").matches();
+        link.setUrlDownload("http://video.fc2.com/en/" + (subContent ? "a/content/" : "content/") + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0));
     }
 
     /*
@@ -208,7 +203,7 @@ public class VideoFCTwoCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for Premium Users!");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, -4);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, -4);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
             throw new PluginException(LinkStatus.ERROR_RETRY, "Service unavailable. Try again later.", 5 * 60 * 1000l);
         } else if (dl.getConnection().getContentType().contains("html")) {
@@ -238,6 +233,7 @@ public class VideoFCTwoCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        correctDownloadLink(downloadLink);
         String dllink = downloadLink.getDownloadURL();
         // this comes first, due to subdoman issues and cached cookie etc.
         if (account == null) {
@@ -295,7 +291,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (upid == null || gk == null) {
             // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also present in
             // ALL pages just doesn't contain text when not valid...
-            if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php") || br.containsHTML("class=\"errmsg\"") || br.getURL().endsWith("://video.fc2.com/")) {
+            if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br._getURL().getPath().equals("/404.php") || br.containsHTML("class=\"errmsg\"") || br.getURL().endsWith("://video.fc2.com/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
