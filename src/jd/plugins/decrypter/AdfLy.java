@@ -13,15 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,12 +33,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
-
-    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com",
-            "tinyical.com", /** <-- full domains & subdomains --> */
-            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
+    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com", /**
+     *
+     *
+     *
+     *
+     *
+     * 
+                                           * <-- full domains & subdomains -->
+     */
+        "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
     @Override
     public String[] siteSupportedNames() {
@@ -50,7 +56,6 @@ public class AdfLy extends antiDDoSForDecrypt {
     // DEV NOTES:
     // uids are not transferable between domains.
     // alternative domains do not support https
-
     public AdfLy(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -74,17 +79,17 @@ public class AdfLy extends antiDDoSForDecrypt {
         for (final String name : domains) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
-        HOSTS = adfPre + "(?:" + pattern.toString() + ")";
-        return new String[] { HOSTS + "/[^<>\r\n\t]+" };
+        final String hosts = adfPre + "(?:" + pattern.toString() + ")";
+        HOSTS.set(hosts);
+        return new String[] { hosts + "/[^<>\r\n\t]+" };
     }
 
-    private static final String adfPre       = "https?://(?:www\\.)?";
+    private static final String            adfPre       = "https?://(?:www\\.)?";
     // builds final String for method calling (no need to edit).
-    private static String       HOSTS        = null;
-    private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
-    private static Object       LOCK         = new Object();
-
-    private String              protocol     = null;
+    private static AtomicReference<String> HOSTS        = new AtomicReference<String>(null);
+    private static final String            INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
+    private static Object                  LOCK         = new Object();
+    private String                         protocol     = null;
 
     @Override
     protected boolean useRUA() {
@@ -99,11 +104,11 @@ public class AdfLy extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("www.", "");
-        if (parameter.matches(HOSTS + INVALIDLINKS)) {
+        final String hosts = HOSTS.get();
+        if (parameter.matches(hosts + INVALIDLINKS)) {
             logger.info("Invalid: " + parameter);
             return decryptedLinks;
         }
-
         // poll plugin setting for default protocol
         protocol = getDefaultProtocol();
         if (!parameter.contains("adf.ly/") && protocol.equalsIgnoreCase("https://")) {
@@ -111,14 +116,13 @@ public class AdfLy extends antiDDoSForDecrypt {
             protocol = "http://";
         }
         br.setFollowRedirects(false);
-
-        if (parameter.matches(HOSTS + "/\\d+/.+")) {
-            String linkInsideLink = new Regex(parameter, HOSTS + "/\\d+/(.+)").getMatch(0);
+        if (parameter.matches(hosts + "/\\d+/.+")) {
+            String linkInsideLink = new Regex(parameter, hosts + "/\\d+/(.+)").getMatch(0);
             if (!linkInsideLink.matches("^(?-i)(?:https?|ftp)://.+$")) {
                 // we assume they are http
                 linkInsideLink = "http://" + linkInsideLink;
             }
-            if (!linkInsideLink.matches(HOSTS + "/.+")) {
+            if (!linkInsideLink.matches(hosts + "/.+")) {
                 // lets try dns method to verify if the link is actually valid
                 // re: https://board.jdownloader.org/showthread.php?p=363462#post363462
                 InetAddress[] inetAddress = null;
@@ -132,7 +136,6 @@ public class AdfLy extends antiDDoSForDecrypt {
                 }
             }
         }
-
         boolean skipWait = true;
         String finallink = null;
         for (int i = 0; i <= 2; i++) {
@@ -207,11 +210,11 @@ public class AdfLy extends antiDDoSForDecrypt {
                 }
             }
             /* old stuff still exists! tested and working as of 20130328 */
-            if (finallink != null && (!finallink.startsWith("/") && finallink.matches(HOSTS + ".+"))) {
-                String extendedProtectionPage = br.getRegex("(?:" + HOSTS + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(0);
+            if (finallink != null && (!finallink.startsWith("/") && finallink.matches(hosts + ".+"))) {
+                String extendedProtectionPage = br.getRegex("(?:" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(0);
                 if (extendedProtectionPage == null) {
                     // 201307xx
-                    extendedProtectionPage = new Regex(finallink, "(?:" + HOSTS + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(0);
+                    extendedProtectionPage = new Regex(finallink, "(?:" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(0);
                     if (extendedProtectionPage != null) {
                         extendedProtectionPage = protocol + "adf.ly" + extendedProtectionPage;
                     } else {
@@ -271,7 +274,7 @@ public class AdfLy extends antiDDoSForDecrypt {
             // Use this because they often change the page
             final String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
             for (final String aLink : lol) {
-                if (!new Regex(aLink, HOSTS + "/.+").matches() && !aLink.contains("/javascript/")) {
+                if (!new Regex(aLink, hosts + "/.+").matches() && !aLink.contains("/javascript/")) {
                     decryptedLinks.add(createDownloadlink(aLink));
                 }
             }
@@ -314,7 +317,7 @@ public class AdfLy extends antiDDoSForDecrypt {
      *
      */
     private boolean isProtocolHTTPS() {
-        if ("https://".equalsIgnoreCase(this.protocol)) {
+        if (protocol != null && "https://".equalsIgnoreCase(this.protocol)) {
             return true;
         } else {
             return false;
@@ -330,5 +333,4 @@ public class AdfLy extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.AdfLy_AdfLy;
     }
-
 }
