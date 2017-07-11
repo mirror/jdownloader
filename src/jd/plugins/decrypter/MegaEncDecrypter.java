@@ -33,8 +33,8 @@ public class MegaEncDecrypter extends PluginForDecrypt {
         final String MEGAENC_KEY;
         final String MEGAENC_IV;
         try {
-            String className = new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8");
-            final Class s = getClass().forName(className);
+            final String className = new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8");
+            final Class<?> s = getClass().forName(className);
             MEGAENC_IV = (String) s.getField("MEGAENC_IV").get(null);
             if (parameter.matches("mega://f?enc2\\?.+")) {
                 MEGAENC_KEY = (String) s.getField("MEGAENC_KEY2").get(null);
@@ -70,8 +70,8 @@ public class MegaEncDecrypter extends PluginForDecrypt {
     }
 
     private byte[] decrypt(byte[] cipher, byte[] key, byte[] iv) throws Exception {
-        PaddedBufferedBlockCipher aes = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
-        CipherParameters ivAndKey = new ParametersWithIV(new KeyParameter(key), iv);
+        final PaddedBufferedBlockCipher aes = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
+        final CipherParameters ivAndKey = new ParametersWithIV(new KeyParameter(key), iv);
         aes.init(false, ivAndKey);
         return cipherData(aes, cipher);
     }
@@ -79,11 +79,11 @@ public class MegaEncDecrypter extends PluginForDecrypt {
     private byte[] cipherData(PaddedBufferedBlockCipher cipher, byte[] data) throws Exception {
         byte[] result = null;
         try {
-            int minSize = cipher.getOutputSize(data.length);
-            byte[] outBuf = new byte[minSize];
-            int length1 = cipher.processBytes(data, 0, data.length, outBuf, 0);
-            int length2 = cipher.doFinal(outBuf, length1);
-            int actualLength = length1 + length2;
+            final int minSize = cipher.getOutputSize(data.length);
+            final byte[] outBuf = new byte[minSize];
+            final int length1 = cipher.processBytes(data, 0, data.length, outBuf, 0);
+            final int length2 = cipher.doFinal(outBuf, length1);
+            final int actualLength = length1 + length2;
             result = new byte[actualLength];
             System.arraycopy(outBuf, 0, result, 0, result.length);
         } catch (Exception e) {
