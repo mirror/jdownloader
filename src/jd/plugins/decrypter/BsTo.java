@@ -16,12 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -34,6 +37,7 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?bs\\.to/(serie/[^/]+/\\d+/[^/]+(/[^/]+)?|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
+
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("bs.to", 200);
@@ -54,7 +58,7 @@ public class BsTo extends PluginForDecrypt {
                 }
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form.put("response", recaptchaV2Response);
-                this.br.submitForm(form);
+                br.submitForm(form);
             }
             final String finallink = br.getRedirectLocation();
             decryptedLinks.add(createDownloadlink(finallink));
@@ -83,7 +87,7 @@ public class BsTo extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                    form.put("response", recaptchaV2Response);
+                    form.put("token", Encoding.urlEncode(recaptchaV2Response));
                     br.submitForm(form);
                 }
                 finallink = br.getRedirectLocation();
