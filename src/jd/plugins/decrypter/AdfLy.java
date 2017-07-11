@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -69,20 +68,12 @@ public class AdfLy extends antiDDoSForDecrypt {
     /**
      * returns the annotation pattern array
      *
-     * @return
-     * @throws InvocationTargetException
-     * @throws IllegalArgumentException
-     * @throws IllegalAccessException
-     * @throws SecurityException
-     * @throws NoSuchMethodException
-     * @throws ClassNotFoundException
-     * @throws InstantiationException
      */
-    public static String[] getAnnotationUrls() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException, InstantiationException {
+    public static String[] getAnnotationUrls() {
         final String[] names = AdfLyDomains.getDomains();
         final StringBuilder adomain = new StringBuilder();
         final StringBuilder sdomain = new StringBuilder();
-        // construct url and adlf domains subdomains
+        // construct url and adfly domains & subdomains
         for (final String name : names) {
             final boolean isSubdomain = name.split("\\.").length >= 3 ? true : false;
             if (isSubdomain) {
@@ -103,7 +94,7 @@ public class AdfLy extends antiDDoSForDecrypt {
     // belongs to other people who use subdomains and use adf.ly service
     private static String       subDomains   = null;
     // builds final String for method calling (no need to edit).
-    private static String       HOSTS        = adfPre + "(?:" + adfDomains + "|" + subDomains + ")";
+    private static String       HOSTS        = null;
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
     private static Object       LOCK         = new Object();
 
