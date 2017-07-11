@@ -38,14 +38,13 @@ import jd.plugins.components.UserAgents.BrowserName;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
 
-    @Override
-    public void init() {
-        super.init();
-    }
+    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com",
+            "tinyical.com", /** <-- full domains & subdomains --> */
+            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
     @Override
     public String[] siteSupportedNames() {
-        return AdfLyDomains.getDomains();
+        return domains;
     }
 
     // DEV NOTES:
@@ -70,29 +69,16 @@ public class AdfLy extends antiDDoSForDecrypt {
      *
      */
     public static String[] getAnnotationUrls() {
-        final String[] names = AdfLyDomains.getDomains();
-        final StringBuilder adomain = new StringBuilder();
-        final StringBuilder sdomain = new StringBuilder();
-        // construct url and adfly domains & subdomains
-        for (final String name : names) {
-            final boolean isSubdomain = name.split("\\.").length >= 3 ? true : false;
-            if (isSubdomain) {
-                sdomain.append(sdomain.length() > 0 ? "|" + Pattern.quote(name) : Pattern.quote(name));
-            } else {
-                adomain.append(adomain.length() > 0 ? "|" + Pattern.quote(name) : Pattern.quote(name));
-            }
+        final StringBuilder pattern = new StringBuilder();
+        // construct pattern
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
-        adfDomains = adomain.toString();
-        subDomains = sdomain.toString();
-        HOSTS = adfPre + "(?:" + adfDomains + "|" + subDomains + ")";
+        HOSTS = adfPre + "(?:" + pattern.toString() + ")";
         return new String[] { HOSTS + "/[^<>\r\n\t]+" };
     }
 
     private static final String adfPre       = "https?://(?:www\\.)?";
-    // belongs to adfly group
-    private static String       adfDomains   = null;
-    // belongs to other people who use subdomains and use adf.ly service
-    private static String       subDomains   = null;
     // builds final String for method calling (no need to edit).
     private static String       HOSTS        = null;
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
