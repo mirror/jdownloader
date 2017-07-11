@@ -76,7 +76,8 @@ public class ProchanCom extends PluginForHost {
             }
         }
         if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // they have blank and offline content and don't say so.. do not throw defect.. let users report broken plugin manually.
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
