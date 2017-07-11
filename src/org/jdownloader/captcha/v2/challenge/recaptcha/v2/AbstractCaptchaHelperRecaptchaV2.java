@@ -1,14 +1,15 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
+
     protected T            plugin;
     protected LogInterface logger;
     protected Browser      br;
@@ -136,7 +137,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             }
         }
         // json values in script or json
-        final String jssource = new Regex(source, "recaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
+        final String jssource = new Regex(source, "recaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\}\\);").getMatch(0);
         if (jssource != null) {
             siteKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*([\\w-]+)\\s*\\2").getMatch(2);
         }
