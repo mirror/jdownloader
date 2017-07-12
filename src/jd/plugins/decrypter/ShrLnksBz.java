@@ -20,9 +20,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,16 +52,9 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
+
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
 
@@ -91,6 +91,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return prepBr;
     }
 
+    private final HashSet<String> dupe = new HashSet<String>();
+
     private void correctLanguageCookie(final Browser prepBr, final String host) {
         if (host.matches("(?i)share-links\\.biz|s2l\\.biz")) {
             /* Prefer English */
@@ -113,21 +115,170 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         br = new Browser();
         String parameter = param.toString();
         if (parameter.contains("s2l.biz")) {
-            br.setFollowRedirects(false);
             getPage(parameter);
             parameter = br.getRedirectLocation();
         }
         setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         /* Prefer English */
         parameter += "?lng=en";
         getPage(parameter);
-        if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
-            logger.info("Link offline: " + parameter);
+        if (isOffline()) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /* Very important! */
+        handleImportant();
+        br.setFollowRedirects(false);
+        /* Folderpassword */
+        handlePassword(param, parameter);
+        /* Captcha handling */
+        handleCaptcha(param, parameter);
+        final int count = getCount();
+        /* use cnl2 button if available */
+        decryptedLinks.addAll(handleClickNLoad(parameter));
+        if (decryptedLinks.size() == count) {
+            return decryptedLinks;
+        }
+        /* Load Contents. Container handling (DLC) */
+        decryptedLinks.addAll(handleDlc());
+        if (decryptedLinks.size() == count) {
+            return decryptedLinks;
+        }
+        /* Individual file handling */
+        decryptedLinks.addAll(handleIndividualLinks(parameter));
+        if (decryptedLinks.isEmpty()) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
+        } else if (decryptedLinks.size() != count) {
+            logger.warning("decryptedLinks size doesn't reflect against count");
+        }
+        return decryptedLinks;
+    }
+
+    private int getCount() {
+        // when individual links are not provided, count seems to be 0/total. use second figure!
+        final String c = br.getRegex("Count of secured links:\\s*<span>\\d+/(\\d+)").getMatch(0);
+        if (c != null) {
+            return Integer.parseInt(c);
+        }
+        return -1;
+    }
+
+    private boolean isOffline() {
+        final boolean result = br.containsHTML(">No usable content was found<|not able to find the desired content under the given URL\\.<");
+        return result;
+    }
+
+    private void handlePassword(CryptedLink param, String parameter) throws Exception {
+        if (br.containsHTML("id=\"folderpass\"")) {
+            final List<String> passwords = getPreSetPasswords();
+            final int tries = 3;
+            for (int i = 0; i <= tries; i++) {
+                String latestPassword = null;
+                if (passwords.size() > 0) {
+                    latestPassword = passwords.remove(0);
+                    i = 0;
+                } else {
+                    latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
+                }
+                final Form pwform = br.getForm(0);
+                if (pwform == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                pwform.setAction(parameter);
+                // First try the stored password, if that doesn't work, ask the user to enter it
+                if (latestPassword == null || latestPassword.equals("")) {
+                    latestPassword = Plugin.getUserInput("Enter password for: " + parameter, param);
+                }
+                pwform.put("password", Encoding.urlEncode(latestPassword));
+                submitForm(pwform);
+                if (!br.containsHTML("This folder requires a password\\.")) {
+                    // Save actual password if it is valid
+                    if (getPluginConfig().setProperty("PASSWORD", latestPassword)) {
+                        getPluginConfig().save();
+                    }
+                    return;
+                }
+                if (tries > i) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+                if (getPluginConfig().setProperty("PASSWORD", null)) {
+                    getPluginConfig().save();
+                }
+            }
+        }
+    }
+
+    private ArrayList<DownloadLink> handleDlc() throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
+        if (dlclink != null) {
+            if (getPluginConfig().getBooleanProperty(NO_DLC, false) == false) {
+                for (final DownloadLink dl : loadContainer(br, "/get/dlc/" + dlclink)) {
+                    if (dupe.add(dl.getPluginPatternMatcher())) {
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    }
+                }
+            }
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> handleClickNLoad(final String parameter) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (br.containsHTML("/cnl2/") || br.containsHTML("/cnl2_add\\.png")) {
+            if (getPluginConfig().getBooleanProperty(NO_CNL, false) == false) {
+                String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
+                if (flashVars == null) {
+                    flashVars = br.getRegex("file[\n\t\r ]*?=[\n\t\r ]*?\"([^<>\"]+)\"").getMatch(0);
+                }
+                if (flashVars == null) {
+                    logger.info("Could not find flashVars");
+                    return decryptedLinks;
+                }
+                final Browser cnlbr = br.cloneBrowser();
+                getPage(cnlbr, "/get/cnl2/" + flashVars);
+                String test = cnlbr.toString();
+                String[] encVars = null;
+                if (test != null) {
+                    encVars = test.split("\\;\\;");
+                }
+                if (encVars == null || encVars.length < 3) {
+                    logger.warning("CNL code broken!");
+                    return decryptedLinks;
+                }
+                final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
+                final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
+                HashMap<String, String> infos = new HashMap<String, String>();
+                infos.put("crypted", crypted);
+                infos.put("jk", jk);
+                infos.put("source", parameter.toString());
+                String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
+                if (pkgName != null && !"unnamed Folder".equals(pkgName) && pkgName.length() > 0) {
+                    infos.put("package", pkgName);
+                }
+                String json = JSonStorage.toString(infos);
+                final LinkCrawler lc = LinkCrawler.newInstance();
+                lc.crawl("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                lc.waitForCrawling();
+                final List<CrawledLink> crawledLinks = lc.getCrawledLinks();
+                // we need to extract the respective DownloadLinks...
+                for (final CrawledLink cl : crawledLinks) {
+                    final DownloadLink dl = cl.getDownloadLink();
+                    if (dupe.add(dl.getPluginPatternMatcher())) {
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    }
+                }
+            }
+        }
+        return decryptedLinks;
+    }
+
+    private void handleImportant() throws Exception {
         final String gif[] = br.getRegex("/template/images/([^\"]+)\\.gif").getColumn(-1);
         if (gif != null) {
             Set<String> hashSet = new HashSet<String>(Arrays.asList(gif));
@@ -145,70 +296,15 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 }
             }
         }
-        /* Check if a redirect was there before */
-        if (br.getRedirectLocation() != null) {
-            getPage(br.getRedirectLocation());
-        }
-        if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        /* Folderpassword */
-        if (br.containsHTML("id=\"folderpass\"")) {
-            final List<String> passwords = getPreSetPasswords();
-            for (int i = 0; i <= 3; i++) {
-                String latestPassword = null;
-                if (passwords.size() > 0) {
-                    latestPassword = passwords.remove(0);
-                    i = 0;
-                } else {
-                    latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
-                }
-                final Form pwform = br.getForm(0);
-                if (pwform == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                pwform.setAction(parameter);
-                // First try the stored password, if that doesn't work, ask the user to enter it
-                if (latestPassword == null || latestPassword.equals("")) {
-                    latestPassword = Plugin.getUserInput("Enter password for: " + parameter, param);
-                }
-                pwform.put("password", latestPassword);
-                submitForm(pwform);
-                if (br.containsHTML("This folder requires a password\\.")) {
-                    if (getPluginConfig().setProperty("PASSWORD", null)) {
-                        getPluginConfig().save();
-                    }
-                    continue;
-                } else {
-                    // Save actual password if it is valid
-                    if (getPluginConfig().setProperty("PASSWORD", latestPassword)) {
-                        getPluginConfig().save();
-                    }
-                }
-                break;
-            }
-            if (br.containsHTML("This folder requires a password\\.")) {
-                if (getPluginConfig().setProperty("PASSWORD", null)) {
-                    getPluginConfig().save();
-                }
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-        }
-        /* Captcha handling */
+    }
+
+    private void handleCaptcha(final CryptedLink param, final String parameter) throws Exception {
         if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
-            // Captcha Recognition broken - auto = false
-            boolean auto = false;
             final int max = 5;
-            boolean failed = true;
-            for (int i = 0; i <= max; i++) {
+            for (int i = 0; i < max; i++) {
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
                 if (Captchamap == null) {
-                    invalidateLastChallengeResponse();
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
@@ -219,7 +315,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                 nexturl = getNextUrl(cp.getX(), cp.getY());
                 if (nexturl == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
                 // they can switch to german here, within REDIRECT we can't have that!
                 // br.setFollowRedirects(true);
@@ -228,142 +324,46 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                     getPage(br.getRedirectLocation());
                 }
                 if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<")) {
-                    getPage(parameter);
-                    if (i == max && auto) {
-                        i = 0;
-                        auto = false;
-                    }
                     invalidateLastChallengeResponse();
+                    if (i + 1 >= max) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                    getPage(parameter);
                     continue;
-                } else {
-                    validateLastChallengeResponse();
                 }
-                failed = false;
-                break;
-            }
-            if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-        }
-        final HashSet<String> dupe = new HashSet<String>();
-        int count = -1;
-        {
-            final String c = br.getRegex("Count of secured links:\\s*<span>(\\d+)").getMatch(0);
-            if (c != null) {
-                count = Integer.parseInt(c);
-            } else {
-                count = -1;
-            }
-        }
-        /* use cnl2 button if available */
-        if (br.containsHTML("/cnl2/") || br.containsHTML("/cnl2_add\\.png")) {
-            if (getPluginConfig().getBooleanProperty(NO_CNL, false) == false) {
-                String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
-                if (flashVars == null) {
-                    flashVars = br.getRegex("file[\n\t\r ]*?=[\n\t\r ]*?\"([^<>\"]+)\"").getMatch(0);
-                }
-                if (flashVars != null) {
-                    final Browser cnlbr = br.cloneBrowser();
-                    getPage(cnlbr, "/get/cnl2/" + flashVars);
-                    String test = cnlbr.toString();
-                    String[] encVars = null;
-                    if (test != null) {
-                        encVars = test.split("\\;\\;");
-                    }
-                    if (encVars == null || encVars.length < 3) {
-                        logger.warning("CNL code broken!");
-                    } else {
-                        final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
-                        final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        infos.put("crypted", crypted);
-                        infos.put("jk", jk);
-                        infos.put("source", parameter.toString());
-                        String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
-                        if (pkgName != null && !"unnamed Folder".equals(pkgName) && pkgName.length() > 0) {
-                            infos.put("package", pkgName);
-                        }
-                        String json = JSonStorage.toString(infos);
-                        final LinkCrawler lc = LinkCrawler.newInstance();
-                        lc.crawl("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                        lc.waitForCrawling();
-                        final List<CrawledLink> crawledLinks = lc.getCrawledLinks();
-                        // we need to extract the respective DownloadLinks...
-                        for (final CrawledLink cl : crawledLinks) {
-                            final DownloadLink dl = cl.getDownloadLink();
-                            if (dupe.add(dl.getPluginPatternMatcher())) {
-                                decryptedLinks.add(dl);
-                                distribute(dl);
-                            }
-                        }
-                        if (decryptedLinks.size() == count) {
-                            return decryptedLinks;
-                        }
-                    }
-                }
-            }
-        }
-        /* Load Contents. Container handling (DLC) */
-        final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
-        if (dlclink != null) {
-            if (getPluginConfig().getBooleanProperty(NO_DLC, false) == false) {
-                for (final DownloadLink dl : loadContainer(br, "/get/dlc/" + dlclink)) {
-                    if (dupe.add(dl.getPluginPatternMatcher())) {
-                        decryptedLinks.add(dl);
-                        distribute(dl);
-                    }
-                }
-                if (decryptedLinks.size() == count) {
-                    return decryptedLinks;
-                }
-            }
-        }
-        /* File package handling */
-        int pages = 1;
-        final String pattern = parameter.substring(parameter.lastIndexOf("/") + 1, parameter.length());
-        if (br.containsHTML("folderNav")) {
-            pages = pages + br.getRegex(pattern + "\\?n=[0-9]++\"").getMatches().length;
-        }
-        final LinkedList<String> links = new LinkedList<String>();
-        for (int i = 1; i <= pages; i++) {
-            getPage(pattern);
-            final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
-            if (linki.length == 0) {
-                if (count == 0) {
-                    break;
-                } else {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-            }
-            links.addAll(Arrays.asList(linki));
-        }
-        if (links.size() == 0) {
-            if (count == 0) {
                 validateLastChallengeResponse();
-                return decryptedLinks;
-            } else {
-                invalidateLastChallengeResponse();
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                return;
             }
         }
-        for (final String tmplink : links) {
-            getPage("/get/lnk/" + tmplink);
-            final String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
-            if (clink0 != null) {
-                try {
-                    getPage(new Regex(Encoding.htmlDecode(clink0), "\"(https?://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
-                } catch (final Throwable e) {
-                    continue;
-                }
-                final String fun = br.getRegex("eval(\\(.*\\))[\r\n]+").getMatch(0);
-                String result = fun != null ? unpackJS(fun, 1) : null;
-                if (result != null) {
-                    if (result.contains("share-links.biz")) {
-                        br.setFollowRedirects(false);
-                        getPage(result);
-                        result = br.getRedirectLocation() != null ? br.getRedirectLocation() : null;
+    }
+
+    private ArrayList<DownloadLink> handleIndividualLinks(final String parameter) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
+        if (linki == null || linki.length == 0) {
+            return decryptedLinks;
+        }
+        for (final String tmplink : linki) {
+            final Browser br = this.br.cloneBrowser();
+            try {
+                getPage(br, "/get/lnk/" + tmplink);
+                final String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
+                if (clink0 != null) {
+                    getPage(br, new Regex(Encoding.htmlDecode(clink0), "\"(https?://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
+                    final String fun = br.getRegex("eval(\\(.*\\))[\r\n]+").getMatch(0);
+                    String result = fun != null ? unpackJS(fun, 1) : null;
+                    if (result == null) {
+                        continue;
+                    }
+                    if ("".equals(result.trim())) {
+                        // no point doing any more, as they have the same outcome.
+                        // not a bug goeo blocked, add entry so it doesn't show up as defect
+                        decryptedLinks.add(null);
+                        logger.warning("you can not decypt individual links from this connection");
+                        return decryptedLinks;
+                    } else if (result.contains("share-links.biz/")) {
+                        getPage(br, result);
+                        result = br.getRedirectLocation();
                         if (result == null || result.trim().length() == 0) {
                             continue;
                         }
@@ -373,17 +373,10 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                         distribute(dl);
                         decryptedLinks.add(dl);
                     }
-                } else {
-                    continue;
                 }
+            } catch (final Exception e) {
+                continue;
             }
-        }
-        if (count > 0 && (decryptedLinks == null || decryptedLinks.size() == 0)) {
-            invalidateLastChallengeResponse();
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
-        } else {
-            validateLastChallengeResponse();
         }
         return decryptedLinks;
     }
