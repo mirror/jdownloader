@@ -125,6 +125,8 @@
 
 		<copy todir="${dist}">
 			<fileset dir="themes" includes="**/*" />
+			<exclude name="**/*.psd" />
+			<exclude name="**/*.pnd" />
 		</copy>
 
 		<copy todir="${dist}/licenses">
@@ -159,7 +161,7 @@
 			<fileset dir="${dep.awu}/src" includes="**/*.lng" />
 			<fileset dir="${dep.updateclient}/src" includes="**/*.lng" />
 			<fileset dir="${dep.browser}/src" includes="**/*.lng" />
-			<fileset dir="src" includes="**/*.lng" />			
+			<fileset dir="src" includes="**/*.lng" />
 		</copy>
 		<copy todir="${dist}">
 
@@ -406,6 +408,8 @@
 			<fileset dir="themes">
 				<include name="themes/standard/**/images/dialog/**/*" />
 				<include name="themes/standard/**/images/update*" />
+				<exclude name="**/*.psd" />
+				<exclude name="**/*.pnd" />
 			</fileset>
 		</jar>
 		<delete file="${dist}/Manifest.MF" failonerror="true" />
