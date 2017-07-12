@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -39,9 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -135,18 +132,13 @@ public class Rlnks extends antiDDoSForDecrypt {
             }
             if (cnlForm != null) {
                 String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
-                HashMap<String, String> infos = new HashMap<String, String>();
-                infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
-                infos.put("jk", jk);
                 String source = cnlForm.getInputField("source").getValue();
                 if (StringUtils.isEmpty(source)) {
                     source = parameter.toString();
                 } else {
                     source = Encoding.urlDecode(source, true);
                 }
-                infos.put("source", source);
-                String json = JSonStorage.toString(infos);
-                final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                final DownloadLink dl = DummyCNL.createDummyCNL(Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false), jk, null, source);
                 if (fp != null) {
                     fp.add(dl);
                 }
@@ -204,7 +196,7 @@ public class Rlnks extends antiDDoSForDecrypt {
                     distribute(dl);
                     decryptedLinks.add(dl);
                 } else {
-                    final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
+                    final String url = brc.getRegex("iframe\\s*name=\"Container\".*?src=\"(https?://.*?)\"").getMatch(0);
                     if (url != null) {
                         final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(url));
                         dl.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
