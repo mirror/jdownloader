@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -82,6 +83,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         private volatile boolean    hasDownloadLinks         = false;
         private volatile boolean    hasCrawledLinks          = false;
         private volatile boolean    hasLinks                 = false;
+        private volatile boolean    hasAccounts              = false;
         private volatile long       lastCrawledLinkEnabled   = -1;
         private volatile long       lastCrawledLinkDisabled  = -1;
         private volatile long       lastDownloadLinkEnabled  = -1;
@@ -110,10 +112,11 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         public Icon getIcon(String lng) {
-            final String iconKey = "banner/" + getHost() + "_" + lng;
             if (StringUtils.isEmpty(lng)) {
+                final String iconKey = "banner/" + getHost() + "_en";
                 return loadIcon(iconKey);
             } else {
+                final String iconKey = "banner/" + getHost() + "_" + lng;
                 final Icon ret = loadIcon(iconKey);
                 if (ret != null) {
                     return ret;
@@ -168,23 +171,25 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                 } else {
                     hasLinks = false;
                 }
+                hasAccounts = false;
+                final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
+                if (accounts != null) {
+                    for (Account account : accounts) {
+                        switch (account.getType()) {
+                        case PREMIUM:
+                        case LIFETIME:
+                            hasAccounts = true;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
                 lastUpdateTimestamp = System.currentTimeMillis();
                 return true;
             } else {
                 return false;
             }
-        }
-
-        public boolean hasDownloadLinks() {
-            return hasDownloadLinks;
-        }
-
-        public boolean hasCrawledLinks() {
-            return hasCrawledLinks;
-        }
-
-        public boolean hasLinks() {
-            return hasLinks;
         }
 
         @Override
@@ -454,7 +459,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
     private final AtomicBoolean            isBannerEnabled       = new AtomicBoolean(false);
     private final boolean                  isJared               = Application.isJared(null);
-    private final int                      bannerRotationTimeout = 30 * 60 * 1000;
+    private final int                      bannerRotationTimeout = 5 * 1000;
     private volatile List<AvailableBanner> rotateBanner          = null;
     private final DelayedRunnable          delayer;
 
