@@ -5,7 +5,6 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.ArrayList;
@@ -17,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
@@ -58,7 +56,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -80,19 +77,16 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
-        private volatile boolean    hasDownloadLinks         = false;
-        private volatile boolean    hasCrawledLinks          = false;
-        private volatile boolean    hasLinks                 = false;
-        private volatile boolean    hasAccounts              = false;
-        private volatile long       lastCrawledLinkEnabled   = -1;
-        private volatile long       lastCrawledLinkDisabled  = -1;
-        private volatile long       lastDownloadLinkEnabled  = -1;
-        private volatile long       lastDownloadLinkDisabled = -1;
-        private volatile long       lastFreeDownloadSeen     = -1;
-        private volatile long       lastMultiDownloadSeen    = -1;
-        private volatile long       lastAccountChangeSeen    = -1;
-        private final AtomicBoolean hasChanges               = new AtomicBoolean(false);
-        private long                lastUpdateTimestamp      = -1;
+        private volatile boolean    hasDownloadLinks        = false;
+        private volatile boolean    hasCrawledLinks         = false;
+        private volatile boolean    hasLinks                = false;
+        private volatile boolean    hasAccounts             = false;
+        private volatile long       lastFreeDownloadSeen    = -1;
+        private volatile long       lastPremiumDownloadSeen = -1;
+        private volatile long       lastMultiDownloadSeen   = -1;
+        private volatile long       lastAccountChangeSeen   = -1;
+        private final AtomicBoolean hasChanges              = new AtomicBoolean(false);
+        private long                lastUpdateTimestamp     = -1;
         private final DomainInfo    domainInfo;
 
         protected AvailableBanner(final DomainInfo domainInfo) {
@@ -160,37 +154,78 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         private boolean updateData() {
-            if (System.currentTimeMillis() - lastUpdateTimestamp > 15 * 60 * 1000l) {
+            if (System.currentTimeMillis() - lastUpdateTimestamp > 60 * 1000l) {
                 final DomainInfo domainInfo = getDomainInfo();
-                hasDownloadLinks = contains(DownloadController.getInstance(), domainInfo, Boolean.TRUE);
-                hasCrawledLinks = contains(LinkCollector.getInstance(), domainInfo, Boolean.TRUE);
-                if (hasDownloadLinks || hasCrawledLinks) {
-                    hasLinks = true;
-                } else if (contains(DownloadController.getInstance(), domainInfo, null) || contains(LinkCollector.getInstance(), domainInfo, null)) {
-                    hasLinks = true;
-                } else {
-                    hasLinks = false;
+                final boolean hasDownloadLinks = this.hasDownloadLinks;
+                final boolean hasCrawledLinks = this.hasCrawledLinks;
+                final boolean hasLinks = this.hasLinks;
+                boolean hasRunningDownloadWithAccount = false;
+                if (!hasDownloadLinks || lastDownloadLinkEnabled < lastUpdateTimestamp) {
+                    boolean hasRunningDownload = false;
+                    for (final SingleDownloadController singleDownloadController : DownloadWatchDog.getInstance().getRunningDownloadLinks()) {
+                        final DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
+                        if (domainInfo == candidate.getLink().getDomainInfo()) {
+                            hasRunningDownload = true;
+                            switch (candidate.getCachedAccount().getType()) {
+                            case ORIGINAL:
+                                switch (candidate.getCachedAccount().getAccount().getType()) {
+                                case LIFETIME:
+                                case PREMIUM:
+                                    hasRunningDownloadWithAccount = true;
+                                    break;
+                                default:
+                                    break;
+                                }
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                    }
+                    if (hasRunningDownload) {
+                        this.hasDownloadLinks = true;
+                    } else {
+                        this.hasDownloadLinks = contains(DownloadController.getInstance(), domainInfo, Boolean.TRUE);
+                    }
                 }
-                hasAccounts = false;
-                final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
-                if (accounts != null) {
-                    for (Account account : accounts) {
-                        switch (account.getType()) {
-                        case PREMIUM:
-                        case LIFETIME:
-                            hasAccounts = true;
-                            break;
-                        default:
-                            break;
+                if (!hasCrawledLinks || lastCrawledLinkEnabled < lastUpdateTimestamp) {
+                    this.hasCrawledLinks = contains(LinkCollector.getInstance(), domainInfo, Boolean.TRUE);
+                }
+                if (this.hasDownloadLinks || this.hasCrawledLinks) {
+                    this.hasLinks = true;
+                } else if (!hasLinks || lastDownloadLinkDisabled < lastUpdateTimestamp || lastCrawledLinkDisabled < lastUpdateTimestamp) {
+                    this.hasLinks = contains(DownloadController.getInstance(), domainInfo, null) || contains(LinkCollector.getInstance(), domainInfo, null);
+                }
+                final boolean hasAccounts = this.hasAccounts;
+                if (hasRunningDownloadWithAccount) {
+                    this.hasAccounts = true;
+                } else {
+                    if (!hasAccounts || lastAccountChangeSeen < lastUpdateTimestamp) {
+                        this.hasAccounts = false;
+                        final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
+                        if (accounts != null) {
+                            for (Account account : accounts) {
+                                switch (account.getType()) {
+                                case PREMIUM:
+                                case LIFETIME:
+                                    this.hasAccounts = true;
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
                 lastUpdateTimestamp = System.currentTimeMillis();
-                return true;
+                return hasAccounts != this.hasAccounts || hasLinks != this.hasLinks || hasDownloadLinks != this.hasDownloadLinks || hasCrawledLinks != this.hasCrawledLinks;
             } else {
                 return false;
             }
         }
+
+        private volatile long lastDownloadLinkEnabled  = -1;
+        private volatile long lastDownloadLinkDisabled = -1;
 
         @Override
         public void onDownloadControllerAddedPackage(final FilePackage pkg) {
@@ -198,13 +233,14 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             try {
                 for (final DownloadLink link : pkg.getChildren()) {
                     if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && domainInfo == link.getDomainInfo()) {
+                        hasLinks = true;
                         if (link.isEnabled()) {
+                            hasDownloadLinks = true;
                             lastDownloadLinkEnabled = System.currentTimeMillis();
-                            onChange();
                         } else {
                             lastDownloadLinkDisabled = System.currentTimeMillis();
-                            onChange();
                         }
+                        onChange();
                         break;
                     }
                 }
@@ -234,7 +270,17 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         @Override
-        public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+        public void onDownloadControllerUpdatedData(DownloadLink link, DownloadLinkProperty property) {
+            if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && domainInfo == link.getDomainInfo()) {
+                hasLinks = true;
+                if (link.isEnabled()) {
+                    hasDownloadLinks = true;
+                    lastDownloadLinkEnabled = System.currentTimeMillis();
+                } else {
+                    lastDownloadLinkDisabled = System.currentTimeMillis();
+                }
+                onChange();
+            }
         }
 
         @Override
@@ -263,6 +309,19 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
         @Override
         public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+            if (event != null && event.getParameter() instanceof CrawledLink) {
+                final CrawledLink link = (CrawledLink) event.getParameter();
+                if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && domainInfo == link.getDomainInfo()) {
+                    hasLinks = true;
+                    if (link.isEnabled()) {
+                        hasCrawledLinks = true;
+                        lastCrawledLinkEnabled = System.currentTimeMillis();
+                    } else {
+                        lastCrawledLinkDisabled = System.currentTimeMillis();
+                    }
+                    onChange();
+                }
+            }
         }
 
         @Override
@@ -277,21 +336,35 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
         }
 
+        private volatile long lastCrawledLinkEnabled  = -1;
+        private volatile long lastCrawledLinkDisabled = -1;
+
         @Override
         public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
             if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && domainInfo == link.getDomainInfo()) {
+                hasLinks = true;
                 if (link.isEnabled()) {
+                    hasCrawledLinks = true;
                     lastCrawledLinkEnabled = System.currentTimeMillis();
-                    onChange();
                 } else {
                     lastCrawledLinkDisabled = System.currentTimeMillis();
-                    onChange();
                 }
+                onChange();
             }
         }
 
         @Override
         public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+            if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && domainInfo == link.getDomainInfo()) {
+                hasLinks = true;
+                if (link.isEnabled()) {
+                    hasCrawledLinks = true;
+                    lastCrawledLinkEnabled = System.currentTimeMillis();
+                } else {
+                    lastCrawledLinkDisabled = System.currentTimeMillis();
+                }
+                onChange();
+            }
         }
 
         @Override
@@ -341,29 +414,30 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         @Override
         public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
             if (domainInfo == candidate.getLink().getDomainInfo()) {
+                hasDownloadLinks = true;
+                hasLinks = true;
                 switch (candidate.getCachedAccount().getType()) {
                 case NONE:
                     lastFreeDownloadSeen = System.currentTimeMillis();
-                    onChange();
                     break;
                 case ORIGINAL:
                     switch (candidate.getCachedAccount().getAccount().getType()) {
                     case FREE:
                     case UNKNOWN:
                         lastFreeDownloadSeen = System.currentTimeMillis();
-                        onChange();
                         break;
                     default:
+                        lastPremiumDownloadSeen = System.currentTimeMillis();
                         break;
                     }
                     break;
                 case MULTI:
                     lastMultiDownloadSeen = System.currentTimeMillis();
-                    onChange();
                     break;
                 default:
                     break;
                 }
+                onChange();
             }
         }
 
@@ -378,16 +452,19 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         @Override
         public void onAccountControllerEvent(AccountControllerEvent event) {
             final Account acc = event.getAccount();
-            if (acc != null && acc.isEnabled() && StringUtils.equalsIgnoreCase(domainInfo.getTld(), acc.getHoster())) {
+            if (acc != null && StringUtils.equalsIgnoreCase(domainInfo.getTld(), acc.getHoster())) {
                 switch (event.getType()) {
                 case ADDED:
-                case ACCOUNT_PROPERTY_UPDATE:
                 case ACCOUNT_UP_OR_DOWNGRADE:
+                case ACCOUNT_CHECKED:
                     switch (acc.getType()) {
                     case LIFETIME:
                     case PREMIUM:
-                        lastAccountChangeSeen = System.currentTimeMillis();
-                        onChange();
+                        if (acc.isEnabled() && acc.isValid()) {
+                            hasAccounts = true;
+                            lastAccountChangeSeen = System.currentTimeMillis();
+                            onChange();
+                        }
                         break;
                     default:
                         break;
@@ -412,10 +489,15 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     private class Banner {
         private final Icon            icon;
         private final AvailableBanner banner;
+        private final long            timeStamp = System.currentTimeMillis();
 
         private Banner(AvailableBanner banner) {
             this.icon = banner.getIcon();
             this.banner = banner;
+        }
+
+        private final long getTimestamp() {
+            return timeStamp;
         }
 
         private final Icon getIcon() {
@@ -431,46 +513,61 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     private volatile Banner      current = null;
 
     private void rotateBanner(List<AvailableBanner> rotateBanners) {
+        final Banner old = current;
         try {
-            if (rotateBanners == null || rotateBanners.size() == 0) {
-                rotateBanners = getAllBanners();
-            }
-            if (rotateBanners == null || rotateBanners.size() == 0) {
+            if (rotateBanners != null && rotateBanners.size() == 0) {
                 current = null;
-            } else if (current == null) {
-                current = new Banner(rotateBanners.get(0));
             } else {
-                final int index = rotateBanners.indexOf(current.banner);
-                if (index == -1 || index + 1 == rotateBanners.size()) {
+                if (rotateBanners == null) {
+                    rotateBanners = getAllBanners();
+                }
+                if (rotateBanners == null || rotateBanners.size() == 0) {
+                    current = null;
+                } else if (old == null) {
                     current = new Banner(rotateBanners.get(0));
                 } else {
-                    current = new Banner(rotateBanners.get(index + 1));
+                    if (System.currentTimeMillis() - old.getTimestamp() > bannerMinimumShowtime) {
+                        final int index = rotateBanners.indexOf(old.banner);
+                        if (index == -1 || index + 1 == rotateBanners.size() || rotateBanners.size() == 1) {
+                            current = new Banner(rotateBanners.get(0));
+                        } else {
+                            current = new Banner(rotateBanners.get(index + 1));
+                        }
+                    }
                 }
             }
         } finally {
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    pane.repaint();
-                }
-            };
+            if (old != current) {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        pane.repaint();
+                    }
+                };
+            }
         }
     }
 
-    private final AtomicBoolean            isBannerEnabled       = new AtomicBoolean(false);
-    private final boolean                  isJared               = Application.isJared(null);
-    private final int                      bannerRotationTimeout = 5 * 1000;
-    private volatile List<AvailableBanner> rotateBanner          = null;
-    private final DelayedRunnable          delayer;
+    private final AtomicBoolean   isBannerEnabled       = new AtomicBoolean(false);
+    private final int             refreshTimeout        = 60 * 1000;
+    private final int             bannerMinimumShowtime = 5 * 60 * 1000;
+    private final DelayedRunnable updateDelayer;
 
     private List<AvailableBanner> updateRotation() {
+        final ArrayList<AvailableBanner> ret = new ArrayList<AvailableBanner>();
         for (final AvailableBanner banner : allBanners) {
             if (banner.hasChanges()) {
-                // eval here
+                // required to process changes
+            }
+            if (!banner.hasAccounts) {
+                if (banner.hasDownloadLinks) {
+                    ret.add(0, banner);
+                } else if (banner.hasLinks) {
+                    ret.add(banner);
+                }
             }
         }
-        // return rotation List
-        return null;
+        return ret;
     }
 
     private List<AvailableBanner> getAllBanners() {
@@ -479,20 +576,26 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
     public BannerRotation() {
         pane = MainTabbedPane.getInstance();
-        final Timer timer = new Timer(bannerRotationTimeout, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (isEnabled()) {
-                    rotateBanner(rotateBanner);
-                }
-            }
-        });
-        timer.setRepeats(true);
-        delayer = new DelayedRunnable(5000, 60000) {
+        updateDelayer = new DelayedRunnable(1000, 15000) {
             @Override
             public void delayedrun() {
-                rotateBanner = updateRotation();
+                rotateBanner(updateRotation());
             }
+        };
+        final Thread refreshThread = new Thread() {
+            {
+                setDaemon(true);
+            }
+
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(refreshTimeout);
+                    } catch (InterruptedException e) {
+                    }
+                    onChange(null);
+                }
+            };
         };
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
             @Override
@@ -511,17 +614,19 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                 final boolean isEnabled = Boolean.TRUE.equals(newValue);
                                 if (isBannerEnabled.getAndSet(isEnabled) != isEnabled) {
-                                    new EDTRunner() {
-                                        @Override
-                                        protected void runInEDT() {
-                                            pane.repaint();
-                                        }
-                                    };
-                                }
-                                if (isEnabled) {
-                                    StatsManager.I().track("various/BANNER/enabled");
-                                } else {
-                                    StatsManager.I().track("various/BANNER/disabled");
+                                    if (!isEnabled) {
+                                        StatsManager.I().track("various/BANNER/disabled");
+                                        new EDTRunner() {
+                                            @Override
+                                            protected void runInEDT() {
+                                                current = null;
+                                                pane.repaint();
+                                            }
+                                        };
+                                    } else {
+                                        StatsManager.I().track("various/BANNER/enabled");
+                                        updateDelayer.resetAndStart();
+                                    }
                                 }
                             }
 
@@ -534,7 +639,8 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("share-online.biz")));
-                        timer.start();
+                        updateDelayer.resetAndStart();
+                        refreshThread.start();
                     }
                 }.start();
             }
@@ -542,7 +648,9 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     }
 
     private void onChange(AvailableBanner banner) {
-        delayer.resetAndStart();
+        if (isEnabled()) {
+            updateDelayer.resetAndStart();
+        }
     }
 
     @Override
@@ -658,7 +766,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     }
 
     private boolean isEnabled() {
-        return !Application.isJared(null) || (false && isBannerEnabled.get());
+        return isBannerEnabled.get();
     }
 
     @Override
@@ -684,7 +792,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         if (banner != null) {
             return banner.getBanner().getPreSelectedInAddAccountDialog();
         } else {
-            return "uploaded.to";
+            return "rapidgator.net";
         }
     }
 
@@ -692,11 +800,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     public void onClicked(MouseEvent e) {
         final Banner banner = this.current;
         if (banner != null && isEnabled()) {
-            if (isJared || e.getButton() == MouseEvent.BUTTON1) {
-                banner.getBanner().onClick(e);
-            } else {
-                rotateBanner(rotateBanner);
-            }
+            banner.getBanner().onClick(e);
         }
     }
 

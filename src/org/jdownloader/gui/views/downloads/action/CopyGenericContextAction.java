@@ -188,6 +188,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             if (link.getContentUrl() != null) {
                 return link.getContentUrl();
             }
+            return link.getPluginPatternMatcher();
         default:
             return null;
         }

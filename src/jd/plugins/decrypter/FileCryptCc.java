@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -63,7 +62,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 public class FileCryptCc extends PluginForDecrypt {
     private final String                   NO_SOLVEMEDIA      = "1";
     private String                         userretrys         = "10";
-
     private static AtomicReference<String> LAST_USED_PASSWORD = new AtomicReference<String>();
 
     public FileCryptCc(PluginWrapper wrapper) {
@@ -85,7 +83,6 @@ public class FileCryptCc extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", agent);
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
         br.getHeaders().put("Accept-Language", "en");
-
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
@@ -102,7 +99,6 @@ public class FileCryptCc extends PluginForDecrypt {
         // Separate password and captcha. this is easier for count reasons!
         int counter = -1;
         final int retry = Integer.parseInt(userretrys);
-
         final List<String> passwords = getPreSetPasswords();
         final HashSet<String> avoidRetry = new HashSet<String>();
         final String lastUsedPassword = LAST_USED_PASSWORD.get();
@@ -168,7 +164,6 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
-
             final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
@@ -235,7 +230,6 @@ public class FileCryptCc extends PluginForDecrypt {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =
                 // http://filecrypt.cc/captcha/captcha.php?namespace=container
                 // using bismarck original observation, this type is skipable.
-
                 if (counter > 0) {
                     final String code = getCaptchaCode(captcha, param);
                     if (StringUtils.isEmpty(code)) {
@@ -258,7 +252,6 @@ public class FileCryptCc extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
-
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
         // mirrors - note: containers can contain uid within path... -raztoki20161204
         String[] mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+" + (containsMirror != null ? Pattern.quote(containsMirror) : "\\.html\\?mirror=\\d+") + ")\"").getColumn(0);
@@ -343,13 +336,11 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -393,7 +384,6 @@ public class FileCryptCc extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
             decryptedLinks.add(dl);
         }
-
     }
 
     private final boolean containsCaptcha() {
@@ -405,7 +395,6 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private final String containsCaptcha = "<h2>(?:Sicherheitsüberprüfung|Security prompt)</h2>";
-
     private String       cleanHTML       = null;
 
     private final void cleanUpHTML() {
@@ -414,7 +403,6 @@ public class FileCryptCc extends PluginForDecrypt {
         // generic cleanup
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
             if (results != null) {
@@ -423,7 +411,6 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
         }
-
         cleanHTML = toClean;
     }
 
@@ -457,7 +444,6 @@ public class FileCryptCc extends PluginForDecrypt {
             if (file.exists()) {
                 file.delete();
             }
-
         }
         return links;
     }
