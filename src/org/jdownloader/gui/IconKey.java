@@ -272,10 +272,6 @@ public class IconKey {
     public static final String ICON_LINK                        = "link";
     public static final String ICON_DOWNLOAD                    = "download";
     public static final String ICON_WARNING_GREEN               = "warning_green";
-    public static final String ICON_UPLOADED_SIGN_UP_NOW_EN     = "uploaded/sign_up_now_en";
-    public static final String ICON_UPLOADED_GET_PREMIUM_DE     = "uploaded/get_premium_de";
-    public static final String ICON_UPLOADED_PREMIUM_EN         = "uploaded/premium_en";
-    public static final String ICON_UPLOADED_GET_PREMIUM_EN     = "uploaded/get_premium_en";
     public static final String ICON_AUTO_RECONNECT              = "auto-reconnect";
     public static final String ICON_REMOVE_FAILED               = "remove_failed";
     public static final String ICON_PUZZLE                      = "puzzle";
