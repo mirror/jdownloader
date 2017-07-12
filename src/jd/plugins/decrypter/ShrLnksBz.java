@@ -329,15 +329,24 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             getPage(pattern);
             final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
             if (linki.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                if (count == 0) {
+                    break;
+                } else {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
             }
             links.addAll(Arrays.asList(linki));
         }
         if (links.size() == 0) {
-            invalidateLastChallengeResponse();
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (count == 0) {
+                validateLastChallengeResponse();
+                return decryptedLinks;
+            } else {
+                invalidateLastChallengeResponse();
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         for (final String tmplink : links) {
             getPage("/get/lnk/" + tmplink);
@@ -369,7 +378,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 }
             }
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        if (count > 0 && (decryptedLinks == null || decryptedLinks.size() == 0)) {
             invalidateLastChallengeResponse();
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
