@@ -57,6 +57,20 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -110,7 +124,6 @@ import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.sponsor.BannerRotation;
 import org.jdownloader.gui.sponsor.Sponsor;
 import org.jdownloader.gui.sponsor.SponsorUtils;
 import org.jdownloader.gui.translate._GUI;
@@ -137,20 +150,6 @@ import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
-
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -1140,18 +1139,18 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 }.getReturnValue();
             }
         });
-        SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
             @Override
             public void run() {
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        Sponsor sp = SponsorUtils.getSponsor();
-                        if (sp != null) {
-                            MainTabbedPane.getInstance().setTopRightPainter(new BannerRotation());
+                final Sponsor sp = SponsorUtils.getSponsor();
+                if (sp != null) {
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            MainTabbedPane.getInstance().setTopRightPainter(sp);
                         }
-                    }
-                };
+                    };
+                }
             }
         });
         FileCreationManager.getInstance().mkdir(Application.getResource("/tmp/update/self/JDU"));

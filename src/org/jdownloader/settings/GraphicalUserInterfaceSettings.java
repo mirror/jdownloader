@@ -33,7 +33,6 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
-
     public static class CustomIsConfigViewVisible extends AbstractCustomValueGetter<Boolean> {
         @Override
         public Boolean getValue(KeyHandler<Boolean> keyHandler, Boolean value) {
@@ -119,7 +118,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // @DefaultBooleanValue(true)
     // @RequiresRestart("A JDownloader Restart is Required")
     // boolean isDownloadViewSidebarVisible();
-
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isBalloonNotificationEnabled();
@@ -314,7 +312,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // void setDownloadViewSidebarToggleButtonEnabled(boolean b);
     //
     // void setDownloadViewSidebarVisible(boolean b);
-
     void setActiveConfigPanel(String name);
 
     void setActiveMyJDownloaderPanel(String name);
@@ -322,9 +319,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setActivePluginConfigPanel(String name);
 
     // void setActiveCESConfigPanel(String name);
-
     // String getActiveCESConfigPanel();
-
     void setBalloonNotificationEnabled(boolean b);
 
     void setCaptchaScaleFactor(int b);
@@ -426,7 +421,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         KiB(1024, true),
         KB(1000l),
         B(1);
-
         private final long    divider;
         private final boolean iecPrefix;
 
@@ -506,16 +500,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public static enum MacDockProgressDisplay implements LabelInterface {
         TOTAL_PROGRESS() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.DockProgressDisplay_total_progress();
             }
-
         },
-
         NOTHING() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.DockProgressDisplay_nothing();
@@ -531,23 +521,18 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public static enum WindowsTaskBarProgressDisplay implements LabelInterface {
         TOTAL_PROGRESS() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.DockProgressDisplay_total_progress();
             }
-
         },
-
         NOTHING() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.DockProgressDisplay_nothing();
             }
         },
         TOTAL_PROGRESS_AND_CONNECTIONS() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.DockProgressDisplay_connections_and_progress();
@@ -628,7 +613,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     // org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel
     public static enum LookAndFeelType {
-
         ALU_OXIDE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaAluOxideLookAndFeel"),
         BLACK_EYE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel"),
         BLACK_MOON("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel"),
@@ -649,7 +633,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         WHITE_VISION("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
         JD_PLAIN("theme-plain", "org.jdownloader.gui.laf.plain.PlainLookAndFeel"),
         DEFAULT(null, "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
-
         private final String clazz;
         private final String extensionID;
 
@@ -756,7 +739,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         DONT_GROUP,
         @EnumLabel("Group supported Accounts")
         GROUP_BY_SUPPORTED_ACCOUNTS
-
     }
 
     @AboutConfig
@@ -785,7 +767,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setPackageDoubleClickAction(PackageDoubleClickAction action);
 
     public static enum LinkDoubleClickAction {
-
         @EnumLabel("Open Downloadfolder")
         OPEN_FOLDER,
         @EnumLabel("Open File")
@@ -853,7 +834,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setLinkPropertiesPanelDownloadFromVisible(boolean v);
 
     //
-
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isDownloadsPropertiesPanelCommentVisible();
@@ -905,7 +885,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public static enum RlyWarnLevel {
         @EnumLabel("HIGH! Show all 'Are you sure?' dialogs!")
         HIGH,
-
         @EnumLabel("NORMAL! Show the most important 'Are you sure?' dialogs!")
         NORMAL,
         @EnumLabel("LOW! Show only severe 'Are you sure?' dialogs!")
@@ -923,33 +902,28 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public void setRlyWarnLevel(RlyWarnLevel level);
 
     public static enum DeleteFileOptions implements LabelInterface {
-
         REMOVE_LINKS_ONLY() {
             @Override
             public String getLabel() {
                 return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2();
             }
         },
-
         REMOVE_LINKS_AND_RECYCLE_FILES() {
             @Override
             public String getLabel() {
                 return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2();
             }
         },
-
         REMOVE_LINKS_AND_DELETE_FILES() {
             @Override
             public String getLabel() {
                 return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2();
             }
         };
-
         @Override
         public String getLabel() {
             return null;
         }
-
     }
 
     @DescriptionForConfigEntry("Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|, | - #AVGSPEED|, | - #RUNNING_DOWNLOADS|")
@@ -988,7 +962,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // boolean isOSRSurveyEnabled();
     //
     // void setOSRSurveyEnabled(boolean b);
-
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isSpecialDealsEnabled();
@@ -997,9 +970,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    boolean isULBannerEnabled();
+    boolean isBannerEnabled();
 
-    void setULBannerEnabled(boolean b);
+    void setBannerEnabled(boolean b);
 
     //
     @AboutConfig
@@ -1112,34 +1085,28 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public static enum ConfirmIncompleteArchiveAction implements LabelInterface {
         ASK() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.GraphicalUserInterfaceSettings_getLabel_ask_();
             }
-
         },
         KEEP_IN_LINKGRABBER() {
-
             @Override
             public String getLabel() {
                 return _GUI.T.GraphicalUserInterfaceSettings_getLabel_do_not_move();
             }
-
         },
         MOVE_TO_DOWNLOADLIST() {
             @Override
             public String getLabel() {
                 return _GUI.T.GraphicalUserInterfaceSettings_getLabel_move_anyway();
             }
-
         },
         DELETE() {
             @Override
             public String getLabel() {
                 return _GUI.T.GraphicalUserInterfaceSettings_getLabel_delete();
             }
-
         }
     }
 
@@ -1249,7 +1216,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public static class Position implements Storable {
         public Position(/* storable */) {
-
         }
 
         private int x = -1;
@@ -1416,5 +1382,4 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isMainWindowAlwaysOnTop();
 
     void setMainWindowAlwaysOnTop(boolean b);
-
 }
