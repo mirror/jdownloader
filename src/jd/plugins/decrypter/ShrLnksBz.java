@@ -23,14 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,9 +44,16 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
-
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
 
@@ -91,8 +90,6 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return prepBr;
     }
 
-    private final HashSet<String> dupe = new HashSet<String>();
-
     private void correctLanguageCookie(final Browser prepBr, final String host) {
         if (host.matches("(?i)share-links\\.biz|s2l\\.biz")) {
             /* Prefer English */
@@ -112,6 +109,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final HashSet<String> dupe = new HashSet<String>();
         br = new Browser();
         String parameter = param.toString();
         if (parameter.contains("s2l.biz")) {
@@ -136,24 +134,30 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         handleCaptcha(param, parameter);
         final int count = getCount();
         /* use cnl2 button if available */
-        decryptedLinks.addAll(handleClickNLoad(parameter));
+        decryptedLinks.addAll(handleClickNLoad(dupe, parameter));
         if (decryptedLinks.size() == count) {
             return decryptedLinks;
         }
         /* Load Contents. Container handling (DLC) */
-        decryptedLinks.addAll(handleDlc());
+        decryptedLinks.addAll(handleDlc(dupe));
         if (decryptedLinks.size() == count) {
             return decryptedLinks;
         }
         /* Individual file handling */
-        decryptedLinks.addAll(handleIndividualLinks(parameter));
+        decryptedLinks.addAll(handleIndividualLinks(dupe, parameter));
         if (decryptedLinks.isEmpty()) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
-        } else if (decryptedLinks.size() != count) {
-            logger.warning("decryptedLinks size doesn't reflect against count");
+            if (count == 0) {
+                return decryptedLinks;
+            } else {
+                logger.warning("Decrypter out of date for link: " + parameter);
+                return null;
+            }
+        } else {
+            if (decryptedLinks.size() != count) {
+                logger.warning("decryptedLinks size doesn't reflect against count");
+            }
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
     private int getCount() {
@@ -161,8 +165,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         final String c = br.getRegex("Count of secured links:\\s*<span>\\d+/(\\d+)").getMatch(0);
         if (c != null) {
             return Integer.parseInt(c);
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     private boolean isOffline() {
@@ -211,7 +216,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> handleDlc() throws Exception {
+    private ArrayList<DownloadLink> handleDlc(Set<String> dupe) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
@@ -227,7 +232,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> handleClickNLoad(final String parameter) throws Exception {
+    private ArrayList<DownloadLink> handleClickNLoad(Set<String> dupe, final String parameter) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (br.containsHTML("/cnl2/") || br.containsHTML("/cnl2_add\\.png")) {
             if (getPluginConfig().getBooleanProperty(NO_CNL, false) == false) {
@@ -337,7 +342,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> handleIndividualLinks(final String parameter) throws Exception {
+    private ArrayList<DownloadLink> handleIndividualLinks(Set<String> dupe, final String parameter) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
         if (linki == null || linki.length == 0) {
