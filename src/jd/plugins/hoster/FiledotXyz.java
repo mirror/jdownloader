@@ -27,6 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,14 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filedot.xyz" }, urls = { "https?://(?:www\\.)?filedot\\.xyz/(?:embed\\-)?[a-z0-9]{12}" })
 public class FiledotXyz extends PluginForHost {
@@ -783,26 +783,26 @@ public class FiledotXyz extends PluginForHost {
 
     /* Removes HTML code which could break the plugin */
     private void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
-        ArrayList<String> regexStuff = new ArrayList<String>();
+        String correctedBR = br.toString();
+        final ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
+        regexStuff.add("<font[^>]*color\\s*=\\s*('|\"|)white\\1[^>]*>\\s*File Not Found\\s*<\\s*/font\\s*>");
+        regexStuff.add("<[A-Za-z0-9]+[^>]*?class=\"hidden\"[^>]*?>File not found</[A-Za-z0-9]+>");
         /* generic cleanup */
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        /* 2016-12-29: Fix for html: "<h1 class="hidden">File not found</h1>" */
-        regexStuff.add("(<[A-Za-z0-9]+[^>]*?class=\"hidden\"[^>]*?>File not found</[A-Za-z0-9]+>)");
+        regexStuff.add("<!--.*?-->");
+        regexStuff.add("<td[^>]+style=(\"|')[\\w:;\\s#-]*color\\s*:\\s*transparent\\s*;[^>]*>.*?</td>");
+        regexStuff.add("<\\s*(font)\\s+[^>]{0,}size\\s*=\\s*(\"|'|)0\\3[^>]*>.*?<\\s*/\\2[^>]*>");
 
         for (String aRegex : regexStuff) {
-            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            String results[] = new Regex(correctedBR, aRegex).getColumn(-1);
             if (results != null) {
                 for (String result : results) {
                     correctedBR = correctedBR.replace(result, "");
                 }
             }
         }
+        this.correctedBR = correctedBR;
     }
 
     /** Function to find the final downloadlink. */
