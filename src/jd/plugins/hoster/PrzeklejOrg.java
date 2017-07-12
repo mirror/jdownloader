@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,9 +27,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "przeklej.org" }, urls = { "https?" + "://(www\\.)?(?:przeklej\\.org|easypaste\\.org)/file/[A-Za-z0-9]+" })
-public class PrzeklejOrg extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easypaste.org" }, urls = { "https?" + "://(www\\.)?(?:przeklej\\.org|easypaste\\.org)/file/[A-Za-z0-9]+" })
+public class PrzeklejOrg extends PluginForHost {
     public PrzeklejOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,7 +59,7 @@ public class PrzeklejOrg extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getPluginPatternMatcher() + "?lang=en");
-        if (br.containsHTML(">\\s*file was removed\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*file was removed\\s*<|>File does not exist<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String jsredirect = br.getRegex("<script>location\\.href=\"(https?://(www\\.)?" + domains + "/file/[^<>\"]*?)\"</script>").getMatch(0);
@@ -133,5 +131,4 @@ public class PrzeklejOrg extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
