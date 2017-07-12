@@ -137,7 +137,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         public DomainInfo getDomainInfo() {
-            return DomainInfo.getInstance(getHost());
+            return domainInfo;
         }
 
         public void onClick(final MouseEvent e) {
@@ -232,7 +232,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             final boolean readL = pkg.getModifyLock().readLock();
             try {
                 for (final DownloadLink link : pkg.getChildren()) {
-                    if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && domainInfo == link.getDomainInfo()) {
+                    if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && getDomainInfo() == link.getDomainInfo()) {
                         hasLinks = true;
                         if (link.isEnabled()) {
                             hasDownloadLinks = true;
@@ -271,7 +271,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
         @Override
         public void onDownloadControllerUpdatedData(DownloadLink link, DownloadLinkProperty property) {
-            if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && domainInfo == link.getDomainInfo()) {
+            if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && getDomainInfo() == link.getDomainInfo()) {
                 hasLinks = true;
                 if (link.isEnabled()) {
                     hasDownloadLinks = true;
@@ -311,7 +311,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
             if (event != null && event.getParameter() instanceof CrawledLink) {
                 final CrawledLink link = (CrawledLink) event.getParameter();
-                if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && domainInfo == link.getDomainInfo()) {
+                if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && getDomainInfo() == link.getDomainInfo()) {
                     hasLinks = true;
                     if (link.isEnabled()) {
                         hasCrawledLinks = true;
@@ -341,7 +341,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
         @Override
         public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
-            if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && domainInfo == link.getDomainInfo()) {
+            if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && getDomainInfo() == link.getDomainInfo()) {
                 hasLinks = true;
                 if (link.isEnabled()) {
                     hasCrawledLinks = true;
@@ -355,7 +355,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
         @Override
         public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
-            if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && domainInfo == link.getDomainInfo()) {
+            if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && getDomainInfo() == link.getDomainInfo()) {
                 hasLinks = true;
                 if (link.isEnabled()) {
                     hasCrawledLinks = true;
@@ -413,7 +413,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
         @Override
         public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
-            if (domainInfo == candidate.getLink().getDomainInfo()) {
+            if (getDomainInfo() == candidate.getLink().getDomainInfo()) {
                 hasDownloadLinks = true;
                 hasLinks = true;
                 switch (candidate.getCachedAccount().getType()) {
@@ -452,7 +452,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         @Override
         public void onAccountControllerEvent(AccountControllerEvent event) {
             final Account acc = event.getAccount();
-            if (acc != null && StringUtils.equalsIgnoreCase(domainInfo.getTld(), acc.getHoster())) {
+            if (acc != null && StringUtils.equalsIgnoreCase(getDomainInfo().getTld(), acc.getHoster())) {
                 switch (event.getType()) {
                 case ADDED:
                 case ACCOUNT_UP_OR_DOWNGRADE:
@@ -756,7 +756,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     @Override
     public Rectangle paint(Graphics2D g) {
         final Banner banner = this.current;
-        if (isVisible() && isEnabled() && banner != null) {
+        if (isVisible() && isEnabled() && banner != null && banner.icon != null) {
             final Icon icon = banner.getIcon();
             icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 25 - icon.getIconHeight() + 2);
             final Rectangle bannerRectangle = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 25 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
