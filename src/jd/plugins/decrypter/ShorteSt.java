@@ -59,7 +59,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("//clkme.in/", "//cllkme.com/");
         if (parameter.contains("%29")) {
             parameter = parameter.replace("%29", ")");
             parameter = parameter.replace("%28", "(");
