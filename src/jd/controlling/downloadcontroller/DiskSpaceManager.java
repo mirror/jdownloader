@@ -14,7 +14,6 @@ import org.appwork.utils.Files17;
 import org.appwork.utils.ProcMounts;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -121,8 +120,9 @@ public class DiskSpaceManager {
                 }
             } catch (final IOException e) {
                 LogController.CL().log(e);
-                if (OperatingSystem.FREEBSD.equals(CrossSystem.getOS()) && StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
-                    LogController.CL().info("Possible FreeBSD Jail detected! Disable DiskSpaceManager!");
+                // https://bugs.openjdk.java.net/browse/JDK-8165852
+                // https://bugs.openjdk.java.net/browse/JDK-8166162
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
                     SUPPORTED.set(false);
                     return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
                 }
