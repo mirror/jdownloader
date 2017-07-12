@@ -88,6 +88,7 @@ import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -1379,7 +1380,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 if (httpServer != null) {
                                     newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
                                 } else {
-                                    newDemuxCommands.add(metaFile.getAbsolutePath());
+                                    final String path = metaFile.getAbsolutePath();
+                                    if (CrossSystem.isWindows() && path.length() > 259) {
+                                        // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+                                        newDemuxCommands.add("\\\\?\\" + path);
+                                    } else {
+                                        newDemuxCommands.add(path);
+                                    }
                                 }
                                 newDemuxCommands.add("-map_metadata");
                                 newDemuxCommands.add("1");
@@ -1393,7 +1400,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             if (httpServer != null) {
                                 newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
                             } else {
-                                newDemuxCommands.add(metaFile.getAbsolutePath());
+                                final String path = metaFile.getAbsolutePath();
+                                if (CrossSystem.isWindows() && path.length() > 259) {
+                                    // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+                                    newDemuxCommands.add("\\\\?\\" + path);
+                                } else {
+                                    newDemuxCommands.add(path);
+                                }
                             }
                             newDemuxCommands.add("-map_metadata");
                             newDemuxCommands.add("1");
@@ -1416,7 +1429,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 if (httpServer != null) {
                                     newMuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
                                 } else {
-                                    newMuxCommands.add(metaFile.getAbsolutePath());
+                                    final String path = metaFile.getAbsolutePath();
+                                    if (CrossSystem.isWindows() && path.length() > 259) {
+                                        // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+                                        newMuxCommands.add("\\\\?\\" + path);
+                                    } else {
+                                        newMuxCommands.add(path);
+                                    }
                                 }
                                 newMuxCommands.add("-map_metadata");
                                 newMuxCommands.add("2");

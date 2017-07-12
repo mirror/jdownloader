@@ -43,7 +43,6 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
 public class AbstractFFmpegBinary {
-
     public static enum FLAGTYPE {
         LIB,
         FORMAT,
@@ -56,7 +55,6 @@ public class AbstractFFmpegBinary {
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
-
         private final Pattern  pattern;
         private final FLAGTYPE type;
 
@@ -155,7 +153,6 @@ public class AbstractFFmpegBinary {
                 }
             }
         };
-
         final Thread reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
@@ -227,7 +224,6 @@ public class AbstractFFmpegBinary {
                              */
                             line = line.substring(1);
                         }
-
                         ret.append(line);
                         parseLine(b, ret, line);
                     }
@@ -306,6 +302,18 @@ public class AbstractFFmpegBinary {
     public ArrayList<String> fillCommand(String out, String videoIn, String audioIn, HashMap<String, String[]> map, String... mc) {
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.add(getFullPath());
+        if (CrossSystem.isWindows()) {
+            // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+            if (videoIn != null && videoIn.length() > 259) {
+                videoIn = "\\\\?\\" + videoIn;
+            }
+            if (audioIn != null && audioIn.length() > 259) {
+                audioIn = "\\\\?\\" + audioIn;
+            }
+            if (out != null && out.length() > 259) {
+                out = "\\\\?\\" + out;
+            }
+        }
         main: for (int i = 0; i < mc.length; i++) {
             String param = mc[i];
             param = param.replace("%video", videoIn == null ? "" : videoIn);
@@ -615,7 +623,6 @@ public class AbstractFFmpegBinary {
                                 }
                                 connection.disconnect();
                             }
-
                         }
                     }
                 } catch (InterruptedException e) {
@@ -630,7 +637,6 @@ public class AbstractFFmpegBinary {
                 return true;
             }
         });
-
     }
 
     private final static HashMap<String, String> DEFAULT_FORMAT_BY_EXTENSION;
@@ -774,5 +780,4 @@ public class AbstractFFmpegBinary {
         final int seconds = Integer.parseInt(found[2]);
         return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
-
 }
