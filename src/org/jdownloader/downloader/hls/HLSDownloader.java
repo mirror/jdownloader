@@ -414,7 +414,6 @@ public class HLSDownloader extends DownloadInterface {
             final AtomicLong completeTime = new AtomicLong(0);
             final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
-
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     try {
                         final String trimmedLine = line.trim();
@@ -544,7 +543,12 @@ public class HLSDownloader extends DownloadInterface {
         }
         l.add("-c");
         l.add("copy");
-        l.add(out);
+        if (CrossSystem.isWindows() && out.length() > 259) {
+            // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+            l.add("\\\\?\\" + out);
+        } else {
+            l.add(out);
+        }
         l.add("-y");
         return l;
     }
@@ -573,7 +577,12 @@ public class HLSDownloader extends DownloadInterface {
         l.add("copy");
         l.add("-f");
         l.add(format);
-        l.add(out);
+        if (CrossSystem.isWindows() && out.length() > 259) {
+            // https://msdn.microsoft.com/en-us/library/aa365247.aspx
+            l.add("\\\\?\\" + out);
+        } else {
+            l.add(out);
+        }
         l.add("-y");
         // l.add("-progress");
         // l.add("http://127.0.0.1:" + server.getPort() + "/progress?id=" + processID);
