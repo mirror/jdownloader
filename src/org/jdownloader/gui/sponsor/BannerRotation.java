@@ -50,6 +50,7 @@ import jd.plugins.FilePackageProperty;
 import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -70,6 +71,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.premium.OpenURLAction;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
@@ -621,6 +623,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                 final boolean isEnabled = Boolean.TRUE.equals(newValue);
                                 if (isBannerEnabled.getAndSet(isEnabled) != isEnabled) {
+                                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setBannerChangeTimestamp(System.currentTimeMillis());
                                     if (!isEnabled) {
                                         StatsManager.I().track("various/BANNER/disabled");
                                         new EDTRunner() {

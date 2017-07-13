@@ -974,6 +974,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setBannerEnabled(boolean b);
 
+    long getBannerChangeTimestamp();
+
+    void setBannerChangeTimestamp(long timestamp);
+
     //
     @AboutConfig
     @DefaultBooleanValue(true)
