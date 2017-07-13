@@ -12,25 +12,17 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 
 public class BytesMappedFile implements FileBytesCacheFlusher {
-
     public static interface BytesMappedFileCallback {
         public void onFlush(BytesMappedFile bytesMappedFile, IOException ioException);
     }
 
     protected final File                                          file;
-
     protected final FileBytesMap                                  bytesMap;
-
     protected volatile RandomAccessFile                           raf         = null;
-
     protected final CopyOnWriteArrayList<BytesMappedFileCallback> callBacks   = new CopyOnWriteArrayList<BytesMappedFileCallback>();
-
     protected final AtomicInteger                                 locks       = new AtomicInteger();
-
     protected volatile IOException                                ioException = null;
-
     protected volatile boolean                                    flushFlag   = false;
-
     private final boolean                                         trySparse;
 
     public BytesMappedFile(File file) {
@@ -103,7 +95,11 @@ public class BytesMappedFile implements FileBytesCacheFlusher {
         if (callBacks.remove(callback) && callBacks.size() == 0) {
             try {
                 if (raf != null) {
-                    raf.close();
+                    try {
+                        raf.getChannel().force(true);
+                    } finally {
+                        raf.close();
+                    }
                 }
                 return true;
             } finally {
@@ -159,5 +155,4 @@ public class BytesMappedFile implements FileBytesCacheFlusher {
             }
         }
     }
-
 }

@@ -744,13 +744,16 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                 }
                 return false;
             } finally {
-                closeBytesMappedFile();
                 try {
-                    downloadable.free(reservation);
-                } catch (final Throwable ignore) {
-                    LogSource.exception(logger, ignore);
+                    closeBytesMappedFile();
+                    try {
+                        downloadable.free(reservation);
+                    } catch (final Throwable ignore) {
+                        LogSource.exception(logger, ignore);
+                    }
+                } finally {
+                    downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
                 }
-                downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
             }
         } finally {
             cleanupDownladInterface();
