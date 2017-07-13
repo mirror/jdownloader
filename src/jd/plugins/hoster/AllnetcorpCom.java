@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,9 +32,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allnetcorp.com" }, urls = { "http://(?:www\\.)?allnetcorp\\.com/download/\\?sid=[a-f0-9]{32}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allnetcorp.com" }, urls = { "http://(?:www\\.)?allnetcorp\\.com/download/\\?sid=[a-f0-9]{32}" })
 public class AllnetcorpCom extends PluginForHost {
-
     public AllnetcorpCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +57,6 @@ public class AllnetcorpCom extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -111,6 +108,7 @@ public class AllnetcorpCom extends PluginForHost {
             /* 2016-04-15: There is a 60 second waittime which we can skip. */
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl.setFilenameFix(true);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -156,5 +154,4 @@ public class AllnetcorpCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
