@@ -13,13 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -28,6 +33,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -40,18 +46,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
+
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/premium.html");
@@ -67,6 +69,7 @@ public class Keep2ShareCc extends K2SApi {
     public final String MAINPAGE = "https://" + MAINTLD; // new.keep2share.cc and keep2share.cc share same
 
     // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
+
     @Override
     public String[] siteSupportedNames() {
         // keep2.cc no dns
@@ -91,11 +94,12 @@ public class Keep2ShareCc extends K2SApi {
         if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
             return "http://keep2share.cc/file/" + getFUID(downloadLink);// do not change
         } else {
-            return getProtocol() + getDomain() + "/file/" + getFUID(downloadLink);
+            return downloadLink.getPluginPatternMatcher();
         }
     }
 
     /* abstract K2SApi class setters */
+
     /**
      * sets domain the API will use!
      */
@@ -148,6 +152,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /* end of abstract class setters */
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -157,8 +162,9 @@ public class Keep2ShareCc extends K2SApi {
             } catch (PluginException e) {
             }
         }
-        final String linkID = getFUID(link);
-        link.setUrlDownload(getProtocol() + getDomain() + "/file/" + linkID);
+        // DO NOT AUTOCORRECT
+        // final String linkID = getFUID(link);
+        // link.setUrlDownload(getProtocol() + getDomain() + "/file/" + linkID);
     }
 
     public void followRedirectNew(Browser br) throws Exception {
@@ -174,10 +180,10 @@ public class Keep2ShareCc extends K2SApi {
         if (useAPI()) {
             return super.requestFileInformation(link);
         }
-        this.setBrowserExclusive();
         correctDownloadLink(link);
+        br = newWebBrowser();
         br.setFollowRedirects(true);
-        super.prepBrowserForWebsite(this.br);
+        super.prepBrowserForWebsite(br);
         getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
         if (this.isNewLayout2017()) {
@@ -188,12 +194,13 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public AvailableStatus requestFileInformationOld(final DownloadLink link) throws Exception {
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
             link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
             return AvailableStatus.UNCHECKABLE;
         }
         final String filename = getFileName();
         final String filesize = getFileSize();
+
         if (filename != null) {
             if (filename.contains("...")) {
                 super.checkLinks(new DownloadLink[] { link });
@@ -223,12 +230,6 @@ public class Keep2ShareCc extends K2SApi {
 
     /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
     public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        correctDownloadLink(link);
-        br.setFollowRedirects(true);
-        super.prepBrowserForWebsite(this.br);
-        getPage(buildExternalDownloadURL(link, this));
-        followRedirectNew(br);
         /*
          * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a
          * downloadlimit is reached!
@@ -238,6 +239,7 @@ public class Keep2ShareCc extends K2SApi {
         }
         final String filename = getFileName();
         final String filesize = getFileSize();
+
         if (filename != null) {
             if (filename.contains("...")) {
                 super.checkLinks(new DownloadLink[] { link });
@@ -340,7 +342,7 @@ public class Keep2ShareCc extends K2SApi {
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached final link!");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.info("Refresh final link");
                 dllink = null;
@@ -428,10 +430,9 @@ public class Keep2ShareCc extends K2SApi {
                 }
             }
             logger.info("dllink = " + dllink);
-            shareCookies(dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
-                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                br.addAllowedResponseCodes(dl.getConnection().getResponseCode());
                 br.followConnection();
                 dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -439,7 +440,7 @@ public class Keep2ShareCc extends K2SApi {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dllink = dllink.replace("\\", "");
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
                 if (!isValidDownloadConnection(dl.getConnection())) {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     logger.warning("The final dllink seems not to be a file!");
@@ -481,6 +482,7 @@ public class Keep2ShareCc extends K2SApi {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalwait + 10000l);
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+
         }
     }
 
@@ -500,40 +502,39 @@ public class Keep2ShareCc extends K2SApi {
     private final String cookiesProperty = "cookies2";
 
     @SuppressWarnings("unchecked")
-    private HashMap<String, String> login(final Account account, final boolean force, AtomicBoolean validateCookie) throws Exception {
+    private HashMap<String, String> login(final Account account, final boolean force, final String MAINPAGE) throws Exception {
         synchronized (ACCLOCK) {
             try {
-                // Load cookies
-                br.setCookiesExclusive(true);
+                // clear cookies/headers etc. this should nullify redirects to /file/
+                br = newWebBrowser();
                 br.setFollowRedirects(true);
-                final Object ret = account.getProperty(cookiesProperty, null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && (!force || (validateCookie != null && validateCookie.get() == true))) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(account.getHoster(), key, value);
-                        }
-                        if (validateCookie != null) {
-                            getPage(MAINPAGE + "/site/profile.html");
-                            followRedirectNew(br);
-                            if (force == false || !br.getURL().contains("login.html")) {
-                                return cookies;
+                // reduce cpu cycles, do not enter and do evaluations when they are not needed.
+                if (!force) {
+                    final Object ret = account.getProperty(cookiesProperty, null);
+                    if (ret != null && ret instanceof HashMap<?, ?>) {
+                        final boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                        if (acmatch) {
+                            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                            if (account.isValid()) {
+                                // load to all bloody domains
+                                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                                    for (final String tld : siteSupportedNames()) {
+                                        final String key = cookieEntry.getKey();
+                                        final String value = cookieEntry.getValue();
+                                        br.setCookie(tld, key, value);
+                                    }
+                                }
+                                getPage(MAINPAGE + "/site/profile.html");
+                                if (force == false && !br._getURL().getFile().equals("login.html")) {
+                                    return cookies;
+                                }
+                                // dump session
+                                br = newWebBrowser();
                             }
-                        } else {
-                            return cookies;
                         }
                     }
                 }
-                if (validateCookie != null) {
-                    validateCookie.set(false);
-                }
-                getPage(MAINPAGE + "/login.html");
+                getPage(this.MAINPAGE + "/login.html");
                 String csrftoken = br.getRegex("value=\"([^<>\"\\']+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
                 if (StringUtils.isEmpty(csrftoken)) {
                     csrftoken = br.getCookie(account.getHoster(), "YII_CSRF_TOKEN");
@@ -607,7 +608,7 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(account.getHoster());
+                final Cookies add = br.getCookies(account.getHoster());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -633,17 +634,13 @@ public class Keep2ShareCc extends K2SApi {
         if (useAPI()) {
             ai = super.fetchAccountInfo(account);
         } else {
-            AtomicBoolean validateCookie = new AtomicBoolean(true);
             try {
-                login(account, true, validateCookie);
+                login(account, true, MAINPAGE);
             } catch (final PluginException e) {
                 account.setValid(false);
                 throw e;
             }
-            if (validateCookie.get() == false) {
-                getPage(MAINPAGE + "/site/profile.html");
-                followRedirectNew(br);
-            }
+            getPage("/site/profile.html");
             account.setValid(true);
             final String accountType = br.getRegex("<span>Account type: </span>\\s*<strong>\\s*(.*?)\\s*<").getMatch(0);
             if (br.containsHTML("class=\"free\"[^>]*>Free</a>") || "Free".equalsIgnoreCase(accountType)) {
@@ -712,155 +709,97 @@ public class Keep2ShareCc extends K2SApi {
         }
         if (useAPI()) {
             super.handleDownload(link, account);
-        } else {
-            requestFileInformation(link);
-            boolean fresh = false;
-            Object after = null;
-            synchronized (ACCLOCK) {
-                Object before = account.getProperty(cookiesProperty, null);
-                after = login(account, false, null);
-                fresh = before != after;
-            }
-            getPage("/site/profile.html");
-            if (br.getURL().contains("login.html")) {
-                logger.info("Redirected to login page, seems cookies are no longer valid!");
-                synchronized (ACCLOCK) {
-                    if (!fresh) {
-                        account.setProperty(cookiesProperty, Property.NULL);
-                    }
-                    if (fresh) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-            }
-            if (account.getType() == AccountType.FREE) {
-                setConstants(account);
-                getPage(buildExternalDownloadURL(link, this));
-                followRedirectNew(br);
-                doFree(link, account);
-            } else {
-                String dllink = getDirectLinkAndReset(link, true);
-                if (!inValidate(dllink)) {
-                    final Browser obr = br.cloneBrowser();
-                    logger.info("Reusing cached final link!");
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                    if (!isValidDownloadConnection(dl.getConnection())) {
-                        logger.info("Refresh final link");
-                        dllink = null;
-                        try {
-                            dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                            br.followConnection();
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                        } finally {
-                            br = obr;
-                            dl.getConnection().disconnect();
-                        }
-                    }
-                }
-                if (dllink == null) {
-                    br.setFollowRedirects(false);
-                    final String url = buildExternalDownloadURL(link, this);
-                    getPage(url);
-                    followRedirectNew(br);
-                    handleGeneralErrors(account);
-                    // Set cookies for other domain if it is changed via redirect
-                    String currentDomain = MAINPAGE.replace("http://", "");
-                    String newDomain = null;
-                    dllink = br.getRedirectLocation();
-                    if (inValidate(dllink)) {
-                        dllink = getDllinkPremium();
-                    }
-                    if (dllink == null && br.containsHTML("class=\"btn-download\".*?>\\s*Download blocked")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    String possibleDomain = getDomain(dllink);
-                    if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
-                        newDomain = getDomain(dllink);
-                    } else if (!br.getURL().contains(currentDomain)) {
-                        newDomain = getDomain(br.getURL());
-                    }
-                    if (newDomain != null) {
-                        resetCookies(account, currentDomain, newDomain);
-                        if (dllink == null) {
-                            getPage(url.replace(currentDomain, newDomain));
-                            followRedirectNew(br);
-                            dllink = br.getRedirectLocation();
-                            if (dllink == null) {
-                                dllink = getDllinkPremium();
-                            }
-                        }
-                        currentDomain = newDomain;
-                    }
-                    if (inValidate(dllink)) {
-                        if (br.containsHTML("Traffic limit exceed!<")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
-                        synchronized (ACCLOCK) {
-                            if (!fresh) {
-                                account.setProperty(cookiesProperty, Property.NULL);
-                            }
-                            if (fresh) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            }
-                        }
-                    }
-                    logger.info("dllink = " + dllink);
-                    shareCookies(dllink);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                    if (!isValidDownloadConnection(dl.getConnection())) {
-                        dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                        br.followConnection();
-                        dllink = getDllinkPremium();
-                        if (dllink == null) {
-                            if (br.containsHTML("Download of file will start in")) {
-                                dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
-                            } else {
-                                dllink = null;
-                            }
-                        }
-                        if (dllink == null) {
-                            logger.warning("The final dllink seems not to be a file!");
-                            handleGeneralServerErrors(account, link);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                        if (!isValidDownloadConnection(dl.getConnection())) {
-                            dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                            logger.warning("The final dllink seems not to be a file!");
-                            br.followConnection();
-                            handleGeneralServerErrors(account, link);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                }
-                // add download slot
-                controlSlot(+1, account);
+            return;
+        }
+        requestFileInformation(link);
+        // login based on current link url domain.
+        login(account, false, Browser.getHost(link.getPluginPatternMatcher()));
+        if (account.getType() == AccountType.FREE) {
+            setConstants(account);
+            // post login referrer info has gone.
+            super.prepBrowserForWebsite(br);
+            getPage(buildExternalDownloadURL(link, this));
+            followRedirectNew(br);
+            doFree(link, account);
+            return;
+        }
+        String dllink = getDirectLinkAndReset(link, true);
+        if (!inValidate(dllink)) {
+            final Browser obr = br.cloneBrowser();
+            logger.info("Reusing cached final link!");
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+            if (!isValidDownloadConnection(dl.getConnection())) {
                 try {
-                    link.setProperty(directlinkproperty, dllink);
-                    dl.startDownload();
+                    br.addAllowedResponseCodes(dl.getConnection().getResponseCode());
+                    br.followConnection();
+                } catch (final Throwable e) {
+                    logger.log(e);
                 } finally {
-                    // remove download slot
-                    controlSlot(-1, account);
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                    dl = null;
+                    br = obr;
+                    logger.info("Refresh final link");
                 }
             }
         }
-    }
-
-    // share cookies between keep2share.cc and k2s.cc domain
-    private void shareCookies(final String url) {
-        final Cookies keep2ShareCookies = br.getCookies(MAINPAGE);
-        if (keep2ShareCookies != null && !keep2ShareCookies.isEmpty()) {
-            br.setCookies("http://keep2share.cc", keep2ShareCookies);
-        } else {
-            final Cookies k2s = br.getCookies(MAINPAGE);
-            if (k2s != null && !k2s.isEmpty()) {
-                br.setCookies("http://keep2share.cc", keep2ShareCookies);
+        if (dl == null) {
+            br.setFollowRedirects(false);
+            final String url = buildExternalDownloadURL(link, this);
+            getPage(url);
+            followRedirectNew(br);
+            handleGeneralErrors(account);
+            dllink = br.getRedirectLocation();
+            if (inValidate(dllink)) {
+                dllink = getDllinkPremium();
+                if (inValidate(dllink)) {
+                    if (br.containsHTML("class=\"btn-download\".*?>\\s*Download blocked")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (br.containsHTML("Traffic limit exceed!<")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
+            logger.info("dllink = " + dllink);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+            if (!isValidDownloadConnection(dl.getConnection())) {
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                br.followConnection();
+                dllink = getDllinkPremium();
+                if (dllink == null) {
+                    if (br.containsHTML("Download of file will start in")) {
+                        dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
+                    } else {
+                        dllink = null;
+                    }
+                }
+                if (dllink == null) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    handleGeneralServerErrors(account, link);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+                if (!isValidDownloadConnection(dl.getConnection())) {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    handleGeneralServerErrors(account, link);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+        // add download slot
+        controlSlot(+1, account);
+        try {
+            link.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlSlot(-1, account);
         }
     }
 
@@ -874,33 +813,8 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     private String getDllinkPremium() {
-        return br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
-    }
-
-    private String getDomain(final String link) {
-        if (link == null) {
-            return null;
-        }
-        return new Regex(link, "https?://(www\\.)?([A-Za-z0-9\\-\\.]+)/").getMatch(1);
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean resetCookies(final Account account, String oldDomain, String newDomain) {
-        oldDomain = "http://" + oldDomain;
-        newDomain = "http://" + newDomain;
-        br.clearCookies(oldDomain);
-        final Object ret = account.getProperty(cookiesProperty, null);
-        if (ret != null && ret instanceof Map) {
-            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                this.br.setCookie(newDomain, key, value);
-            }
-            return true;
-        } else {
-            return false;
-        }
+        final String dllink = br.getRegex("('|\")(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
+        return inValidate(dllink) ? dllink : Request.getLocation(dllink, br.getRequest());
     }
 
     @Override
@@ -959,4 +873,5 @@ public class Keep2ShareCc extends K2SApi {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
+
 }
