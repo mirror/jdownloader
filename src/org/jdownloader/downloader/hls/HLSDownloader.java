@@ -528,10 +528,27 @@ public class HLSDownloader extends DownloadInterface {
     protected ArrayList<String> buildConcatCommandLine(FFmpeg ffmpeg, String out) {
         final ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
-        l.add("-f");
-        l.add("concat");
-        l.add("-i");
-        l.add("http://127.0.0.1:" + server.getPort() + "/concat?id=" + processID);
+        if (CrossSystem.isWindows()) {
+            // workaround to support long path lengths
+            l.add("-i");
+            final StringBuilder sb = new StringBuilder();
+            sb.append("concat:");
+            boolean seperator = false;
+            for (final File outputPartFile : outputPartFiles) {
+                if (seperator) {
+                    sb.append("|");
+                } else {
+                    seperator = true;
+                }
+                sb.append("\\\\?\\" + outputPartFile.getAbsolutePath());
+            }
+            l.add(sb.toString());
+        } else {
+            l.add("-f");
+            l.add("concat");
+            l.add("-i");
+            l.add("http://127.0.0.1:" + server.getPort() + "/concat?id=" + processID);
+        }
         if (isMapMetaDataEnabled()) {
             final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
             if (ffMpegMetaData != null && !ffMpegMetaData.isEmpty()) {
