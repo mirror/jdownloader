@@ -359,18 +359,24 @@ public class HLSDownloader extends DownloadInterface {
             };
             progress.setProgressSource(this);
             boolean deleteOutput = true;
+            final String concatFormat;
+            if (CrossSystem.isWindows() && m3u8Playlists.size() > 1) {
+                concatFormat = getFFmpegFormat(ffmpeg);
+            } else {
+                concatFormat = null;
+            }
             try {
                 downloadable.addPluginProgress(progress);
                 try {
                     outputFile.set(outputCompleteFile);
-                    ffmpeg.runCommand(null, buildConcatCommandLine(ffmpeg, outputCompleteFile.getAbsolutePath()));
+                    ffmpeg.runCommand(null, buildConcatCommandLine(concatFormat, ffmpeg, outputCompleteFile.getAbsolutePath()));
                     deleteOutput = false;
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
                     if (e.getError() != null && e.getError().contains("No such file or directory")) {
                         final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
                         outputFile.set(tmpOut);
-                        ffmpeg.runCommand(null, buildConcatCommandLine(ffmpeg, tmpOut.getAbsolutePath()));
+                        ffmpeg.runCommand(null, buildConcatCommandLine(concatFormat, ffmpeg, tmpOut.getAbsolutePath()));
                         outputCompleteFile.delete();
                         if (tmpOut.renameTo(outputCompleteFile)) {
                             deleteOutput = false;
@@ -471,7 +477,12 @@ public class HLSDownloader extends DownloadInterface {
                 };
             };
             currentPlayListIndex.set(0);
-            final String format = getFFmpegFormat(ffmpeg);
+            final String downloadFormat;
+            if (CrossSystem.isWindows() && m3u8Playlists.size() > 1) {
+                downloadFormat = "mpegts";
+            } else {
+                downloadFormat = getFFmpegFormat(ffmpeg);
+            }
             processID = new UniqueAlltimeID().getID();
             initPipe(ffmpeg);
             for (int index = 0; index < m3u8Playlists.size(); index++) {
@@ -481,12 +492,12 @@ public class HLSDownloader extends DownloadInterface {
                     lastBitrate.set(-1);
                     lastBytesWritten.set(bytesWritten.get());
                     currentPlayListIndex.set(index);
-                    ffmpeg.runCommand(null, buildDownloadCommandLine(format, ffmpeg, destination.getAbsolutePath()));
+                    ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, destination.getAbsolutePath()));
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
                     if (e.getError() != null && e.getError().contains("No such file or directory")) {
                         final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-                        ffmpeg.runCommand(null, buildDownloadCommandLine(format, ffmpeg, tmpOut.getAbsolutePath()));
+                        ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
                         destination.delete();
                         tmpOut.renameTo(destination);
                     } else {
@@ -525,11 +536,12 @@ public class HLSDownloader extends DownloadInterface {
         return ffmpeg.requiresAdtstoAsc(format);
     }
 
-    protected ArrayList<String> buildConcatCommandLine(FFmpeg ffmpeg, String out) {
+    protected ArrayList<String> buildConcatCommandLine(final String format, FFmpeg ffmpeg, String out) {
         final ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
         if (CrossSystem.isWindows()) {
             // workaround to support long path lengths
+            // https://trac.ffmpeg.org/wiki/Concatenate
             l.add("-i");
             final StringBuilder sb = new StringBuilder();
             sb.append("concat:");
@@ -560,6 +572,7 @@ public class HLSDownloader extends DownloadInterface {
         }
         l.add("-c");
         l.add("copy");
+        applyBitStreamFilter(l, format, ffmpeg);
         if (CrossSystem.isWindows() && out.length() > 259) {
             // https://msdn.microsoft.com/en-us/library/aa365247.aspx
             l.add("\\\\?\\" + out);
@@ -586,10 +599,7 @@ public class HLSDownloader extends DownloadInterface {
                 l.add("1");
             }
         }
-        if (requiresAdtstoAsc(format, ffmpeg)) {
-            l.add("-bsf:a");
-            l.add("aac_adtstoasc");
-        }
+        applyBitStreamFilter(l, format, ffmpeg);
         l.add("-c");
         l.add("copy");
         l.add("-f");
@@ -604,6 +614,17 @@ public class HLSDownloader extends DownloadInterface {
         // l.add("-progress");
         // l.add("http://127.0.0.1:" + server.getPort() + "/progress?id=" + processID);
         return l;
+    }
+
+    protected void applyBitStreamFilter(List<String> cmdLine, String format, FFmpeg ffmpeg) {
+        if (format != null && "mpegts".equals(format)) {
+            cmdLine.add("-bsf:v");
+            cmdLine.add("h264_mp4toannexb");
+        }
+        if (format != null && requiresAdtstoAsc(format, ffmpeg)) {
+            cmdLine.add("-bsf:a");
+            cmdLine.add("aac_adtstoasc");
+        }
     }
 
     protected FFmpegMetaData getFFmpegMetaData() {
