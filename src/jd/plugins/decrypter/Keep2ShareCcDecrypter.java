@@ -17,12 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -30,30 +33,34 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
+
     public Keep2ShareCcDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost plugin = JDUtilities.getPluginForHost("keep2share.cc");
         if (plugin == null) {
             throw new IllegalStateException("keep2share plugin not found!");
         }
+        br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser();
         // set cross browser support
         ((jd.plugins.hoster.Keep2ShareCc) plugin).setBrowser(br);
-        // corrections
-        final String uid = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFUID(param.toString());
-        final String host = ((jd.plugins.hoster.Keep2ShareCc) plugin).MAINPAGE.replaceFirst("^https?://", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
-        if (uid == null || host == null) {
-            logger.warning("Decrypter broken for link: " + param.toString());
-            return null;
-        }
-        final String parameter = host + "/file/" + uid;
+        // // corrections
+        // final String uid = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFUID(param.toString());
+        // final String host = ((jd.plugins.hoster.Keep2ShareCc) plugin).MAINPAGE.replaceFirst("^https?://",
+        // ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
+        // if (uid == null || host == null) {
+        // logger.warning("Decrypter broken for link: " + param.toString());
+        // return null;
+        // }
+        // final String parameter = host + "/file/" + uid;
+
+        // DO NOT AUTO CORRECT, links redirect to there default server
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).followRedirectNew(br);
@@ -84,12 +91,12 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     }
                 }
                 for (final String link : links) {
-                    final DownloadLink singlelink = createDownloadlink("http://keep2sharedecrypted.cc" + link);
+                    final DownloadLink singlelink = createDownloadlink(link);
                     final String name = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">(.*?)</a>").getMatch(1);
                     final String size = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">.*?>\\[.*?([0-9\\.GKMB ]+?) \\]<").getMatch(1);
                     if (name != null) {
                         singlelink.setName(name);
-                        singlelink.setAvailable(true);
+                        singlelink.setAvailableStatus(AvailableStatus.TRUE);
                     }
                     if (size != null) {
                         singlelink.setDownloadSize(SizeFormatter.getSize(size.trim()));
@@ -104,7 +111,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage("?UserFile_page=" + (pageIndex++));
             }
         } else {
-            final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc/file/" + uid);
+            final DownloadLink singlink = createDownloadlink(br.getURL());
             final String filename = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileName();
             final String filesize = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileSize();
             if (filename != null) {
@@ -114,13 +121,13 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 singlink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             }
             if (filename == null) {
-                singlink.setAvailable(false);
+                singlink.setAvailableStatus(AvailableStatus.FALSE);
             } else {
                 if (filename.contains("...")) {
                     singlink.setAvailableStatus(null);
                 } else {
                     // prevent wasteful double linkchecks.
-                    singlink.setAvailable(true);
+                    singlink.setAvailableStatus(AvailableStatus.TRUE);
                 }
             }
             if (br.containsHTML("Downloading blocked due to")) {
@@ -128,7 +135,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             }
             // you can set filename for offline links! handling should come here!
             if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>|class=\"empty\"|>Displaying 1")) {
-                singlink.setAvailable(false);
+                singlink.setAvailableStatus(AvailableStatus.FALSE);
             }
             decryptedLinks.add(singlink);
         }

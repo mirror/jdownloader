@@ -23,6 +23,13 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -49,13 +56,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
@@ -64,6 +64,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  *
  */
 public abstract class K2SApi extends PluginForHost {
+
     private String                         authToken;
     protected String                       directlinkproperty;
     protected int                          chunks;
@@ -428,7 +429,7 @@ public abstract class K2SApi extends PluginForHost {
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
@@ -523,7 +524,7 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 setIP(downloadLink, account);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
@@ -561,13 +562,14 @@ public abstract class K2SApi extends PluginForHost {
      */
     protected Browser newBrowser() {
         Browser nbr = new Browser() {
+
             /**
              * overrides openPostConnection and turns it into openPostRawConnection
              *
              * @author raztoki
              */
             @Override
-            public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
+            public URLConnectionAdapter openPostConnection(final String url, final String post) throws Exception {
                 return this.openRequestConnection(this.createPostRawRequest(url, post));
             }
 
@@ -598,6 +600,49 @@ public abstract class K2SApi extends PluginForHost {
                 return request;
             }
         };
+        return nbr;
+    }
+
+    public Browser newWebBrowser() {
+
+        Browser nbr = new Browser() {
+
+            @Override
+            public void updateCookies(Request request) {
+                super.updateCookies(request);
+
+                // sync cookies between domains!
+
+                // just not for api requests
+                if (request.getURL().getPath().contains("/api/v2")) {
+                    return;
+                }
+                final String host = Browser.getHost(request.getUrl());
+                // todo: test which reference this is.
+                final Cookies cookies = request.getCookies();
+
+                // also remove cloudflare cookies, each domain gets its own instance (same as browser)
+                {
+                    final Cookie cfuid = cookies.get("__cfduid");
+                    if (cfuid != null) {
+                        cookies.remove(cfuid);
+                    }
+                    final Cookie cfclearance = cookies.get("cf_clearance");
+                    if (cfclearance != null) {
+                        cookies.remove(cfclearance);
+                    }
+                }
+                for (final String domain : siteSupportedNames()) {
+                    if (domain.equals(host)) {
+                        continue;
+                    }
+                    for (Cookie c : this.getCookies(host).getCookies()) {
+                        this.setCookie(domain, c.getKey(), c.getValue());
+                    }
+                }
+            }
+        };
+
         return nbr;
     }
 
@@ -1511,13 +1556,13 @@ public abstract class K2SApi extends PluginForHost {
         try {
             con = ibr.openGetConnection(page);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        antiDDoS(ibr);
     }
 
     /**
@@ -1542,7 +1587,6 @@ public abstract class K2SApi extends PluginForHost {
         try {
             con = ibr.openPostConnection(page, postData);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -1550,6 +1594,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
     }
 
     /**
@@ -1580,7 +1625,6 @@ public abstract class K2SApi extends PluginForHost {
         try {
             con = ibr.openFormConnection(form);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -1588,6 +1632,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
     }
 
     /**
@@ -1601,11 +1646,13 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected void sendRequest(final Browser ibr, final Request request) throws Exception {
+        if (!prepBrSet) {
+            prepBrowser(ibr);
+        }
         URLConnectionAdapter con = null;
         try {
             con = ibr.openRequestConnection(request);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -1613,6 +1660,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
     }
 
     /**
@@ -1659,6 +1707,7 @@ public abstract class K2SApi extends PluginForHost {
                         this.setDownloadLink(dllink);
                         final Form cf = cloudflare;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+
                             {
                                 boundToDomain = true;
                             }
