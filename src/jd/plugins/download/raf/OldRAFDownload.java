@@ -583,7 +583,7 @@ public class OldRAFDownload extends DownloadInterface {
                     }
                     downloadable.removePluginProgress(downloadPluginProgress);
                 }
-                HashResult result = onChunksReady();
+                final HashResult result = onChunksReady();
                 if (result != null) {
                     logger.info(result.getHashInfo().getType() + "-Check: " + (result.match() ? "ok" : "failed"));
                     if (result.match()) {
@@ -594,8 +594,11 @@ public class OldRAFDownload extends DownloadInterface {
                 }
                 return handleErrors();
             } finally {
-                downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                cleanupDownladInterface();
+                try {
+                    cleanupDownladInterface();
+                } finally {
+                    downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                }
             }
         } catch (PluginException e) {
             error(e);
@@ -1112,6 +1115,11 @@ public class OldRAFDownload extends DownloadInterface {
         try {
             final RandomAccessFile loutputPartFileRaf = outputPartFileRaf.getAndSet(null);
             if (loutputPartFileRaf != null) {
+                try {
+                    loutputPartFileRaf.getChannel().force(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 logger.info("Close File. Let AV programs run");
                 loutputPartFileRaf.close();
             }
