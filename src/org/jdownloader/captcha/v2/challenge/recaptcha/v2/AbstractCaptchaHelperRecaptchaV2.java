@@ -1,15 +1,14 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
-
     protected T            plugin;
     protected LogInterface logger;
     protected Browser      br;
@@ -108,7 +107,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         final String[] divs = new Regex(source, "<div(?:[^>]*>.*?</div>|[^>]*\\s*/\\s*>)").getColumn(-1);
         if (divs != null) {
             for (final String div : divs) {
-                if (new Regex(div, "class=('|\")g-recaptcha(\\1|\\s+)").matches()) {
+                if (new Regex(div, "class=('|\")[^'\"]*g-recaptcha(\\1|\\s+)").matches()) {
                     siteKey = new Regex(div, "data-sitekey=('|\")\\s*([\\w-]+)\\s*\\1").getMatch(1);
                     if (siteKey != null) {
                         return siteKey;

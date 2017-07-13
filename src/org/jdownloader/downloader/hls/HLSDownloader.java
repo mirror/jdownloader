@@ -725,6 +725,7 @@ public class HLSDownloader extends DownloadInterface {
                             sb.append("file '");
                             if (CrossSystem.isWindows()) {
                                 // https://trac.ffmpeg.org/ticket/2702
+                                // NOTE: this does not work for long path lengths! see different way in buildConcatCommandLine
                                 sb.append("file:" + partFile.getAbsolutePath().replaceAll("\\\\", "/"));
                             } else {
                                 sb.append("file://" + partFile.getAbsolutePath());

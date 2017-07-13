@@ -379,6 +379,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 final String ext = getFileNameExtensionFromURL(pic);
                 if (!useOriginalFilename) {
                     dl.setFinalFileName(filename + ext);
+                } else {
+                    dl.setName(extractFileNameFromURL(pic));
                 }
                 setMD5Hash(dl, pic);
                 setImageLinkID(dl, pic, puid);
@@ -456,10 +458,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     if (fp != null) {
                         fp.add(dl);
                     }
-                    // cleanup...
+                    // cleanup... im
                     final String filename = setFileName(cleanupName(df.format(count) + " - " + fpName), puid) + getFileNameExtensionFromString(url);
                     if (!useOriginalFilename) {
                         dl.setFinalFileName(filename);
+                    } else {
+                        dl.setName(extractFileNameFromURL(url));
                     }
                     dl.setContentUrl(postURL);
                     dl.setAvailable(true);
@@ -553,6 +557,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         final String ext = getFileNameExtensionFromURL(externID);
         if (!useOriginalFilename) {
             dl.setFinalFileName(filename + ext);
+        } else {
+            dl.setName(extractFileNameFromURL(externID));
         }
         setMD5Hash(dl, externID);
         setImageLinkID(dl, externID, puid);
@@ -799,6 +805,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     }
                     if (filename != null && !useOriginalFilename) {
                         dl.setName(filename);
+                    } else {
+                        dl.setName(extractFileNameFromURL(directlink));
                     }
                     fp.add(dl);
                     decryptedLinks.add(dl);

@@ -554,20 +554,27 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     private final DelayedRunnable updateDelayer;
 
     private List<AvailableBanner> updateRotation() {
-        final ArrayList<AvailableBanner> ret = new ArrayList<AvailableBanner>();
+        final ArrayList<AvailableBanner> rotation = new ArrayList<AvailableBanner>();
+        final ArrayList<AvailableBanner> fallback = new ArrayList<AvailableBanner>();
         for (final AvailableBanner banner : allBanners) {
             if (banner.hasChanges()) {
                 // required to process changes
             }
             if (!banner.hasAccounts) {
                 if (banner.hasDownloadLinks) {
-                    ret.add(0, banner);
+                    rotation.add(0, banner);
                 } else if (banner.hasLinks) {
-                    ret.add(banner);
+                    rotation.add(banner);
+                } else {
+                    fallback.add(banner);
                 }
             }
         }
-        return ret;
+        if (rotation.size() > 0) {
+            return rotation;
+        } else {
+            return fallback;
+        }
     }
 
     private List<AvailableBanner> getAllBanners() {
