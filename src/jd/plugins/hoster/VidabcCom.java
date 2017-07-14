@@ -26,6 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,13 +53,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidabc.com" }, urls = { "https?://(?:www\\.)?vidabc\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class VidabcCom extends PluginForHost {
 
@@ -62,7 +62,7 @@ public class VidabcCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://vidabc.com";
+    private static final String            COOKIE_HOST                        = "https://vidabc.com";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -88,8 +88,8 @@ public class VidabcCom extends PluginForHost {
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_HTTPS                     = true;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = false;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = false;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
@@ -1336,15 +1336,21 @@ public class VidabcCom extends PluginForHost {
     // if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
+    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę
+    // użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i
+    // nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some
+    // hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your
+    // username/password by hand without copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
