@@ -137,12 +137,14 @@ public class LittlebyteNet extends PluginForHost {
             }
             /* Remove json escapes from html */
             br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
-            dllink = br.getRegex("to download the file:</strong><br> <a href=\\'(http[^<>\"]+)\\'").getMatch(0);
+            dllink = br.getRegex("to download the file:<\\\\?/strong><br> <a href='(https?[^<>\"]+)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(http://cdn\\d+\\.littlebyte\\.net/files/[^<>\"]+)\\'").getMatch(0);
+                dllink = br.getRegex("(https?:\\\\?/\\\\?/cdn\\d+\\.littlebyte\\.net\\\\?/files\\\\?/[^<>\"]+)'").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                dllink = dllink.replaceAll("\\\\", "");
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
