@@ -66,9 +66,12 @@ public class CloudyfilesCom extends PluginForHost {
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
+
+    private final boolean                  SUPPORTS_HTTPS                     = false;
+
     /* primary website url, take note of redirects */
     private final String                   primaryDomain                      = "cloudyfiles.org";
-    private final String                   COOKIE_HOST                        = "http://" + primaryDomain;
+    private final String                   COOKIE_HOST                        = (SUPPORTS_HTTPS ? "https://" : "http://") + primaryDomain;
     private final String                   NICE_HOSTproperty                  = primaryDomain.replaceAll("(\\.|\\-)", "");
     /* domain names used within download links */
     private static final String            DOMAINS                            = "(cloudyfiles\\.(?:co|com|org))";
@@ -93,8 +96,6 @@ public class CloudyfilesCom extends PluginForHost {
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
@@ -154,10 +155,9 @@ public class CloudyfilesCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
         /* link cleanup, prefer https if possible */
-        final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = protocol + primaryDomain + "/" + fuid;
+        final String corrected_downloadurl = COOKIE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + primaryDomain + "/embed-" + fuid + ".html";
+            final String url_embed = COOKIE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             link.setContentUrl(url_embed);
         }
@@ -199,14 +199,14 @@ public class CloudyfilesCom extends PluginForHost {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
         correctDownloadLink(link);
-        prepBrowser(this.br);
+        prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        altbr = this.br.cloneBrowser();
+        altbr = br.cloneBrowser();
 
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
@@ -219,7 +219,7 @@ public class CloudyfilesCom extends PluginForHost {
             }
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
-        } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+        } else if (br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             /*
              * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
              * There are 2 alternative ways to get this information anyways!
@@ -384,7 +384,7 @@ public class CloudyfilesCom extends PluginForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
+        getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -398,7 +398,7 @@ public class CloudyfilesCom extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
             filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
@@ -491,7 +491,7 @@ public class CloudyfilesCom extends PluginForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
+                final String embed_access = COOKIE_HOST + "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
@@ -512,7 +512,7 @@ public class CloudyfilesCom extends PluginForHost {
             checkErrors(downloadLink, false);
             Form imghost_next_form = null;
             do {
-                imghost_next_form = this.br.getFormbyKey("next");
+                imghost_next_form = br.getFormbyKey("next");
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
@@ -529,7 +529,7 @@ public class CloudyfilesCom extends PluginForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
-            final Form download1 = this.br.getFormByInputFieldKeyValue("op", "download1");
+            final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 /*
@@ -925,12 +925,10 @@ public class CloudyfilesCom extends PluginForHost {
     }
 
     private void getPage(String page) throws Exception {
-        page = correctProtocol(page);
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
-        page = correctProtocol(page);
         br.getPage(page);
         if (correctBr) {
             correctBR();
@@ -938,12 +936,10 @@ public class CloudyfilesCom extends PluginForHost {
     }
 
     private void postPage(String page, final String postdata) throws Exception {
-        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
-        page = correctProtocol(page);
         br.postPage(page, postdata);
         if (correctBr) {
             correctBR();
@@ -961,15 +957,6 @@ public class CloudyfilesCom extends PluginForHost {
     // counter++;
     // }
     // }
-
-    private String correctProtocol(String url) {
-        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
-            url = url.replaceFirst("http://", "https://");
-        } else if (!SUPPORTS_HTTPS) {
-            url = url.replaceFirst("https://", "http://");
-        }
-        return url;
-    }
 
     private void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
@@ -1216,7 +1203,7 @@ public class CloudyfilesCom extends PluginForHost {
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
-        checkResponseCodeErrors(this.br.getHttpConnection());
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -1334,15 +1321,15 @@ public class CloudyfilesCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                this.br.setCookiesExclusive(true);
-                prepBrowser(this.br);
+                br.setCookiesExclusive(true);
+                prepBrowser(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = this.br.getFormbyProperty("name", "FL");
+                final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
@@ -1355,7 +1342,7 @@ public class CloudyfilesCom extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1364,7 +1351,7 @@ public class CloudyfilesCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!this.br.getURL().contains("/?op=my_account")) {
+                if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
@@ -1372,7 +1359,7 @@ public class CloudyfilesCom extends PluginForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -1394,11 +1381,11 @@ public class CloudyfilesCom extends PluginForHost {
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
-                this.br.setFollowRedirects(false);
+                br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Form dlform = this.br.getFormbyProperty("name", "F1");
+                    final Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
@@ -1416,11 +1403,11 @@ public class CloudyfilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
-                this.br.followConnection();
+                br.followConnection();
                 correctBR();
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
