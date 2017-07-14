@@ -569,7 +569,7 @@ public abstract class K2SApi extends PluginForHost {
              * @author raztoki
              */
             @Override
-            public URLConnectionAdapter openPostConnection(final String url, final String post) throws Exception {
+            public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
                 return this.openRequestConnection(this.createPostRawRequest(url, post));
             }
 
@@ -604,15 +604,12 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     public Browser newWebBrowser() {
-
         Browser nbr = new Browser() {
 
             @Override
             public void updateCookies(Request request) {
                 super.updateCookies(request);
-
                 // sync cookies between domains!
-
                 // just not for api requests
                 if (request.getURL().getPath().contains("/api/v2")) {
                     return;
@@ -620,7 +617,6 @@ public abstract class K2SApi extends PluginForHost {
                 final String host = Browser.getHost(request.getUrl());
                 // todo: test which reference this is.
                 final Cookies cookies = request.getCookies();
-
                 // also remove cloudflare cookies, each domain gets its own instance (same as browser)
                 {
                     final Cookie cfuid = cookies.get("__cfduid");
@@ -642,7 +638,6 @@ public abstract class K2SApi extends PluginForHost {
                 }
             }
         };
-
         return nbr;
     }
 
