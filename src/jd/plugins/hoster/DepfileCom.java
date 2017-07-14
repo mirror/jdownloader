@@ -50,7 +50,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?d[ei]pfile\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
 
     private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
@@ -79,20 +79,31 @@ public class DepfileCom extends PluginForHost {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        // keep2.cc no dns
+        return new String[] { "i-filez.com", "depfile.com", "dipfile.com", "depfile.us" };
+    }
+
+    @Override
     public String rewriteHost(String host) {
-        if (host == null || "i-filez.com".equals(host) || "depfile.com".equals(host) || "dipfile.com".equals(host)) {
+        if (host == null) {
             return "depfile.com";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "depfile.com";
+            }
         }
         return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://dipfile.com/terms";
+        return "http://depfile.com/terms";
     }
 
     public String correctDownloadLink(final String parameter) {
-        final String result = parameter.replaceFirst("(?:i-filez|dipfile)\\.com/", "depfile.com/").replace("http://", "https://");
+        final String result = parameter.replaceFirst("(?:i-filez\\.com|dipfile\\.com|depfile\\.us)/", "depfile.com/").replace("http://", "https://");
         return result;
     }
 
@@ -430,7 +441,7 @@ public class DepfileCom extends PluginForHost {
     private String getPremiumDllink(Browser br) {
         String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(https?://.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.d[ei]pfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
+            dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.(?:d[ei]pfile\\.com|depfile\\.us)/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
             if (dllink == null) {
                 // Link; 4855091887641.log; 271792; jdlog://4855091887641
                 dllink = br.getRegex("<th>Download:</th>\\s*<td><a href=('|\")(http.*?)\\1").getMatch(1);
@@ -583,7 +594,7 @@ public class DepfileCom extends PluginForHost {
 
     private boolean isOfflineHTML() {
         final boolean offline;
-        if (br.containsHTML("(>File was not found in the d[ei]pFile database\\.|It is possible that you provided wrong link\\.<|>Файл не найден в базе d[ei]pfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
+        if (br.containsHTML("(>File was not found in the d[ei]pFile database\\.|It is possible that you provided wrong link\\.<|>Файл не найден в базе (?:d[ei]pfile\\.com|depfile\\.us)\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
             offline = true;
         } else if (br.containsHTML(">403 Forbidden</")) {
             /* Invalid links */
