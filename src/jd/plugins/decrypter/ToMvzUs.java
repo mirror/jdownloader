@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,19 +31,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?twomovies\\.(?:us|net)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?twomovies\\.(?:us|net|tv)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" })
 public class ToMvzUs extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "twomovies.us", "twomovies.net" };
+        return new String[] { "twomovies.us", "twomovies.net", "twomovies.tv" };
     }
 
     public ToMvzUs(PluginWrapper wrapper) {
@@ -54,14 +54,14 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         return 1;
     }
 
-    final String host = "https?://(?:www\\.)?twomovies\\.(?:us|net)/";
+    final String host = "https?://(?:www\\.)?twomovies\\.(?:us|net|tv)/";
     final String fm   = host + "full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/)";
     final String wt   = host + "(?:watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|watch_movie/[a-zA-z0-9_]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // lets force https, and correct host so that we don't have issues with cookies
-        final String parameter = param.toString().replace("http://", "https://").replace("twomovies.us/", "twomovies.net/");
+        final String parameter = param.toString().replace("http://", "https://").replaceFirst("twomovies\\.(?:us|net)/", "twomovies.tv/");
         br.setFollowRedirects(true);
         // cookie needed for seeing links!
         final String cookie_host = Browser.getHost(parameter);
