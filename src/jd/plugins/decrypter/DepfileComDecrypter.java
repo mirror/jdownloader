@@ -34,14 +34,14 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez|d[ei]pfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez\\.com|d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileComDecrypter extends PluginForDecrypt {
 
     public DepfileComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?d[ei]pfile\\.com/(myspace|uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate|report|data|dmca|favicon|ajax|API|robots)";
+    private static final String INVALIDLINKS = "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(myspace|uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate|report|data|dmca|favicon|ajax|API|robots)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -63,7 +63,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
         if (links != null && links.length != 0) {
             // folder link
             for (String link : links) {
-                final String l = new Regex(link, "https?://d[ei]pfile\\.com/[A-Za-z0-9]+|https?://(www\\.)?d[ei]pfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32}").getMatch(-1);
+                final String l = new Regex(link, "https?://(?:d[ei]pfile\\.com|depfile\\.us)/[A-Za-z0-9]+|https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32}").getMatch(-1);
                 final String f = new Regex(link, "title=(\"|')(.*?)\\1").getMatch(1);
                 final String s = new Regex(link, ">(\\d+(\\.\\d+)? [a-z]{2})<").getMatch(0);
                 if (l != null && !l.contains(folder_id) && !new URL(l).getPath().equals("/downloads")) {
