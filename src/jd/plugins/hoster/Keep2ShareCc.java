@@ -162,9 +162,9 @@ public class Keep2ShareCc extends K2SApi {
             } catch (PluginException e) {
             }
         }
-        // DO NOT AUTOCORRECT
+        // DO NOT AUTOCORRECT DOMAINS
         // final String linkID = getFUID(link);
-        // link.setUrlDownload(getProtocol() + getDomain() + "/file/" + linkID);
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("https?://", getProtocol()));
     }
 
     public void followRedirectNew(Browser br) throws Exception {
