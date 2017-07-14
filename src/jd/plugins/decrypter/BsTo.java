@@ -75,6 +75,14 @@ public class BsTo extends PluginForDecrypt {
             String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<iframe\\s+[^>]+src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
+                // hoster player
+                if (finallink == null) {
+                    finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\" class=\"hoster-player\">").getMatch(0);
+                    if (finallink == null) {
+                        // final failover?
+                        finallink = br.getRegex("https?://(\\w+\\.)?bs\\.to/out/\\d+").getMatch(-1);
+                    }
+                }
             }
             if (finallink == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
