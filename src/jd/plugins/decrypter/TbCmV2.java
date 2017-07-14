@@ -726,6 +726,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 // }
             }
         }
+        logger.info("parseGeneric method returns: " + ret.size() + " VideoID's!");
         return ret;
     }
 
@@ -898,6 +899,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
+        logger.info("parsePlaylist method returns: " + ret.size() + " VideoID's!");
         return ret;
     }
 
@@ -961,6 +963,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
+        logger.info("parseChannelgrid method returns: " + ret.size() + " VideoID's!");
         return ret;
     }
 
@@ -1029,6 +1032,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
+        logger.info("parseUsergrid method returns: " + ret.size() + " VideoID's!");
         return ret;
     }
 
