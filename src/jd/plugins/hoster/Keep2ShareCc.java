@@ -13,18 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,6 +40,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 /**
  *
  * @author raztoki
@@ -53,7 +52,6 @@ import jd.plugins.PluginForHost;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
-
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/premium.html");
@@ -69,7 +67,6 @@ public class Keep2ShareCc extends K2SApi {
     public final String MAINPAGE = "https://" + MAINTLD; // new.keep2share.cc and keep2share.cc share same
 
     // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
-
     @Override
     public String[] siteSupportedNames() {
         // keep2.cc no dns
@@ -99,7 +96,6 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /* abstract K2SApi class setters */
-
     /**
      * sets domain the API will use!
      */
@@ -152,7 +148,6 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /* end of abstract class setters */
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -200,7 +195,6 @@ public class Keep2ShareCc extends K2SApi {
         }
         final String filename = getFileName();
         final String filesize = getFileSize();
-
         if (filename != null) {
             if (filename.contains("...")) {
                 super.checkLinks(new DownloadLink[] { link });
@@ -239,7 +233,6 @@ public class Keep2ShareCc extends K2SApi {
         }
         final String filename = getFileName();
         final String filesize = getFileSize();
-
         if (filename != null) {
             if (filename.contains("...")) {
                 super.checkLinks(new DownloadLink[] { link });
@@ -432,7 +425,7 @@ public class Keep2ShareCc extends K2SApi {
             logger.info("dllink = " + dllink);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
-                br.addAllowedResponseCodes(dl.getConnection().getResponseCode());
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
                 dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -482,7 +475,6 @@ public class Keep2ShareCc extends K2SApi {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalwait + 10000l);
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-
         }
     }
 
@@ -730,7 +722,7 @@ public class Keep2ShareCc extends K2SApi {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 try {
-                    br.addAllowedResponseCodes(dl.getConnection().getResponseCode());
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -873,5 +865,4 @@ public class Keep2ShareCc extends K2SApi {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
-
 }
