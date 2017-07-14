@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -61,6 +62,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -296,7 +298,9 @@ public class TbCmV2 extends PluginForDecrypt {
                  * instead
                  */
                 br.getPage("https://www.youtube.com/user/" + userID + "/featured");
-                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, extractWebsiteTitle());
+                // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
+                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle());
+                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
                 playlistID = br.getRegex(">Uploads</span>.*?list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
                 userWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
             }
@@ -829,6 +833,7 @@ public class TbCmV2 extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
             br.getHeaders().put("Accept-Charset", null);
             br.getPage(getBase() + "/playlist?list=" + playlistID);
+            // user list it's not a playlist.... just a channel decryption. this can return incorrect information.
             globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, extractWebsiteTitle());
             final String PAGE_CL = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
             final String PAGE_BUILD_LABEL = br.getRegex("'PAGE_BUILD_LABEL': \"(.*?)\"").getMatch(0);
@@ -879,9 +884,9 @@ public class TbCmV2 extends PluginForDecrypt {
                     // anti ddos
                     round = antiDdosSleep(round);
                     pbr.getPage(jsonPage);
-                    String output = pbr.toString().replace("\\n", " ");
+                    String output = pbr.toString();
                     output = Encoding.unicodeDecode(output);
-                    output = output.replaceAll("[ ]{2,}", "");
+                    output = output.replaceAll("\\s+", " ");
                     pbr.getRequest().setHtmlCode(output);
                 } else if (nextPage != null) {
                     // OLD! doesn't always present. Depends on server playlist backend code.!
