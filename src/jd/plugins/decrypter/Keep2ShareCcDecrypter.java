@@ -60,7 +60,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // final String parameter = host + "/file/" + uid;
 
         // DO NOT AUTO CORRECT, links redirect to there default server
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceFirst("https?://", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).followRedirectNew(br);
