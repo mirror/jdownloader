@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -63,12 +64,27 @@ public class BoxCom extends antiDDoSForDecrypt {
             decryptedLinks.addAll(decryptApp(cryptedlink));
             // single link share url!
             if (decryptedLinks.isEmpty()) {
+                // test links for password/empty folder/login required https://svn.jdownloader.org/issues/83897
+                if (br.containsHTML("<strong>There are no items in this folder.</strong>")) {
+                    // could be a empty folder.
+                    decryptedLinks.add(createOfflinelink(cryptedlink));
+                    return decryptedLinks;
+                } else if (br.containsHTML(">\\s*Enter Password</h1>")) {
+                    // password protected
+                    decryptedLinks.add(createOfflinelink(cryptedlink));
+                    return decryptedLinks;
+                }
                 // single link should still have fuid
                 final String fuid = br.getRegex("data-typed-id=\"f_(\\d+)\"").getMatch(0);
+                final String filename = br.getRegex("<span class=\"item-name\">(.*?)</span>").getMatch(0);
                 if (fuid == null) {
+                    if (br.containsHTML("/login\\?redirect_url=" + Pattern.quote(br._getURL().getPath()))) {
+                        // login required
+                        decryptedLinks.add(createOfflinelink(cryptedlink, filename, "Login Required, unsupported feature"));
+                        return decryptedLinks;
+                    }
                     return null;
                 }
-                final String filename = br.getRegex("<span class=\"item-name\">(.*?)</span>").getMatch(0);
                 final String url = br.getURL() + "/file/" + fuid;
                 final DownloadLink dl = createDownloadlink(url);
                 // otherwise will enter decrypter again..
