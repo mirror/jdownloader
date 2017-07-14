@@ -713,7 +713,7 @@ public class Keep2ShareCc extends K2SApi {
         }
         requestFileInformation(link);
         // login based on current link url domain.
-        login(account, false, Browser.getHost(link.getPluginPatternMatcher()));
+        login(account, false, "https://" + Browser.getHost(link.getPluginPatternMatcher()));
         if (account.getType() == AccountType.FREE) {
             setConstants(account);
             // post login referrer info has gone.
