@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,8 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.belle.la" }, urls = { "https?://(?:www\\.)?vip\\.belle\\.la/(?:view|down)/[a-z0-9]+" })
 public class VipBelleLa extends PluginForHost {
@@ -65,7 +63,7 @@ public class VipBelleLa extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         fuid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -77,10 +75,16 @@ public class VipBelleLa extends PluginForHost {
 
         filename = br.getRegex("id=\"file_name\"[^<>]*?>([^<>\"]+)<span").getMatch(0);
         if (filename == null) {
-            /* Fallback */
-            filename = fuid;
+            filename = br.getRegex("<h4>(.*?)</h4>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) - 百丽资源中心 - 百丽图库旗下资源储存与分享平台</title>").getMatch(0);
+                if (filename == null) {
+                    /* Fallback */
+                    filename = fuid;
+                }
+            }
         }
-        filesize = br.getRegex("class=\"filename_normal\">\\(([^<>\"]+)\\)<").getMatch(0);
+        filesize = br.getRegex("（(\\s*\\d+.*?)）").getMatch(0);
         link.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
             filesize = Encoding.htmlDecode(filesize).trim();
@@ -102,27 +106,31 @@ public class VipBelleLa extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            /* Skip pre-download-waittime here. */
-            String postData = this.br.getRegex("data\\s*?:\\s*?\\'(file_key=[^<>\"\\']+\\&token=[^<>\"\\']+)\\'").getMatch(0);
-            if (postData == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (postData.endsWith("t=")) {
-                postData += System.currentTimeMillis();
-            }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.postPage("/recall/check_down", postData);
-            final String waittime_str = this.br.getRegex("page_download_tips\\((\\d+)\\);").getMatch(0);
-            final int wait = waittime_str != null ? Integer.parseInt(waittime_str) : 60;
-            this.sleep(wait * 1001l, downloadLink);
-            this.br.postPage("/recall/check_down", postData);
-            this.br.getPage("/down/" + this.fuid);
-            dllink = br.getRegex("(http[^<>\"]+/download/[^<>\"]+)").getMatch(0);
+            // 20170716
+            dllink = br.getRegex("href=(\"|')(http.*?/download/.*?)\\1").getMatch(1);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Skip pre-download-waittime here. */
+                String postData = this.br.getRegex("data\\s*?:\\s*?\\'(file_key=[^<>\"\\']+\\&token=[^<>\"\\']+)\\'").getMatch(0);
+                if (postData == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (postData.endsWith("t=")) {
+                    postData += System.currentTimeMillis();
+                }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                this.br.postPage("/recall/check_down", postData);
+                final String waittime_str = this.br.getRegex("page_download_tips\\((\\d+)\\);").getMatch(0);
+                final int wait = waittime_str != null ? Integer.parseInt(waittime_str) : 60;
+                this.sleep(wait * 1001l, downloadLink);
+                this.br.postPage("/recall/check_down", postData);
+                this.br.getPage("/down/" + this.fuid);
+                dllink = br.getRegex("(http[^<>\"]+/download/[^<>\"]+)").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
