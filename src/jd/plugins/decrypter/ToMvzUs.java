@@ -74,6 +74,9 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         } else if (parameter.matches(fm) && br.getURL().matches(host + "watch_[^/]+/.+")) {
             // redirect happened back to the main subgroup, this happens when the parameter doesn't end with /
             return decryptedLinks;
+        } else if (br._getURL().getPath().equals("/abuse")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
         // tv ep each mirror, movie each mirror.
         if (parameter.matches(wt)) {
