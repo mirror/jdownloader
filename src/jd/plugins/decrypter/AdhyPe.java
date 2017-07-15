@@ -27,11 +27,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Request;
-import jd.nutils.encoding.HTMLEntities;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -58,51 +57,41 @@ public class AdhyPe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final int repeat = 4;
-        for (int i = 0; i <= repeat; i++) {
-            br = new Browser();
-            br.setFollowRedirects(false);
-            br.getPage(parameter);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-            final String unwise = unWise();
-            final String key = getKey(unwise, fuid);
-            if (key == null || unwise == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-            }
-            Browser br = this.br.cloneBrowser();
-            sleep(7500, param);
-            // only required for this request
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage(Request.getLocation(key, br.getRequest()));
-            String redirecturl = br.toString();
-            // recaptchav2
-            if (isCaptcha(unwise)) {
-                if ((i + 1) <= (repeat - 1)) {
-                    sleep(30000L, param);
-                    continue;
-                }
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, this.br).getToken();
-                if (recaptchaV2Response != null) {
-                    redirecturl += "." + recaptchaV2Response;
-                }
-            }
-            br = this.br.cloneBrowser();
-            br.getPage(Request.getLocation(redirecturl, br.getRequest()));
-            final String finallink = HTMLEntities.unhtmlentities(br.getRedirectLocation());
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
+        br = new Browser();
+        br.setFollowRedirects(false);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        if (br.getRedirectLocation() != null) {
+            // can redirect without captchas
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            return decryptedLinks;
+        }
+        final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        String unwise1 = unWise();
+        String unwise2;
+        final Form captcha = br.getForm(0);
+        // recaptchav2
+        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+        // form only has one input...its static
+        captcha.put("cd", Encoding.urlEncode(recaptchaV2Response));
+        br.submitForm(captcha);
+        unwise2 = unWise();
+        String finallink = new Regex(unwise2, "(\"|')(r/[^\"]*[a-f0-9]{32}\\." + fuid + "\\.[a-f0-9]{32})\\1").getMatch(1);
+        if (finallink == null) {
+            return null;
+        }
+        // there are cookies set here also.. but they don't check/validate
+        // they also have additional args .1.0 but this isnt needed either...
+        br.getPage(finallink + ".1.0");
+        finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            return null;
+        }
+        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
-
     }
 
     private boolean isCaptcha(String unwise) {
