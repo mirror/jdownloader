@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,20 +35,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
-    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com", /**
-     *
-     *
-     *
-     *
-     *
-     * 
-                                           * <-- full domains & subdomains -->
-     */
-        "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
+
+    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com",
+            "tinyical.com", /**
+                             * <-- full domains & subdomains -->
+                             */
+            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
     @Override
     public String[] siteSupportedNames() {
@@ -74,14 +70,25 @@ public class AdfLy extends antiDDoSForDecrypt {
      *
      */
     public static String[] getAnnotationUrls() {
-        final StringBuilder pattern = new StringBuilder();
         // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/[^<>\r\n\t]+" };
+    }
+
+    private static String getHostsPattern() {
+        final StringBuilder pattern = new StringBuilder();
         for (final String name : domains) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         final String hosts = adfPre + "(?:" + pattern.toString() + ")";
-        HOSTS.set(hosts);
-        return new String[] { hosts + "/[^<>\r\n\t]+" };
+        return hosts;
+    }
+
+    @Override
+    public void init() {
+        if (HOSTS.get() == null) {
+            HOSTS.set(getHostsPattern());
+        }
     }
 
     private static final String            adfPre       = "https?://(?:www\\.)?";
@@ -269,7 +276,7 @@ public class AdfLy extends antiDDoSForDecrypt {
         } else if (finallink != null) {
             decryptedLinks.add(createDownloadlink(finallink.replace("\\", "")));
         } else {
-            logger.warning("adf.ly single regex broken for link: " + parameter);
+            logger.warning("single regex broken for link: " + parameter);
             logger.info("Adding all available links on page");
             // Use this because they often change the page
             final String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
