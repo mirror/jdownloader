@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(www\\.)?security-links\\.com/(?:\\d+/[A-Za-z0-9:;/\\.]+|[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(www\\.)?security-links\\.com/(?:\\d+/[A-Za-z0-9:;/\\.@#]+|[A-Za-z0-9]+)" })
 public class SecurityLinksCom extends PluginForDecrypt {
 
     public SecurityLinksCom(PluginWrapper wrapper) {
