@@ -16,9 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,9 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.logging2.LogInterface;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" })
 public class SuicidegirlsCom extends PluginForHost {
 
     public SuicidegirlsCom(PluginWrapper wrapper) {
@@ -70,27 +71,25 @@ public class SuicidegirlsCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private String               DLLINK                       = null;
+    private String               dllink                       = null;
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        login(this.br);
-        this.br = prepBR(this.br);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = login(br);
+        return requestFileInformation(link, account);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         String filename = null;
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
-            this.br.getPage(link.getDownloadURL());
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            DLLINK = this.br.getRegex("<source src=\"(http[^<>\"]*?)\" type=\\'video/mp4\\'").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = this.br.getRegex("\"(https?://[^/]+/videos/[^/]+\\.mp4)\"").getMatch(0);
+            dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\" type=\\'video/mp4\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://[^/]+/videos/[^/]+\\.mp4)\"").getMatch(0);
             }
-            filename = this.br.getRegex("<h2 class=\"title\">SuicideGirls: ([^<>\"]*?)</h2>").getMatch(0);
+            filename = br.getRegex("<h2 class=\"title\">SuicideGirls: ([^<>\"]*?)</h2>").getMatch(0);
             if (filename == null) {
                 /* Fallback to url-filename */
                 filename = new Regex(link.getDownloadURL(), "suicidegirls\\.com/videos/\\d+/([A-Za-z0-9\\-_]+)/").getMatch(0);
@@ -98,15 +97,15 @@ public class SuicidegirlsCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             filename += ".mp4";
         } else {
-            DLLINK = link.getStringProperty("directlink", null);
+            dllink = link.getStringProperty("directlink", null);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -118,7 +117,7 @@ public class SuicidegirlsCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setProperty("directlink", DLLINK);
+            link.setProperty("directlink", dllink);
         } finally {
             try {
                 con.disconnect();
@@ -144,7 +143,7 @@ public class SuicidegirlsCom extends PluginForHost {
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
         // }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -154,7 +153,7 @@ public class SuicidegirlsCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, DLLINK);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -166,7 +165,7 @@ public class SuicidegirlsCom extends PluginForHost {
     public static final String MAINPAGE = "http://suicidegirls.com";
     private static Object      LOCK     = new Object();
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 prepBR(br);
@@ -174,7 +173,12 @@ public class SuicidegirlsCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(MAINPAGE, cookies);
-                    return;
+                    // do a test
+                    br.getPage("https://www.suicidegirls.com/member/account/");
+                    if (br.containsHTML(">Log Out<")) {
+                        return;
+                    }
+                    br = prepBR(new Browser());
                 }
                 br.getPage("https://www.suicidegirls.com");
                 final Form loginform = br.getFormbyProperty("id", "login-form");
@@ -185,6 +189,25 @@ public class SuicidegirlsCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // login can contain recaptchav2
+                if (loginform.containsHTML("g-recaptcha") && loginform.containsHTML("data-sitekey")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+
+                        @Override
+                        public String getSiteKey() {
+                            return getSiteKey(loginform.getHtmlCode());
+                        };
+
+                    }.getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
                     }
                 }
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
@@ -213,44 +236,48 @@ public class SuicidegirlsCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(br, account, false);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
-        if (this.br.getURL() == null || !this.br.getURL().contains("/member/account")) {
-            this.br.getPage("https://www.suicidegirls.com/member/account/");
+        if (br.getURL() == null || !br.getURL().contains("/member/account")) {
+            br.getPage("https://www.suicidegirls.com/member/account/");
         }
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("YOUR ACCOUNT IS CLOSING IN <a>(\\d+ weeks?, \\d+ days?)<").getMatch(0);
-        if (expire == null) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
-        } else {
+        String expire = br.getRegex("YOUR ACCOUNT IS CLOSING IN <a>(\\d+ weeks?, \\d+ days?)<").getMatch(0);
+        long expire_long = -1;
+        if (expire != null) {
             final Regex info = new Regex(expire, "(\\d+) weeks?, (\\d+) days?");
             final String weeks = info.getMatch(0);
             final String days = info.getMatch(1);
             final long days_total = Long.parseLong(weeks) * 7 * +Long.parseLong(days);
-            final long expire_long = System.currentTimeMillis() + days_total * 24 * 60 * 60 * 1000l;
-            ai.setValidUntil(expire_long);
-
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
+            expire_long = System.currentTimeMillis() + days_total * 24 * 60 * 60 * 1000l;
         }
-        account.setValid(true);
+        if (expire == null && expire_long == -1) {
+            expire = br.getRegex("Your account will be cancelled on (\\w+ \\d+, \\d{4})").getMatch(0);
+            expire_long = TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH);
+        }
+        if (expire_long > -1) {
+            ai.setValidUntil(expire_long);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
+        } else {
+            // free account
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
+        }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        login(br, account, false);
+        requestFileInformation(link, account);
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
@@ -262,7 +289,7 @@ public class SuicidegirlsCom extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // }
             // }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -273,19 +300,20 @@ public class SuicidegirlsCom extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("premium_directlink", DLLINK);
+            link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
     }
 
     @SuppressWarnings("deprecation")
-    public static boolean login(final Browser br) {
+    public Account login(final Browser br) {
         final ArrayList<Account> accounts = AccountController.getInstance().list("suicidegirls.com");
         if (accounts != null && accounts.size() != 0) {
             final LogInterface logger = br.getLogger();
             for (final Account account : accounts) {
                 try {
                     login(br, account, false);
+                    return account;
                 } catch (final PluginException e) {
                     logger.log(e);
                     account.setValid(false);
@@ -294,20 +322,14 @@ public class SuicidegirlsCom extends PluginForHost {
                 }
             }
         }
-        return false;
+        return null;
     }
 
-    public static Browser prepBR(final Browser br) {
+    public Browser prepBR(final Browser br) {
         br.setCookie(MAINPAGE, "burlesque_ad_closed", "True");
         br.setCookie(MAINPAGE, "django_language", "en");
         br.setFollowRedirects(true);
         return br;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
