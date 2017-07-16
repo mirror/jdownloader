@@ -70,6 +70,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         }
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
+            // folder
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             final FilePackage fp;
             if (fpName != null) {
@@ -111,6 +112,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage("?UserFile_page=" + (pageIndex++));
             }
         } else {
+            // single link
             final DownloadLink singlink = createDownloadlink(br.getURL());
             final String filename = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileName();
             final String filesize = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileSize();
@@ -122,13 +124,13 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             }
             if (filename == null) {
                 singlink.setAvailableStatus(AvailableStatus.FALSE);
+            } else if (filename.contains("...")) {
+                // has to be null (to trigger linkchecking within hoster plugin to remove ...), availablestatus.unchecked will re-enter
+                // decrypter
+                singlink.setAvailableStatus(null);
             } else {
-                if (filename.contains("...")) {
-                    singlink.setAvailableStatus(null);
-                } else {
-                    // prevent wasteful double linkchecks.
-                    singlink.setAvailableStatus(AvailableStatus.TRUE);
-                }
+                // prevent wasteful double linkchecks.
+                singlink.setAvailableStatus(AvailableStatus.TRUE);
             }
             if (br.containsHTML("Downloading blocked due to")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);
