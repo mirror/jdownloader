@@ -26,6 +26,15 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,15 +56,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixstep.co" }, urls = { "https?://(?:www\\.)?mixstep\\.co/(?:embed\\-)?[a-z0-9]{12}" })
 public class MixstepCo extends antiDDoSForHost {
 
@@ -65,7 +65,7 @@ public class MixstepCo extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://mixstep.co";
+    private static final String  COOKIE_HOST                        = "https://mixstep.co";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -92,7 +92,7 @@ public class MixstepCo extends antiDDoSForHost {
     private final boolean        IMAGEHOSTER                        = false;
 
     private final boolean        SUPPORTS_HTTPS                     = true;
-    private final boolean        SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean        SUPPORTS_HTTPS_FORCED              = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
