@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(www\\.)?security-links\\.com/(?:\\d+/[A-Za-z0-9:;/\\.@#]+|[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(?:www\\.)?security-links\\.com/(?:\\d+/(\\S+)|[A-Za-z0-9]+)" })
 public class SecurityLinksCom extends PluginForDecrypt {
 
     public SecurityLinksCom(PluginWrapper wrapper) {
@@ -38,14 +38,27 @@ public class SecurityLinksCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (new Regex(parameter, "/\\d+/\\S+").matches()) {
+            // code by raztoki
+            try {
+                final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+                final String decode = Encoding.urlDecode(fuid, false);
+                final StringBuilder sb = new StringBuilder();
+                for (int index = 0; index < decode.length(); index++) {
+                    char ch = decode.charAt(index);
+                    sb.append(Character.toChars(ch - 1));
+                }
+                if (sb.toString().matches("(?i)(?:http|ftp).+")) {
+                    decryptedLinks.add(createDownloadlink(sb.toString()));
+                    return decryptedLinks;
+                }
+            } catch (final Throwable t) {
+            }
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("il y a une ereur")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, null, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0)));
             return decryptedLinks;
         }
         if (br.containsHTML("\"generate\\.php\"")) {
@@ -73,7 +86,7 @@ public class SecurityLinksCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String[] links = br.getRegex("\\d+\\| <a href=\\'(http[^<>\"]*?)\\'").getColumn(0);
+        String[] links = br.getRegex("\\d+\\| <a href='(http[^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) {
             // for /\\d+/[A-Za-z0-9:;]+/[A-Za-z0-9:;]+
             final String filter = br.getRegex("<div id=\"hideshow\".*?</div>").getMatch(-1);
