@@ -128,7 +128,7 @@ public class YouPornCom extends PluginForHost {
         for (final String qualitiy : qualities) {
             DLLINK = br.getRegex("(?:sources\\s*?:.*?)?" + qualitiy + "\\s*?:\\s*?(?:\"|\\')([^'\"]+)(?:\"|\\')").getMatch(0);
             if (DLLINK == null) {
-                DLLINK = br.getRegex("(https?://[^'\"]+?" + qualitiy + "p[^'\"]+)(?:\"|\\')").getMatch(0);
+                DLLINK = br.getRegex("(https?://[^'\"]+?" + qualitiy + "p[^'\"]+\\.mp4[^'\"]+)(?:\"|\\')").getMatch(0); // <---
             }
             if (DLLINK != null) {
                 break;
