@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +30,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" })
 public class SuicidegirlsCom extends PluginForDecrypt {
 
     public SuicidegirlsCom(PluginWrapper wrapper) {
@@ -40,19 +44,20 @@ public class SuicidegirlsCom extends PluginForDecrypt {
     private static final String TYPE_USER  = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<String> dupecheck = new ArrayList<String>();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> dupecheck = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         String fpName = null;
-        final boolean loggedin = jd.plugins.hoster.SuicidegirlsCom.login(this.br);
-        jd.plugins.hoster.SuicidegirlsCom.prepBR(this.br);
-        this.br.setFollowRedirects(true);
+        final PluginForHost plugin = JDUtilities.getPluginForHost("suicidegirls.com");
+        final boolean loggedin = ((jd.plugins.hoster.SuicidegirlsCom) plugin).login(br) != null;
+        ((jd.plugins.hoster.SuicidegirlsCom) plugin).prepBR(br);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (this.br.containsHTML("class=\"album-join-message\"")) {
+        if (br.containsHTML("class=\"album-join-message\"")) {
             logger.info("User added member-only url but has no (valid) account");
             return decryptedLinks;
         }
@@ -67,7 +72,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
             }
             fpName = username + " - " + fpName;
 
-            final String[] links = br.getRegex(" <li class=\"photo\\-container\" id=\"thumb\\-\\d+\" data\\-index=\"\\d+\">[\t\n\r ]*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
+            final String[] links = br.getRegex("<li class=\"photo-container\" id=\"thumb-\\d+\" data-index=\"\\d+\"[^>]*>\\s*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
             if ((links == null || links.length == 0) && !loggedin) {
                 /* Account is needed most times */
                 logger.info("Account needed to crawl link: " + parameter);
@@ -83,12 +88,13 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                 dl.setLinkID(directlink);
                 dl.setAvailable(true);
                 dl.setContentUrl(directlink);
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 decryptedLinks.add(dl);
             }
         } else {
             /* TYPE_USER */
-            this.br.getPage("/" + member_type + "/" + username + "/photos/view/photosets/");
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("/" + member_type + "/" + username + "/photos/view/photosets/");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final short max_entries_per_page = 9;
             int addedlinks_total = 0;
             int addedlinks = 0;
@@ -99,7 +105,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                 }
                 addedlinks = 0;
                 if (addedlinks_total > 0) {
-                    this.br.getPage("/" + member_type + "/" + username + "/photos/?partial=true&offset=" + addedlinks_total);
+                    br.getPage("/" + member_type + "/" + username + "/photos/?partial=true&offset=" + addedlinks_total);
                 }
                 final String[] links = br.getRegex("\"(/(?:girls|members)/[^/]+/album/\\d+/[A-Za-z0-9\\-_]+/)[^<>\"]*?\"").getColumn(0);
                 if ((links == null || links.length == 0) && addedlinks_total == 0 && !loggedin) {
