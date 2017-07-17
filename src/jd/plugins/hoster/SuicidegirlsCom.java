@@ -74,7 +74,11 @@ public class SuicidegirlsCom extends PluginForHost {
     private String               dllink                       = null;
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         final Account account = login(br);
+        if (account == null) {
+            prepBR(br);
+        }
         return requestFileInformation(link, account);
     }
 
@@ -89,7 +93,7 @@ public class SuicidegirlsCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://[^/]+/videos/[^/]+\\.mp4)\"").getMatch(0);
             }
-            filename = br.getRegex("<h2 class=\"title\">SuicideGirls: ([^<>\"]*?)</h2>").getMatch(0);
+            filename = br.getRegex("<h2 class=\"title\">(?:SuicideGirls:\\s*)?([^<>\"]*?)</h2>").getMatch(0);
             if (filename == null) {
                 /* Fallback to url-filename */
                 filename = new Regex(link.getDownloadURL(), "suicidegirls\\.com/videos/\\d+/([A-Za-z0-9\\-_]+)/").getMatch(0);
