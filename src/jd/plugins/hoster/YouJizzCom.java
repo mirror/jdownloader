@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,11 +33,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
+
     /* DEV NOTES */
     /* Porn_plugin */
     private String dllink = null;
@@ -80,6 +85,7 @@ public class YouJizzCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -105,21 +111,23 @@ public class YouJizzCom extends PluginForHost {
         // 20170717
         final String filter = br.getRegex("var\\s+encodings\\s*=\\s*(\\[.*?\\]);").getMatch(0);
         if (filter != null) {
+            final ArrayList<Object> results = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
             // mobile has mp4 and non mobile is hls
-            final String[] results = PluginJSonUtils.getJsonResultsFromArray(filter);
             int quality = 0;
-            for (String result : results) {
-                final String d = PluginJSonUtils.getJson(result, "filename");
-                if (PluginJSonUtils.getJson(result, "quality").equals("false") && d.contains(".mp4")) {
+            for (final Object resultz : results) {
+                final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) resultz;
+                final Object q = result.get("quality");
+                final String d = (String) result.get("filename");
+                if (q == null || d == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (q instanceof Boolean && d != null && !d.contains(".m3u8")) {
                     dllink = d;
-                    break;
-                }
-                final Integer q = Integer.parseInt(PluginJSonUtils.getJson(result, "quality"));
-                if (q > quality && d.contains(".mp4")) {
-                    quality = q;
+                } else if (q instanceof String && Integer.parseInt((String) q) > quality && !d.contains(".m3u8")) {
+                    quality = Integer.parseInt((String) q);
                     dllink = d;
                 }
             }
+
         }
         if (dllink == null) {
             dllink = br.getRegex("addVariable\\(\"file\"\\s*,.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
@@ -152,6 +160,7 @@ public class YouJizzCom extends PluginForHost {
                 }
             }
         }
+
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
