@@ -33,7 +33,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
     private String dllink = null;
@@ -110,14 +109,17 @@ public class YouJizzCom extends PluginForHost {
             final String[] results = PluginJSonUtils.getJsonResultsFromArray(filter);
             int quality = 0;
             for (String result : results) {
-                final Integer q = Integer.parseInt(PluginJSonUtils.getJson(result, "quality"));
                 final String d = PluginJSonUtils.getJson(result, "filename");
+                if (PluginJSonUtils.getJson(result, "quality").equals("false") && d.contains(".mp4")) {
+                    dllink = d;
+                    break;
+                }
+                final Integer q = Integer.parseInt(PluginJSonUtils.getJson(result, "quality"));
                 if (q > quality && d.contains(".mp4")) {
                     quality = q;
                     dllink = d;
                 }
             }
-
         }
         if (dllink == null) {
             dllink = br.getRegex("addVariable\\(\"file\"\\s*,.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
@@ -150,7 +152,6 @@ public class YouJizzCom extends PluginForHost {
                 }
             }
         }
-
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
