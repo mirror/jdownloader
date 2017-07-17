@@ -234,7 +234,12 @@ public class VidabcCom extends PluginForHost {
         }
 
         scanInfo(fileInfo);
-
+        if (new Regex(correctedBR, "class=\"err\">This video can be watched as embed only.<").matches() && inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<title>Watch (.*?)</title>").getMatch(0);
+            if (!inValidate(fileInfo[0])) {
+                fileInfo[0] = fileInfo[0].replaceFirst("vidabc[\\s\\.]*com", "");
+            }
+        }
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
         if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
@@ -473,6 +478,7 @@ public class VidabcCom extends PluginForHost {
             try {
                 logger.info("Trying to get link via embed");
                 final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
+                br.getHeaders().put("Referer", "");
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
