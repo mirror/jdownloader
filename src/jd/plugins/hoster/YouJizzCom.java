@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,10 +28,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
+
     /* DEV NOTES */
     /* Porn_plugin */
     private String dllink = null;
@@ -82,7 +82,7 @@ public class YouJizzCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -103,35 +103,54 @@ public class YouJizzCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(Encoding.htmlOnlyDecode(embed));
-        dllink = br.getRegex("addVariable\\(\"file\"\\s*,.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
-        if (dllink == null) {
-            // 02.dec.2016
-            dllink = br.getRegex("<source src=\"([^\"]+)").getMatch(0);
-        }
-        if (dllink == null) {
-            // 02.dec.2016
-            dllink = br.getRegex("newLink\\.setAttribute\\('href'\\s*,\\s*'([^']+)").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
-            if (dllink == null) {
-                // class="buttona" >Download This Video</
-                dllink = br.getRegex("\"(http://im\\.[^<>\"]+)\"").getMatch(0);
-            }
-            if (dllink == null) {
-                String playlist = br.getRegex("so\\.addVariable\\(\"playlist\"\\s*,\\s*\"(https?://(www\\.)?youjizz\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
-                if (playlist == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                Browser br2 = br.cloneBrowser();
-                br2.getPage(playlist);
-                // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
-                dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
-                if (dllink != null) {
-                    dllink = dllink.replace("%252", "%2");
+        // 20170717
+        final String filter = br.getRegex("var\\s+encodings\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+        if (filter != null) {
+            // mobile has mp4 and non mobile is hls
+            final String[] results = PluginJSonUtils.getJsonResultsFromArray(filter);
+            int quality = 0;
+            for (String result : results) {
+                final Integer q = Integer.parseInt(PluginJSonUtils.getJson(result, "quality"));
+                final String d = PluginJSonUtils.getJson(result, "filename");
+                if (q > quality && d.contains(".mp4")) {
+                    quality = q;
+                    dllink = d;
                 }
             }
+
         }
+        if (dllink == null) {
+            dllink = br.getRegex("addVariable\\(\"file\"\\s*,.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+            if (dllink == null) {
+                // 02.dec.2016
+                dllink = br.getRegex("<source src=\"([^\"]+)").getMatch(0);
+            }
+            if (dllink == null) {
+                // 02.dec.2016
+                dllink = br.getRegex("newLink\\.setAttribute\\('href'\\s*,\\s*'([^']+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+                if (dllink == null) {
+                    // class="buttona" >Download This Video</
+                    dllink = br.getRegex("\"(http://im\\.[^<>\"]+)\"").getMatch(0);
+                }
+                if (dllink == null) {
+                    String playlist = br.getRegex("so\\.addVariable\\(\"playlist\"\\s*,\\s*\"(https?://(www\\.)?youjizz\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
+                    if (playlist == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    Browser br2 = br.cloneBrowser();
+                    br2.getPage(playlist);
+                    // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
+                    dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
+                    if (dllink != null) {
+                        dllink = dllink.replace("%252", "%2");
+                    }
+                }
+            }
+        }
+
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -161,7 +180,7 @@ public class YouJizzCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
