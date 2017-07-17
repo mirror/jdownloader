@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "games.reveur.de" }, urls = { "http://(www\\.)?games\\.reveur\\.de/(en|de)/[a-z0-9\\-]+/addons/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+/[A-Za-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "games.reveur.de" }, urls = { "http://(www\\.)?games\\.reveur\\.de/(en|de)/[a-z0-9\\-]+/addons/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+/[A-Za-z0-9\\-]+\\.html" })
 public class GamesReveurDe extends PluginForHost {
-
     public GamesReveurDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,7 +51,7 @@ public class GamesReveurDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         br.getPage(link.getDownloadURL());
-        if (this.br.getURL().equals("http://games.reveur.de/")) {
+        if (br.getURL().equals("http://games.reveur.de/") || br.containsHTML(">\\s*Download not available!\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) zum Download</title>").getMatch(0);
@@ -136,5 +134,4 @@ public class GamesReveurDe extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
