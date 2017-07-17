@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -43,35 +46,34 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
 public class NicoVideoJp extends PluginForHost {
-    private static final String  MAINPAGE                             = "http://www.nicovideo.jp/";
-    private static final String  ONLYREGISTEREDUSERTEXT               = "Only downloadable for registered users";
-    private static final String  CUSTOM_DATE                          = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME                      = "CUSTOM_FILENAME";
-    private static final String  TYPE_NM                              = "http://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
-    private static final String  TYPE_SM                              = "http://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
-    private static final String  TYPE_SO                              = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+
+    private static final String  MAINPAGE                    = "http://www.nicovideo.jp/";
+    private static final String  ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
+    private static final String  CUSTOM_DATE                 = "CUSTOM_DATE";
+    private static final String  CUSTOM_FILENAME             = "CUSTOM_FILENAME";
+    private static final String  TYPE_NM                     = "http://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
+    private static final String  TYPE_SM                     = "http://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
+    private static final String  TYPE_SO                     = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
-    private static final String  TYPE_WATCH                           = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
-    private static final String  default_extension                    = ".flv";
-    private static final String  privatevid                           = "account.nicovideo.jp";
-    private static final String  NOCHUNKS                             = "NOCHUNKS";
-    private static final String  AVOID_ECONOMY_MODE                   = "AVOID_ECONOMY_MODE";
-    private static final boolean FREE_RESUME                          = true;
-    private static final int     FREE_MAXCHUNKS                       = 0;
-    private static final int     FREE_MAXDOWNLOADS                    = 2;
-    private static final boolean ACCOUNT_FREE_RESUME                  = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS               = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS            = 2;
-    private static final int     economy_active_wait_minutes          = 30;
-    private static final String  html_account_needed                  = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
-    public static final long     trust_cookie_age                     = 300000l;
+    private static final String  TYPE_WATCH                  = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
+    private static final String  default_extension           = ".flv";
+    private static final String  privatevid                  = "account.nicovideo.jp";
+    private static final String  NOCHUNKS                    = "NOCHUNKS";
+    private static final String  AVOID_ECONOMY_MODE          = "AVOID_ECONOMY_MODE";
+    private static final boolean FREE_RESUME                 = true;
+    private static final int     FREE_MAXCHUNKS              = 0;
+    private static final boolean ACCOUNT_FREE_RESUME         = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS      = 0;
+    private static final int     economy_active_wait_minutes = 30;
+    private static final String  html_account_needed         = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
+    public static final long     trust_cookie_age            = 300000l;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
-    private static AtomicInteger totalMaxSimultanFree_AccountDownload = new AtomicInteger(ACCOUNT_FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFree        = new AtomicInteger(2);
+    private static AtomicInteger totalMaxSimultanFreeAccount = new AtomicInteger(2);
     /* don't touch the following! */
-    private static AtomicInteger maxPremium                           = new AtomicInteger(1);
-    private static AtomicInteger maxFree                              = new AtomicInteger(1);
-    private static Object        LOCK                                 = new Object();
+    private static AtomicInteger maxPremium                  = new AtomicInteger(1);
+    private static AtomicInteger maxFree                     = new AtomicInteger(1);
+    private static Object        LOCK                        = new Object();
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,6 +86,8 @@ public class NicoVideoJp extends PluginForHost {
         super.init();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
+
+    private LinkedHashMap<String, Object> entries = null;
 
     /**
      * IMPORTANT: The site has a "normal" and "economy" mode. Normal mode = Higher video quality - mp4 streams. Economy mode = lower quality
@@ -120,12 +124,15 @@ public class NicoVideoJp extends PluginForHost {
         }
         final String channel;
         String filename;
+        String date = null;
         if (loggedin) {
-            filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"videoTitle\">([^<>\"]+)<").getMatch(0);
-            }
-            channel = br.getRegex("data\\-click\\-target=\"userName\">([^<>\"]+)<").getMatch(0);
+            final String player = br.getRegex("data-api-data=\"(\\{.*?\\})\" hidden").getMatch(0);
+            final String json = Encoding.htmlOnlyDecode(player);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            filename = (String) JavaScriptEngineFactory.walkJson(entries, "video/title");
+            channel = (String) JavaScriptEngineFactory.walkJson(entries, "owner/nickname");
+            // originalPostedDateTime can be null
+            date = (String) JavaScriptEngineFactory.walkJson(entries, "video/postedDateTime");
         } else {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
@@ -138,7 +145,9 @@ public class NicoVideoJp extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setProperty("plainfilename", filename);
-        final String date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
+        if (date == null) {
+            date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
+        }
         if (date != null) {
             link.setProperty("originaldate", date);
         }
@@ -214,7 +223,7 @@ public class NicoVideoJp extends PluginForHost {
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -270,13 +279,8 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        String dllink = null;
         final String linkid_url = getLID(link);
         requestFileInformation(link);
-        br = new Browser();
-        login(account, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
         checkWatchableGeneral();
         /* Can happen if its not clear whether the video is private or offline */
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -286,14 +290,8 @@ public class NicoVideoJp extends PluginForHost {
         } else if (br.containsHTML(">This is a private video and not available")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
         }
-        String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        if (br.getURL().matches(TYPE_SO)) {
-            br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + linkid_url);
-        } else if (br.getURL().matches(TYPE_NM) || link.getDownloadURL().matches(TYPE_SM)) {
-            final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
-            br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
-        }
-        dllink = getDllink_account(flashvars != null ? flashvars : br.toString());
+        ajaxPost("//api.dmc.nico:2805/api/sessions?_format=json", constructJSON());
+        final String dllink = PluginJSonUtils.getJson(ajax, "content_uri");
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -302,7 +300,7 @@ public class NicoVideoJp extends PluginForHost {
         if (link.getBooleanProperty(NOCHUNKS, false) && getPluginConfig().getBooleanProperty(NOCHUNKS, true)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -339,18 +337,37 @@ public class NicoVideoJp extends PluginForHost {
         }
     }
 
+    private Browser ajax = null;
+
+    private void ajaxPost(String string, String string2) throws Exception {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "application/json");
+        ajax.getHeaders().put("Content-type", "application/json");
+        ajax.postPageRaw(string, string2);
+    }
+
+    private String constructJSON() {
+        try {
+            final LinkedHashMap<String, Object> sesApi = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "video/dmcInfo/session_api");
+            final String token = (String) sesApi.get("token");
+            final String videos = sesApi.get("videos").toString().replaceAll("(\\w+)(,|)", "\"$1\"$2").replaceAll("\\s+", "");
+            final String audios = sesApi.get("audios").toString().replaceAll("(\\w+)(,|)", "\"$1\"$2").replaceAll("\\s+", "");
+            // new shit is all within json!
+            final String output = "{\"session\":{\"recipe_id\":\"" + (String) sesApi.get("recipe_id") + "\",\"content_id\":\"" + (String) sesApi.get("content_id") + "\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":" + videos + ",\"audio_src_ids\":" + audios + "}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"http_output_download_parameters\":{\"use_well_known_port\":\"no\",\"use_ssl\":\"no\"}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"" + token.replaceAll("\"", "\\\\\"") + "\",\"signature\":\"" + (String) sesApi.get("signature") + "\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":"
+                    + JavaScriptEngineFactory.toLong(sesApi.get("content_key_timeout"), 60000) + ",\"service_id\":\"nicovideo\",\"service_user_id\":\"" + sesApi.get("service_user_id") + "\"},\"client_info\":{\"player_id\":\"" + (String) sesApi.get("player_id") + "\"},\"priority\":" + sesApi.get("priority").toString() + "}}";
+
+            return output;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /* Checks if a video is watch-/downloadable, works for logged in- and unregistered users. */
     private void checkWatchableGeneral() throws PluginException {
         if (this.br.containsHTML(">Unable to play video|>You can view this video by join")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-    }
-
-    private String getDllink_account(final String flashvars) {
-        final String singleDecode = Encoding.htmlDecode(flashvars);
-        String dllink = PluginJSonUtils.getJsonValue(singleDecode, "flvInfo");
-        dllink = dllink != null ? asdf(dllink) : asdf(singleDecode);
-        return dllink;
     }
 
     private String asdf(String input) {
@@ -391,8 +408,6 @@ public class NicoVideoJp extends PluginForHost {
                     br.setCookies(this.getHost(), cookies);
                     return null;
                 }
-                /* Full login needed */
-                br = new Browser();
             }
             /* Try multiple times - it sometimes just doesn't work :( */
             boolean success = false;
@@ -406,7 +421,11 @@ public class NicoVideoJp extends PluginForHost {
                 // this will redirect with session info.
                 br.getHeaders().put("Accept-Encoding", "gzip, deflate, br");
                 br.getHeaders().put("Referer", "https://account.nicovideo.jp/login");
-                br.postPage("//account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                final String redirect = br.getRedirectLocation();
+                if (redirect != null && redirect.contains("//account.nicovideo.jp/login?")) {
+                    br.getPage(redirect);
+                }
                 if (br.getCookie(MAINPAGE, "user_session") == null || "deleted".equals(br.getCookie(MAINPAGE, "user_session"))) {
                     continue;
                 }
@@ -507,13 +526,13 @@ public class NicoVideoJp extends PluginForHost {
      */
     public synchronized void controlPremium(final int num) {
         logger.info("maxPremium was = " + maxPremium.get());
-        maxPremium.set(Math.min(Math.max(1, maxPremium.addAndGet(num)), totalMaxSimultanFree_AccountDownload.get()));
+        maxPremium.set(Math.min(Math.max(1, maxPremium.addAndGet(num)), totalMaxSimultanFreeAccount.get()));
         logger.info("maxPremium now = " + maxPremium.get());
     }
 
     public synchronized void controlFree(final int num) {
         logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFree.get()));
         logger.info("maxFree now = " + maxFree.get());
     }
 
