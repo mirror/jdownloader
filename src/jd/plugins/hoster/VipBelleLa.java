@@ -66,6 +66,7 @@ public class VipBelleLa extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         fuid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">该文件已被删除，您无权访问")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -108,9 +109,10 @@ public class VipBelleLa extends PluginForHost {
         if (dllink == null) {
             // 20170716
             dllink = br.getRegex("href=(\"|')(http.*?/download/.*?)\\1").getMatch(1);
+            // original
             if (dllink == null) {
                 /* Skip pre-download-waittime here. */
-                String postData = this.br.getRegex("data\\s*?:\\s*?\\'(file_key=[^<>\"\\']+\\&token=[^<>\"\\']+)\\'").getMatch(0);
+                String postData = br.getRegex("data\\s*?:\\s*?\\'(file_key=[^<>\"\\']+\\&token=[^<>\"\\']+)\\'").getMatch(0);
                 if (postData == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -118,12 +120,12 @@ public class VipBelleLa extends PluginForHost {
                     postData += System.currentTimeMillis();
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.br.postPage("/recall/check_down", postData);
-                final String waittime_str = this.br.getRegex("page_download_tips\\((\\d+)\\);").getMatch(0);
+                br.postPage("/recall/check_down", postData);
+                final String waittime_str = br.getRegex("page_download_tips\\((\\d+)\\);").getMatch(0);
                 final int wait = waittime_str != null ? Integer.parseInt(waittime_str) : 60;
                 this.sleep(wait * 1001l, downloadLink);
-                this.br.postPage("/recall/check_down", postData);
-                this.br.getPage("/down/" + this.fuid);
+                br.postPage("/recall/check_down", postData);
+                br.getPage("/down/" + this.fuid);
                 dllink = br.getRegex("(http[^<>\"]+/download/[^<>\"]+)").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
