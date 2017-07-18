@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -38,10 +39,8 @@ import jd.plugins.components.UserAgents.BrowserName;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
 
-    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com",
-            "tinyical.com", /**
-                             * <-- full domains & subdomains -->
-                             */
+    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com",
+            "casualient.com", /** <-- full domains & subdomains --> */
             "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
     @Override
@@ -86,17 +85,20 @@ public class AdfLy extends antiDDoSForDecrypt {
 
     @Override
     public void init() {
-        if (HOSTS.get() == null) {
+        // first run -1 && revision change == sync.
+        if (this.getVersion() > HOSTS_REFERENCE.get()) {
             HOSTS.set(getHostsPattern());
+            HOSTS_REFERENCE.set(this.getVersion());
         }
     }
 
-    private static final String            adfPre       = "https?://(?:www\\.)?";
+    private static final String            adfPre          = "https?://(?:www\\.)?";
     // builds final String for method calling (no need to edit).
-    private static AtomicReference<String> HOSTS        = new AtomicReference<String>(null);
-    private static final String            INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
-    private static Object                  LOCK         = new Object();
-    private String                         protocol     = null;
+    private static AtomicReference<String> HOSTS           = new AtomicReference<String>(null);
+    private static AtomicLong              HOSTS_REFERENCE = new AtomicLong(-1);
+    private static final String            INVALIDLINKS    = "/(link-deleted\\.php|index|login|static).+";
+    private static Object                  LOCK            = new Object();
+    private String                         protocol        = null;
 
     @Override
     protected boolean useRUA() {
