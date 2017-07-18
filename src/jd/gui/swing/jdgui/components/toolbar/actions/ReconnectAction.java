@@ -25,12 +25,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class ReconnectAction extends AbstractToolBarAction {
-
     public ReconnectAction() {
-
         setIconKey(IconKey.ICON_RECONNECT);
         setAccelerator(KeyEvent.VK_R);
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -50,6 +47,11 @@ public class ReconnectAction extends AbstractToolBarAction {
                 if (!JDGui.bugme(WarnLevel.NORMAL) || UIOManager.I().show(ConfirmDialogInterface.class, d).getCloseReason() == CloseReason.OK) {
                     try {
                         Dialog.getInstance().showDialog(new ReconnectDialog() {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
+
                             protected boolean startReconnectAndWait(LogSource logger) throws ReconnectException, InterruptedException {
                                 return DownloadWatchDog.getInstance().requestReconnect(true) == ReconnectResult.SUCCESSFUL;
                             }
@@ -62,12 +64,10 @@ public class ReconnectAction extends AbstractToolBarAction {
                 }
             }
         }.start();
-
     }
 
     @Override
     protected String createTooltip() {
         return _GUI.T.action_reconnect_invoke_tooltip();
     }
-
 }
