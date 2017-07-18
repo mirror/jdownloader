@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -44,18 +43,16 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  *
  *         "old style" , "new style", "redirect url shorting service", "some json crap".
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten/\\d+/.+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]*))|pdj\\.cc/\\w+))|http://xml\\.maases\\.com/audio/\\d+\\.json" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten/\\d+/.+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]*))|pdj\\.cc/\\w+))|https?://xml\\.(?:maases|promodj)\\.com/audio/\\d+\\.json" })
 public class ProDjCm extends PluginForDecrypt {
-
     // DEV NOTES
     // other: Because they have so many domains, Please becareful with the regex, \\w can not be used twice either side of (sub.)?domains as
     // it effectively lets all site links match.
     // other: As of march 12 they redirect to promodj.com but it's too hard to rename prior to processing, as redirects do not necessarily
     // carry the same parameters.
-
     private static final String HOSTS     = "(djkolya\\.net|pdj\\.(cc|ru)|promodeejay\\.(net|ru)|promodj\\.(ru|com))";
     /* This is the important part of embedded links. Such links are very rare and are only sometimes added e.g. by the vk.com decrypter. */
-    private static final String type_json = "http://xml\\.maases\\.com/audio/\\d+\\.json";
+    private static final String type_json = ".+/audio/\\d+\\.json";
 
     public ProDjCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,13 +66,10 @@ public class ProDjCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         HashSet<String> filter = new HashSet<String>();
-
         String parameter = param.toString();
-
         br.setCookiesExclusive(true);
         // this is needed! do not disable
         br.setFollowRedirects(true);
-
         // these types here need to be done before first page grab!! as they could be files prelisten links are direct links!
         if (parameter.matches(".+/prelisten/\\d+(?:/.+)?")) {
             handlePrelisten(decryptedLinks, filter, parameter);
@@ -101,7 +95,6 @@ public class ProDjCm extends PluginForDecrypt {
                 passItOn(decryptedLinks, filter, parameter);
             }
         }
-
         return decryptedLinks;
     }
 
@@ -151,10 +144,8 @@ public class ProDjCm extends PluginForDecrypt {
             parseDownload(ret, filter, grabThis);
         } else if (grabThis.matches(".*/groups/\\d+")) {
             // find groups data and export it.
-
             // prevent itself from itself!
             filter.add(grabThis);
-
             String frame = br.getRegex("(<div class=\"dj_bblock\">.*<h2>.*</div>[\r\n ]+</div>[\r\n ]+</div>)").getMatch(0);
             String fp1 = br.getRegex("&ndash; (.*?)</title>").getMatch(0);
             String fp2 = new Regex(frame, ">([^<]+)</span>[\r\n ]+</h2>").getMatch(0);
@@ -163,7 +154,6 @@ public class ProDjCm extends PluginForDecrypt {
             } else if (fp1 == null) {
                 fpName = fp2;
             }
-
             String[] posts = new Regex(frame, this.getSupportedLinks()).getColumn(0);
             if (frame == null || posts == null) {
                 logger.warning("/groups/ issue, Please report this issue to JDownloader Deveolopment Team!" + grabThis);
@@ -207,7 +197,6 @@ public class ProDjCm extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("directhttp://" + dllink);
             ret.add(dl);
         }
-
         if (fpName != null) {
             fpName = fpName.replaceAll("&quot;", "'");
             FilePackage fp = FilePackage.getInstance();
@@ -221,7 +210,6 @@ public class ProDjCm extends PluginForDecrypt {
     private void parseDownload(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
         ArrayList<String[]> customHeaders = new ArrayList<String[]>();
         ArrayList<String> linksFound = new ArrayList<String>();
-
         String dllink = br.getRegex("<a class=\"bigload1\" promenade=\"\\d+\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<a id=\"download_flasher\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
@@ -271,7 +259,6 @@ public class ProDjCm extends PluginForDecrypt {
                         } catch (Exception e) {
                             dllink = null;
                         }
-
                         // the following is not really needed.. though might be good to send it anyway.
                         customHeaders.add(new String[] { "Referer", br.getURL() });
                         customHeaders.add(new String[] { "Accept", "*/*" });
@@ -306,7 +293,6 @@ public class ProDjCm extends PluginForDecrypt {
         if (linksFound.isEmpty()) {
             linksFound.add(dllink);
         }
-
         for (String link : linksFound) {
             if (filter.add(link) == true) {
                 DownloadLink dl = createDownloadlink(link);
@@ -321,7 +307,6 @@ public class ProDjCm extends PluginForDecrypt {
     private void parseFoto(ArrayList<DownloadLink> ret, HashSet<String> filter, boolean album, String grabThis) throws IOException {
         String fuid = null;
         ArrayList<String> imgsArray = new ArrayList<String>();
-
         if (!album) {
             // place this first, then use null for each possible combination album link but with tag to photo requested.
             fuid = new Regex(grabThis, "#(foto|full)(\\d+)").getMatch(1);
@@ -337,7 +322,6 @@ public class ProDjCm extends PluginForDecrypt {
                 imgsArray.addAll(Arrays.asList(imgArray));
             }
         }
-
         for (String result : imgsArray) {
             if (fuid == null) {
                 fuid = new Regex(result, "link: '.+/foto/\\d+/(\\d+)").getMatch(0);
@@ -401,5 +385,4 @@ public class ProDjCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

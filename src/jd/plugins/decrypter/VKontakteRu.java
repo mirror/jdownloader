@@ -678,7 +678,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         try {
             br.setFollowRedirects(false);
-            String correctedBR = br.toString().replace("\\", "");
+            String correctedBR = null;
             String embedHash = null;
             String filename = null;
             {
@@ -707,6 +707,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                     // vk video is also within ajax.preload, so make searches faster below...
                     correctedBR = ajax;
+                } else {
+                    correctedBR = br.toString();
                 }
             }
             embedHash = PluginJSonUtils.getJsonValue(correctedBR, "hash");

@@ -125,9 +125,7 @@ public class SaveTv extends PluginForHost {
     public static final String    PROPERTY_acc_package                      = "acc_package";
     public static final String    PROPERTY_acc_price                        = "acc_price";
     public static final String    PROPERTY_acc_runtime                      = "acc_runtime";
-
     public static final String    PROPERTY_downloadable_via                 = "downloadable_via";
-
     /* Settings stuff */
     private static final String   USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
     private static final String   PREFERADSFREE                             = "PREFERADSFREE";
@@ -208,7 +206,6 @@ public class SaveTv extends PluginForHost {
     private static final long     SITE_FORMAT_HD_L                          = 6;
     private static final long     SITE_FORMAT_HQ_L                          = 5;
     private static final long     SITE_FORMAT_LQ_L                          = 4;
-
     private static final int      INTERNAL_FORMAT_HD_I                      = 0;
     private static final int      INTERNAL_FORMAT_HQ_I                      = 1;
     private static final int      INTERNAL_FORMAT_LQ_I                      = 2;
@@ -241,12 +238,14 @@ public class SaveTv extends PluginForHost {
         String url = link.getDownloadURL().toLowerCase();
         final String telecastID;
         if (url.matches(LINKTYPE_DIRECT)) {
+            /* Convert directurls --> 'Normal' Stv 'telecastID'-URLs */
             telecastID = new Regex(url, "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)").getMatch(0);
         } else {
             telecastID = new Regex(url, "telecastid=(\\d+)$").getMatch(0);
         }
         /* Create new url */
         url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastID=" + telecastID;
+        link.setUrlDownload(url);
         link.setContentUrl(url);
     }
 
@@ -283,10 +282,15 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unused", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         link.setProperty(PROPERTY_type, EXTENSION_default);
         /* Show telecast-ID + extension as dummy name for all error cases */
         final String telecast_ID = getTelecastId(link);
+        if (telecast_ID == null) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (telecast_ID != null) {
             if (link.getName() != null && (link.getName().contains(telecast_ID) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
                 link.setName(telecast_ID + EXTENSION_default);
@@ -315,10 +319,7 @@ public class SaveTv extends PluginForHost {
         }
         /* Set linkID for correct dupe-check */
         if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
-            /* Every account has individual telecastIDs. */
-            if (telecast_ID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            /* Every account has individual telecastIDs, only downloadable via this account. */
             link.setLinkID(aa.getUser() + telecast_ID);
         }
         setConstants(aa, link);

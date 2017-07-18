@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +27,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+" })
 public class HqqTv extends antiDDoSForHost {
@@ -59,8 +59,8 @@ public class HqqTv extends antiDDoSForHost {
         String jsWise = br.getRegex(";eval\\((function\\(w,i,s,e.+?)\\);\\s*</").getMatch(0);
         String decode = decodeWise(jsWise);
         String[] data = new Regex(decode, "var vid=\"([^\"]*).*?var at=\"([^\"]*).*?var autoplayed=\"([^\"]*).*?var referer=\"([^\"]*).*var http_referer=\"([^\"]*).*var pass=\"([^\"]*).*var embed_from=\"([^\"]*).*var need_captcha=\"([^\"]*).*var hash_from=\"([^\"]*)").getRow(0);
-        if (data.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (data == null || data.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Browser ajax = br.cloneBrowser();
         // ip
@@ -106,6 +106,10 @@ public class HqqTv extends antiDDoSForHost {
         }
         String[] keyNames = new Regex(unescapedString.toString(), "link_1: ([^,]+), server_1: ([^,]+),").getRow(0);
         jsWise = br.getRegex(";eval\\((function\\(w,i,s,e.+?)\\);\\s*</").getMatch(0);
+        if (jsWise == null) {
+            /* 2017-07-18 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         decode = decodeWise(jsWise);
         String linkl = new Regex(decode, "var " + keyNames[0] + " = \"([^\"]+)").getMatch(0);
         String serverl = new Regex(decode, "var " + keyNames[1] + " = \"([^\"]+)").getMatch(0);

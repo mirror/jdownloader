@@ -24,9 +24,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
@@ -38,6 +35,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BrDe.BrDeConfigInterface;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" })
 public class BrDeDecrypter extends PluginForDecrypt {
@@ -82,8 +82,9 @@ public class BrDeDecrypter extends PluginForDecrypt {
         final String player_link = br.getRegex("\\{dataURL:\\'(/mediathek/video/[^<>\"]*?)\\'\\}").getMatch(0);
         String date = br.getRegex(">(\\d{2}\\.\\d{2}\\.\\d{4}), \\d{2}:\\d{2} Uhr,?</time>").getMatch(0);
         if (player_link == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("URL does not lead to any downloadable content");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         final String playerLinkID = JDHash.getMD5(player_link);
         br.getPage("http://www.br.de" + player_link);

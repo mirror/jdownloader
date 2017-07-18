@@ -13,13 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,14 +29,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smotri.com" }, urls = { "http://(www\\.)?smotri\\.com/video/view/\\?id=v[a-z0-9]+" })
 public class SmotriCom extends PluginForHost {
-
     public SmotriCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dllink = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     @Override
     public String getAGBLink() {
@@ -54,8 +54,7 @@ public class SmotriCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("class=\"top\\-info\\-404\">|Видео не прошло модерацию<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!br.getURL().contains("/video/view/")) {
+        } else if (!br.getURL().contains("/video/view/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Confirm that we're over 18 years old if necessary
@@ -64,8 +63,7 @@ public class SmotriCom extends PluginForHost {
             br.getPage("http://smotri.com" + ageconfirm);
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-        final String context = br.getRegex("addVariable\\(\\'context\\', \"(.*?)\"").getMatch(0);
-        if (filename == null || context == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
@@ -84,28 +82,33 @@ public class SmotriCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dllink = dllink.replace("\\", "");
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(filename + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+            if (StringUtils.isEmpty(ext)) {
+                ext = ".flv";
             }
-            return AvailableStatus.TRUE;
-        } finally {
+        } else {
+            ext = ".flv";
+        }
+        downloadLink.setFinalFileName(filename + ext);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -113,6 +116,11 @@ public class SmotriCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("\"_pass_protected\":1")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not supported yet");
+        }
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

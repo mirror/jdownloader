@@ -13,15 +13,16 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,21 +32,24 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/(?:video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|[A-Za-z]+/[a-z]{2}\\d+/mediaviewer/rm\\d+)" })
 public class ImDbCom extends PluginForHost {
-
-    private String              dllink     = null;
-    private static final String IDREGEX    = "(vi\\d+)$";
-    private static final String TYPE_VIDEO = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
-    private static final String TYPE_PHOTO = "https?://(?:www\\.)?imdb\\.com/.+/mediaviewer/.+";
+    private String              dllink        = null;
+    private boolean             server_issues = false;
+    private static final String IDREGEX       = "(vi\\d+)$";
+    private static final String TYPE_VIDEO    = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
+    private static final String TYPE_PHOTO    = "https?://(?:www\\.)?imdb\\.com/.+/mediaviewer/.+";
 
     public ImDbCom(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @SuppressWarnings("deprecation")
@@ -68,6 +72,8 @@ public class ImDbCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        this.dllink = null;
+        this.server_issues = false;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         final String downloadURL = downloadLink.getDownloadURL();
@@ -82,14 +88,27 @@ public class ImDbCom extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String json = this.br.getRegex("(\\{\"mediaViewerModel.+\\})").getMatch(0);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-            entries = (LinkedHashMap<String, Object>) entries.get("mediaViewerModel");
+            boolean newWay = false;
+            String json = this.br.getRegex("(\\{\"mediaViewerModel.+\\})").getMatch(0);
+            if (json == null) {
+                /* 2017-07-18 */
+                json = this.br.getRegex("IMDbReactInitialState\\.push\\((\\{.*?\\})\\);\\s+").getMatch(0);
+                newWay = true;
+            }
+            LinkedHashMap<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
+            if (newWay) {
+                /* 2017-07-18 */
+                final String id_main = new Regex(downloadLink.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
+                entries = getJsonMap(JavaScriptEngineFactory.walkJson(entries, "mediaviewer/galleries/" + id_main));
+            } else {
+                entries = getJsonMap(entries.get("mediaViewerModel"));
+            }
+            /* Now let's find the specific object ... */
             final String idright = new Regex(downloadLink.getDownloadURL(), "(rm\\d+)").getMatch(0);
             String idtemp = null;
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("allImages");
             for (final Object imageo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) imageo;
+                entries = getJsonMap(imageo);
                 idtemp = (String) entries.get("id");
                 if (idtemp != null && idtemp.equalsIgnoreCase(idright)) {
                     filename = (String) entries.get("altText");
@@ -137,47 +156,85 @@ public class ImDbCom extends PluginForHost {
             // br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) +
             // "/player?uff=3");
             br.getPage("http://www.imdb.com/video/user/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
-            String[] vs = br.getRegex("(\"videoUrl\".*?)\\}").getColumn(0);
-            for (String v : vs) {
-                dllink = PluginJSonUtils.getJsonValue(v, "videoUrl");
-                if (dllink != null && dllink.contains("mp4")) {
-                    break;
+            final String json = this.br.getRegex("<script class=\"imdb\\-player\\-data\" type=\"text/imdb\\-video\\-player\\-json\">([^<>]+)<").getMatch(0);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "videoPlayerObject/video/videoInfoList");
+            String dllink_http = null;
+            String dllink_hls_master = null;
+            for (final Object videoo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoo;
+                final String dllink_temp = (String) entries.get("videoUrl");
+                if (dllink_temp == null || !dllink_temp.startsWith("http")) {
+                    continue;
+                }
+                if (dllink_temp.contains(".m3u8")) {
+                    dllink_hls_master = dllink_temp;
+                } else {
+                    dllink_http = dllink_temp;
                 }
             }
-            if (dllink == null) {
-                dllink = br.getRegex("addVariable\\(\"file\", \"((http|rtmp).*?)\"\\)").getMatch(0);
+            /* 2017-07-18: Prefer hls as it contains higher qualities */
+            if (!StringUtils.isEmpty(dllink_hls_master)) {
+                dllink = dllink_hls_master;
+            } else {
+                dllink = dllink_http;
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dllink.startsWith("rtmp")) {
-                final String playPath = br.getRegex("addVariable\\(\"id\", \"(.*?)\"\\)").getMatch(0);
-                if (playPath == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = dllink + "#" + playPath;
-            }
-            dllink = Encoding.htmlDecode(dllink);
             filename = filename.trim();
-            ending = ".flv";
-            if (dllink.contains(".mp4")) {
+            if (dllink.contains(".mp4") || dllink.contains(".m3u8")) {
                 ending = ".mp4";
+            } else {
+                ending = ".flv";
             }
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ending);
-        if (!dllink.startsWith("rtmp")) {
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
+        if (dllink != null && dllink.contains(".m3u8")) {
+            /* Access HLS master */
+            br.getPage(dllink);
+            final List<HlsContainer> allQualities = HlsContainer.getHlsQualities(this.br);
+            final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(allQualities);
+            HlsContainer finalCandidate = null;
+            final String configuredResolution = getConfiguredVideoResolution();
+            final long configuredBandwidth = getConfiguredVideoBandwidth();
+            if (configuredResolution.equalsIgnoreCase("BEST")) {
+                finalCandidate = hlsBest;
+            } else {
+                for (final HlsContainer hlstemp : allQualities) {
+                    if (hlstemp.getResolution().equalsIgnoreCase(configuredResolution) && hlstemp.getBandwidth() == configuredBandwidth) {
+                        logger.info("Found User-Selection");
+                        finalCandidate = hlstemp;
+                    }
+                }
+                if (finalCandidate == null) {
+                    logger.info("Failed to find configured quality --> Falling back to BEST");
+                    finalCandidate = hlsBest;
+                } else {
+                    logger.info("Quality selection successful");
+                }
+            }
+            dllink = finalCandidate.getDownloadurl();
+            checkFFProbe(downloadLink, "Download a HLS Stream");
+            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (streamInfo == null) {
+                server_issues = true;
+            } else {
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (estimatedSize > 0) {
+                    downloadLink.setDownloadSize(estimatedSize);
+                }
+            }
+        } else {
             URLConnectionAdapter con = null;
             try {
-                con = openConnection(br2, dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
                 }
-                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
@@ -188,41 +245,29 @@ public class ImDbCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
+    /* Simple wrapper due to unexpected LinkedHashMap/HashMap results. */
+    private LinkedHashMap getJsonMap(final Object jsono) {
+        LinkedHashMap<String, Object> entries = null;
+        if (jsono instanceof HashMap) {
+            entries = new LinkedHashMap<>((HashMap<String, Object>) jsono);
         } else {
-            con = br.openHeadConnection(directlink);
-            if (!con.isOK()) {
-                br.followConnection();
-                con = br.openGetConnection(directlink);
-            }
+            entries = (LinkedHashMap<String, Object>) jsono;
         }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        return entries;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (dllink.startsWith("rtmp")) {
-            if (isStableEnviroment()) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
-            }
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            rtmp.setUrl(dllink.substring(0, dllink.indexOf("#")));
-            rtmp.setPlayPath(dllink.substring(dllink.indexOf("#") + 1));
-            rtmp.setApp(new Regex(dllink.substring(0, dllink.indexOf("#")), "[a-zA-Z]+://.*?/(.*?)$").getMatch(0));
-            rtmp.setSwfVfy("http://www.imdb.com/images/js/app/video/mediaplayer.swf");
-            rtmp.setResume(true);
-
-            ((RTMPDownload) dl).startDownload();
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink.contains(".m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
         } else {
             int maxChunks = 0;
             if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
@@ -237,19 +282,37 @@ public class ImDbCom extends PluginForHost {
         }
     }
 
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
+    private String getConfiguredVideoResolution() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final String selectedFormat = FORMATS[selection];
+        if (selectedFormat.contains("x")) {
+            final String resolution = selectedFormat.split("@")[0];
+            return resolution;
         } else {
-            prev = prev.replaceAll(",|\\.", "");
+            /* BEST selection */
+            return selectedFormat;
         }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
+
+    private long getConfiguredVideoBandwidth() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final String selectedFormat = FORMATS[selection];
+        if (selectedFormat.contains("x")) {
+            final String bandwidth = selectedFormat.split("@")[1];
+            return Long.parseLong(bandwidth);
+        } else {
+            /* BEST selection */
+            return 0;
+        }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred quality:").setDefaultValue(0));
+    }
+
+    /* The list of qualities displayed to the user */
+    private final String[] FORMATS               = new String[] { "BEST", "1920x1080@8735000", "1280x720@5632000", "1280x720@3480000", "704x396@2366000", "640x360@1638000", "640x360@1114000", "512x288@777000", "480x270@532000", "320x180@326000" };
+    private final String   SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
 
     @Override
     public void reset() {
