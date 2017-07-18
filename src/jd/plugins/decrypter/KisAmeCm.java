@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -64,8 +63,9 @@ import jd.utils.RazStringBuilder;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
+
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,7 +79,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         KISS_ANIME,
         KISS_ASIAN,
         KISS_CARTOON,
+        KISS_MANGA,
         KISS_UNKNOWN;
+
         private static HostType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "kissanime")) {
                 return KISS_ANIME;
@@ -87,15 +89,18 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 return KISS_ASIAN;
             } else if (StringUtils.containsIgnoreCase(link, "cartoon")) {
                 return KISS_CARTOON;
+            } else if (StringUtils.containsIgnoreCase(link, "manga")) {
+                return KISS_MANGA;
             } else {
                 return KISS_UNKNOWN;
             }
         }
+
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        HostType hostType = HostType.parse(param.toString());
+        final HostType hostType = HostType.parse(param.toString());
         final String parameter = param.toString();
         final KissanimeToConfig pc = PluginJsonConfig.get(KissanimeToConfig.class);
         if (pc == null) {
@@ -115,90 +120,116 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         }
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
         handleHumanCheck(this.br);
-        String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
-        if (title == null) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        title = title.replaceAll("\\s+", " ");
-        final String url_base = br.getURL();
-        String[] mirrors = br.getRegex("(\\&s=[A-Za-z0-9\\-_]+)\"").getColumn(0);
-        if (mirrors.length == 0) {
-            mirrors = new String[] { "dummy" };
-        }
-        for (int mirror_number = 0; mirror_number <= mirrors.length - 1; mirror_number++) {
-            if (mirror_number > 0) {
-                final String mirror_param = mirrors[mirror_number];
-                getPage(url_base + mirror_param);
+        String title;
+        if (hostType == HostType.KISS_MANGA) {
+            if (true) {
+                return decryptedLinks;
             }
-            // we have two things we need to base64decode
-            final String[][] quals = getQuals(br);
-            if (quals != null) {
-                String skey = null;
-                String iv = null;
-                switch (hostType) {
-                case KISS_ANIME:
-                    skey = getSecretKeyAnime();
-                    iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
-                    break;
-                case KISS_ASIAN:
-                    skey = getSecretKeyAsian();
-                    iv = "32b812e9a1321ae0e84af660c4722b3a";
-                    break;
-                case KISS_CARTOON:
-                    skey = getSecretKeyCartoon();
-                    iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
-                default:
-                    break;
+            // crypto!
+            title = br.getRegex("<title>(?:\\s*Read manga\\s*)?(.*?)(?:\\s*online\\s*in\\s*high\\s*quality\\s*)?</title>").getMatch(0);
+            if (title != null) {
+                title = title.replace("[\r\n]+", " ").replaceAll("\\s+", " ");
+            }
+            final String skey = getSecretKeyManga(); // mshsdf832nsdbash20asdm ?
+            final String iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+
+            final String[] links = br.getRegex("lstImages\\.push\\(wrapKA\\(\"([a-zA-Z0-9\\+/]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String link : links) {
+                // decrypt
+                final String singleLink = decodeSingleURL(link, skey, iv);
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+
+        } else {
+            title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
+            if (title == null) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            title = title.replaceAll("\\s+", " ");
+            final String url_base = br.getURL();
+            String[] mirrors = br.getRegex("(\\&s=[A-Za-z0-9\\-_]+)\"").getColumn(0);
+            if (mirrors.length == 0) {
+                mirrors = new String[] { "dummy" };
+            }
+            for (int mirror_number = 0; mirror_number <= mirrors.length - 1; mirror_number++) {
+                if (mirror_number > 0) {
+                    final String mirror_param = mirrors[mirror_number];
+                    getPage(url_base + mirror_param);
                 }
-                for (final String qual[] : quals) {
-                    String decode = null;
+                // we have two things we need to base64decode
+                final String[][] quals = getQuals(br);
+                if (quals != null) {
+                    String skey = null;
+                    String iv = null;
                     switch (hostType) {
                     case KISS_ANIME:
-                    case KISS_ASIAN:
-                    case KISS_CARTOON:
-                        decode = decodeSingleURL(qual[1], skey, iv);
+                        skey = getSecretKeyAnime();
+                        iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                         break;
+                    case KISS_ASIAN:
+                        skey = getSecretKeyAsian();
+                        iv = "32b812e9a1321ae0e84af660c4722b3a";
+                        break;
+                    case KISS_CARTOON:
+                        skey = getSecretKeyCartoon();
+                        iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                     default:
                         break;
                     }
-                    if (decode == null) {
-                        continue;
+                    for (final String qual[] : quals) {
+                        String decode = null;
+                        switch (hostType) {
+                        case KISS_ANIME:
+                        case KISS_ASIAN:
+                        case KISS_CARTOON:
+                            decode = decodeSingleURL(qual[1], skey, iv);
+                            break;
+                        default:
+                            break;
+                        }
+                        if (decode == null) {
+                            continue;
+                        }
+                        final String quality = qual[2];
+                        final DownloadLink dl = createDownloadlink(decode);
+                        /* md5 of "kissanime.com" */
+                        dl.setProperty("refresh_url_plugin", getHost());
+                        dl.setProperty("source_url", parameter);
+                        dl.setProperty("source_quality", quality);
+                        dl.setFinalFileName(title + "-" + quality + ".mp4");
+                        dl.setAvailableStatus(AvailableStatus.TRUE);
+                        /* Best comes first --> Simply quit the loop if user wants best quality. */
+                        if (grabBEST) {
+                            decryptedLinks.add(dl);
+                            break;
+                        }
+                        qualities.put(quality, dl);
                     }
-                    final String quality = qual[2];
-                    final DownloadLink dl = createDownloadlink(decode);
-                    /* md5 of "kissanime.com" */
-                    dl.setProperty("refresh_url_plugin", getHost());
-                    dl.setProperty("source_url", parameter);
-                    dl.setProperty("source_quality", quality);
-                    dl.setFinalFileName(title + "-" + quality + ".mp4");
-                    dl.setAvailableStatus(AvailableStatus.TRUE);
-                    /* Best comes first --> Simply quit the loop if user wants best quality. */
-                    if (grabBEST) {
-                        decryptedLinks.add(dl);
-                        break;
+                    if (!grabBEST) {
+                        if (grab1080p && qualities.containsKey("1080p")) {
+                            decryptedLinks.add(qualities.get("1080p"));
+                        }
+                        if (grab720p && qualities.containsKey("720p")) {
+                            decryptedLinks.add(qualities.get("720p"));
+                        }
+                        if (grab480p && qualities.containsKey("480p")) {
+                            decryptedLinks.add(qualities.get("480p"));
+                        }
+                        if (grab360p && qualities.containsKey("360p")) {
+                            decryptedLinks.add(qualities.get("360p"));
+                        }
                     }
-                    qualities.put(quality, dl);
-                }
-                if (!grabBEST) {
-                    if (grab1080p && qualities.containsKey("1080p")) {
-                        decryptedLinks.add(qualities.get("1080p"));
+                } else {
+                    /* iframed.. seen openload.. but maybe others */
+                    final String link = br.getRegex("\\$\\('#divContentVideo'\\)\\.html\\('<iframe\\s+[^>]* src=\"(.*?)\"").getMatch(0);
+                    if (link != null) {
+                        decryptedLinks.add(createDownloadlink(link));
                     }
-                    if (grab720p && qualities.containsKey("720p")) {
-                        decryptedLinks.add(qualities.get("720p"));
-                    }
-                    if (grab480p && qualities.containsKey("480p")) {
-                        decryptedLinks.add(qualities.get("480p"));
-                    }
-                    if (grab360p && qualities.containsKey("360p")) {
-                        decryptedLinks.add(qualities.get("360p"));
-                    }
-                }
-            } else {
-                /* iframed.. seen openload.. but maybe others */
-                final String link = br.getRegex("\\$\\('#divContentVideo'\\)\\.html\\('<iframe\\s+[^>]* src=\"(.*?)\"").getMatch(0);
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
                 }
             }
         }
@@ -266,7 +297,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     }
 
     /**
-     * copy of getSecretKeyAnime with slight mods. TODO: not entirely sure this is correct, as we do get padding issues.
+     * copy of getSecretKeyAnime with slight mods.
      *
      * @author raztoki
      * @author zt333
@@ -291,6 +322,24 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             skey = match3[0] + "n1f" + skey + match3[1];
         }
         return skey;
+    }
+
+    private String getSecretKeyManga() throws Exception {
+        final Regex mt1 = new Regex(br, ".+(<script[^>]*>\\s*var.*?\\[\"([^\"]+)\".*?CryptoJS.SHA256.*?</script>).+?");
+        String filter = mt1.getMatch(0);
+        String match1 = mt1.getMatch(1);
+        String skey = null;
+        if (match1 != null) {
+            skey = Encoding.unicodeDecode(match1);
+        }
+        if (filter != null) {
+            filter = Encoding.unicodeDecode(filter);
+            String match2b = new Regex(filter, "\\[\"([^\"]+)\"\\];\\s*(\\w+)\\s*=\\s*(\\w+) ").getMatch(2);
+            if (match2b != null) {
+                skey = match2b + skey;
+            }
+        }
+        return skey != null ? skey : "chkonasdbasd612basd";
     }
 
     public String decodeSingleURL(final String encodedString, final String skey, final String iv) {
@@ -477,7 +526,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
     private Integer[] widths = null;
 
-    private File getStitchedImage(final String[] captchaImages, final BufferedImage[] images) throws IOException {
+    private File getStitchedImage(final String[] captchaImages, final BufferedImage[] images) throws Exception {
         int i = -1;
         for (final String ci : captchaImages) {
             // download each image
@@ -550,6 +599,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 break;
             case KISS_CARTOON:
                 skey = getSecretKeyCartoon();
+                iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+            case KISS_MANGA:
+                skey = getSecretKeyManga();
                 iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
             default:
                 break;
