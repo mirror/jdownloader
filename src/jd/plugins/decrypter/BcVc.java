@@ -176,7 +176,7 @@ public class BcVc extends antiDDoSForDecrypt {
                 for (final String[] o : other) {
                     data.put(Encoding.urlEncode(o[0]), Encoding.urlEncode(o[1]));
                 }
-                // sleep(6000, param);
+                sleep(6000, param);
                 ajaxPostPage(url, data);
                 final String link = PluginJSonUtils.getJsonValue(ajax, "url");
                 if (link != null) {
