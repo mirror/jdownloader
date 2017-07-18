@@ -23,6 +23,8 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.eclipse.jetty.util.StringUtil;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -152,6 +154,9 @@ public class PornHubCom extends PluginForDecrypt {
             final Entry<String, String> next = it.next();
             final String qualityInfo = next.getKey();
             final String finallink = next.getValue();
+            if (StringUtils.isEmpty(finallink)) {
+                continue;
+            }
             if (cfg.getBooleanProperty(qualityInfo, true) || bestonly) {
                 final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
                 final DownloadLink dl = getDecryptDownloadlink();
