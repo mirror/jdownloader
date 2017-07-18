@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+|title/tt\\d+/videogallery)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((?:name|title)/(?:nm|tt)\\d+/(?:mediaindex|videogallery)|media/index/rg\\d+)" })
 public class ImdbCom extends PluginForDecrypt {
-
     public ImdbCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,7 +36,7 @@ public class ImdbCom extends PluginForDecrypt {
     private static final String TYPE_ARTIST = "https?://(www\\.)?imdb\\.com/media/index/rg\\d+";
     private static final String TYPE_TITLE  = "https?://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
     private static final String TYPE_NAME   = "https?://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
-    private static final String TYPE_VIDEO  = "https?://(www\\.)?imdb\\.com/title/tt\\d+/videogallery";
+    private static final String TYPE_VIDEO  = ".+/videogallery";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

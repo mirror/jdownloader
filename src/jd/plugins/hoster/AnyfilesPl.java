@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anyfiles.pl" }, urls = { "http://video\\.anyfiles\\.pl/((?:videos|w)\\.jsp\\?id=\\d+|.+/video/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anyfiles.pl" }, urls = { "https?://(?:video\\.)?anyfiles\\.pl/((?:videos|w)\\.jsp\\?id=\\d+|.*/video/\\d+)" })
 public class AnyfilesPl extends PluginForHost {
-
     public AnyfilesPl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,12 +40,10 @@ public class AnyfilesPl extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @SuppressWarnings("deprecation")
@@ -77,15 +73,16 @@ public class AnyfilesPl extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://video.anyfiles.pl/w.jsp?id=" + vid + "&width=620&height=349");
-        final String url_pcs = br.getRegex("\"(/pcs\\?[^<>\"]*?)\"").getMatch(0);
+        br.getPage("https://video.anyfiles.pl/w.jsp?id=" + vid + "&width=620&height=349");
+        String url_pcs = br.getRegex("(/AutocompleteData\\?[^<>\"]+)").getMatch(0);
         if (url_pcs == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        url_pcs = Encoding.htmlDecode(url_pcs);
         this.br.getPage(url_pcs);
-        dllink = br.getRegex("\"(https?://[^<>\"]*?.mp4[^<>\"]*?)").getMatch(0);
+        dllink = br.getRegex("(https?://[^<>\"\\']*?\\.mp4[^<>\"]*?)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("'(https?://[^<>\"]*?.mp4[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("\\'(https?://[^<>\"\\']*?\\.mp4[^<>\"]*?)\\'").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Video offline or external url");

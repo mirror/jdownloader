@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kathtv.org" }, urls = { "https?://(?:www\\.)?kathtv\\.org/video/\\d+\\.html" })
 public class KathtvOrg extends PluginForHost {
-
     public KathtvOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,7 +41,6 @@ public class KathtvOrg extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -62,7 +59,7 @@ public class KathtvOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Video unbekannt<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Video unbekannt<") || !this.br.getURL().contains(".html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
