@@ -24,7 +24,6 @@ import java.util.Random;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.eclipse.jetty.util.StringUtil;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
