@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -34,12 +33,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -64,9 +57,14 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.ThrowingRunnable;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" })
-public class DataFileCom extends antiDDoSForHost {
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/(d/[A-Za-z0-9]+(/[^<>\"/]+)?|download/.*?i=[A-Za-z0-9]+)" })
+public class DataFileCom extends antiDDoSForHost {
     public DataFileCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -88,12 +86,10 @@ public class DataFileCom extends antiDDoSForHost {
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-
     private final String                   accessKey                    = "cddce1a5-a6dd-4300-9c08-eb70909de7c6";
     private final String                   PREMIUMONLY                  = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
     private final boolean                  SKIPRECONNECTWAITTIME        = true;
     private final boolean                  SKIPWAITTIME                 = true;
-
     private final String[]                 IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static final String            PROPERTY_LASTDOWNLOAD        = "datafilecom_lastdownload_timestamp";
     private final String                   PROPERTY_LASTIP              = "PROPERTY_LASTIP";
@@ -103,15 +99,17 @@ public class DataFileCom extends antiDDoSForHost {
     private static Object                  CTRLLOCK                     = new Object();
     private final Pattern                  IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static final long              FREE_RECONNECTWAIT           = 3610000L;
-
     private Account                        currAcc                      = null;
-
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger     totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
 
     @SuppressWarnings({ "deprecation" })
     public void correctDownloadLink(final DownloadLink link) {
+        final String rewrite = new Regex(link.getDownloadURL(), "datafile\\.com/download/.*?i=([A-Za-z0-9]+)").getMatch(0);
+        if (rewrite != null) {
+            link.setUrlDownload("https://datafile.com/d/" + rewrite);
+        }
         final String unneededPart = new Regex(link.getDownloadURL(), "datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)").getMatch(0);
         if (unneededPart != null) {
             final String urlfilename = new Regex(unneededPart, "/([^<>\"/]+)").getMatch(0);
@@ -217,25 +215,20 @@ public class DataFileCom extends antiDDoSForHost {
         }
 
         public void log(String log) {
-
             System.out.println(log);
         }
 
         public void eval(String eval) throws ScriptException {
-
             engine.eval(eval);
-
         }
 
         public String atob(String string) {
             String ret = Encoding.Base64Decode(string);
             return ret;
         }
-
     }
 
     public static void redirectAntiDDos(final Browser br, final Plugin plugin) throws Exception {
-
         try {
             String js = br.getRegex("<script language=\"JavaScript\">(.*)</script>").getMatch(0);
             if (js != null) {
@@ -247,27 +240,21 @@ public class DataFileCom extends antiDDoSForHost {
                 engine.eval("history=[];");
                 // load java environment trusted
                 JavaScriptEngineFactory.runTrusted(new ThrowingRunnable<ScriptException>() {
-
                     @Override
                     public void run() throws ScriptException {
-
                         ScriptEnv env = new ScriptEnv(engine);
                         // atob requires String to be loaded for its parameter and return type
                         engine.put("env", env);
                         engine.eval("var string=" + String.class.getName() + ";");
-
                         engine.eval("log=function(str){return env.log(str);};");
                         engine.eval("eval=function(str){return env.eval(str);};");
-
                         engine.eval("atob=function(str){return env.atob(str);};");
                         // cleanup
                         engine.eval("delete java;");
                         engine.eval("delete jd;");
                         // load Env in Trusted Thread
                         engine.eval("log('Java Env Loaded');");
-
                     }
-
                 });
                 engine.eval(js);
                 Object redirect = engine.eval("window.location.href");
@@ -280,7 +267,6 @@ public class DataFileCom extends antiDDoSForHost {
         } catch (Exception e) {
             throw e;
         } finally {
-
         }
     }
 
@@ -370,7 +356,6 @@ public class DataFileCom extends antiDDoSForHost {
                 }
                 // Validation phase, return token that need to be added to getFileDownloadLink call
                 pagePost("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
-
                 String token = br.getRegex("\\{\"success\":1,\"token\":\"(.*)\"\\}").getMatch(0);
                 if (token == null || br.containsHTML("\"success\":0")) {
                     rc.reload();
@@ -399,7 +384,6 @@ public class DataFileCom extends antiDDoSForHost {
             this.handleURLErrors(dllink);
         }
         try {
-
             /*
              * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
              */
@@ -416,7 +400,6 @@ public class DataFileCom extends antiDDoSForHost {
                 }
             } catch (final Throwable e) {
             }
-
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 404) {
@@ -586,7 +569,6 @@ public class DataFileCom extends antiDDoSForHost {
             account.setValid(true);
         }
         return ai;
-
     }
 
     @SuppressWarnings("deprecation")
@@ -892,7 +874,6 @@ public class DataFileCom extends antiDDoSForHost {
             // remove download slot
             controlSlot(-1, account);
         }
-
     }
 
     private void handleServerErrors() throws PluginException {
@@ -1081,5 +1062,4 @@ public class DataFileCom extends antiDDoSForHost {
             }
         }
     }
-
 }

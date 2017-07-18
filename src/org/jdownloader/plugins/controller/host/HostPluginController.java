@@ -41,7 +41,6 @@ import org.jdownloader.plugins.controller.PluginInfo;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class HostPluginController extends PluginController<PluginForHost> {
-
     public static final String                TMP_INVALIDPLUGINS = "invalidplugins";
     private static final HostPluginController INSTANCE           = new HostPluginController();
 
@@ -160,7 +159,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     });
                 } else {
                     Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
-
                         public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
                             return o1.getDisplayName().compareTo(o2.getDisplayName());
                         }
@@ -188,11 +186,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 if (existingPlugin != null) {
                     if (existingPlugin.getLazyPluginClass().getInterfaceVersion() > plugin.getLazyPluginClass().getInterfaceVersion()) {
                         retMap.put(pluginID, existingPlugin);
-                        // logger.finest("@HostPlugin keep:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() +
-                        // " instead " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
+                        logger.finest("@HostPlugin keep:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() + " instead " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
                     } else {
-                        // logger.finest("@HostPlugin replaced:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() +
-                        // " with " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
+                        logger.finest("@HostPlugin replaced:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() + " with " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
                     }
                 }
             }
@@ -223,11 +219,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
         }
         if (SecondLevelLaunch.HOST_PLUGINS_COMPLETE.isReached()) {
             SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
                 @Override
                 public void run() {
                     TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                         @Override
                         protected Void run() throws RuntimeException {
                             LinkCollector.getInstance().checkPluginUpdates();
@@ -237,7 +231,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             return null;
                         }
                     });
-
                 }
             });
         }
@@ -266,7 +259,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private List<LazyHostPlugin> update(LogSource logger, final List<LazyHostPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final List<LazyHostPlugin> retList = new ArrayList<LazyHostPlugin>();
         for (PluginInfo<PluginForHost> pluginInfo : scan(logger, "jd/plugins/hoster", updateCache, lastFolderModification)) {
-
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyHostPlugin plugin = (LazyHostPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
@@ -337,28 +329,24 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     }
                                     /* set hasConfig */
                                     lazyHostPlugin.setHasConfig(plg.hasConfig());
-
                                     try {
                                         lazyHostPlugin.setHasAllowHandle(PluginForHost.implementsAllowHandle(plg));
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setHasAllowHandle(false);
                                     }
-
                                     try {
                                         lazyHostPlugin.setHasRewrite(PluginForHost.implementsRewriteHost(plg));
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setHasRewrite(false);
                                     }
-
                                     try {
                                         lazyHostPlugin.setSitesSupported(plg.siteSupportedNames() != null);
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setSitesSupported(false);
                                     }
-
                                     lazyHostPlugin.setFeatures(plg.getFeatures());
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {
@@ -463,5 +451,4 @@ public class HostPluginController extends PluginController<PluginForHost> {
             invalidateCache();
         }
     }
-
 }

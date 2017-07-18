@@ -29,19 +29,17 @@ public class SystemAPIImpl17 {
             filterList = Arrays.asList(new String[0]);
         }
         final LinkedHashMap<Path, FileStore> roots = new LinkedHashMap<Path, FileStore>();
-        final boolean customPath;
+        Path customPath = null;
         if (StringUtils.isNotEmpty(path)) {
             try {
                 final Path pathObj = Paths.get(path);
                 roots.put(pathObj, Files.getFileStore(pathObj));
+                customPath = pathObj;
             } catch (InvalidPathException e) {
                 LoggerFactory.getDefaultLogger().log(e);
             } catch (IOException e) {
                 LoggerFactory.getDefaultLogger().log(e);
             }
-            customPath = true;
-        } else {
-            customPath = false;
         }
         if (roots.isEmpty()) {
             for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
@@ -56,7 +54,7 @@ public class SystemAPIImpl17 {
             final Path root = entry.getKey();
             try {
                 final FileStore store = entry.getValue();
-                if (!customPath && (store.isReadOnly() || filterList.contains(store.type()))) {
+                if ((customPath == null || !customPath.equals(root)) && (filterList.contains(store.type()) || store.isReadOnly())) {
                     continue;
                 }
                 storage.setPath(root.toString());
