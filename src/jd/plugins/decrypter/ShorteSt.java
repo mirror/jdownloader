@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -31,13 +34,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "https?://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me|skiip\\.me|clkme\\.me|clkmein\\.com|clkme\\.in|destyy\\.com|festyy\\.com|corneey\\.com|gestyy\\.com)/[^<>\r\n\t]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
 
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "clkme.in", "destyy.com", "festyy.com", "corneey.com", "gestyy.com" };
-    }
+    // add new domains here.
+    private static final String[] domains = { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "clkme.in", "destyy.com", "festyy.com", "corneey.com", "gestyy.com", "ceesty.com" };
 
     public ShorteSt(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,13 +49,8 @@ public class ShorteSt extends antiDDoSForDecrypt {
             return false;
         }
         final String redirect = Request.getLocation(input, br.getRequest());
-        final String domain = Browser.getHost(redirect);
-        for (final String name : siteSupportedNames()) {
-            if (name.contains(domain + "/login")) {
-                return true;
-            }
-        }
-        return false;
+        final boolean result = redirect.matches("(?i)" + HOSTS.get() + "/login");
+        return result;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -107,6 +103,51 @@ public class ShorteSt extends antiDDoSForDecrypt {
         }
         decryptedLinks.add(createDownloadlink(finallink.replaceAll(" ", "%20")));
         return decryptedLinks;
+    }
+
+    private static AtomicReference<String> HOSTS           = new AtomicReference<String>(null);
+    private static AtomicLong              HOSTS_REFERENCE = new AtomicLong(-1);
+
+    @Override
+    public void init() {
+        // first run -1 && revision change == sync.
+        if (this.getVersion() > HOSTS_REFERENCE.get()) {
+            HOSTS.set(getHostsPattern());
+            HOSTS_REFERENCE.set(this.getVersion());
+        }
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return domains;
+    }
+
+    /**
+     * Returns the annotations names array
+     *
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "shorte.st" };
+    }
+
+    /**
+     * returns the annotation pattern array
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/[^<>\r\n\t]+" };
+    }
+
+    private static String getHostsPattern() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        final String hosts = "https?://(www\\.)?" + "(?:" + pattern.toString() + ")";
+        return hosts;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
