@@ -23,12 +23,12 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.cafe" }, urls = { "https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/" })
 public class HentaiCafe extends antiDDoSForDecrypt {
@@ -57,7 +57,7 @@ public class HentaiCafe extends antiDDoSForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_chapter + "_" + url_name);
 
-        final String[] images = this.br.getRegex("\"url\":\"(http[^<>\"]+)\"").getColumn(0);
+        final String[] images = br.getRegex("\"url\":\"(http[^<>\"]+)\"").getColumn(0);
         final int padLength = getPadLength(images.length);
         short page = 0;
 
@@ -68,7 +68,7 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             }
             final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
 
-            final String finallink = Encoding.unicodeDecode(image);
+            final String finallink = PluginJSonUtils.unescape(image);
             if (finallink == null) {
                 return null;
             }
