@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,11 +33,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
+
     private String security_hash = null;
     private String id_main       = null;
     private String id_single     = null;
@@ -67,13 +68,13 @@ public class WeTransferCom extends PluginForHost {
 
     public static Browser prepBR(final Browser br) {
         br.addAllowedResponseCodes(new int[] { 410, 503 });
-        br.setCookie("wetransfer.com", "wt_tandc", "2016317");
+        br.setCookie("wetransfer.com", "wt_tandc", "20170208");
         return br;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = prepBR(this.br);
+        br = prepBR(new Browser());
         setBrowserExclusive();
         final String[] dlinfo = link.getDownloadURL().replace("http://wetransferdecrypted/", "").split("/");
         id_main = dlinfo[0];
@@ -90,7 +91,14 @@ public class WeTransferCom extends PluginForHost {
              * https://wetransfer.com/api/ui/transfers/0d9f92839e6772d79ce5ee4256d936a620170524074451/4fd9d9/files/
              * cbd496b1ef50e4ff5d98ffb9337e394920170524074451/download
              */
-            br.getPage("https://" + this.getHost() + "/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/files/" + this.id_single + "/download");
+            final String referer = link.getStringProperty("referer", null);
+            if (referer != null) {
+                br.getPage(referer);
+            }
+            // now without id_single
+            br.getHeaders().put("Accept", "application/json");
+            br.getHeaders().put("Content-Type", "application/json");
+            br.postPageRaw("https://" + this.getHost() + "/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{}");
         }
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -187,9 +195,9 @@ public class WeTransferCom extends PluginForHost {
         }
         // More chunks are possible for some links but not for all
         if (param != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, param, true, -2);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, param, true, -2);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

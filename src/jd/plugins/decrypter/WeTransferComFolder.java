@@ -92,16 +92,12 @@ public class WeTransferComFolder extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink(String.format("http://wetransferdecrypted/%s/%s/%s", id_main, security_hash, id_single));
+            dl.setProperty("referer", br.getURL());
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
             dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
-        }
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
         }
         // String fpName = null;
         // final FilePackage fp = FilePackage.getInstance();
