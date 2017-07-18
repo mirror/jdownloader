@@ -65,7 +65,6 @@ import jd.utils.RazStringBuilder;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
-
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,7 +80,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         KISS_CARTOON,
         KISS_MANGA,
         KISS_UNKNOWN;
-
         private static HostType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "kissanime")) {
                 return KISS_ANIME;
@@ -95,7 +93,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 return KISS_UNKNOWN;
             }
         }
-
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -122,17 +119,13 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         handleHumanCheck(this.br);
         String title;
         if (hostType == HostType.KISS_MANGA) {
-            if (true) {
-                return decryptedLinks;
-            }
             // crypto!
             title = br.getRegex("<title>(?:\\s*Read manga\\s*)?(.*?)(?:\\s*online\\s*in\\s*high\\s*quality\\s*)?</title>").getMatch(0);
             if (title != null) {
                 title = title.replace("[\r\n]+", " ").replaceAll("\\s+", " ");
             }
-            final String skey = getSecretKeyManga(); // mshsdf832nsdbash20asdm ?
-            final String iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
-
+            final String skey = getSecretKeyManga();
+            final String iv = "a5e8e2e9c2721be0a84ad660c472c1f3";
             final String[] links = br.getRegex("lstImages\\.push\\(wrapKA\\(\"([a-zA-Z0-9\\+/]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -143,7 +136,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 final String singleLink = decodeSingleURL(link, skey, iv);
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
-
         } else {
             title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
             if (title == null) {
@@ -325,21 +317,16 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     }
 
     private String getSecretKeyManga() throws Exception {
-        final Regex mt1 = new Regex(br, ".+(<script[^>]*>\\s*var.*?\\[\"([^\"]+)\".*?CryptoJS.SHA256.*?</script>).+?");
-        String filter = mt1.getMatch(0);
-        String match1 = mt1.getMatch(1);
-        String skey = null;
-        if (match1 != null) {
-            skey = Encoding.unicodeDecode(match1);
-        }
-        if (filter != null) {
-            filter = Encoding.unicodeDecode(filter);
-            String match2b = new Regex(filter, "\\[\"([^\"]+)\"\\];\\s*(\\w+)\\s*=\\s*(\\w+) ").getMatch(2);
-            if (match2b != null) {
-                skey = match2b + skey;
+        String skey = "";
+        String[] chkos = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\".*?CryptoJS.SHA256.*?</script>").getColumn(0);
+        if (chkos != null) {
+            for (String chko : chkos) {
+                skey += Encoding.unicodeDecode(chko);
             }
+        } else {
+            skey = "mshsdf832nsdbash20asdm";
         }
-        return skey != null ? skey : "chkonasdbasd612basd";
+        return skey;
     }
 
     public String decodeSingleURL(final String encodedString, final String skey, final String iv) {
