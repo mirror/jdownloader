@@ -168,10 +168,14 @@ public class TwitterCom extends PluginForHost {
                     }
                 } else {
                     con = br.openHeadConnection(dllink);
+                    if (con.getResponseCode() == 404) {
+                        /* Definitly offline */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     final long filesize = con.getLongContentLength();
                     if (filesize == 0) {
-                        /* E.g. abused video */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
                     }
                     if (!con.getContentType().contains("html") && con.isOK() && con.getLongContentLength() > 0) {
                         if (filename == null) {

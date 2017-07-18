@@ -55,7 +55,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+\\&quelle_id=\\d+\\&format=\\d+\\&adfree=(?:1|0)\\&stream=0" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+" })
 public class HighWayMe extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
     private static final String                            DOMAIN                              = "http://http.high-way.me/api.php";
@@ -132,6 +132,7 @@ public class HighWayMe extends UseNet {
             final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
             final String linkid = new Regex(dlink, "id=(\\d+)").getMatch(0);
             link.setName(linkid);
+            link.setLinkID(linkid);
             link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             br.setFollowRedirects(true);
             ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
@@ -147,7 +148,7 @@ public class HighWayMe extends UseNet {
                 this.currAcc = acc;
                 this.loginSafe(false);
                 if (check_via_json) {
-                    final String json_url = link.getDownloadURL().replaceAll("stream=(?:0|1)", "json=1");
+                    final String json_url = link.getDownloadURL().replaceAll("stream=(?:0|1)", "") + "&json=1";
                     this.br.getPage(json_url);
                     final String code = PluginJSonUtils.getJsonValue(this.br, "code");
                     filename = PluginJSonUtils.getJsonValue(this.br, "name");
