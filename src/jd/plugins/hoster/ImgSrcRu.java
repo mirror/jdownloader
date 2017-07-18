@@ -17,9 +17,13 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,11 +40,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
+
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
     private String                         ddlink    = null;
@@ -143,7 +145,31 @@ public class ImgSrcRu extends PluginForHost {
         }
     }
 
-    private void getDllink() throws Exception {
+    private void getDllink() {
+        String js = br.getRegex("<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+)</script>").getMatch(1);
+        if (js != null) {
+            Object result = null;
+            try {
+                final String[] var = new Regex(js, "(var (\\w+)\\s*=\\s*document\\.getElementById\\('([\\w_]+)'\\).(\\w+),)").getRow(0);
+                final String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
+                final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
+                js = js.replace(var[0], "");
+                js = js.replaceFirst("document.getElementById\\('\\w+'\\)\\.src=", "var result=");
+                final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                final ScriptEngine engine = mgr.getEngineByName("javascript");
+                engine.put(var[1], varsrc);
+                engine.eval(js);
+                result = engine.get("result");
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+            if (result != null && result instanceof ConsString) {
+                ddlink = result.toString();
+            }
+        }
+    }
+
+    private void getDllink_old() throws Exception {
         String js = br.getRegex("<script(?: type=(\"|')text/javascript\\1)?>.*?((?:\\s*var [a-z]='.*?'[;,]){1,}[^<]+)</script>").getMatch(1);
         if (js == null) {
             logger.warning("Could not find JS!");
@@ -192,7 +218,7 @@ public class ImgSrcRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, ddlink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
