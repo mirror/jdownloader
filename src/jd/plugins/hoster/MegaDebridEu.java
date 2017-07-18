@@ -16,15 +16,20 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,10 +38,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
+
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static Object                                  ACCLOCK            = new Object();
@@ -73,27 +77,31 @@ public class MegaDebridEu extends PluginForHost {
             ac.setValidUntil(Long.parseLong(daysLeft) * 1000l);
         } else if ("0".equals(daysLeft)) {
             ac.setExpired(true);
-            ac.setStatus("Expired VIP!");
+            account.setType(AccountType.FREE);
+            ac.setStatus("Free Account!");
             return ac;
         } else {
-            ac.setStatus("Can not determine account expire time!");
-            logger.severe("Error, can not parse left days. API response:\r\n\r\n" + br.toString());
-            account.setValid(false);
-            return ac;
+            throw new AccountInvalidException();
         }
         // now it's time to get all supported hosts
-        br.getPage("/api.php?action=getHosters");
-        if (!"ok".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_code"))) {
-            ac.setStatus("can not get supported hosts");
-            logger.severe("Error, can not parse supported hosts. API response:\r\n\r\n" + br.toString());
-            account.setValid(false);
-            return ac;
+        br.getPage("/api.php?action=getHostersList");
+        final LinkedHashMap<String, Object> results = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        if (!"ok".equalsIgnoreCase((String) results.get("response_code"))) {
+            throw new AccountInvalidException();
         }
-        String[] hosts = br.getRegex("\\[\"([a-z0-9\\.\\-]+)\"").getColumn(0);
-        ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        account.setValid(true);
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        for (final Object resultz : (ArrayList<Object>) results.get("hosters")) {
+            final LinkedHashMap<String, Object> r = (LinkedHashMap<String, Object>) resultz;
+            if (!"up".equals(r.get("status"))) {
+                continue;
+            }
+            for (final String domain : (ArrayList<String>) r.get("domains")) {
+                supportedHosts.add(domain);
+            }
+        }
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("VIP Account");
+        account.setType(AccountType.PREMIUM);
+        ac.setStatus("Premium Account");
         return ac;
     }
 
@@ -211,7 +219,7 @@ public class MegaDebridEu extends PluginForHost {
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">400 Bad Request<")) {
