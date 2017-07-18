@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -26,10 +26,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?pornxsdecrypted\\.com/.+" }) 
-public class VidearnCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?pornxsdecrypted\\.com/.+" })
+public class VidearnCom extends antiDDoSForHost {
 
     public VidearnCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -70,13 +69,13 @@ public class VidearnCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         /* Check offline via decrypter */
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -91,12 +90,14 @@ public class VidearnCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
-        final String finallink = br.getRegex("config\\-final\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
+        String finallink = br.getRegex("config\\-final\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            finallink = br.getRegex("file\\s*:\\s*('|\")(http.*?)\\1").getMatch(1);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

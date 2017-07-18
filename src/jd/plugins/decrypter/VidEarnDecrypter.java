@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,10 +28,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?(pornxs\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.pornxs\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?" })
-public class VidEarnDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?(pornxs\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/$|playlists/\\d+[-\\w]+/)|(?:embed\\.pornxs\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?)" })
+public class VidEarnDecrypter extends antiDDoSForDecrypt {
 
     public VidEarnDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +38,7 @@ public class VidEarnDecrypter extends PluginForDecrypt {
 
     // This plugin takes videarn links and checks if there is also a filearn.com link available (partnersite)
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
         final String vid = new Regex(parameter, "embed\\.php\\?id=(\\d+)$").getMatch(0);
@@ -46,14 +47,14 @@ public class VidEarnDecrypter extends PluginForDecrypt {
         }
         final DownloadLink mainlink = createDownloadlink(parameter.replaceAll("pornxs\\.com/", "pornxsdecrypted.com/"));
         try {
-            br.getPage(parameter);
+            getPage(parameter);
         } catch (final Exception e) {
             mainlink.setAvailable(false);
             decryptedLinks.add(mainlink);
             return decryptedLinks;
         }
         String fpName = null;
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"video\\-player\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || (false && !br.containsHTML("id=\"video\\-player\""))) {
             mainlink.setAvailable(false);
             mainlink.setProperty("offline", true);
         } else {
@@ -78,9 +79,11 @@ public class VidEarnDecrypter extends PluginForDecrypt {
         }
 
         decryptedLinks.add(mainlink);
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
