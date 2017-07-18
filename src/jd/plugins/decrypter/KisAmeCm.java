@@ -317,14 +317,14 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     }
 
     private String getSecretKeyManga() throws Exception {
-        String skey = "";
-        String[] chkos = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\".*?CryptoJS.SHA256.*?</script>").getColumn(0);
-        if (chkos != null) {
-            for (String chko : chkos) {
-                skey += Encoding.unicodeDecode(chko);
-            }
-        } else {
-            skey = "mshsdf832nsdbash20asdm";
+        String skey = "mshsdf832nsdbash20asdm";
+        String match1 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\"\\]; chko = _.*?CryptoJS.SHA256.*?</script>").getMatch(0);
+        if (match1 != null) {
+            skey = Encoding.unicodeDecode(match1);
+        }
+        String match2 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\"\\]; chko = chko.*?CryptoJS.SHA256.*?</script>").getMatch(0);
+        if (match2 != null) {
+            skey += Encoding.unicodeDecode(match2);
         }
         return skey;
     }
