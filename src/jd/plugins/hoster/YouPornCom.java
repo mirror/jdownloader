@@ -17,10 +17,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,7 +38,8 @@ import jd.utils.locale.JDL;
 public class YouPornCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
-    String DLLINK = null;
+    String          dllink        = null;
+    private boolean server_issues = false;
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,7 +86,7 @@ public class YouPornCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
-        this.DLLINK = null;
+        this.dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://youporn.com/", "age_verified", "1");
@@ -124,59 +127,73 @@ public class YouPornCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         /* Find highest quality */
-        final String[] qualities = { "1080", "720", "480", "240" };
-        for (final String qualitiy : qualities) {
-            DLLINK = br.getRegex("(?:sources\\s*?:.*?)?" + qualitiy + "\\s*?:\\s*?(?:\"|\\')([^'\"]+)(?:\"|\\')").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("(https?://[^'\"]+?" + qualitiy + "p[^'\"]+\\.mp4[^'\"]+)(?:\"|\\')").getMatch(0); // <---
+        int qualityMax = 0;
+        int qualityTemp = 0;
+        String qualityTempStr;
+        /* Must not be present */
+        String filesize = null;
+        final String[] htmls = this.br.getRegex("class=\\'callBox downloadOption downloadVideoLink clearfix\\'(.*?)</span>").getColumn(0);
+        for (final String html : htmls) {
+            qualityTempStr = new Regex(html, "(\\d+)p_\\d+k").getMatch(0);
+            if (qualityTempStr == null) {
+                continue;
             }
-            if (DLLINK != null) {
-                break;
+            qualityTemp = Integer.parseInt(qualityTempStr);
+            if (qualityTemp > qualityMax) {
+                qualityMax = qualityTemp;
+                dllink = new Regex(html, "(https?://[^'\"]+\\d+p[^'\"]+\\.mp4[^\\'\"\\|]+)").getMatch(0);
+                if (dllink != null) {
+                    /* Only attempt to grab filesize if it corresponds to the current videoquality! */
+                    filesize = new Regex(html, "class=\\'downloadsize\\'>\\((\\d+[^<>\"]+)\\)").getMatch(0);
+                }
             }
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://cdn[a-z0-9]+\\.public\\.youporn\\.phncdn\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://cdn[a-z0-9]+\\.public\\.youporn\\.phncdn\\.com/[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
         }
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
         parameter.setFinalFileName(filename + defaultEXT);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                parameter.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else if (dllink != null) {
+            /* Do NOT htmldecode! */
+            dllink = dllink.replace("&amp;", "&");
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    parameter.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
