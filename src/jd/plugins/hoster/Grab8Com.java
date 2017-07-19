@@ -23,6 +23,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,13 +54,6 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * Note: prem.link redirects to grab8
  *
@@ -61,6 +62,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" })
 public class Grab8Com extends antiDDoSForHost {
+
     private final String                 NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
     private final String                 NOCHUNKS                       = NICE_HOSTproperty + "_NOCHUNKS";
     private final String                 NORESUME                       = NICE_HOSTproperty + "_NORESUME";
@@ -110,6 +112,7 @@ public class Grab8Com extends antiDDoSForHost {
             if (accounts != null && accounts.size() != 0) {
                 // lets sort, premium > non premium
                 Collections.sort(accounts, new Comparator<Account>() {
+
                     @Override
                     public int compare(Account o1, Account o2) {
                         final int io1 = AccountType.PREMIUM.equals(o1.getType()) ? 1 : 0;
@@ -202,8 +205,7 @@ public class Grab8Com extends antiDDoSForHost {
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(url));
             dllink = PluginJSonUtils.getJsonValue(ajax, "linkdown");
-            final boolean transload = StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "message"), "Transloading in progress") || PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
-            if (transload && StringUtils.isEmpty(dllink)) {
+            if (isTransload()) {
                 dllink = handleTransload(link, url);
             }
             if (StringUtils.isEmpty(dllink)) {
@@ -220,10 +222,34 @@ public class Grab8Com extends antiDDoSForHost {
         handleDL(account, link, dllink);
     }
 
+    private boolean isTransload() {
+        return isTransloadMode1() || isTransloadMode2();
+    }
+
+    /**
+     * newer method with json key
+     *
+     * @return
+     */
+    private boolean isTransloadMode1() {
+        final boolean result = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
+        return result;
+    }
+
+    /**
+     * older method with no json identifier, also has dllink response to /account#myfiles
+     *
+     * @return
+     */
+    private boolean isTransloadMode2() {
+        // older original method, can have a non empty dllink also!
+        final boolean result = StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "message"), "Transloading in progress");
+        return result;
+    }
+
     private String handleTransload(final DownloadLink downloadLink, final String url) throws Exception {
         String dllink = null;
-        final boolean mode1 = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
-        if (mode1) {
+        if (isTransloadMode1()) {
             // some uid/hash
             final String key = PluginJSonUtils.getJson(ajax, "key");
             // http://p6.grab8.com/new/status.php?key=KEY
@@ -234,7 +260,7 @@ public class Grab8Com extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // some counter
-            int counter = 0;
+            int counter = 1;
             final long waitInt = 10000l;
             do {
                 // wait between polling
@@ -256,10 +282,32 @@ public class Grab8Com extends antiDDoSForHost {
                 }
                 // this error to /ajax/action.php?action=get_status&key=KEY
                 // {"status":"error","message":"File not found","step":"error","runtime":0.000271081924438}
-                logger.info("Transloading Wait: " + (++counter * waitInt) + " @ " + PluginJSonUtils.getJson(ajax, "percent") + "% complete");
+                logger.info("Transloading Wait: " + (waitInt / 1000l) + " seconds wait, " + ((++counter * waitInt) / 1000l) + " Total seconds waited @ " + PluginJSonUtils.getJson(ajax, "percent") + "% complete");
             } while (dllink == null);
             return dllink;
         }
+        if (isTransloadMode2()) {
+            // some uid/hash
+            final String key = PluginJSonUtils.getJson(ajax, "key");
+            if (key == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // some counter
+            int counter = 1;
+            final long waitInt = 10000l;
+            do {
+                // wait between polling
+                sleep(waitInt, downloadLink);
+                // either the link is done, or it's not... no feeedback from what I can tell.
+                dllink = getDllinkFromAccount(key);
+                if (!inValidate(dllink)) {
+                    return dllink;
+                }
+                logger.info("Transloading Wait: " + (waitInt / 1000l) + " seconds wait, " + ((++counter * waitInt) / 1000l) + " Total seconds waited @ Unknown % complete");
+            } while (dllink == null);
+            return dllink;
+        }
+
         return null;
     }
 
@@ -277,8 +325,26 @@ public class Grab8Com extends antiDDoSForHost {
         if (filter == null) {
             filter = br.getRegex("<a [^>]*\\W+data-key=(?:'|\")" + key + "\\1[^>]+>").getMatch(-1);
         }
-        final String dllink = new Regex(filter, "href=('|\")(.*?)\\1").getMatch(1);
-        return dllink;
+        if (filter == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String dllink = new Regex(filter, "href=('|\")((?!#).*?)\\1").getMatch(1);
+        if (!inValidate(dllink)) {
+            return dllink;
+        }
+        // error handling can be within table (lame)
+        filter = br.getRegex("<tr>\\s*<td align=\"center\">.*?" + Pattern.quote(filter) + ".*?</tr>").getMatch(-1);
+        if (filter == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // user account or multihoster account? we will assume account.
+        if (new Regex(filter, "filesize bigger than left traffic").matches()) {
+            // delete the file??
+            mhm.putError(currAcc, currDownloadLink, 1 * 60 * 60 * 1000l, "No daily traffic left for this host");
+        } else if (new Regex(filter, "<span class=\"text-danger\">").matches()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error handling");
+        }
+        return null;
     }
 
     @SuppressWarnings("deprecation")
