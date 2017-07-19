@@ -932,16 +932,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
             volatile long[] chunkProgress = null;
             {
-                Object ret = downloadLink.getProperty(dashChunksProperty, null);
-                if (ret != null && ret instanceof long[]) {
-                    chunkProgress = (long[]) ret;
-                } else {
-                    if (ret != null && ret instanceof List) {
+                final Object ret = downloadLink.getProperty(dashChunksProperty, null);
+                if (ret != null) {
+                    if (ret instanceof long[] && ((long[]) ret).length > 0) {
+                        chunkProgress = (long[]) ret;
+                    } else if (ret instanceof List && ((List) ret).size() > 0) {
                         /* restored json-object */
-                        List<Object> list = ((List<Object>) ret);
-                        long[] ret2 = new long[list.size()];
+                        final List<Object> list = ((List<Object>) ret);
+                        final long[] ret2 = new long[list.size()];
                         for (int i = 0; i < ret2.length; i++) {
-                            ret2[i] = Long.valueOf(list.get(0).toString());
+                            ret2[i] = Long.valueOf(list.get(i).toString());
                         }
                         chunkProgress = ret2;
                     }
@@ -962,12 +962,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 return chunkProgress;
             }
 
-            public void setChunksProgress(long[] ls) {
+            public void setChunksProgress(final long[] ls) {
                 chunkProgress = ls;
-                if (ls == null) {
+                if (ls == null || ls.length == 0) {
                     downloadLink.setProperty(dashChunksProperty, Property.NULL);
                 } else {
-                    downloadLink.setProperty(dashChunksProperty, ls);
+                    downloadLink.setProperty(dashChunksProperty, Arrays.copyOf(ls, ls.length));
                 }
             }
 
