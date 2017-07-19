@@ -1320,9 +1320,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2691,9 +2691,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         if (urlConnection.getResponseCode() == 200) {
                                             if (urlConnection.isContentDisposition()) {
                                                 return true;
-                                            } else if (StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
+                                            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
                                                 return true;
-                                            } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && hasContentType && !StringUtils.contains(urlConnection.getContentType(), "text")) {
+                                            } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && (!hasContentType || !StringUtils.contains(urlConnection.getContentType(), "text"))) {
                                                 return true;
                                             }
                                         }
@@ -2713,11 +2713,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     @Override
                                     public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawler.LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
                                         if (urlConnection.getResponseCode() == 200 && urlConnection.getRequest().getLocation() == null) {
-                                            final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
                                             final LinkCrawlerRule matchingRule = link.getMatchingRule();
-                                            if (matchingRule == null) {
+                                            if (matchingRule == null && looksLikeDownloadableContent(urlConnection)) {
                                                 final URL url = urlConnection.getURL();
-                                                if (looksLikeDownloadableContent(urlConnection) && StringUtils.endsWithCaseInsensitive(url.getPath(), ".php") && url.getQuery() != null) {
+                                                if (StringUtils.endsWithCaseInsensitive(url.getPath(), ".php") && url.getQuery() != null) {
                                                     // hoster.domain/script.php?somevalue=somekey.....->Download
                                                     if (!hasDirectHTTPRule(urlConnection)) {
                                                         final String domain = Browser.getHost(url, false);
@@ -2732,8 +2731,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                     } catch (Throwable e) {
                                                     }
                                                     return lc.find(generation, "directhttp://" + url, null, false, false);
-                                                }
-                                                if (hasContentType && !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
+                                                } else {
                                                     final String fileName = Plugin.getFileNameFromURL(url);
                                                     final String fileExtension = Files.getExtension(fileName);
                                                     if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
