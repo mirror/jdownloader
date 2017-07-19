@@ -51,6 +51,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     private final String                   secureToken;
     private final boolean                  localhost;
     private final boolean                  boundToDomain;
+    private final boolean                  sameOrigin;
 
     public String getSiteKey() {
         return siteKey;
@@ -89,6 +90,15 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         private String  siteKey;
         private String  contextUrl;
         private boolean boundToDomain;
+        private boolean sameOrigin;
+
+        public boolean isSameOrigin() {
+            return sameOrigin;
+        }
+
+        public void setSameOrigin(boolean sameOrigin) {
+            this.sameOrigin = sameOrigin;
+        }
 
         public boolean isBoundToDomain() {
             return boundToDomain;
@@ -119,9 +129,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (RAWTOKEN.equals(format)) {
             final RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
             ret.setSiteKey(getSiteKey());
-            ret.setContextUrl("http://" + siteDomain);
+            ret.setContextUrl("http://" + getSiteDomain());
             ret.setStoken(getSecureToken());
             ret.setBoundToDomain(isBoundToDomain());
+            ret.setSameOrigin(isSameOrigin());
             return ret;
         } else {
             final BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
@@ -162,7 +173,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
-    public RecaptchaV2Challenge(String siteKey, String secureToken, boolean boundToDomain, Plugin pluginForHost, Browser br, String siteDomain) {
+    public RecaptchaV2Challenge(final String siteKey, final String secureToken, final boolean boundToDomain, final Boolean sameOrigin, Plugin pluginForHost, Browser br, String siteDomain) {
         super(RECAPTCHAV2, pluginForHost, br);
         this.secureToken = secureToken;
         this.siteKey = siteKey;
@@ -172,6 +183,13 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             throw new WTFException("Bad SiteKey");
         }
         localhost = true;
+        if (sameOrigin != null) {
+            this.sameOrigin = sameOrigin.booleanValue();
+        } else if (br != null && br.getRequest() != null) {
+            this.sameOrigin = br.getRequest().getResponseHeader("X-Frame-Options") != null;
+        } else {
+            this.sameOrigin = false;
+        }
         // if ("pgorelease.nianticlabs.com".equals(siteDomain)) {
         // localhost = false;
         // }
@@ -179,6 +197,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     public boolean isBoundToDomain() {
         return boundToDomain;
+    }
+
+    public boolean isSameOrigin() {
+        return sameOrigin;
     }
 
     public String getSecureToken() {
@@ -570,6 +592,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%session%%%", id);
             html = html.replace("%%%namespace%%%", getHttpPath());
             html = html.replace("%%%boundToDomain%%%", String.valueOf(isBoundToDomain()));
+            html = html.replace("%%%sameOrigin%%%", String.valueOf(isSameOrigin()));
             String stoken = getSecureToken();
             if (StringUtils.isNotEmpty(stoken)) {
                 html = html.replace("%%%sToken%%%", stoken);

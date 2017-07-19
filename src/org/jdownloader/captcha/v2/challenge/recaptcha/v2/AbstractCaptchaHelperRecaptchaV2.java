@@ -1,21 +1,21 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import jd.http.Browser;
+import jd.plugins.Plugin;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
-
     protected T            plugin;
     protected LogInterface logger;
     protected Browser      br;
     protected String       siteKey;
     protected String       secureToken;
     protected boolean      boundToDomain;
+    protected Boolean      sameOrigin = null;
 
     public String getSecureToken() {
         return getSecureToken(br != null ? br.toString() : null);

@@ -2,17 +2,6 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.blacklist.BlacklistEntry;
-import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
-import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
-import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.AbstractResponse;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
@@ -25,6 +14,17 @@ import jd.plugins.DecrypterException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.blacklist.BlacklistEntry;
+import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForDecrypt> {
     public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
@@ -168,6 +168,6 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
     }
 
     protected RecaptchaV2Challenge createChallenge(final PluginForDecrypt plugin) {
-        return new RecaptchaV2Challenge(siteKey, secureToken, boundToDomain, plugin, br, getSiteDomain());
+        return new RecaptchaV2Challenge(siteKey, secureToken, boundToDomain, sameOrigin, plugin, br, getSiteDomain());
     }
 }
