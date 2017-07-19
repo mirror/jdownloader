@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -27,11 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+" })
 public class HqqTv extends antiDDoSForHost {
@@ -126,8 +126,26 @@ public class HqqTv extends antiDDoSForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // json
         getPage(sb.toString());
-        hls_master = PluginJSonUtils.getJsonValue(br, "link");
+        String obfLink = PluginJSonUtils.getJsonValue(br, "obf_link");
+        if (obfLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        hls_master = decodeLink(obfLink);
         return AvailableStatus.TRUE;
+    }
+
+    private String decodeLink(final String obfLink) {
+        String result = obfLink;
+        if (obfLink.indexOf('.') == -1) {
+            String obfLink2 = obfLink.substring(1);
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < obfLink2.length(); i += 3) {
+                sb.append("%u0");
+                sb.append(obfLink2.substring(i, i + 3));
+            }
+            result = Encoding.unicodeDecode(sb.toString());
+        }
+        return result;
     }
 
     private String decodeWise(final String s) {
