@@ -190,9 +190,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         } else {
             this.sameOrigin = false;
         }
-        // if ("pgorelease.nianticlabs.com".equals(siteDomain)) {
-        // localhost = false;
-        // }
     }
 
     public boolean isBoundToDomain() {
