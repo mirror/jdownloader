@@ -42,7 +42,6 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
-
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.google.com/signup");
@@ -201,7 +200,7 @@ public class GoogleDrive extends PluginForHost {
                         }
                     } else {
                         br2.followConnection();
-                        size = br2.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
+                        size = br2.getRegex("\\((\\d+(,\\d)?(M|G))\\)</span>").getMatch(0);
                         if (size != null) {
                             link.setDownloadSize(SizeFormatter.getSize(size + "b"));
                         }

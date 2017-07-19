@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.InputStream;
@@ -22,6 +21,13 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,14 +41,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "https?://((www\\.)?datafilehost\\.com/(download\\-[a-z0-9]+\\.html|d/[a-z0-9]+)|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" })
 public class DataFileHostCom extends antiDDoSForHost {
-
     // note: at this time download not possible? everything goes via 'download manager' which is just used to install adware/malware.
-
     private char[] FILENAMEREPLACES = new char[] { ' ', '_', '[', ']' };
 
     @Override
@@ -121,9 +122,7 @@ public class DataFileHostCom extends antiDDoSForHost {
         final AtomicInteger requestQ = new AtomicInteger(0);
         final AtomicInteger requestS = new AtomicInteger(0);
         final ArrayList<String> links = new ArrayList<String>();
-
         final String out = br.toString();
-
         String[] l1 = new Regex(out, "\\s+(?:src|href)=(\"|')((?!'.*?\\').*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
@@ -141,9 +140,7 @@ public class DataFileHostCom extends antiDDoSForHost {
             final String correctedLink = Request.getLocation(link, this.br.getRequest());
             if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.matches(".+" + Pattern.quote(this.getHost()) + "/?$") && !new Regex(correctedLink, "\\.html|\\.php|/demo/public|%20|&(?:#[0-9]{3,4}|[A-Za-z]{2,8});").matches() && !correctedLink.matches(getSupportedLinks().pattern()) && !correctedLink.equals(this.br.getURL())) {
                 if (this.dupe.add(correctedLink)) {
-
                     final Thread simulate = new Thread("SimulateBrowser") {
-
                         @Override
                         public void run() {
                             final Browser rb = DataFileHostCom.this.br.cloneBrowser();
@@ -165,11 +162,9 @@ public class DataFileHostCom extends antiDDoSForHost {
                             }
                             return;
                         }
-
                     };
                     simulate.start();
                     Thread.sleep(100);
-
                 }
             }
         }
@@ -201,7 +196,14 @@ public class DataFileHostCom extends antiDDoSForHost {
         final String dllink = br.getURL("/get.php?file=" + fid).toString().replace("https://", "http://");
         br.getHeaders().put("Upgrade-Insecure-Requests", "1");
         br.setRequest(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        final DataFileHostConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DataFileHostCom.DataFileHostConfigInterface.class);
+        final int maxchunks;
+        if (cfg.isFreeUnlimitedChunksEnabled()) {
+            maxchunks = 0;
+        } else {
+            maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         if (downloadLink.getDownloadSize() > 0 && dl.getConnection().getLongContentLength() == 0) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Server sends empty file", 5 * 60 * 1000l);
@@ -220,6 +222,27 @@ public class DataFileHostCom extends antiDDoSForHost {
     }
 
     @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return DataFileHostConfigInterface.class;
+    }
+
+    public static interface DataFileHostConfigInterface extends PluginConfigInterface {
+        public static class TRANSLATION {
+            public String getFreeUnlimitedChunksEnabled_label() {
+                return "Enable unlimited chunks for free mode [can cause issues]?";
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(false)
+        @Order(8)
+        boolean isFreeUnlimitedChunksEnabled();
+
+        void setFreeUnlimitedChunksEnabled(boolean b);
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -231,5 +254,4 @@ public class DataFileHostCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
