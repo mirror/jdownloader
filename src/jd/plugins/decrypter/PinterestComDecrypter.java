@@ -22,6 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.uio.UIOManager;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -40,10 +44,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.uio.UIOManager;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de)/(?!pin/)[^/]+/[^/]+/" })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -80,10 +80,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        } else if (!this.br.containsHTML("\"followers\"")) {
-            /* Probably invalid url (no profile url). */
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
         }
         String numberof_pins_str = br.getRegex("class=\"value\">(\\d+(?:\\.\\d+)?)</span> <span class=\"label\">Pins</span>").getMatch(0);
         if (numberof_pins_str == null) {
@@ -92,13 +88,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (numberof_pins_str == null) {
             numberof_pins_str = br.getRegex("name=\"pinterestapp:pins\" content=\"(\\d+)\"").getMatch(0);
         }
+        if (numberof_pins_str == null) {
+            numberof_pins_str = PluginJSonUtils.getJson(this.br, "pin_count");
+        }
         fpName = br.getRegex("class=\"boardName\">([^<>]*?)<").getMatch(0);
         if (fpName == null) {
             fpName = linkpart.replace("/", "_");
         }
         if (numberof_pins_str == null) {
-            logger.warning("numberof_pins_str = null");
-            return null;
+            logger.info("numberof_pins_str = null --> Offline or not a PIN site");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         final long numberof_pins = Long.parseLong(numberof_pins_str.replace(".", ""));
         if (numberof_pins == 0) {
@@ -122,32 +122,54 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (loggedIN || force_api_usage) {
             String nextbookmark = null;
             /* First, get the first 25 pictures from their site. */
-            final String board_id = PluginJSonUtils.getJsonValue(json_source, "board_id");
+            final String board_id = getBoardID(json_source);
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
-            if (board_id == null) {
-                logger.warning("board_id = null");
-                return null;
-            }
             int i = 0;
             do {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + parameter);
                     return decryptedLinks;
                 }
-                // less confusing logic! should only enter after first round! We can use decryptedLinks size!
+                /*
+                 * 2017-07-19: First round does not necessarily have to contain items but we look for them anyways - then we'll enter this
+                 * ajax mode.
+                 */
                 if (i > 0) {
-                    // no results found on base, we should abort to prevent infinite loop
-                    if (decryptedLinks.isEmpty()) {
+                    /*
+                     * 2017-07-19: When loggedIN, first batch of results gets loaded via ajax as well so we will only abort if we still got
+                     * 0 items after 2 loops.
+                     */
+                    if (i > 1 && decryptedLinks.isEmpty()) {
                         /*
                          * 2017-07-18: It can actually happen that according to the website, one or more PIN items are available but
                          * actually nothing is available ...
                          */
                         logger.info("Failed to find any entry - either wrong URL, broken website or (low chance) plugin issue");
                         return decryptedLinks;
+                    } else if (board_id == null) {
+                        logger.warning("board_id = null --> Failed to grab more than the first batch of items");
+                        break;
                     }
-                    // not required.
+                    /* not required. */
                     final String module = ""; // "&module_path=App%3ENags%3EUnauthBanner%3EUnauthHomePage%3ESignupForm%3EUserRegister(wall_class%3DdarkWall%2C+container%3Dinspired_banner%2C+show_personalize_field%3Dfalse%2C+next%3Dnull%2C+force_disable_autofocus%3Dnull%2C+is_login_form%3Dnull%2C+show_business_signup%3Dnull%2C+auto_follow%3Dnull%2C+register%3Dtrue)";
-                    String getpage = "/resource/BoardWithRelatedFeedResource/get/?" + Encoding.urlEncode(source_url) + "%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
+                    final String getpage;
+                    if (loggedIN) {
+                        if (i == 1) {
+                            /* 2nd round (first ajax round) --> We do not need nextbookmark */
+                            nextbookmark = "";
+                        } else if (i > 1 && nextbookmark == null) {
+                            /* 3rd round (2nd ajax round) --> We need nextbookmark */
+                            logger.info("Failed to find nextbookmark for first / second round --> Cannot grab more items --> Stopping");
+                            break;
+                        }
+                        getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22access%22%3A%5B%5D%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                    } else {
+                        if (nextbookmark == null) {
+                            logger.info("Failed to find nextbookmark for first round --> Cannot grab more items --> Stopping");
+                            break;
+                        }
+                        getpage = "/resource/BoardWithRelatedFeedResource/get/?" + Encoding.urlEncode(source_url) + "%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
+                    }
                     // referrer should always be of the first request!
                     final Browser ajax = br.cloneBrowser();
                     ajax.setAllowedResponseCodes(new int[] { 503, 504 });
@@ -252,7 +274,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     logger.info("Decrypted " + decryptedLinks.size() + " of " + numberof_pins + " pins");
                     i++;
                 }
-            } while (nextbookmark != null && !nextbookmark.equalsIgnoreCase("-end-"));
+            } while (decryptedLinks.size() < numberof_pins);
         } else {
             decryptSite();
             if (numberof_pins > max_entries_per_page_free) {
@@ -263,7 +285,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     private boolean proccessLinkedHashMap(LinkedHashMap<String, Object> single_pinterest_data, final String board_id, final String source_url) throws DecrypterException {
-        final String type = (String) single_pinterest_data.get("type");
+        final String type = getStringFromJson(single_pinterest_data, "type");
         if (type == null || !(type.equals("pin") || type.equals("interest"))) {
             /* Skip invalid objects! */
             return false;
@@ -322,6 +344,28 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         decryptedLinks.add(dl);
         distribute(dl);
         return true;
+    }
+
+    /* Wrapper which either returns object as String or (e.g. it is missing or different datatype), null. */
+    private String getStringFromJson(final LinkedHashMap<String, Object> entries, final String key) {
+        final String output;
+        final Object jsono = entries.get(key);
+        if (jsono != null && jsono instanceof String) {
+            output = (String) jsono;
+        } else {
+            output = null;
+        }
+        return output;
+    }
+
+    private String getBoardID(final String json_source) {
+        /* This board_id RegEx will usually only work when loggedOFF */
+        String board_id = PluginJSonUtils.getJsonValue(json_source, "board_id");
+        if (board_id == null) {
+            /* For LoggedIN and loggedOFF */
+            board_id = this.br.getRegex("(\\d+)_board_thumbnail").getMatch(0);
+        }
+        return board_id;
     }
 
     /**

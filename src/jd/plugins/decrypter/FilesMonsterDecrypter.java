@@ -13,12 +13,13 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
 import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,7 +36,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
-
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -101,6 +101,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(parameter);
+        final String title = jd.plugins.hoster.FilesMonsterCom.getLongTitle(this.br);
         if (jd.plugins.hoster.FilesMonsterCom.isOffline(this.br)) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
@@ -111,7 +112,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         String fname = br.getRegex(FILENAMEREGEX).getMatch(0);
         String fsize = br.getRegex(FILESIZEREGEX).getMatch(0);
-
         String[] decryptedStuff = null;
         final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
@@ -127,7 +127,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         if (br.containsHTML(">You need Premium membership to download files larger than")) {
             FAILED = "There are no free downloadlinks";
         }
-
         if (addFree) {
             if (FAILED == null) {
                 final String theImportantPartOfTheMainLink = jd.plugins.hoster.FilesMonsterCom.getMainLinkID(parameter);
@@ -149,6 +148,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     finalOne.setProperty("origfilename", filename);
                     finalOne.setProperty("origsize", filesize);
                     finalOne.setProperty("mainlink", parameter);
+                    if (title != null) {
+                        finalOne.setComment(title);
+                    }
                     decryptedLinks.add(finalOne);
                 }
                 if (decryptedStuff == null || decryptedStuff.length == 0) {
@@ -159,7 +161,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 logger.info("Failed to get free links because: " + FAILED);
             }
         }
-
         if (addPremium || FAILED != null) {
             final DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             if (fname != null && fsize != null) {
@@ -168,6 +169,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 thebigone.setAvailable(true);
             }
             thebigone.setProperty("PREMIUMONLY", true);
+            if (title != null) {
+                thebigone.setComment(title);
+            }
             decryptedLinks.add(thebigone);
         }
         /** All those links belong to the same file so lets make a package */
@@ -183,5 +187,4 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

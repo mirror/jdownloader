@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -54,14 +53,12 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
-
     private static final String POSTTHATREGEX            = "\"((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.*?)\"";
     private static final String POSTTHATREGEX2           = "((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.+)";
     private static final String TEMPORARYUNAVAILABLE     = "Download not available at the moment";
     private static final String REDIRECTFNF              = "DL_FileNotFound";
     private static final String PREMIUMONLYUSERTEXT      = "Only downloadable via premium";
     private static Object       LOCK                     = new Object();
-
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
     public FilesMonsterCom(PluginWrapper wrapper) {
@@ -131,14 +128,11 @@ public class FilesMonsterCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             synchronized (LOCK) {
-
                 /*
                  * we only have to load this once, to make sure its loaded
                  */
                 JDUtilities.getPluginForDecrypt("filesmonster.com");
-
             }
             String filename = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
             String filesize = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);
@@ -157,7 +151,6 @@ public class FilesMonsterCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         }
         return AvailableStatus.TRUE;
-
     }
 
     public static boolean isOffline(final Browser br) {
@@ -227,7 +220,6 @@ public class FilesMonsterCom extends PluginForHost {
                     }
                 }
             }
-
         }
         if (wait != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait) * 60 * 1001l);
@@ -258,7 +250,6 @@ public class FilesMonsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(newTemporaryLink);
-
             handleErrors();
             br.setFollowRedirects(true);
             String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
@@ -277,7 +268,6 @@ public class FilesMonsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
             }
-
             /* now we have the data page, check for wait time and data id */
             if (this.br.containsHTML("g\\-recaptcha")) {
                 final Form continueform = this.br.getFormbyKey("submitbtn");
@@ -354,6 +344,18 @@ public class FilesMonsterCom extends PluginForHost {
         dl.startDownload();
     }
 
+    /** Returns title (NOT the filename) of an item. */
+    public static String getLongTitle(final Browser br) {
+        String title = br.getRegex("<a href=\"/report\\.php\\?[^<>\"]+\" target=\"_blank\" title=\"Click this to report for ([^<>\"]+)").getMatch(0);
+        if (title != null) {
+            title = title.trim();
+            if (title.isEmpty()) {
+                title = null;
+            }
+        }
+        return title;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -413,7 +415,6 @@ public class FilesMonsterCom extends PluginForHost {
                 login.put("user", Encoding.urlEncode(account.getUser()));
                 login.put("pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-
                 /* Make sure that we have the correct language (English) */
                 final String lang_cookie = br.getCookie("http://filesmonster.com/", "yab_ulanguage");
                 if (!"en".equals(lang_cookie)) {
@@ -422,7 +423,6 @@ public class FilesMonsterCom extends PluginForHost {
                 if (br.containsHTML("Please confirm that you are not a robot") || br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api)")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Captcha invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-
                 if (br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by \\'Password reminder\\'")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -531,7 +531,6 @@ public class FilesMonsterCom extends PluginForHost {
         login(account, false);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-
         Regex r = br.getRegex("Please try again in <b>(\\d+)</b> hours and <b>(\\d+)</b> minutes.");
         if (r.count() > 0) {
             long sec = 60 * (Long.parseLong(r.getMatch(0)) * 60 + Long.parseLong(r.getMatch(1)));
@@ -540,7 +539,6 @@ public class FilesMonsterCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, sec * 1000l);
         }
-
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"), 120 * 60 * 1000l);
         }
@@ -568,7 +566,6 @@ public class FilesMonsterCom extends PluginForHost {
         String ajaxurl = br.getRegex("get_link\\(\"(.*?)\"\\)").getMatch(0);
         Browser ajax = br.cloneBrowser();
         ajax.getPage(ajaxurl);
-
         String dllink = ajax.getRegex("url\":\"(https?:.*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
