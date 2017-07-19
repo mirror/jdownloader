@@ -7,6 +7,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.http.Browser;
+
 import org.appwork.remoteapi.exceptions.FileNotFound404Exception;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.Application;
@@ -15,8 +17,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS;
-
-import jd.http.Browser;
 
 public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
     private static final CaptchaForwarder INSTANCE = new CaptchaForwarder();
@@ -70,7 +70,7 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
 
                     @Override
                     protected org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge createChallenge(jd.plugins.PluginForDecrypt plugin) {
-                        return new RecaptchaV2Challenge(lsiteKey, stoken, false, null, this.br, this.getSiteDomain()) {
+                        return new RecaptchaV2Challenge(lsiteKey, stoken, false, null, null, this.br, this.getSiteDomain()) {
                             @Override
                             public org.jdownloader.DomainInfo getDomainInfo() {
                                 return DomainInfo.getInstance(domain);

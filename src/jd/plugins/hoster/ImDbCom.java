@@ -16,9 +16,9 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -95,7 +95,7 @@ public class ImDbCom extends PluginForHost {
                 json = this.br.getRegex("IMDbReactInitialState\\.push\\((\\{.*?\\})\\);\\s+").getMatch(0);
                 newWay = true;
             }
-            LinkedHashMap<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
+            Map<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
             if (newWay) {
                 /* 2017-07-18 */
                 final String id_main = new Regex(downloadLink.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
@@ -246,14 +246,12 @@ public class ImDbCom extends PluginForHost {
     }
 
     /* Simple wrapper due to unexpected LinkedHashMap/HashMap results. */
-    private LinkedHashMap getJsonMap(final Object jsono) {
-        LinkedHashMap<String, Object> entries = null;
-        if (jsono instanceof HashMap) {
-            entries = new LinkedHashMap<>((HashMap<String, Object>) jsono);
+    private Map<String, Object> getJsonMap(final Object jsono) {
+        if (jsono instanceof Map) {
+            return (Map<String, Object>) jsono;
         } else {
-            entries = (LinkedHashMap<String, Object>) jsono;
+            return null;
         }
-        return entries;
     }
 
     @Override
