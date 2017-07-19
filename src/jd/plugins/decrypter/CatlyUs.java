@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -42,9 +41,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
-
     public CatlyUs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,10 +73,11 @@ public class CatlyUs extends antiDDoSForDecrypt {
         if (form != null) {
             boolean requiresCaptchaWhichCanFail = false;
             boolean captcha_failed = true;
+            final String solvemediaChallengeKey = br.getRegex("app_vars\\[\\'solvemedia_challenge_key\\'\\]\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
+            final String reCaptchaSiteKey = br.getRegex("app_vars\\[\\'reCAPTCHA_site_key\\'\\]\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
             for (int i = 0; i <= 2; i++) {
-                if (form.containsHTML("adcopy_response")) {
+                if (form.containsHTML("adcopy_response") && solvemediaChallengeKey != null) {
                     requiresCaptchaWhichCanFail = true;
-                    final String solvemediaChallengeKey = br.getRegex("app_vars\\[\\'solvemedia_challenge_key\\'\\]\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     if (solvemediaChallengeKey != null) {
                         sm.setChallengeKey(solvemediaChallengeKey);
@@ -89,8 +88,8 @@ public class CatlyUs extends antiDDoSForDecrypt {
                     final String chid = sm.getChallenge(code);
                     form.put("adcopy_challenge", chid);
                     form.put("adcopy_response", "manual_challenge");
-                } else if (form.containsHTML("g\\-recaptcha")) {
-                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                } else if (form.containsHTML("g\\-recaptcha") && reCaptchaSiteKey != null) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken();
                     form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     captcha_failed = false;
                 } else {
@@ -126,7 +125,6 @@ public class CatlyUs extends antiDDoSForDecrypt {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
@@ -156,5 +154,4 @@ public class CatlyUs extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.OuoIoCryptor;
     }
-
 }

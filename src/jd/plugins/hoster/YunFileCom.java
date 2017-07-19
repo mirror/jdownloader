@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -58,7 +57,6 @@ import jd.plugins.components.UserAgents.BrowserName;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
-
     private static final String            MAINPAGE    = "http://www.yunfile.com/";
     private static final String            CAPTCHAPART = "/verifyimg/getPcv";
     private static Object                  LOCK        = new Object();
@@ -78,7 +76,6 @@ public class YunFileCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\.yunfile\\.com/", "yunfile.com/"));
         // standard
         link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/", "yunfile.com/"));
-
     }
 
     @Override
@@ -227,15 +224,18 @@ public class YunFileCom extends PluginForHost {
             final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(https?://[a-z0-9]+\\." + DOMAINS + "/ls/([A-Za-z0-9\\-_]+)/)\"");
             userid = siteInfo.getMatch(1);
             if (userid == null) {
-                userid = new Regex(downloadLink.getDownloadURL(), "/file/(.*?)/").getMatch(0);
+                userid = br.getRegex("\\&userId=([A-Za-z0-9]+)").getMatch(0);
             }
             if (fileid == null) {
-                fileid = br.getRegex("&fileId=([A-Za-z0-9]+)&").getMatch(0);
+                fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)").getMatch(0);
             }
-            if (userid == null || fileid == null) {
+            String freelink = this.br.getRegex("var url\\s*?=\\s*?\"(/file/down/[^<>\"\\']+\\.html)\";").getMatch(0);
+            if (freelink == null && userid != null && fileid != null) {
+                freelink = Request.getLocation("/file/down/" + userid + "/" + fileid + ".html", br.getRequest());
+            }
+            if (freelink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String freelink = Request.getLocation("/file/down/" + userid + "/" + fileid + ".html", br.getRequest());
             // Check if captcha needed
             if (br.containsHTML(CAPTCHAPART)) {
                 String captchalink = br.getRegex("cvimgvip2\\.setAttribute\\(\"src\",(.*?)\\)").getMatch(0);
@@ -333,7 +333,6 @@ public class YunFileCom extends PluginForHost {
                 }
                 // dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             }
-
             final String[] counter = br.getRegex("document.getElementById\\('.*?'\\)\\.src = \"([^\"]+)").getColumn(0);
             if (counter != null && counter.length > 0) {
                 for (String count : counter) {
@@ -352,7 +351,6 @@ public class YunFileCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             final java.util.List<String> dllinks = new ArrayList<String>(dllinkVidMap.keySet());
             java.util.Collections.shuffle(dllinks); // Shuffle for load balancing
             final Iterator<String> it = dllinks.iterator();
@@ -490,7 +488,6 @@ public class YunFileCom extends PluginForHost {
         if (referer != null) {
             rb.getHeaders().put("Referer", referer);
         }
-
         URLConnectionAdapter con = null;
         try {
             con = rb.openGetConnection(url);
