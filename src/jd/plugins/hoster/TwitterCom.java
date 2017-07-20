@@ -148,10 +148,14 @@ public class TwitterCom extends PluginForHost {
                 if (dllink.contains(".m3u8")) {
                     link.setFinalFileName(filename);
                     checkFFProbe(link, "Download a HLS Stream");
-                    br.getPage(this.dllink);
+                    br.getPage(dllink);
                     if (this.br.getHttpConnection().getResponseCode() == 403) {
                         /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
+                        // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
+                        account_required = true;
+                        return AvailableStatus.TRUE;
+                    } else if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                     this.dllink = hlsbest.getDownloadurl();
@@ -175,9 +179,10 @@ public class TwitterCom extends PluginForHost {
                     final long filesize = con.getLongContentLength();
                     if (filesize == 0) {
                         /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
+                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
+                        // Pass it to download core, it can handle this.
                     }
-                    if (!con.getContentType().contains("html") && con.isOK() && con.getLongContentLength() > 0) {
+                    if (!con.getContentType().contains("html") && con.isOK() && con.getLongContentLength() >= 0) {
                         if (filename == null) {
                             filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
                         }
