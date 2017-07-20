@@ -263,7 +263,13 @@ public class SiteType {
         /**
          * <a href="https://adf.ly/">adf.ly</a> plugin, used to detect new/old domains that are using their service.
          */
-        AdfLy_AdfLy;
+        AdfLy_AdfLy,
+
+        /**
+         * url shorting service provider
+         *
+         */
+        URLShortnerLLP_URLShortner;
 
     }
 
