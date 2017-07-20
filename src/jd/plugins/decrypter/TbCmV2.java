@@ -75,6 +75,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
@@ -132,6 +133,7 @@ public class TbCmV2 extends PluginForDecrypt {
     private String                  userID;
     private AbstractVariant         requestedVariant;
     private HashMap<String, Object> globalPropertiesForDownloadLink;
+    private CryptedLink             param;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         // nullify, for debugging purposes!
@@ -140,6 +142,7 @@ public class TbCmV2 extends PluginForDecrypt {
         playlistID = null;
         channelID = null;
         userID = null;
+        this.param = param;
         dupeCheckSet = new HashSet<String>();
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -886,7 +889,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     round = antiDdosSleep(round);
                     pbr.getPage(jsonPage);
                     String output = pbr.toString();
-                    output = Encoding.unicodeDecode(output);
+                    output = PluginJSonUtils.unescape(output);
                     output = output.replaceAll("\\s+", " ");
                     pbr.getRequest().setHtmlCode(output);
                 } else if (nextPage != null) {
@@ -913,7 +916,7 @@ public class TbCmV2 extends PluginForDecrypt {
      * @throws InterruptedException
      */
     protected int antiDdosSleep(int round) throws InterruptedException {
-        Thread.sleep((DDOS_WAIT_MAX * (Math.min(DDOS_INCREASE_FACTOR, round++))) / DDOS_INCREASE_FACTOR);
+        sleep(((DDOS_WAIT_MAX * (Math.min(DDOS_INCREASE_FACTOR, round++))) / DDOS_INCREASE_FACTOR), param);
         return round;
     }
 
