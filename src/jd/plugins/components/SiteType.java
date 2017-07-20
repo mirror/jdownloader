@@ -266,8 +266,8 @@ public class SiteType {
         AdfLy_AdfLy,
 
         /**
-         * url shorting service provider
-         *
+         * URL shortening service provider. <br />
+         * <a href="http://click.tf/services.html">A list of all supported domains</a>
          */
         URLShortnerLLP_URLShortner;
 

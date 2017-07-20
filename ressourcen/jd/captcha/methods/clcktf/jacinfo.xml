@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="click.tf" author="raztoki"  services="click.tf;ssh.tf" /> 
+<method name="click.tf" author="raztoki"  services="click.tf" /> 
 <format type="jpg" letterNum="4" />
 </jDownloader>
