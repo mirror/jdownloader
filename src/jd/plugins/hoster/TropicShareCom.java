@@ -55,7 +55,7 @@ public class TropicShareCom extends PluginForHost {
         return "http://tropicshare.com/pages/6-Terms-of-service.html";
     }
 
-    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     private void prepBR(final Browser br) {
         if (userAgent.get() == null) {

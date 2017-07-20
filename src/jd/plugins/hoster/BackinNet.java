@@ -94,7 +94,7 @@ public class BackinNet extends antiDDoSForHost {
     private final boolean              captchaSkipableSolveMedia    = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
     @Override
     protected boolean useRUA() {

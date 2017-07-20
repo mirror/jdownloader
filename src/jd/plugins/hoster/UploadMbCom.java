@@ -54,8 +54,8 @@ public class UploadMbCom extends PluginForHost {
         return -1;
     }
 
-    private final static AtomicReference<String> PHPSESSID = new AtomicReference<String>(null);
-    private final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private static AtomicReference<String> PHPSESSID = new AtomicReference<String>(null);
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
     private String                               fuid      = null;
 
     @Override

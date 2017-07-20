@@ -142,7 +142,7 @@ public class BigfileTo extends PluginForHost {
         return true;
     }
 
-    private static final AtomicReference<String> agent = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     private Browser prepBr(final Browser br) {
         if (agent.get() == null) {

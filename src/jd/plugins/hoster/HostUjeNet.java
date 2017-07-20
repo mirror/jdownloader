@@ -55,7 +55,7 @@ public class HostUjeNet extends PluginForHost {
         return -1;
     }
 
-    private static final AtomicReference<String> userAgent = new AtomicReference<String>();
+    private static AtomicReference<String> userAgent = new AtomicReference<String>();
 
     @SuppressWarnings("deprecation")
     @Override

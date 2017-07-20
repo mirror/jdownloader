@@ -100,7 +100,7 @@ public class VodLockerCom extends PluginForHost {
     private final String               TYPE_VODLOCKER_CITY          = "https?://(?:www\\.)?vodlocker\\.city/video/\\d+/[^/]+";
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
     // XfileShare Version 3.0.8.5

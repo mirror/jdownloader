@@ -102,7 +102,7 @@ public class DataFileCom extends antiDDoSForHost {
     private Account                        currAcc                      = null;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger     totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger     totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
 
     @SuppressWarnings({ "deprecation" })
     public void correctDownloadLink(final DownloadLink link) {

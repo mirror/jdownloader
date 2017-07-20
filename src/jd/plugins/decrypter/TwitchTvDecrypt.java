@@ -515,7 +515,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         return true;
     }
 
-    private final static AtomicBoolean pL = new AtomicBoolean(false);
+    private static AtomicBoolean pL = new AtomicBoolean(false);
 
     private void pluginsLoaded() {
         if (!pL.get()) {

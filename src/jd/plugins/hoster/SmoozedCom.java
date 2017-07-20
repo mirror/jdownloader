@@ -442,7 +442,7 @@ public class SmoozedCom extends antiDDoSForHost {
         return request;
     }
 
-    private final static AtomicBoolean TRIALDIALOG = new AtomicBoolean(false);
+    private static AtomicBoolean TRIALDIALOG = new AtomicBoolean(false);
 
     private void errorHandling(Request request, final Account account, final String session_Key, final String method, DownloadLink link) throws Exception {
         if (StringUtils.containsIgnoreCase(request.getResponseHeader("Content-Type"), "application/json")) {
