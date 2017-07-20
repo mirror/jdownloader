@@ -15,6 +15,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -33,14 +38,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
+
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.google.com/signup");
@@ -113,9 +115,7 @@ public class GoogleDrive extends PluginForHost {
             pbr = new Browser();
         }
         if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent = UserAgents.stringUserAgent();
         }
         pbr.getHeaders().put("User-Agent", agent);
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -199,9 +199,9 @@ public class GoogleDrive extends PluginForHost {
                         }
                     } else {
                         br2.followConnection();
-                        size = br2.getRegex("\\((\\d+(,\\d)?(M|G))\\)</span>").getMatch(0);
+                        size = br2.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
                         if (size != null) {
-                            link.setDownloadSize(SizeFormatter.getSize(size + "b"));
+                            link.setDownloadSize(SizeFormatter.getSize(size + "B"));
                         }
                     }
                 } else if (con.getResponseCode() == 404) {
