@@ -246,8 +246,8 @@ public class MegarapidoNet extends antiDDoSForHost {
         }
         ai.setValidUntil(TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH), br);
         if (ai.isExpired()) {
-            ai.setExpired(false);
             // free accounts can download, tested with zippyshare link - 20170706-raz
+            ai.setExpired(false);
             // /* Prevent downloads via free account - they have no traffic! */
             // ai.setTrafficLeft(0);
             // throw new AccountInvalidException("Unsupported account type");
@@ -314,7 +314,7 @@ public class MegarapidoNet extends antiDDoSForHost {
                     br.setCookies(PRIMARYURL, cookies);
                     br.getPage(PRIMARYURL + "/api/login/signed_in");
                     // should have json...
-                    if (!isCookiesInvalid()) {
+                    if (!isCookiesSessionInvalid()) {
                         /* Existing cookies are valid --> Save new timestamp */
                         currAcc.saveCookies(br.getCookies(PRIMARYURL), "");
                         return;
@@ -343,8 +343,8 @@ public class MegarapidoNet extends antiDDoSForHost {
         }
     }
 
-    private boolean isCookiesInvalid() {
-        final boolean result = br.getCookie(DOMAIN, "key") == null || "deleted".equals(br.getCookie(DOMAIN, "key"));
+    private boolean isCookiesSessionInvalid() {
+        final boolean result = br.getCookie(DOMAIN, "key") == null || "deleted".equals(br.getCookie(DOMAIN, "key")) || (br.getHttpConnection().getResponseCode() == 401 && "Usuário deslogado".equals(br.toString()));
         return result;
     }
 
