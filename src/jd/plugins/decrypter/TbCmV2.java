@@ -27,6 +27,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.utils.locale.JDL;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -63,26 +80,8 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.utils.locale.JDL;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
 public class TbCmV2 extends PluginForDecrypt {
-
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
     private static final int DDOS_INCREASE_FACTOR = 15;
 
@@ -133,7 +132,6 @@ public class TbCmV2 extends PluginForDecrypt {
     private String                  userID;
     private AbstractVariant         requestedVariant;
     private HashMap<String, Object> globalPropertiesForDownloadLink;
-    private CryptedLink             param;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         // nullify, for debugging purposes!
@@ -142,7 +140,6 @@ public class TbCmV2 extends PluginForDecrypt {
         playlistID = null;
         channelID = null;
         userID = null;
-        this.param = param;
         dupeCheckSet = new HashSet<String>();
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -162,7 +159,6 @@ public class TbCmV2 extends PluginForDecrypt {
             return ret;
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
-
             @Override
             public boolean add(DownloadLink e) {
                 distribute(e);
@@ -221,7 +217,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
                     if (playListAction == IfUrlisAPlaylistAction.ASK) {
                         ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isplaylist.question.message", "This link is a Play-List or Channel-List or User-List. What would you like to do?"), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process Playlist?"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do Nothing?")) {
-
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -256,7 +251,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
                     if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
                         ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist")) {
-
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -567,14 +561,12 @@ public class TbCmV2 extends PluginForDecrypt {
                         continue;
                     }
                     Collections.sort(cutLinkVariantsDropdown, new Comparator<VariantInfo>() {
-
                         @Override
                         public int compare(VariantInfo o1, VariantInfo o2) {
                             return o2.compareTo(o1);
                         }
                     });
                     Collections.sort(linkVariants, new Comparator<VariantInfo>() {
-
                         @Override
                         public int compare(VariantInfo o1, VariantInfo o2) {
                             return o2.compareTo(o1);
@@ -644,7 +636,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                 }
                 Collections.sort(linkVariants, new Comparator<VariantInfo>() {
-
                     @Override
                     public int compare(VariantInfo o1, VariantInfo o2) {
                         return o2.compareTo(o1);
@@ -916,7 +907,7 @@ public class TbCmV2 extends PluginForDecrypt {
      * @throws InterruptedException
      */
     protected int antiDdosSleep(int round) throws InterruptedException {
-        sleep(((DDOS_WAIT_MAX * (Math.min(DDOS_INCREASE_FACTOR, round++))) / DDOS_INCREASE_FACTOR), param);
+        sleep(((DDOS_WAIT_MAX * (Math.min(DDOS_INCREASE_FACTOR, round++))) / DDOS_INCREASE_FACTOR), getCurrentLink().getCryptedLink());
         return round;
     }
 
