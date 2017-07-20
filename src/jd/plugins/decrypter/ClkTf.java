@@ -17,6 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +35,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 /**
  *
@@ -56,12 +60,16 @@ import jd.plugins.PluginForDecrypt;
  * 103.237.33.180<br/>
  * 111.221.47.171<br/>
  *
+ * http://ssh.tf/services.html
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "click.tf", "ssh.tf" }, urls = { "http://click\\.tf/[a-zA-Z0-9]{8,}(/.+)?", "http://ssh\\.tf/[a-zA-Z0-9]{8,}(/.+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClkTf extends PluginForDecrypt {
+
+    // add new domains here.
+    private static final String[] domains = { "click.tf", "ssh.tf", "yep.pm", "adlink.wf", "bily.ga", "bily.ml", "fave.cf", "fave.ga", "fave.gq", "iapp.ga", "icom.ga", "icom.ml", "igov.cf", "igov.ga", "igov.ml", "ihec.cf", "ihec.ga", "ihec.ml", "ihec.tk", "ilol.cf", "ilol.ml", "iref.ga", "iref.ml", "iref.tk", "itao.cf", "itao.ga", "itao.ml", "item.ga", "itop.cf", "itop.ga", "itop.ml", "iurl.ml", "iusa.cf", "iusa.ga", "iusd.cf", "iusd.ga", "iusd.ml", "iusd.tk", "kyc.pm", "lan.wf", "led.wf", "mcaf.cf", "mcaf.ga", "mcaf.gq", "mcaf.ml", "mcaf.tk", "owly.cf", "owly.ml", "ssh.yt", "tass.ga", "tass.ml", "twit.cf", "yourls.ml" };
 
     public ClkTf(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +82,7 @@ public class ClkTf extends PluginForDecrypt {
         // some links are delivered by redirects!!
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Invalid Link\\.")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -147,6 +155,56 @@ public class ClkTf extends PluginForDecrypt {
 
     public boolean hasAutoCaptcha() {
         return true;
+    }
+
+    private static AtomicReference<String> HOSTS           = new AtomicReference<String>(null);
+    private static AtomicLong              HOSTS_REFERENCE = new AtomicLong(-1);
+
+    @Override
+    public void init() {
+        // first run -1 && revision change == sync.
+        if (this.getVersion() > HOSTS_REFERENCE.get()) {
+            HOSTS.set(getHostsPattern());
+            HOSTS_REFERENCE.set(this.getVersion());
+        }
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return domains;
+    }
+
+    /**
+     * Returns the annotations names array
+     *
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "click.tf" };
+    }
+
+    /**
+     * returns the annotation pattern array
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/[a-zA-Z0-9]{8,}(/.+)?" };
+    }
+
+    private static String getHostsPattern() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        final String hosts = "https?://(www\\.)?" + "(?:" + pattern.toString() + ")";
+        return hosts;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.URLShortnerLLP_URLShortner;
     }
 
 }
