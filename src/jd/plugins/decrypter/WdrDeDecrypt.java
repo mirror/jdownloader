@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -34,8 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class WdrDeDecrypt extends PluginForDecrypt {
@@ -56,7 +56,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
      * Other, unsupported linktypes:
      *
      * http://www1.wdr.de/daserste/monitor/videos/videomonitornrvom168.html
-     * */
+     */
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -177,10 +177,19 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             }
             flashvars = this.br.toString();
             subtitle_url = PluginJSonUtils.getJsonValue(flashvars, "captionURL");
+            final String mediaType = PluginJSonUtils.getJson(this.br, "mediaType");
+            if (!mediaType.equalsIgnoreCase("vod")) {
+                /* E.g. 'live' */
+                logger.info("Bad mediaType - nothing downloadable there");
+                return decryptedLinks;
+            }
             final String date_formatted = formatDate(date);
             /* We know how their http links look - this way we can avoid HDS/HLS/RTMP */
-            /* http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4 */
-            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/med[a-z0-9]+/([a-z]{2})/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
+            /*
+             * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
+             */
+            // //wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/139/1394333/,1394333_16295554,1394333_16295556,1394333_16295555,1394333_16295557,1394333_16295553,1394333_16295558,.mp4.csmil/master.m3u8
+            final Regex hds_convert = new Regex(flashvars, "^[^/]*?//[^/]+/[a-z0-9]+/med[a-z0-9]+/.*?([a-z]+)/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
             String region = hds_convert.getMatch(0);
             final String fsk_url = hds_convert.getMatch(1);
             final String quality_string = hds_convert.getMatch(2);

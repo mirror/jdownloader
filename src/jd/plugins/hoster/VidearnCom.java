@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -27,9 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?pornxsdecrypted\\.com/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(?:www\\.)?pornxsdecrypted\\.com/.+" })
 public class VidearnCom extends antiDDoSForHost {
-
     public VidearnCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
