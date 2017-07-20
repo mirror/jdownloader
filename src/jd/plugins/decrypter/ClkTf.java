@@ -39,28 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 /**
  *
- * after writing this... found out same as yep.pm (now dead)<br/>
- * Name: yep.pm <br/>
- * Addresses: 213.184.127.151<br/>
- * 108.61.185.218<br/>
- * 190.97.163.134<br/>
- * <br/>
- * Name: click.tf<br/>
- * Addresses: 190.97.163.134<br/>
- * 213.184.127.151<br/>
- * 108.61.185.218<br/>
- * <br/>
- * same server!!!<br/>
- *
- * I've created jac for this under this name.
- *
- * ssh.tf<br/>
- * Name: ssh.tf<br/>
- * Addresses: 103.39.133.244<br/>
- * 103.237.33.180<br/>
- * 111.221.47.171<br/>
- *
- * http://ssh.tf/services.html
+ * I've created jac for this under the default names entry 'click.tf'.
  *
  * @author raztoki
  *
@@ -180,6 +159,7 @@ public class ClkTf extends PluginForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
+        // never change! its linked to the JAC auto solving method.
         return new String[] { "click.tf" };
     }
 
