@@ -65,6 +65,7 @@ public class AnyfilesPl extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        /* Important or we might get a prompt to confirm we're over 18 years old. */
         br.setCookie(this.getHost(), "coockie_restrict", "ImOfAge");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("/Alert.jsp") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h4>Error</h4>")) {
