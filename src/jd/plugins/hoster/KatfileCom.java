@@ -680,7 +680,7 @@ public class KatfileCom extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
@@ -1269,25 +1269,29 @@ public class KatfileCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
+        final boolean lifetime = new Regex(correctedBR, ">Premium account expire</TD><TD><b>Lifetime</b>").matches();
         /* If the premium account is expired we'll simply accept it as a free account. */
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         long expire_milliseconds = 0;
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+        if (lifetime) {
+            /* Expire date is in the future --> It is a premium account */
+            account.setType(AccountType.LIFETIME);
+            account.setMaxSimultanDownloads(3);
+            account.setConcurrentUsePossible(true);
+        } else if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(3);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(3);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -1378,7 +1382,7 @@ public class KatfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, -2);
+            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, -2);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
@@ -1410,6 +1414,7 @@ public class KatfileCom extends PluginForHost {
     }
 
     public static interface KatfileComConfigInterface extends PluginConfigInterface {
+
         @DefaultBooleanValue(false)
         @Order(10)
         boolean isForceHttpsEnabled();
