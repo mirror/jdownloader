@@ -94,7 +94,7 @@ public class DataTorCz extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, msg);
     }
 
-    private static final AtomicBoolean useAPI = new AtomicBoolean(false);
+    private static AtomicBoolean useAPI = new AtomicBoolean(false);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {

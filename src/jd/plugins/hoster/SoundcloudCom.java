@@ -114,7 +114,7 @@ public class SoundcloudCom extends PluginForHost {
         return false;
     }
 
-    private static final AtomicReference<String> appVersion = new AtomicReference<String>(null);
+    private static AtomicReference<String> appVersion = new AtomicReference<String>(null);
 
     public static final String getAppVersion(final Browser obr) throws PluginException, IOException {
         synchronized (appVersion) {

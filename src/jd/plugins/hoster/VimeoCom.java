@@ -99,7 +99,7 @@ public class VimeoCom extends PluginForHost {
         return -1;
     }
 
-    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     public Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
         final String vimeo_forced_referer = dl != null ? getForcedReferer(dl) : null;

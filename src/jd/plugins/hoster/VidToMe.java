@@ -90,7 +90,7 @@ public class VidToMe extends antiDDoSForHost {
     private static final boolean       ENABLE_HTML_FILESIZE_CHECK   = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
     // XfileShare Version 3.0.8.5

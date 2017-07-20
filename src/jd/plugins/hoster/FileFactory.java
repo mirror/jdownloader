@@ -70,7 +70,7 @@ public class FileFactory extends PluginForHost {
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     private static AtomicInteger       maxPrem                      = new AtomicInteger(1);
     private static AtomicInteger       maxFree                      = new AtomicInteger(1);
     private final String               NO_SLOT                      = ">All free download slots";
