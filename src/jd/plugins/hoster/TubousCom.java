@@ -17,9 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,101 +30,95 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anyfiles.pl" }, urls = { "https?://(?:video\\.)?anyfiles\\.pl/((?:videos|w)\\.jsp\\?id=\\d+|.*/video/\\d+)" })
-public class AnyfilesPl extends PluginForHost {
-    public AnyfilesPl(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubous.com" }, urls = { "https?://(?:www\\.)?tubous\\.com/videos/\\d+(?:/[a-z0-9\\-]+)?|https?://embeds\\.tubous\\.com/embed/\\d+" })
+public class TubousCom extends PluginForHost {
+    public TubousCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
+
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        link.setLinkID(vid);
-        link.setUrlDownload("http://video.anyfiles.pl/videos.jsp?id=" + vid);
-    }
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://video.anyfiles.pl/helper-pages/regulations.jsp";
+        return "https://www.tubous.com/pages/terms.html";
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        final String vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "coockie_restrict", "ImOfAge");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/Alert.jsp") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h4>Error</h4>")) {
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(.+)").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+)\\- Free Tubous Video</title>").getMatch(0);
+        if (filename == null) {
+            filename = url_filename;
+        }
+        dllink = this.br.getRegex("<video src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://video.anyfiles.pl/w.jsp?id=" + vid + "&width=620&height=349");
-        String url_pcs = br.getRegex("(/AutocompleteData\\?[^<>\"]+)").getMatch(0);
-        if (url_pcs == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        url_pcs = Encoding.htmlDecode(url_pcs);
-        this.br.getPage(url_pcs);
-        dllink = br.getRegex("(https?://[^<>\"\\']*?\\.mp4[^<>\"]*?)").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\\'(https?://[^<>\"\\']*?\\.mp4[^<>\"]*?)\\'").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Video offline or external url");
-        }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext;
+        if (!StringUtils.isEmpty(dllink)) {
+            ext = getFileNameExtensionFromString(dllink, default_extension);
+        } else {
+            ext = default_extension;
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            link.setFinalFileName(filename);
+            URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("directlink", dllink);
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else {
+            /* We cannot be sure whether we have the correct extension or not! */
+            link.setName(filename);
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -133,6 +127,10 @@ public class AnyfilesPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

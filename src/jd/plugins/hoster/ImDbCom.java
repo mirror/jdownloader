@@ -20,6 +20,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,19 +39,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/(?:video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|[A-Za-z]+/[a-z]{2}\\d+/mediaviewer/rm\\d+)" })
 public class ImDbCom extends PluginForHost {
-    private String              dllink        = null;
-    private boolean             server_issues = false;
-    private static final String IDREGEX       = "(vi\\d+)$";
-    private static final String TYPE_VIDEO    = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
-    private static final String TYPE_PHOTO    = "https?://(?:www\\.)?imdb\\.com/.+/mediaviewer/.+";
+    private String              dllink         = null;
+    private boolean             server_issues  = false;
+    private boolean             mature_content = false;
+    private static final String IDREGEX        = "(vi\\d+)$";
+    private static final String TYPE_VIDEO     = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
+    private static final String TYPE_PHOTO     = "https?://(?:www\\.)?imdb\\.com/.+/mediaviewer/.+";
 
     public ImDbCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -74,6 +75,7 @@ public class ImDbCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.dllink = null;
         this.server_issues = false;
+        this.mature_content = false;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         final String downloadURL = downloadLink.getDownloadURL();
@@ -156,41 +158,38 @@ public class ImDbCom extends PluginForHost {
             // br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) +
             // "/player?uff=3");
             br.getPage("http://www.imdb.com/video/user/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
-            final String json = this.br.getRegex("<script class=\"imdb\\-player\\-data\" type=\"text/imdb\\-video\\-player\\-json\">([^<>]+)<").getMatch(0);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "videoPlayerObject/video/videoInfoList");
-            String dllink_http = null;
-            String dllink_hls_master = null;
-            for (final Object videoo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoo;
-                final String dllink_temp = (String) entries.get("videoUrl");
-                if (dllink_temp == null || !dllink_temp.startsWith("http")) {
-                    continue;
+            this.mature_content = this.br.containsHTML("why=maturevideo");
+            if (!this.mature_content) {
+                final String json = this.br.getRegex("<script class=\"imdb\\-player\\-data\" type=\"text/imdb\\-video\\-player\\-json\">([^<>]+)<").getMatch(0);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "videoPlayerObject/video/videoInfoList");
+                String dllink_http = null;
+                String dllink_hls_master = null;
+                for (final Object videoo : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) videoo;
+                    final String dllink_temp = (String) entries.get("videoUrl");
+                    if (dllink_temp == null || !dllink_temp.startsWith("http")) {
+                        continue;
+                    }
+                    if (dllink_temp.contains(".m3u8")) {
+                        dllink_hls_master = dllink_temp;
+                    } else {
+                        dllink_http = dllink_temp;
+                    }
                 }
-                if (dllink_temp.contains(".m3u8")) {
-                    dllink_hls_master = dllink_temp;
+                /* 2017-07-18: Prefer hls as it contains higher qualities */
+                if (!StringUtils.isEmpty(dllink_hls_master)) {
+                    dllink = dllink_hls_master;
                 } else {
-                    dllink_http = dllink_temp;
+                    dllink = dllink_http;
                 }
-            }
-            /* 2017-07-18: Prefer hls as it contains higher qualities */
-            if (!StringUtils.isEmpty(dllink_hls_master)) {
-                dllink = dllink_hls_master;
-            } else {
-                dllink = dllink_http;
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = filename.trim();
-            if (dllink.contains(".mp4") || dllink.contains(".m3u8")) {
-                ending = ".mp4";
-            } else {
-                ending = ".flv";
-            }
+            ending = ".mp4";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ending);
         if (dllink != null && dllink.contains(".m3u8")) {
+            /* hls */
             /* Access HLS master */
             br.getPage(dllink);
             final List<HlsContainer> allQualities = HlsContainer.getHlsQualities(this.br);
@@ -226,7 +225,8 @@ public class ImDbCom extends PluginForHost {
                     downloadLink.setDownloadSize(estimatedSize);
                 }
             }
-        } else {
+        } else if (this.dllink != null) {
+            /* http */
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -246,6 +246,7 @@ public class ImDbCom extends PluginForHost {
     }
 
     /* Simple wrapper due to unexpected LinkedHashMap/HashMap results. */
+    @SuppressWarnings("unchecked")
     private Map<String, Object> getJsonMap(final Object jsono) {
         if (jsono instanceof Map) {
             return (Map<String, Object>) jsono;
@@ -254,11 +255,16 @@ public class ImDbCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (this.mature_content) {
+            /* Mature content --> Only viewable for registered users */
+            logger.info("Video with mature content --> Only downloadable for registered users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

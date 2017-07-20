@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,11 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
     public TwitterCom(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class TwitterCom extends PluginForHost {
     private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
     private static final String  TYPE_VIDEO                = "https?://amp\\.twimg\\.com/v/.+";
     private static final String  TYPE_VIDEO_VMAP           = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
-    private static final String  TYPE_VIDEO_EMBED          = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
+    public static final String   TYPE_VIDEO_EMBED          = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
     /* Connection stuff - don't allow chunks as we only download small pictures */
     private static final boolean FREE_RESUME               = true;
     private static final int     FREE_MAXCHUNKS            = 1;
@@ -180,7 +180,8 @@ public class TwitterCom extends PluginForHost {
                     if (filesize == 0) {
                         /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
                         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
-                        // Pass it to download core, it can handle this.
+                        // 2017-07-20: Pass it to download core, it can handle this.
+                        logger.info("Downloading empty file ...");
                     }
                     if (!con.getContentType().contains("html") && con.isOK() && con.getLongContentLength() >= 0) {
                         if (filename == null) {

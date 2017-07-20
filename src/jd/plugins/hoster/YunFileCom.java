@@ -72,10 +72,13 @@ public class YunFileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
+        String url = link.getDownloadURL();
         // to fix jiaz bad commit
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\.yunfile\\.com/", "yunfile.com/"));
+        url = url.replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\.yunfile\\.com/", "yunfile.com/");
         // standard
-        link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/", "yunfile.com/"));
+        url = url.replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/", "yunfile.com/");
+        url = url.replace("/file/down/", "/file/");
+        link.setUrlDownload(url);
     }
 
     @Override
@@ -162,17 +165,14 @@ public class YunFileCom extends PluginForHost {
             filename = br.getRegex("<title>(.*?)\\s*-\\s*(?:Yunfile|Dix3)[^<]*</title>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<h2 class=\"title\">文件下载&nbsp;&nbsp;([^<>\"]*?)</h2>").getMatch(0);
+            filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
         }
         filesize = br.getRegex("文件大小: <b>([^<>\"]*?)</b>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
         }
         if (filesize == null) {
-            filesize = br.getRegex("Downloading:&nbsp;<a></a>&nbsp;[^<>]+ - (\\d*(\\.\\d*)? (K|M|G)?B)[\t\n\r ]*?<").getMatch(0);
-        }
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"file_title\">\\&nbsp;Downloading:\\&nbsp;\\&nbsp;[^<>\"]*? \\- ([^<>\"]*?) </h2>").getMatch(0);
+            filesize = br.getRegex("id=\"file_show_filename\">[^<>]+</span> \\- ([^<>\"]+) <").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -224,10 +224,10 @@ public class YunFileCom extends PluginForHost {
             final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(https?://[a-z0-9]+\\." + DOMAINS + "/ls/([A-Za-z0-9\\-_]+)/)\"");
             userid = siteInfo.getMatch(1);
             if (userid == null) {
-                userid = br.getRegex("\\&userId=([A-Za-z0-9]+)").getMatch(0);
+                userid = br.getRegex("userId=([A-Za-z0-9]+)").getMatch(0);
             }
             if (fileid == null) {
-                fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)").getMatch(0);
+                fileid = br.getRegex("fileId=([A-Za-z0-9]+)").getMatch(0);
             }
             String freelink = this.br.getRegex("var url\\s*?=\\s*?\"(/file/down/[^<>\"\\']+\\.html)\";").getMatch(0);
             if (freelink == null && userid != null && fileid != null) {
@@ -278,8 +278,8 @@ public class YunFileCom extends PluginForHost {
         final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
         final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
-        logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
-        if (vid1 == null || vid == null || md5 == null || savecdnurl == null || finalurl_pt2 == null) {
+        logger.info("vid = " + vid + " vid1 = " + vid1 + " userid = " + userid + " action = " + action + " md5 = " + md5);
+        if (vid1 == null || vid == null || userid == null || md5 == null || savecdnurl == null || finalurl_pt2 == null) {
             if (br.containsHTML(CAPTCHAPART)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

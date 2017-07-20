@@ -16,6 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -33,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -132,6 +136,20 @@ public class TwitterCom extends PornEmbedParser {
                 dl.setName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
+            }
+        } else if (parameter.matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
+            final LinkedHashMap<String, Object> entries = getPlayerData(this.br);
+            final String sourcetype = (String) entries.get("source_type");
+            if (sourcetype.equals("consumer")) {
+                /* Video uploaded by user, hosted on Twitter --> Download via Twitter hosterplugin */
+                decryptedLinks.add(this.createDownloadlink(parameter));
+            } else {
+                /* E.g. embedded Vine.co video */
+                final String url_extern = (String) entries.get("player_url");
+                if (StringUtils.isEmpty(url_extern)) {
+                    return null;
+                }
+                decryptedLinks.add(this.createDownloadlink(url_extern));
             }
         } else if (parameter.matches(TYPE_USER_POST)) {
             /* Single Tweet */
@@ -320,6 +338,17 @@ public class TwitterCom extends PornEmbedParser {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    public static LinkedHashMap<String, Object> getPlayerData(final Browser br) {
+        LinkedHashMap<String, Object> entries = null;
+        try {
+            String json_source = br.getRegex("<div id=\"playerContainer\"[^<>]*?data\\-config=\"([^<>\"]+)\"").getMatch(0);
+            json_source = Encoding.htmlDecode(json_source);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+        } catch (final Throwable e) {
+        }
+        return entries;
     }
 
     protected void getPage(final Browser br, final String url) throws Exception {
