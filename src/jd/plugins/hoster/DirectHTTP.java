@@ -519,14 +519,6 @@ public class DirectHTTP extends antiDDoSForHost {
                 return null;
             }
 
-            protected String getValueOrEmpty(final String value) {
-                if (value != null) {
-                    return value;
-                } else {
-                    return "";
-                }
-            }
-
             @Override
             public boolean retry(Authentication authentication, Browser browser, Request request) {
                 if (authentication != null && containsAuthentication(authentication) && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
@@ -540,7 +532,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         AuthenticationController.getInstance().add(auth);
                     } else {
                         try {
-                            final String newURL = URLHelper.createURL(url.getProtocol(), getValueOrEmpty(authentication.getUsername()) + ":" + getValueOrEmpty(authentication.getPassword()), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
+                            final String newURL = URLHelper.createURL(url.getProtocol(), StringUtils.valueOrEmpty(authentication.getUsername()) + ":" + StringUtils.valueOrEmpty(authentication.getPassword()), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
                             downloadLink.setUrlDownload(newURL);
                         } catch (MalformedURLException e) {
                             getLogger().log(e);

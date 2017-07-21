@@ -72,6 +72,7 @@ import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -1024,7 +1025,14 @@ public class LinkCrawler {
                                     // relative
                                     // path.
                                     final Request request = br.getRequest();
-                                    final String brURL = request.getUrl();
+                                    final String brURL;
+                                    if (request.getAuthentication() == null) {
+                                        brURL = request.getUrl();
+                                    } else {
+                                        final URL url = request.getURL();
+                                        final Authentication authentication = request.getAuthentication();
+                                        brURL = URLHelper.createURL(url.getProtocol(), StringUtils.valueOrEmpty(authentication.getUsername()) + ":" + StringUtils.valueOrEmpty(authentication.getPassword()), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
+                                    }
                                     final List<CrawledLink> possibleCryptedLinks = find(generation, brURL, null, false, false);
                                     if (possibleCryptedLinks != null) {
                                         final boolean singleDest = possibleCryptedLinks.size() == 1;
