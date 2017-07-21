@@ -31,14 +31,16 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.HTACCESSController;
+import jd.http.Authentication;
+import jd.http.AuthenticationFactory;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.DefaultAuthenticanFactory;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.nutils.SimpleFTP;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -54,7 +56,12 @@ import jd.utils.locale.JDL;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -240,11 +247,6 @@ public class DirectHTTP extends antiDDoSForHost {
         return "";
     }
 
-    private String[] getBasicAuth(final DownloadLink link) throws PluginException {
-        org.jdownloader.auth.Login logins = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), link);
-        return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -267,18 +269,15 @@ public class DirectHTTP extends antiDDoSForHost {
         if (this.requestFileInformation(downloadLink) == AvailableStatus.UNCHECKABLE) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         }
-        final String auth = this.br.getHeaders().get("Authorization");
         /*
          * replace with br.setCurrentURL(null); in future (after 0.9)
          */
         final Cookies cookies = br.getCookies(getDownloadURL(downloadLink));
-        this.br = new Browser();/* needed to clean referer */
+        br.setCurrentURL(null);
+        br.setRequest(null);
         br.setCookies(getDownloadURL(downloadLink), cookies);
         this.br.getHeaders().put("Accept-Encoding", "identity");
         br.setDefaultSSLTrustALL(isSSLTrustALL());
-        if (auth != null) {
-            this.br.getHeaders().put("Authorization", auth);
-        }
         /* workaround to clear referer */
         this.br.setFollowRedirects(true);
         this.br.setDebug(true);
@@ -439,7 +438,7 @@ public class DirectHTTP extends antiDDoSForHost {
                              */
                             urlConnection.disconnect();
                             urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
-                        } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
+                        } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() != 401 && urlConnection.getResponseCode() >= 300) {
                             // no head support?
                             urlConnection.disconnect();
                             urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
@@ -476,11 +475,11 @@ public class DirectHTTP extends antiDDoSForHost {
     private boolean preferHeadRequest = true;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         return requestFileInformation(downloadLink, 0);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws PluginException {
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -494,38 +493,83 @@ public class DirectHTTP extends antiDDoSForHost {
         this.setBrowserExclusive();
         this.br.setDefaultSSLTrustALL(isSSLTrustALL());
         this.br.getHeaders().put("Accept-Encoding", "identity");
-        final String authinURL = new Regex(getDownloadURL(downloadLink), "https?://(.+)@.*?($|/)").getMatch(0);
-        String authSaved = null;
-        String authProperty = null;
-        final ArrayList<String> pwTries = new ArrayList<String>();
-        final String preAuth = downloadLink.getStringProperty("auth", null);
-        if (preAuth != null) {
-            pwTries.add(preAuth);
+        final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
+        final URL url = new URL(getDownloadURL(downloadLink));
+        if (url.getUserInfo() != null) {
+            authenticationFactories.add(new DefaultAuthenticanFactory());
         }
-        pwTries.add("");
-        if (authinURL != null) {
-            /* take auth from url */
-            pwTries.add("Basic " + Encoding.Base64Encode(authinURL));
-        }
-        if ((authProperty = downloadLink.getStringProperty("pass", null)) != null) {
-            /* convert property to auth */
-            pwTries.add("Basic " + Encoding.Base64Encode(authProperty));
-        }
-        for (org.jdownloader.auth.Login l : org.jdownloader.auth.AuthenticationController.getInstance().getSortedLoginsList(getDownloadURL(downloadLink))) {
-            pwTries.add(l.toBasicAuth());
-        }
+        authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(url, null));
+        authenticationFactories.add(new DefaultAuthenticanFactory() {
+            protected Authentication remember = null;
+
+            protected Authentication ask(Browser browser, Request request) {
+                try {
+                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), getRealm(request), downloadLink);
+                    if (login != null) {
+                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), login.getUsername(), login.getPassword()).buildAuthentication(browser, request);
+                        addAuthentication(ret);
+                        if (login.isRememberSelected()) {
+                            remember = ret;
+                        }
+                        return ret;
+                    }
+                } catch (PluginException e) {
+                    getLogger().log(e);
+                }
+                return null;
+            }
+
+            protected String getValueOrEmpty(final String value) {
+                if (value != null) {
+                    return value;
+                } else {
+                    return "";
+                }
+            }
+
+            @Override
+            public boolean retry(Authentication authentication, Browser browser, Request request) {
+                if (authentication != null && containsAuthentication(authentication) && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
+                    if (remember == authentication) {
+                        final AuthenticationInfo auth = new AuthenticationInfo();
+                        auth.setRealm(authentication.getRealm());
+                        auth.setUsername(authentication.getUsername());
+                        auth.setPassword(authentication.getPassword());
+                        auth.setHostmask(authentication.getHost());
+                        auth.setType(Type.HTTP);
+                        AuthenticationController.getInstance().add(auth);
+                    } else {
+                        try {
+                            final String newURL = URLHelper.createURL(url.getProtocol(), getValueOrEmpty(authentication.getUsername()) + ":" + getValueOrEmpty(authentication.getPassword()), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
+                            downloadLink.setUrlDownload(newURL);
+                        } catch (MalformedURLException e) {
+                            getLogger().log(e);
+                        }
+                    }
+                }
+                return super.retry(authentication, browser, request);
+            }
+
+            @Override
+            public Authentication buildAuthentication(Browser browser, Request request) {
+                if (request.getAuthentication() == null && requiresAuthentication(request)) {
+                    return ask(browser, request);
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            protected Authentication buildDigestAuthentication(Browser browser, Request request, String realm) {
+                return ask(browser, request);
+            }
+        });
         this.br.setFollowRedirects(true);
         URLConnectionAdapter urlConnection = null;
         try {
             String basicauth = null;
-            for (final String pw : pwTries) {
-                if (pw != null && pw.length() > 0) {
-                    basicauth = pw;
-                    this.br.getHeaders().put("Authorization", pw);
-                } else {
-                    basicauth = null;
-                    this.br.getHeaders().remove("Authorization");
-                }
+            for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
+                br.setAuthenticationFactory(authenticationFactory);
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -552,25 +596,9 @@ public class DirectHTTP extends antiDDoSForHost {
                     }
                     urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
                     br.followConnection();
-                    invalidateLogins(pw, downloadLink);
                 } else {
-                    validateLogins(downloadLink, pw);
                     break;
                 }
-            }
-            if (urlConnection.getResponseCode() == 401) {
-                final String[] basicauthInfo = this.getBasicAuth(downloadLink);
-                if (basicauthInfo == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
-                }
-                basicauth = basicauthInfo[0];
-                this.br.getHeaders().put("Authorization", basicauth);
-                urlConnection = this.prepareConnection(this.br, downloadLink);
-                if (urlConnection.getResponseCode() == 401) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
-                }
-                HTACCESSController.getInstance().addValidatedAuthentication(getDownloadURL(downloadLink), basicauthInfo[1], basicauthInfo[2]);
-                validateLogins(downloadLink, basicauthInfo[1], basicauthInfo[2]);
             }
             if (urlConnection.getResponseCode() == 503 || urlConnection.getResponseCode() == 504) {
                 return AvailableStatus.UNCHECKABLE;
@@ -775,27 +803,6 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     private final String IOEXCEPTIONS = "IOEXCEPTIONS";
-
-    private void validateLogins(DownloadLink downloadLink, String basicAuth) {
-        try {
-            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicAuth), getDownloadURL(downloadLink));
-        } catch (Throwable e) {
-        }
-    }
-
-    private void validateLogins(DownloadLink downloadLink, String username, String password) {
-        try {
-            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(username, password), getDownloadURL(downloadLink));
-        } catch (Throwable e) {
-        }
-    }
-
-    private void invalidateLogins(String basicAuth, DownloadLink downloadLink) {
-        try {
-            org.jdownloader.auth.AuthenticationController.getInstance().invalidate(new org.jdownloader.auth.BasicAuth(basicAuth), getDownloadURL(downloadLink));
-        } catch (Throwable e) {
-        }
-    }
 
     /**
      * update this map to your needs

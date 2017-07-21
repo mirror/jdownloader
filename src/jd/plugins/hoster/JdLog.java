@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedReader;
@@ -21,12 +20,17 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
-import jd.controlling.HTACCESSController;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.http.Authentication;
+import jd.http.AuthenticationFactory;
+import jd.http.Browser;
+import jd.http.DefaultAuthenticanFactory;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,6 +41,11 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
 
 /**
  * alternative log downloader
@@ -44,13 +53,8 @@ import org.appwork.utils.StringUtils;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jdlog" }, urls = { "jdlog://(\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jdlog" }, urls = { "jdlog://(\\d+)" })
 public class JdLog extends PluginForHost {
-
-    private String  dllink     = null;
-    private String  uid        = null;
-    private boolean isNewLogin = false;
-
     @Override
     public String getAGBLink() {
         return "";
@@ -69,7 +73,7 @@ public class JdLog extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+        final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         downloadLink.setFinalFileName(uid + ".log");
         return AvailableStatus.TRUE;
     }
@@ -77,22 +81,73 @@ public class JdLog extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dllink = "http://update3.jdownloader.org/jdserv/UploadInterface/logunsorted?" + uid;
-        final String[] basicauthInfo = this.getBasicAuth(downloadLink);
-        if (basicauthInfo == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
+        final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+        final String url = "http://update3.jdownloader.org/jdserv/UploadInterface/logunsorted?" + uid;
+        final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().getSortedAuthenticationFactories(URLHelper.createURL(url), null);
+        authenticationFactories.add(new DefaultAuthenticanFactory() {
+            protected Authentication remember = null;
+
+            protected Authentication ask(Browser browser, Request request) {
+                try {
+                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), getRealm(request), downloadLink);
+                    if (login != null) {
+                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), login.getUsername(), login.getPassword()).buildAuthentication(browser, request);
+                        addAuthentication(ret);
+                        if (login.isRememberSelected()) {
+                            remember = ret;
+                        }
+                        return ret;
+                    }
+                } catch (PluginException e) {
+                    getLogger().log(e);
+                }
+                return null;
+            }
+
+            @Override
+            public boolean retry(Authentication authentication, Browser browser, Request request) {
+                if (authentication != null && containsAuthentication(authentication) && remember == authentication && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
+                    final AuthenticationInfo auth = new AuthenticationInfo();
+                    auth.setRealm(authentication.getRealm());
+                    auth.setUsername(authentication.getUsername());
+                    auth.setPassword(authentication.getPassword());
+                    auth.setHostmask(authentication.getHost());
+                    auth.setType(Type.HTTP);
+                    AuthenticationController.getInstance().add(auth);
+                }
+                return super.retry(authentication, browser, request);
+            }
+
+            @Override
+            public Authentication buildAuthentication(Browser browser, Request request) {
+                if (request.getAuthentication() == null && requiresAuthentication(request)) {
+                    return ask(browser, request);
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            protected Authentication buildDigestAuthentication(Browser browser, Request request, String realm) {
+                return ask(browser, request);
+            }
+        });
+        for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
+            br.setAuthenticationFactory(authenticationFactory);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
+            if (dl.getConnection().getResponseCode() == 401) {
+                dl.getConnection().disconnect();
+            } else {
+                break;
+            }
         }
-        final String basicauth = basicauthInfo[0];
-        br.getHeaders().put("Authorization", basicauth);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl == null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
+        }
         if (dl.getConnection().getResponseCode() == 401) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
         }
-        if (isNewLogin) {
-            HTACCESSController.getInstance().addValidatedAuthentication(dllink, basicauthInfo[1], basicauthInfo[2]);
-        }
-        org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicauthInfo[1], basicauthInfo[2]), dllink);
         dl.startDownload();
         // the following determine is its empty container.
         final File file = new File(dl.getDownloadable().getFileOutput());
@@ -106,7 +161,6 @@ public class JdLog extends PluginForHost {
                     downloadLink.setProperty("offlineByRegexConfirmation", true);
                     // delete method
                     downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
                         @Override
                         public void interrupt() {
                         }
@@ -129,7 +183,6 @@ public class JdLog extends PluginForHost {
             } else if (dlsize < 125) {
                 // delete method
                 downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
                     @Override
                     public void interrupt() {
                     }
@@ -152,23 +205,12 @@ public class JdLog extends PluginForHost {
         }
     }
 
-    private String[] getBasicAuth(final DownloadLink link) throws PluginException {
-        org.jdownloader.auth.Login logins = org.jdownloader.auth.AuthenticationController.getInstance().getBestLogin(dllink);
-        if (logins == null) {
-            logins = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), link);
-            isNewLogin = true;
-        }
-        return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
-    }
-
     private String parseLocalFile(final File file) {
         final BufferedReader f;
         final StringBuffer buffer = new StringBuffer();
         try {
             f = new BufferedReader(new FileReader(file));
-
             String line;
-
             while ((line = f.readLine()) != null) {
                 buffer.append(line + "\r\n");
             }
@@ -197,5 +239,4 @@ public class JdLog extends PluginForHost {
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
     }
-
 }

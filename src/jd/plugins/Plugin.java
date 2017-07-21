@@ -64,6 +64,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.auth.Login;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -381,7 +382,7 @@ public abstract class Plugin implements ActionListener {
      * @return
      * @throws PluginException
      */
-    protected Login requestLogins(String message, DownloadLink link) throws PluginException {
+    protected Login requestLogins(String message, String realm, DownloadLink link) throws PluginException {
         if (message == null) {
             message = _JDT.T.Plugin_requestLogins_message();
         }
@@ -392,15 +393,29 @@ public abstract class Plugin implements ActionListener {
             link.addPluginProgress(prg);
             final AskUsernameAndPasswordDialogInterface handle = UIOManager.I().show(AskUsernameAndPasswordDialogInterface.class, new AskForUserAndPasswordDialog(message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
-                String password = handle.getPassword();
+                final String password = handle.getPassword();
                 if (StringUtils.isEmpty(password)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
                 }
-                String username = handle.getUsername();
+                final String username = handle.getUsername();
                 if (StringUtils.isEmpty(username)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongusername());
                 }
-                return new Login(username, password);
+                if (StringUtils.startsWithCaseInsensitive(link.getDownloadURL(), "ftp")) {
+                    return new Login(Type.FTP, realm, link.getHost(), username, password) {
+                        @Override
+                        public boolean isRememberSelected() {
+                            return handle.isRememberSelected();
+                        }
+                    };
+                } else {
+                    return new Login(Type.HTTP, realm, link.getHost(), username, password) {
+                        @Override
+                        public boolean isRememberSelected() {
+                            return handle.isRememberSelected();
+                        }
+                    };
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
             }

@@ -1,11 +1,13 @@
 package org.jdownloader.gui.dialog;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -21,6 +23,7 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -32,6 +35,8 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 public class AskForUserAndPasswordDialog extends InputDialog implements AskUsernameAndPasswordDialogInterface {
     private final DownloadLink downloadLink;
     private ExtPasswordField   password;
+    private JCheckBox          save;
+    private Color              titleColor;
 
     public AskForUserAndPasswordDialog(String message, DownloadLink link) {
         super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_HIDE_ICON, _GUI.T.AskForUserAndPasswordDialog_AskForUserAndPasswordDialog_title_(), message, null, null, _GUI.T.lit_continue(), null);
@@ -42,13 +47,13 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
     @Override
     public JComponent layoutDialogContent() {
         final JPanel p = new MigPanel("ins 0,wrap 1", "[]", "[][]");
+        titleColor = Color.DARK_GRAY;
         if (!StringUtils.isEmpty(message)) {
             textField = new JTextPane() {
                 private static final long serialVersionUID = 1L;
 
                 @Override
                 public boolean getScrollableTracksViewportWidth() {
-
                     return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
                 }
 
@@ -56,24 +61,18 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
                     return true;
                 }
             };
-
             textField.setContentType("text/plain");
-
             textField.setText(message);
             textField.setEditable(false);
             textField.setBackground(null);
             textField.setOpaque(false);
             textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
             textField.setCaretPosition(0);
-
             p.add(textField, "pushx, growx");
-
             // inout dialog can become too large(height) if we do not limit the
             // prefered textFIled size here.
             textField.setPreferredSize(textField.getPreferredSize());
-
         }
-
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getView().getDisplayName()));
         final String packagename = getPackageName();
@@ -87,21 +86,21 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
         ret.setHorizontalAlignment(SwingConstants.LEFT);
         ret.setIcon(di.getFavIcon());
         p.add(ret);
-
         input = getSmallInputComponent();
         // this.input.setBorder(BorderFactory.createEtchedBorder());
         input.setText(defaultMessage);
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_username())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
-
         password = new ExtPasswordField();
         password.addKeyListener(this);
         password.addMouseListener(this);
+        save = new JCheckBox();
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_password())), "split 2,sizegroup left,alignx left");
         p.add(password, "w 450,pushx,growx");
+        p.add(addSettingName(_AWU.T.AccountNew_layoutDialogContent_save()));
+        p.add(save, "sizegroup g1");
         if (StringUtils.isNotEmpty(packagename)) {
             getDialog().addWindowFocusListener(new WindowFocusListener() {
-
                 @Override
                 public void windowLostFocus(WindowEvent e) {
                 }
@@ -117,6 +116,12 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
         return p;
     }
 
+    private JLabel addSettingName(final String name) {
+        final JLabel lbl = new JLabel(name);
+        lbl.setForeground(titleColor);
+        return lbl;
+    }
+
     private Component leftLabel(String name) {
         JLabel ret = new JLabel(name);
         ret.setHorizontalAlignment(SwingConstants.LEFT);
@@ -125,7 +130,6 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
 
     @Override
     public ModalityType getModalityType() {
-
         return ModalityType.MODELESS;
     }
 
@@ -171,5 +175,19 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
                 return password.getText();
             }
         }.getReturnValue();
+    }
+
+    @Override
+    public boolean isRememberSelected() {
+        if ((getReturnmask() & (Dialog.RETURN_OK | Dialog.RETURN_TIMEOUT)) == 0) {
+            return false;
+        }
+        // return new LoginData(accid.getText(), new String(pass.getPassword()), );
+        return new EDTHelper<Boolean>() {
+            @Override
+            public Boolean edtRun() {
+                return save.isSelected();
+            }
+        }.getReturnValue() == Boolean.TRUE;
     }
 }

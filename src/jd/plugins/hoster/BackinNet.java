@@ -75,23 +75,23 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 public class BackinNet extends antiDDoSForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://backin.net";
+    private final String         COOKIE_HOST                  = "http://backin.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(backin\\.net)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|dw/dw\\.php\\?[^\"]+)";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = false;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private final String         DOMAINS                      = "(backin\\.net)";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|dw/dw\\.php\\?[^\"]+)";
+    private final boolean        supportsHTTPS                = false;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        useVidEmbed                  = false;
+    private final boolean        useAltEmbed                  = false;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000l;
+    private final boolean        waitTimeSkipableReCaptcha    = false;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
@@ -863,54 +863,12 @@ public class BackinNet extends antiDDoSForHost {
                 ai.setStatus("Registered (free) User");
                 account.setProperty("totalMaxSim", 20);
             } else {
-                long expire = 0, expireD = 0, expireS = 0;
-                final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-                if (!inValidate(expireDay)) {
-                    expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-                }
-                if (inValidate(expireDay) || useAltExpire) {
-                    // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
-                    getPage("/?op=payments");
-                    String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
-                    if (!inValidate(expireSecond)) {
-                        String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                        String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                        String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                        String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                        String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                        long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                        if (!inValidate(tmpYears)) {
-                            years = Integer.parseInt(tmpYears);
-                        }
-                        if (!inValidate(tmpdays)) {
-                            days = Integer.parseInt(tmpdays);
-                        }
-                        if (!inValidate(tmphrs)) {
-                            hours = Integer.parseInt(tmphrs);
-                        }
-                        if (!inValidate(tmpmin)) {
-                            minutes = Integer.parseInt(tmpmin);
-                        }
-                        if (!inValidate(tmpsec)) {
-                            seconds = Integer.parseInt(tmpsec);
-                        }
-                        if (days > 0 && hours > 0 && minutes > 0 && seconds > 0) {
-                            expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                        }
-                    }
-                    if (expireD == 0 && expireS == 0) {
-                        ai.setExpired(true);
-                        account.setValid(false);
-                        return ai;
-                    }
-                }
-                if (expireS != 0) {
-                    expire = expireS;
-                } else {
-                    expire = expireD;
-                }
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("http://fast-api.backin.net/account_info.php?key=" + Encoding.Base64Decode("amRzb2Z0d2FyZTQ5NjQ=") + "&login=" + Encoding.urlEncode(account.getUser()));
+                final String expireDay = brc.getRegex("usr_premium_expire\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 account.setProperty("totalMaxSim", 20);
-                ai.setValidUntil(expire);
+                final long validUntil = TimeFormatter.getMilliSeconds(expireDay, "yyyy'-'MM'-'dd HH:mm:ss", Locale.ENGLISH);
+                ai.setValidUntil(validUntil);
                 ai.setStatus("Premium Account");
             }
         } else {

@@ -5,7 +5,6 @@ import org.appwork.uio.Out;
 import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition;
 
 public interface AskUsernameAndPasswordDialogInterface extends OKCancelCloseUserIODefinition {
-
     @Out
     public String getMessage();
 
@@ -27,4 +26,7 @@ public interface AskUsernameAndPasswordDialogInterface extends OKCancelCloseUser
 
     @In
     public String getPassword();
+
+    @In
+    public boolean isRememberSelected();
 }

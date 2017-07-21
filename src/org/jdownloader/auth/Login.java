@@ -1,37 +1,46 @@
 package org.jdownloader.auth;
 
+import org.jdownloader.auth.AuthenticationInfo.Type;
 
 public class Login {
-    private String username;
+    protected final Type   type;
+    protected final String host;
+    protected final String realm;
+    protected final String username;
+    protected final String password;
 
-    public Login(String username, String password) {
-        this.username = username;
-        this.password = password;
+    public String getRealm() {
+        return realm;
     }
 
-    public Login() {
+    public Login(Type type, String host, String realm, String username, String password) {
+        this.type = type;
+        this.host = host;
+        this.realm = realm;
+        this.username = username;
+        this.password = password;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public Type getType() {
+        return type;
     }
 
-    private String password;
-
-    public String toBasicAuth() {
-        return new BasicAuth(getUsername(), getPassword()).toAuthString();
+    public void validate() {
     }
 
+    public boolean isRememberSelected() {
+        return true;
+    }
+
+    public String getHost() {
+        return host;
+    }
 }

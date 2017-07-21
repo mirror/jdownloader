@@ -1,12 +1,17 @@
 package org.jdownloader.auth;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.http.Authentication;
+import jd.http.AuthenticationFactory;
 import jd.http.Browser;
+import jd.http.DefaultAuthenticanFactory;
+import jd.http.Request;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -15,7 +20,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
-
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.logging.LogController;
@@ -33,7 +37,7 @@ public class AuthenticationController {
     }
 
     private final AuthenticationControllerSettings         config;
-    private final CopyOnWriteArrayList<AuthenticationInfo> list;
+    private final CopyOnWriteArrayList<AuthenticationInfo> authenticationInfos;
     private final ChangeEventSender                        eventSender = new ChangeEventSender();
     private final LogSource                                logger;
 
@@ -44,15 +48,16 @@ public class AuthenticationController {
     private AuthenticationController() {
         logger = LogController.getInstance().getLogger(AuthenticationController.class.getName());
         config = JsonConfig.create(AuthenticationControllerSettings.class);
-        CopyOnWriteArrayList<AuthenticationInfo> list = cleanup(config.getList());
+        final CopyOnWriteArrayList<AuthenticationInfo> list = cleanup(config.getList());
         if (list == null) {
-            list = new CopyOnWriteArrayList<AuthenticationInfo>();
+            this.authenticationInfos = new CopyOnWriteArrayList<AuthenticationInfo>();
+        } else {
+            this.authenticationInfos = list;
         }
-        this.list = list;
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                config.setList(AuthenticationController.this.list);
+                config.setList(AuthenticationController.this.authenticationInfos);
             }
 
             @Override
@@ -72,71 +77,110 @@ public class AuthenticationController {
     }
 
     public java.util.List<AuthenticationInfo> list() {
-        return list;
+        return authenticationInfos;
     }
 
     /* remove invalid entries...without hostmask or without logins */
-    private CopyOnWriteArrayList<AuthenticationInfo> cleanup(List<AuthenticationInfo> input) {
-        if (input == null || input.size() == 0) {
+    private CopyOnWriteArrayList<AuthenticationInfo> cleanup(List<AuthenticationInfo> infos) {
+        if (infos == null || infos.size() == 0) {
             return null;
         }
-        CopyOnWriteArrayList<AuthenticationInfo> ret = new CopyOnWriteArrayList<AuthenticationInfo>();
-        for (AuthenticationInfo item : input) {
-            if (StringUtils.isEmpty(item.getHostmask())) {
+        final CopyOnWriteArrayList<AuthenticationInfo> ret = new CopyOnWriteArrayList<AuthenticationInfo>();
+        for (final AuthenticationInfo info : infos) {
+            if (StringUtils.isEmpty(info.getHostmask())) {
                 continue;
             }
-            if (StringUtils.isEmpty(item.getPassword()) && StringUtils.isEmpty(item.getPassword())) {
+            if (info.getType() == null) {
                 continue;
             }
-            ret.add(item);
+            if (StringUtils.isAllEmpty(info.getPassword(), info.getPassword())) {
+                continue;
+            }
+            ret.add(info);
         }
         return ret;
     }
 
-    public void add(AuthenticationInfo a) {
-        if (a != null && list.addIfAbsent(a)) {
-            config.setList(list);
+    public boolean add(AuthenticationInfo a) {
+        if (a != null && authenticationInfos.addIfAbsent(a)) {
+            config.setList(authenticationInfos);
             eventSender.fireEvent(new ChangeEvent(this));
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public void remove(AuthenticationInfo a) {
-        if (a != null && list.remove(a)) {
-            config.setList(list);
+    public boolean remove(AuthenticationInfo a) {
+        if (a != null && authenticationInfos.remove(a)) {
+            config.setList(authenticationInfos);
             eventSender.fireEvent(new ChangeEvent(this));
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public void remove(java.util.List<AuthenticationInfo> selectedObjects) {
-        if (selectedObjects != null && list.removeAll(selectedObjects)) {
-            config.setList(list);
+    public boolean remove(java.util.List<AuthenticationInfo> selectedObjects) {
+        if (selectedObjects != null && authenticationInfos.removeAll(selectedObjects)) {
+            config.setList(authenticationInfos);
             eventSender.fireEvent(new ChangeEvent(this));
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public List<Login> getSortedLoginsList(String url) {
-        if (StringUtils.isEmpty(url)) {
+    public Login getBestLogin(URL url, final String realm) {
+        final List<Login> ret = getSortedLoginsList(url, realm);
+        if (ret != null && ret.size() > 0) {
+            return ret.get(0);
+        } else {
             return null;
         }
-        AuthenticationInfo.Type type = null;
-        if (url.startsWith("ftp")) {
+    }
+
+    public List<AuthenticationFactory> getSortedAuthenticationFactories(final URL url, final String realm) {
+        final List<AuthenticationFactory> ret = new ArrayList<AuthenticationFactory>();
+        final List<Login> logins = getSortedLoginsList(url, realm);
+        if (logins != null) {
+            for (final Login login : logins) {
+                ret.add(new DefaultAuthenticanFactory(login.getHost(), login.getRealm(), login.getUsername(), login.getPassword()) {
+                    @Override
+                    public boolean retry(Authentication authentication, Browser browser, Request request) {
+                        if (containsAuthentication(authentication) && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
+                            login.validate();
+                        }
+                        return super.retry(authentication, browser, request);
+                    };
+                });
+            }
+        }
+        return ret;
+    }
+
+    public List<Login> getSortedLoginsList(final URL url, final String realm) {
+        final AuthenticationInfo.Type type;
+        if (StringUtils.equalsIgnoreCase(url.getProtocol(), "ftp")) {
             type = Type.FTP;
-        } else if (url.startsWith("http")) {
+        } else if (StringUtils.equalsIgnoreCase(url.getProtocol(), "https") || StringUtils.equalsIgnoreCase(url.getProtocol(), "http")) {
             type = Type.HTTP;
         } else {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
             return null;
         }
-        final ArrayList<AuthenticationInfo> possibleInfos = new ArrayList<AuthenticationInfo>();
-
-        String urlHost = Browser.getHost(url, true);
-        for (AuthenticationInfo info : list) {
+        final List<AuthenticationInfo> selection = new ArrayList<AuthenticationInfo>();
+        final String urlHost = Browser.getHost(url, true);
+        for (final AuthenticationInfo info : authenticationInfos) {
             if (!info.isEnabled()) {
+                continue;
+            }
+            if (realm != null && !StringUtils.equalsIgnoreCase(realm, info.getRealm())) {
                 continue;
             }
             final String authHost = info.getHostmask();
             if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {
-                boolean contains = false;
+                final boolean contains;
                 if (authHost.length() > urlHost.length()) {
                     /* hostMask of AuthenticationInfo is longer */
                     contains = authHost.contains(urlHost);
@@ -145,17 +189,27 @@ public class AuthenticationController {
                     contains = urlHost.contains(authHost);
                 }
                 if (contains) {
-                    possibleInfos.add(info);
-
+                    selection.add(info);
                 }
             }
         }
         try {
-            Collections.sort(possibleInfos, new Comparator<AuthenticationInfo>() {
+            Collections.sort(selection, new Comparator<AuthenticationInfo>() {
+                private String getRealm(AuthenticationInfo ai) {
+                    final String realm = ai.getRealm();
+                    if (realm == null) {
+                        return "";
+                    } else {
+                        return realm;
+                    }
+                }
 
                 @Override
                 public int compare(AuthenticationInfo o1, AuthenticationInfo o2) {
-                    int ret = Integer.compare(o2.getHostmask().length(), o1.getHostmask().length());
+                    int ret = Integer.compare(getRealm(o2).length(), getRealm(o1).length());
+                    if (ret == 0) {
+                        ret = Integer.compare(o2.getHostmask().length(), o1.getHostmask().length());
+                    }
                     if (ret == 0) {
                         ret = Long.compare(o2.getLastValidated(), o1.getLastValidated());
                     }
@@ -165,30 +219,22 @@ public class AuthenticationController {
                     return ret;
                 }
             });
-
         } catch (Throwable e) {
             logger.log(e);
         }
-        final ArrayList<Login> ret = new ArrayList<Login>();
-        for (AuthenticationInfo info : possibleInfos) {
-            ret.add(new Login(info.getUsername(), info.getPassword()));
+        final List<Login> ret = new ArrayList<Login>();
+        for (final AuthenticationInfo info : selection) {
+            ret.add(new Login(info.getType(), info.getHostmask(), info.getRealm(), info.getUsername(), info.getPassword()) {
+                @Override
+                public void validate() {
+                    info.setLastValidated(System.currentTimeMillis());
+                };
+            });
         }
         return ret;
     }
 
-    public Login getBestLogin(String url) {
-        List<Login> ret = getSortedLoginsList(url);
-        if (ret != null && ret.size() > 0) {
-            return ret.get(0);
-        }
-        return null;
-    }
-
-    public void invalidate(Login login, String url) {
-    }
-
     public void validate(Login login, String url) {
-
         if (StringUtils.isEmpty(url)) {
             return;
         }
@@ -198,12 +244,11 @@ public class AuthenticationController {
         } else if (url.startsWith("http")) {
             type = Type.HTTP;
         } else {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
             return;
         }
-
         String urlHost = Browser.getHost(url, true);
-        for (AuthenticationInfo info : list) {
+        for (AuthenticationInfo info : authenticationInfos) {
             if (!info.isEnabled()) {
                 continue;
             }
@@ -220,12 +265,9 @@ public class AuthenticationController {
                 if (contains) {
                     if (StringUtils.equals(info.getUsername(), login.getUsername()) && StringUtils.equals(info.getPassword(), login.getPassword())) {
                         info.setLastValidated(System.currentTimeMillis());
-
                     }
-
                 }
             }
         }
-
     }
 }

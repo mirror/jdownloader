@@ -3,6 +3,7 @@ package org.jdownloader.auth;
 import java.util.Locale;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class AuthenticationInfo implements Storable {
@@ -29,6 +30,23 @@ public class AuthenticationInfo implements Storable {
 
     public long getCreated() {
         return created;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (obj == null || !(obj instanceof AuthenticationInfo)) {
+            return false;
+        } else {
+            final AuthenticationInfo o = (AuthenticationInfo) obj;
+            return getType() == o.getType() && StringUtils.equals(getUsername(), o.getUsername()) && StringUtils.equals(getPassword(), o.getPassword()) && StringUtils.equals(getRealm(), o.getRealm()) && StringUtils.equals(getHostmask(), o.getHostmask());
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return AuthenticationInfo.class.hashCode();
     }
 
     public void setCreated(long created) {
@@ -94,4 +112,13 @@ public class AuthenticationInfo implements Storable {
     private String password;
     private Type   type = Type.HTTP;
     private String hostmask;
+    private String realm;
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public void setRealm(String realm) {
+        this.realm = realm;
+    }
 }
