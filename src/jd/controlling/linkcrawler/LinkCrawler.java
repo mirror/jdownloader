@@ -31,14 +31,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.controlling.HTACCESSController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Authentication;
+import jd.http.AuthenticationFactory;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -56,6 +58,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
@@ -72,9 +75,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.BasicAuth;
-import org.jdownloader.auth.InvalidBasicAuthFormatException;
-import org.jdownloader.auth.Login;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.gui.IconKey;
@@ -783,75 +785,71 @@ public class LinkCrawler {
         loopAvoid.add(request.getUrl());
         URLConnectionAdapter connection = null;
         for (int i = 0; i < 10; i++) {
-            final ArrayList<String> basicAuths = new ArrayList<String>();
-            final String basicAuthinURL = new Regex(request.getUrl(), "https?://(.+)@.*?($|/)").getMatch(0);
-            if (basicAuthinURL != null) {
-                basicAuths.add("Basic " + Encoding.Base64Encode(basicAuthinURL));
+            final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
+            if (request.getURL().getUserInfo() != null) {
+                authenticationFactories.add(new DefaultAuthenticanFactory());
             }
-            final List<Login> knownAuths = AuthenticationController.getInstance().getSortedLoginsList(request.getUrl());
-            if (knownAuths != null) {
-                for (final Login knownAuth : knownAuths) {
-                    final String basicAuth = knownAuth.toBasicAuth();
-                    if (StringUtils.isNotEmpty(basicAuth)) {
-                        basicAuths.add(basicAuth);
+            authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(request.getURL(), null));
+            authenticationFactories.add(new DefaultAuthenticanFactory() {
+                protected Authentication remember = null;
+
+                protected Authentication ask(Browser browser, Request request) {
+                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT.T.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
+                    loginDialog.setTimeout(60 * 1000);
+                    final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
+                    if (handle.getCloseReason() == CloseReason.OK) {
+                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), handle.getUsername(), handle.getPassword()).buildAuthentication(browser, request);
+                        addAuthentication(ret);
+                        if (handle.isRememberSelected()) {
+                            remember = ret;
+                        }
+                        return ret;
+                    } else {
+                        return null;
                     }
                 }
-            }
-            basicAuths.add("");
-            basicAuths.add(null);
-            authLoop: for (String basicAuth : basicAuths) {
+
+                @Override
+                public boolean retry(Authentication authentication, Browser browser, Request request) {
+                    if (containsAuthentication(authentication) && remember == authentication && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
+                        final AuthenticationInfo auth = new AuthenticationInfo();
+                        auth.setRealm(authentication.getRealm());
+                        auth.setUsername(authentication.getUsername());
+                        auth.setPassword(authentication.getPassword());
+                        auth.setHostmask(authentication.getHost());
+                        auth.setType(Type.HTTP);
+                        AuthenticationController.getInstance().add(auth);
+                    }
+                    return super.retry(authentication, browser, request);
+                }
+
+                @Override
+                public Authentication buildAuthentication(Browser browser, Request request) {
+                    if (request.getAuthentication() == null && requiresAuthentication(request)) {
+                        return ask(browser, request);
+                    } else {
+                        return null;
+                    }
+                }
+
+                @Override
+                protected Authentication buildDigestAuthentication(Browser browser, Request request, String realm) {
+                    return ask(browser, request);
+                }
+            });
+            authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
                     connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
                     br.followConnection();
                 }
-                final boolean ask = basicAuth == null;
-                boolean remember = false;
-                if (ask) {
-                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT.T.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
-                    loginDialog.setTimeout(60 * 1000);
-                    final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
-                    final String userNameAndPassword;
-                    if (handle.getCloseReason() == CloseReason.OK) {
-                        userNameAndPassword = handle.getUsername() + ":" + handle.getPassword();
-                        remember = handle.isRememberSelected();
-                    } else {
-                        userNameAndPassword = null;
-                    }
-                    if (StringUtils.isEmpty(userNameAndPassword)) {
-                        return openCrawlDeeperConnection(source, br, connection, round);
-                    } else {
-                        basicAuth = "Basic " + Encoding.Base64Encode(userNameAndPassword);
-                    }
-                }
-                request = request.cloneRequest();
-                if (StringUtils.isNotEmpty(basicAuth)) {
-                    request.getHeaders().put("Authorization", basicAuth);
-                } else {
-                    request.getHeaders().remove("Authorization");
-                }
+                br.setAuthenticationFactory(authenticationFactory);
                 connection = br.openRequestConnection(request);
                 if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
-                    if (connection.getHeaderField("WWW-Authenticate") == null) {
+                    if (connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
                         return openCrawlDeeperConnection(source, br, connection, round);
-                    }
-                    if (StringUtils.isNotEmpty(basicAuth)) {
-                        try {
-                            AuthenticationController.getInstance().invalidate(new BasicAuth(basicAuth), request.getUrl());
-                        } catch (InvalidBasicAuthFormatException ignore) {
-                        }
                     }
                     continue authLoop;
                 } else if (connection.isOK()) {
-                    if (StringUtils.isNotEmpty(basicAuth)) {
-                        try {
-                            final BasicAuth auth = new BasicAuth(basicAuth);
-                            if (ask && remember) {
-                                HTACCESSController.getInstance().addValidatedAuthentication(request.getUrl(), auth.getUsername(), auth.getPassword());
-                            }
-                            AuthenticationController.getInstance().validate(auth, request.getUrl());
-                        } catch (InvalidBasicAuthFormatException ignore) {
-                        }
-                    }
                     break authLoop;
                 } else {
                     return openCrawlDeeperConnection(source, br, connection, round);
@@ -1025,7 +1023,8 @@ public class LinkCrawler {
                                     // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
                                     // relative
                                     // path.
-                                    final String brURL = br.getURL();
+                                    final Request request = br.getRequest();
+                                    final String brURL = request.getUrl();
                                     final List<CrawledLink> possibleCryptedLinks = find(generation, brURL, null, false, false);
                                     if (possibleCryptedLinks != null) {
                                         final boolean singleDest = possibleCryptedLinks.size() == 1;
@@ -1037,7 +1036,7 @@ public class LinkCrawler {
                                             final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                                             final String crawlContent;
                                             if (matchingRule != null && matchingRule._getDeepPattern() != null) {
-                                                final String[][] matches = br.getRegex(matchingRule._getDeepPattern()).getMatches();
+                                                final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getDeepPattern()).getMatches();
                                                 if (matches != null) {
                                                     final HashSet<String> dups = new HashSet<String>();
                                                     final StringBuilder sb = new StringBuilder();
@@ -1056,7 +1055,7 @@ public class LinkCrawler {
                                                     crawlContent = "";
                                                 }
                                             } else {
-                                                crawlContent = br.toString();
+                                                crawlContent = request.getHtmlCode();
                                             }
                                             /* first check if the url itself can be handled */
                                             final CrawledLink link = possibleCryptedLinks.get(0);

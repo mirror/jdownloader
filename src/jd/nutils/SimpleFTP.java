@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 /*
  Copyright Paul James Mutton, 2001-2004, http://www.jibble.org/
 
@@ -75,10 +74,8 @@ import org.seamless.util.io.IO;
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public abstract class SimpleFTP {
-
     public static enum ENCODING {
         ASCII7BIT {
-
             @Override
             public String fromBytes(byte[] bytes) throws IOException {
                 final StringBuilder sb = new StringBuilder();
@@ -118,10 +115,8 @@ public abstract class SimpleFTP {
                 }
                 return bos.toByteArray();
             }
-
         },
         UTF8 {
-
             @Override
             public String fromBytes(byte[] bytes) throws IOException {
                 return URLEncoder.encode(new String(bytes, "UTF-8"), "UTF-8");
@@ -131,13 +126,10 @@ public abstract class SimpleFTP {
             public byte[] toBytes(String string) throws IOException {
                 return URLDecoder.decode(string, "UTF-8").getBytes("UTF-8");
             }
-
         };
-
         public abstract String fromBytes(final byte[] bytes) throws IOException;
 
         public abstract byte[] toBytes(final String string) throws IOException;
-
     }
 
     public static enum FEATURE {
@@ -145,7 +137,6 @@ public abstract class SimpleFTP {
         SIZE,
         CLNT,
         UTF8;
-
         public static FEATURE get(final String input) {
             if (input != null && input.startsWith(" ")) {
                 for (FEATURE feature : values()) {
@@ -208,7 +199,6 @@ public abstract class SimpleFTP {
             public final int compare(String o1, String o2) {
                 return compare(o1.length(), o2.length());
             }
-
         });
         if (bestMatches.size() > 0) {
             return bestMatches.get(0);
@@ -225,7 +215,6 @@ public abstract class SimpleFTP {
     private final LogInterface logger;
     private String             latestResponseLine = null;
     private String             user               = null;
-
     private final byte[]       CRLF               = "\r\n".getBytes();
 
     public String getUser() {
@@ -366,13 +355,11 @@ public abstract class SimpleFTP {
         }
         sendLine("PWD");
         while ((response = readLine()).startsWith("230") || response.charAt(0) >= '9' || response.charAt(0) <= '0') {
-
         }
         //
         if (!response.startsWith("257 ")) {
             throw new IOException("PWD COmmand not understood " + response);
         }
-
         // Response: 257 "/" is the current directory
         dir = new Regex(response, "\"(.*)\"").getMatch(0);
         // dir = dir;
@@ -385,7 +372,6 @@ public abstract class SimpleFTP {
         } else {
             return ENCODING.ASCII7BIT;
         }
-
     }
 
     /**
@@ -505,7 +491,6 @@ public abstract class SimpleFTP {
             }
         }
         return length;
-
     }
 
     public boolean wasLatestOperationNotPermitted() {
@@ -815,7 +800,6 @@ public abstract class SimpleFTP {
     }
 
     public static class SimpleFTPListEntry {
-
         private final boolean isFile;
 
         public final boolean isFile() {
@@ -867,7 +851,6 @@ public abstract class SimpleFTP {
             }
             return sb.toString();
         }
-
     }
 
     public SimpleFTPListEntry[] listEntries() throws IOException {
@@ -972,7 +955,7 @@ public abstract class SimpleFTP {
                     connect(host, port, auth[0], auth[1]);
                 }
             } else {
-                final Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
+                final Login ret = AuthenticationController.getInstance().getBestLogin(url, null);
                 if (ret != null) {
                     autoTry = true;
                     connect(host, port, ret.getUsername(), ret.getPassword());
@@ -987,7 +970,7 @@ public abstract class SimpleFTP {
                 if (autoTry) {
                     connect(host, port);
                 } else {
-                    final Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
+                    final Login ret = AuthenticationController.getInstance().getBestLogin(url, null);
                     if (ret != null) {
                         connect(host, port, ret.getUsername(), ret.getPassword());
                         return;
@@ -1001,5 +984,4 @@ public abstract class SimpleFTP {
     public static byte[] toRawBytes(String nameString) throws IOException {
         return ENCODING.ASCII7BIT.toBytes(nameString);
     }
-
 }

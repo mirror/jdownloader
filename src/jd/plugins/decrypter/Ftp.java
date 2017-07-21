@@ -36,7 +36,6 @@ import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
 public class Ftp extends PluginForDecrypt {
-
     private static HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
 
     public Ftp(PluginWrapper wrapper) {
@@ -96,7 +95,7 @@ public class Ftp extends PluginForDecrypt {
                     return decryptIt(cLink, progress);
                 } else if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
-                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), dummyLink);
+                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), null, dummyLink);
                     if (login != null) {
                         final String host = url.getHost();
                         int port = url.getPort();
@@ -155,7 +154,6 @@ public class Ftp extends PluginForDecrypt {
             // ftp.listFeatures();
             // ftp.sendClientID("JDownloader");
             // ftp.setUTF8(true);
-
             if (ftp.cwd(filePath)) {
                 SimpleFTPListEntry[] entries = ftp.listEntries();
                 if (entries != null) {
