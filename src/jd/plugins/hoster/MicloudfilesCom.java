@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -55,24 +55,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "micloudfiles.com" }, urls = { "https?://(?:www\\.)?micloudfiles\\.com/((?:embed\\-)?[a-z0-9]{12}|[A-Za-z0-9]+)" })
+public class MicloudfilesCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://ForDevsToPlayWith.com";
+    private static final String  COOKIE_HOST                        = "http://micloudfiles.com";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(ForDevsToPlayWith\\.com)";
+    private static final String  DOMAINS                            = "(micloudfiles\\.com)";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -94,17 +88,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private final boolean        SUPPORTS_HTTPS                     = false;
     private final boolean        SUPPORTS_HTTPS_FORCED              = false;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
-    /*
-     * true = check via postPage, false = we access the check_files site first and parse the Form to cover eventually required tokens inside
-     * the Form.
-     */
-    private final boolean        SUPPORTS_AVAILABLECHECK_ALT_FAST   = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ALT_FAST   = false;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK         = true;
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = false;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -134,12 +124,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.4.7<br />
-     * mods:<br />
+     * mods: heavily modified, do NOT upgrade!<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
     @SuppressWarnings({ "deprecation" })
@@ -186,7 +176,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public MicloudfilesCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -340,7 +330,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* 2017-04-11: Typically for XVideoSharing sites */
             fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
-        if (SUPPORTS_HTML_FILESIZE_CHECK) {
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
@@ -1103,10 +1093,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
-    /**
-     * Sets XFS file-ID which is usually present inside the downloadurl added by the user. Usually it is [a-z0-9]{12}. <br />
-     * Best to execute AFTER having accessed the downloadurl!
-     */
+    /** Sets XFS file-ID which is usually present inside the downloadurl added by the user. Usually it is [a-z0-9]{12} */
     private void setFUID(final DownloadLink dl) throws PluginException {
         this.fuid = getFUIDFromURL(dl);
         /*

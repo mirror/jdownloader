@@ -69,7 +69,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/(torrentdl|dl)/.+" })
 public class PremiumizeMe extends UseNet {
-
     private static MultiHosterManagement mhm          = new MultiHosterManagement("premiumize.me");
     private static final String          SENDDEBUGLOG = "SENDDEBUGLOG";
     private static final String          NOCHUNKS     = "NOCHUNKS";
@@ -399,7 +398,6 @@ public class PremiumizeMe extends UseNet {
             ai.setProperty("multiHostSupport", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-
         String status = type;
         // https://secure.premiumize.me/<extuid>/<port>/proxy.pac
         String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
@@ -545,6 +543,10 @@ public class PremiumizeMe extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 404:
                 /* file offline */
+                if (statusMessage != null && statusMessage.matches(".*?Video not yet released.*?")) {
+                    /* E.g. Brazzers.com */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Video not yet released");
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 428:
                 /* hoster currently not possible,block host for 30 mins */
@@ -634,7 +636,6 @@ public class PremiumizeMe extends UseNet {
     }
 
     public static class PremiumizeMeAccountFactory extends MigPanel implements AccountBuilderInterface {
-
         /**
          *
          */
@@ -683,7 +684,6 @@ public class PremiumizeMe extends UseNet {
             add(new JLink(getProtocol() + "www.premiumize.me/account"));
             add(idLabel = new JLabel(_GUI.T.premiumize_add_account_idlabel()));
             add(this.name = new ExtTextField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
@@ -692,7 +692,6 @@ public class PremiumizeMe extends UseNet {
             name.setHelpText(IDHELP);
             add(new JLabel("PIN:"));
             add(this.pass = new ExtPasswordField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);

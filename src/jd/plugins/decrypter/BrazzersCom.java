@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -96,12 +95,7 @@ public class BrazzersCom extends PluginForDecrypt {
             }
             this.br.getPage(parameter);
         } else {
-            final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
-            if (aa == null && (moch_accounts == null || moch_accounts.size() == 0)) {
-                logger.info("Account needed to use this crawler for this linktype (videos)");
-                return decryptedLinks;
-            }
-            if (aa == null && moch_accounts != null && moch_accounts.size() > 0) {
+            if (aa == null) {
                 /* Only MOCH download and/or trailer download --> Add link for hostplugin */
                 final DownloadLink dl = this.createDownloadlink(String.format(brazzers_decrypted, fid));
                 decryptedLinks.add(dl);
