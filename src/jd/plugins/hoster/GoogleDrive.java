@@ -15,6 +15,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.regex.Pattern;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -127,6 +129,7 @@ public class GoogleDrive extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         privatefile = false;
         download_might_not_be_possible = false;
         this.setBrowserExclusive();
@@ -173,6 +176,12 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
+        if (size == null) {
+            // value is within html or a subquent ajax request to fetch json..
+            // devnote: to fix, look for the json request to https://clients\d+\.google\.com/drive/v2internal/files/ + fuid and find the
+            // filesize, then search for the number within the base page. It's normally there. just not referenced as such.
+            size = br.getRegex("\\[null,\"" + (filename != null ? Pattern.quote(filename) : "[^\"]") + "\"[^\r\n]+\\[null,\\d+,\"(\\d+)\"\\]").getMatch(0);
+        }
         if (filename == null) {
             if (this.br.containsHTML("initFolderLandingPageApplication")) {
                 logger.info("This looks like an empty folder ...");
@@ -383,7 +392,7 @@ public class GoogleDrive extends PluginForHost {
         account.setType(AccountType.FREE);
         /* free accounts cannot have captchas */
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
+        account.setMaxSimultanDownloads(20);
         account.setValid(true);
         return ai;
     }
@@ -392,11 +401,6 @@ public class GoogleDrive extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         doFree(link);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return FREE_MAXDOWNLOADS;
     }
 
     @Override
