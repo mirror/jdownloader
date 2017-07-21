@@ -31,6 +31,8 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -51,6 +53,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidabc.com" }, urls = { "https?://(?:www\\.)?vidabc\\.com/(?:embed\\-)?[a-z0-9]{12}" })
@@ -93,7 +96,6 @@ public class VidabcCom extends PluginForHost {
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = false;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = false;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
-    private final boolean                  ENABLE_RANDOM_UA                   = false;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
@@ -149,10 +151,9 @@ public class VidabcCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
         /* link cleanup, prefer https if possible */
-        final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+        final String corrected_downloadurl = COOKIE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+            final String url_embed = COOKIE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             link.setContentUrl(url_embed);
         }
@@ -370,7 +371,7 @@ public class VidabcCom extends PluginForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
+        getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -384,7 +385,7 @@ public class VidabcCom extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
             filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
@@ -438,6 +439,7 @@ public class VidabcCom extends PluginForHost {
         if (dllink == null) {
             dllink = getDllink();
         }
+        final boolean requiresEmbed = downloadLink.getBooleanProperty("requiresEmbed", false);
         /* 3, do they provide audio hosting? */
         if (dllink == null && AUDIOHOSTER && downloadLink.getName().endsWith(".mp3")) {
             try {
@@ -474,11 +476,12 @@ public class VidabcCom extends PluginForHost {
             }
         }
         /* 5, do they provide video hosting #2? */
-        if (dllink == null && VIDEOHOSTER_2) {
+        if (dllink == null && VIDEOHOSTER_2 && requiresEmbed) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
-                br.getHeaders().put("Referer", "");
+                final String embed_access = COOKIE_HOST + "/embed-" + fuid + ".html";
+                br = new Browser();
+                // br.getHeaders().put("Referer", "https://facebook.com");
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
@@ -681,17 +684,22 @@ public class VidabcCom extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            checkResponseCodeErrors(dl.getConnection());
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            correctBR();
-            checkServerErrors();
-            handlePluginBroken(downloadLink, "dllinknofile", 3);
+        if (!dllink.contains("m3u8")) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                checkResponseCodeErrors(dl.getConnection());
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                handlePluginBroken(downloadLink, "dllinknofile", 3);
+            }
+            downloadLink.setProperty(directlinkproperty, dllink);
+            fixFilename(downloadLink);
+        } else {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        fixFilename(downloadLink);
         try {
             /* add a download slot */
             controlFree(+1);
@@ -701,6 +709,7 @@ public class VidabcCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+
     }
 
     /**
@@ -708,27 +717,39 @@ public class VidabcCom extends PluginForHost {
      * [NOT html]).
      */
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        String dllink = downloadLink.getStringProperty(property, null);
         if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
+            if (!checkDirectLink(downloadLink.getStringProperty(property, null))) {
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                return null;
             }
         }
         return dllink;
+    }
+
+    private boolean checkDirectLink(final String link) {
+        URLConnectionAdapter con = null;
+        try {
+            // no cookies!
+            final Browser br2 = new Browser();
+            br2.getHeaders().put("Accept", "*/*");
+            br2.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+            br2.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
+            br2.getHeaders().put("Range", "bytes=0-");
+            con = br2.openGetConnection(link);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                return false;
+            }
+            return true;
+        } catch (final Exception e) {
+            return false;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+
     }
 
     @Override
@@ -759,9 +780,9 @@ public class VidabcCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setFollowRedirects(true);
-        if (ENABLE_RANDOM_UA) {
+        if (true) {
             if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
+                agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
@@ -812,43 +833,71 @@ public class VidabcCom extends PluginForHost {
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
+        String decoded = null;
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) {
+                        decoded = decodeDownloadLink(crypted);
+                        if (decoded != null) {
                             break;
                         }
                     }
                 }
             }
         }
+        if (dllink == null && decoded == null) {
+            decoded = correctedBR;
+        }
         if (dllink == null) {
             /* RegExes sometimes used for streaming */
-            final String jssource = new Regex(correctedBR, "sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+            final String jssource = new Regex(decoded, "sources\\s*:\\s*(\\[.*?\\])").getMatch(0);
             if (inValidate(dllink) && jssource != null) {
                 try {
-                    HashMap<String, Object> entries = null;
                     long quality_temp = 0;
                     long quality_best = 0;
                     String dllink_temp = null;
                     final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-                    for (final Object videoo : ressourcelist) {
-                        entries = (HashMap<String, Object>) videoo;
-                        dllink_temp = (String) entries.get("file");
-                        quality_temp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
-                        if (inValidate(dllink_temp) || quality_temp == 0) {
-                            continue;
-                        } else if (dllink_temp.contains(".m3u8")) {
-                            /* Skip hls */
-                            continue;
+                    if (true) {
+                        for (final Object videoo : ressourcelist) {
+                            final HashMap<String, Object> entries = (HashMap<String, Object>) videoo;
+                            dllink_temp = (String) entries.get("file");
+                            quality_temp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
+                            if (inValidate(dllink_temp) || quality_temp == 0) {
+                                continue;
+                            } else if (dllink_temp.contains(".m3u8")) {
+                                /* Skip hls */
+                                continue;
+                            }
+                            // test the link to see if its downloadable.
+                            if (quality_temp > quality_best && checkDirectLink(dllink_temp)) {
+                                quality_best = quality_temp;
+                                dllink = dllink_temp;
+                            }
                         }
-                        if (quality_temp > quality_best) {
+                    }
+                    if (dllink == null) {
+                        // hls as fail over
+                        for (final Object videoo : ressourcelist) {
+                            final HashMap<String, Object> entries = (HashMap<String, Object>) videoo;
+                            dllink_temp = (String) entries.get("file");
+                            // hls doesn't have quality reference, the master file does!
+                            if (inValidate(dllink_temp) || !dllink_temp.contains(".m3u8")) {
+                                continue;
+                            }
+                            // test the link to see if its downloadable.
+                            Browser br = this.br.cloneBrowser();
+                            getPage(br, dllink_temp, false);
+                            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
+                            if (hlsbest == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            final String url_hls = hlsbest.getDownloadurl();
                             quality_best = quality_temp;
-                            dllink = dllink_temp;
+                            dllink = url_hls;
+                            break;
                         }
                     }
                     if (!inValidate(dllink)) {
@@ -903,21 +952,20 @@ public class VidabcCom extends PluginForHost {
         } catch (Exception e) {
         }
 
-        String finallink = null;
-        if (decoded != null) {
-            /* Open regex is possible because in the unpacked JS there are usually only 1 links */
-            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
-        }
-        return finallink;
+        // String finallink = null;
+        // if (decoded != null) {
+        // /* Open regex is possible because in the unpacked JS there are usually only 1 links */
+        // finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
+        // }
+        // return finallink;
+        return decoded;
     }
 
     private void getPage(String page) throws Exception {
-        page = correctProtocol(page);
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
-        page = correctProtocol(page);
         br.getPage(page);
         if (correctBr) {
             correctBR();
@@ -925,12 +973,10 @@ public class VidabcCom extends PluginForHost {
     }
 
     private void postPage(String page, final String postdata) throws Exception {
-        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
-        page = correctProtocol(page);
         br.postPage(page, postdata);
         if (correctBr) {
             correctBR();
@@ -948,15 +994,6 @@ public class VidabcCom extends PluginForHost {
     // counter++;
     // }
     // }
-
-    private String correctProtocol(String url) {
-        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
-            url = url.replaceFirst("http://", "https://");
-        } else if (!SUPPORTS_HTTPS) {
-            url = url.replaceFirst("https://", "http://");
-        }
-        return url;
-    }
 
     private void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
@@ -1129,6 +1166,10 @@ public class VidabcCom extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
+        }
+        if (new Regex(correctedBR, "class=\"err\">This video can be watched as embed only\\.</font>").matches()) {
+            theLink.setProperty("requiresEmbed", true);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
