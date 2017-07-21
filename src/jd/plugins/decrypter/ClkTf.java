@@ -48,7 +48,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class ClkTf extends PluginForDecrypt {
 
     // add new domains here.
-    private static final String[] domains = { "click.tf", "ssh.tf", "yep.pm", "adlink.wf", "bily.ga", "bily.ml", "fave.cf", "fave.ga", "fave.gq", "iapp.ga", "icom.ga", "icom.ml", "igov.cf", "igov.ga", "igov.ml", "ihec.cf", "ihec.ga", "ihec.ml", "ihec.tk", "ilol.cf", "ilol.ml", "iref.ga", "iref.ml", "iref.tk", "itao.cf", "itao.ga", "itao.ml", "item.ga", "itop.cf", "itop.ga", "itop.ml", "iurl.ml", "iusa.cf", "iusa.ga", "iusd.cf", "iusd.ga", "iusd.ml", "iusd.tk", "kyc.pm", "lan.wf", "led.wf", "mcaf.cf", "mcaf.ga", "mcaf.gq", "mcaf.ml", "mcaf.tk", "owly.cf", "owly.ml", "ssh.yt", "tass.ga", "tass.ml", "twit.cf", "yourls.ml" };
+    private static final String[] domains = { "click.tf", "ssh.yt", "ssh.tf", "yep.pm", "adlink.wf", "kyc.pm", "lan.wf", "led.wf" };
+    // all other domains mentioned within /services.html do not match expected.
 
     public ClkTf(PluginWrapper wrapper) {
         super(wrapper);
