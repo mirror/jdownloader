@@ -140,7 +140,7 @@ public class TwitterCom extends PornEmbedParser {
         } else if (parameter.matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
             final LinkedHashMap<String, Object> entries = getPlayerData(this.br);
             final String sourcetype = (String) entries.get("source_type");
-            if (sourcetype.equals("consumer")) {
+            if (sourcetype.equals("consumer") || sourcetype.equals("gif")) {
                 /* Video uploaded by user, hosted on Twitter --> Download via Twitter hosterplugin */
                 decryptedLinks.add(this.createDownloadlink(parameter));
             } else {

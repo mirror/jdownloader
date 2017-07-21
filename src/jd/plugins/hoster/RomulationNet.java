@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,11 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.net" }, urls = { "https?://(?:www\\.)?romulation\\.net/rom/[^/]+/[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.net" }, urls = { "https?://(?:www\\.)?romulation\\.net/rom/[^/]+/[^/]+" })
 public class RomulationNet extends PluginForHost {
-
     public RomulationNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +57,6 @@ public class RomulationNet extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -99,6 +96,9 @@ public class RomulationNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.getPage(dllink);
+            if (this.br.containsHTML("File too big for guests to download")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             dllink = br.getRegex("\"(https?://[^/]+/files/guest/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -150,5 +150,4 @@ public class RomulationNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

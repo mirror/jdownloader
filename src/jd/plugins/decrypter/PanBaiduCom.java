@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
-
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,6 @@ public class PanBaiduCom extends PluginForDecrypt {
     private static final String                TYPE_FOLDER_SHORT                     = "https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
     private static final String                TYPE_FOLDER_USER_HOME                 = ".+/share/home.+";
     private static final String                APPID                                 = "250528";
-
     private String                             link_password                         = null;
     private String                             link_password_cookie                  = null;
     private String                             uk                                    = null;
@@ -97,7 +94,6 @@ public class PanBaiduCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         return decryptedLinks;
     }
 
@@ -146,7 +142,6 @@ public class PanBaiduCom extends PluginForDecrypt {
         uk = br.getRegex("\"uk\":(\\d+),").getMatch(0);
         String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
-
         if (br.getURL().contains("/share/init")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             if (parameter.matches(TYPE_FOLDER_GENERAL)) {
@@ -182,12 +177,10 @@ public class PanBaiduCom extends PluginForDecrypt {
                 return;
             }
         }
-
         if (uk == null || shareid == null) {
             /* Probably user added invalid url */
             return;
         }
-
         String singleFolder = new Regex(parameter, "#dir/path=(.*?)$").getMatch(0);
         if (singleFolder == null) {
             singleFolder = new Regex(parameter, "&dir=([^&\\?]+)").getMatch(0);
@@ -244,7 +237,6 @@ public class PanBaiduCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return;
             }
-
             for (final Object fileo : ressourcelist) {
                 crawlFolderObject(fileo, shorturl_id, shareid);
                 currentlinksnum++;
@@ -296,25 +288,25 @@ public class PanBaiduCom extends PluginForDecrypt {
                 /* Nothing to grab */
                 return;
             }
-            final String contenturl = String.format("http://%s/s/%s", this.getHost(), shorturl_id);
+            /* 2017-07-21: 'shorturl_id' is not always given (anymore?)! */
+            final String contenturl;
+            if (shorturl_id != null) {
+                contenturl = String.format("http://%s/s/%s", this.getHost(), shorturl_id);
+            } else {
+                contenturl = getPlainLink(parameter);
+            }
             // final String md5 = (String) entries.get("md5");
             dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("server_filename", server_filename);
-
             dl.setFinalFileName(server_filename);
             if (size > 0) {
                 dl.setDownloadSize(size);
             }
-            if (this.parameter.matches(TYPE_FOLDER_USER_HOME)) {
-                dl.setProperty("mainLink", contenturl);
-            } else {
-                dl.setProperty("mainLink", getPlainLink(parameter));
-            }
+            dl.setProperty("mainLink", contenturl);
             // dl.setProperty("dirName", dir);
             dl.setProperty("important_link_password", link_password);
             dl.setProperty("important_link_password_cookie", link_password_cookie);
             dl.setProperty("important_fsid", fsid);
-
             dl.setContentUrl(contenturl);
             dl.setProperty("origurl_uk", uk);
             dl.setProperty("origurl_shareid", shareid);
@@ -381,5 +373,4 @@ public class PanBaiduCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
