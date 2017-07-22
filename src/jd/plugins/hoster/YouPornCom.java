@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,6 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
 public class YouPornCom extends PluginForHost {
@@ -160,12 +160,14 @@ public class YouPornCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
         }
+        if (dllink != null) {
+            /* Do NOT htmldecode! */
+            dllink = dllink.replace("&amp;", "&");
+        }
         parameter.setFinalFileName(filename + defaultEXT);
         if (filesize != null) {
             parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         } else if (dllink != null) {
-            /* Do NOT htmldecode! */
-            dllink = dllink.replace("&amp;", "&");
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
