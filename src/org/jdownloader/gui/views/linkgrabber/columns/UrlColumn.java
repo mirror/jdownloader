@@ -11,15 +11,6 @@ import java.awt.event.MouseEvent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -32,6 +23,15 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.UrlDisplayType;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class UrlColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -57,9 +57,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     @Override
@@ -70,7 +68,6 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     public UrlColumn() {
         super(_GUI.T.LinkGrabberTableModel_initColumns_url());
         this.setClickcount(2);
-
     }
 
     @Override
@@ -84,7 +81,6 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
 
     private boolean isOpenURLAllowed(AbstractNode value) {
         DownloadLink dlLink = getLink(value);
-
         if (dlLink != null) {
             return true;
         }
@@ -126,11 +122,9 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         final long timeSinceLastHide = System.currentTimeMillis() - lastHide;
         if (timeSinceLastHide < 250 && editing == value) {
             //
-
             editing = null;
             repaint();
             return true;
-
         }
         if (!isOpenURLAllowed(value)) {
             Toolkit.getDefaultToolkit().beep();
@@ -139,7 +133,6 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         editing = value;
         popup = new JPopupMenu() {
             public void setVisible(final boolean b) {
-
                 super.setVisible(b);
                 if (!b) {
                     lastHide = System.currentTimeMillis();
@@ -148,11 +141,8 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
                 } else {
                     // updateIcon(false);
                 }
-
             };
-
         };
-
         try {
             final DownloadLink dlLink = getLink(editing);
             if (!Application.isJared(null)) {
@@ -192,32 +182,20 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         popup.add(new AppAction() {
             {
                 if (Application.isJared(null)) {
-
-                    setName(_GUI.T.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + shorten(string)));
+                    setName(_GUI.T.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + string));
                 } else if (dt == null) {
                     setName(_GUI.T.UrlColumn_onDoubleClick_object_copy("PLUGIN_PATTERN: " + string));
                 } else {
-
                     setName(_GUI.T.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + string));
                 }
-
                 setIconKey(IconKey.ICON_COPY);
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 ClipboardMonitoring.getINSTANCE().setCurrentContent(string);
             }
-
         });
-    }
-
-    protected String shorten(String browserUrl) {
-        if (browserUrl.length() < 45) {
-            return browserUrl;
-        }
-        return browserUrl.substring(0, 45) + "[...]";
     }
 
     @Override
@@ -242,5 +220,4 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         }
         return null;
     }
-
 }
