@@ -30,7 +30,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -68,16 +67,32 @@ public class UploadgigCom extends antiDDoSForHost {
         return "http://uploadgig.com/page/content/term-of-service";
     }
 
-    /* Connection stuff */
-    private final boolean        FREE_RESUME                  = false;
-    private final int            FREE_MAXCHUNKS               = 1;
-    private final int            FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME          = false;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -3;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private void setConstants(final Account account) {
+        if (account == null) {
+            // non account
+            chunks = 1;
+            resumes = false;
+            acctype = "Non Account";
+            directlinkproperty = "freelink";
+        } else if (AccountType.FREE.equals(account.getType())) {
+            // free account
+            chunks = 1;
+            resumes = false;
+            acctype = "Free Account";
+            directlinkproperty = "freelink2";
+        } else if (AccountType.PREMIUM.equals(account.getType())) {
+            // prem account
+            chunks = -3;
+            resumes = true;
+            acctype = "Premium Account";
+            directlinkproperty = "premlink";
+        }
+    }
+
+    private boolean resumes            = false;
+    private int     chunks             = 1;
+    private String  directlinkproperty = null;
+    private String  acctype            = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -116,10 +131,11 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        setConstants(null);
+        doFree(downloadLink);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             // premium only content
@@ -148,25 +164,25 @@ public class UploadgigCom extends antiDDoSForHost {
                 /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
-            // they use javascript to determine finallink...
-            dllink = getDllink(br2);
             int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(br2, "cd");
             if (waittime_str != null) {
                 wait = Integer.parseInt(waittime_str);
             }
             this.sleep(wait * 1001l, downloadLink);
+            // they use javascript to determine finallink...
+            getDllink(br2);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
+            // ok browser set by another method is now lost.
+            br = dl.getDownloadable().getContextBrowser();
             /* E.g. "The download link has expired, please buy premium account or start download file from the beginning." */
-            else if (br.containsHTML("The download link has expired")) {
+            if (br.containsHTML("The download link has expired")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The download link has expired'", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -175,13 +191,13 @@ public class UploadgigCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String getDllink(final Browser br) throws PluginException {
+    private boolean getDllink(final Browser br) throws PluginException {
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         final String js = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+\\+?'\">Download now</a>'\\);").getMatch(0);
         if (js != null) {
             String dllink = PluginJSonUtils.getJsonValue(br, js);
             if (dupe.add(dllink) && testLink(dllink)) {
-                return dllink;
+                return true;
             }
         }
         // fail over
@@ -191,29 +207,31 @@ public class UploadgigCom extends antiDDoSForHost {
             Collections.shuffle(list);
             for (final String link : list) {
                 if (dupe.add(link) && testLink(link)) {
-                    return link;
+                    return true;
                 }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return false;
     }
 
     private boolean testLink(String dllink) {
-        URLConnectionAdapter con = null;
         try {
             final Browser br2 = this.br.cloneBrowser();
-            con = br2.openHeadConnection(dllink);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, this.getDownloadLink(), dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br2.followConnection();
+                if (br2.getHttpConnection().getResponseCode() == 403 && br2.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
+                }
                 return false;
             }
             return true;
         } catch (final Exception e) {
-            return false;
-        } finally {
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                dl.getConnection().disconnect();
+            } catch (final Throwable ee) {
             }
+            return false;
         }
     }
 
@@ -234,7 +252,7 @@ public class UploadgigCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     private void errorhandlingFree(final Browser br) throws PluginException {
@@ -312,13 +330,13 @@ public class UploadgigCom extends antiDDoSForHost {
         if (expire == null) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(10);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
@@ -336,6 +354,7 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        setConstants(account);
         synchronized (LOCK) {
             login(account, false);
             br.setFollowRedirects(false);
@@ -354,7 +373,7 @@ public class UploadgigCom extends antiDDoSForHost {
             }
         }
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            doFree(link);
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
@@ -363,20 +382,17 @@ public class UploadgigCom extends antiDDoSForHost {
                 if (dllink == null) {
                     dllink = link.getDownloadURL();
                 }
+                testLink(dllink);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
-                    // some blocked message here
-                    if (br.containsHTML(">Blocked")) {
-                        // TODO:
-                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else if (br.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
+                }
+                br = dl.getDownloadable().getContextBrowser();
+                if (br.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
                     account.setNextDayAsTempTimeout(br);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
