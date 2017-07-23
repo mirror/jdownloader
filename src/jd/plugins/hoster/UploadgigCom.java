@@ -21,6 +21,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,13 +45,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
 public class UploadgigCom extends antiDDoSForHost {
+
     @Override
     protected boolean useRUA() {
         return true;
@@ -176,7 +177,7 @@ public class UploadgigCom extends antiDDoSForHost {
 
     private String getDllink(final Browser br) throws PluginException {
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        final String js = br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+'\">Download now</a>'\\);").getMatch(0);
+        final String js = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+\\+?'\">Download now</a>'\\);").getMatch(0);
         if (js != null) {
             String dllink = PluginJSonUtils.getJsonValue(br, js);
             if (dupe.add(dllink) && testLink(dllink)) {
@@ -291,7 +292,7 @@ public class UploadgigCom extends antiDDoSForHost {
     }
 
     private boolean isAccountCookiesMissing() {
-        final boolean missing = br.getCookie(this.getHost(), "fs_secure") == null || br.getCookie(this.getHost(), "fs_secure").equalsIgnoreCase("deleted");
+        final boolean missing = br.getCookie(this.getHost(), "fs_secure") == null || "deleted".equalsIgnoreCase(br.getCookie(this.getHost(), "fs_secure"));
         return missing;
     }
 
