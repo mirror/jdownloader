@@ -92,10 +92,10 @@ public class CryptorCom extends PluginForDecrypt {
                 }
                 this.br.postPage(this.br.getURL(), postData);
                 if (this.br.containsHTML(html_passwordrequired)) {
-                    if (passCode != null) {
-                        CryptorCom.LASTSESSIONPASSWORD.set(passCode);
-                    }
                     continue;
+                }
+                if (passCode != null) {
+                    CryptorCom.LASTSESSIONPASSWORD.set(passCode);
                 }
                 failed = false;
                 break;

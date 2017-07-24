@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -42,7 +41,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
 public class Up4ShareVn extends PluginForHost {
-
     private static final String MAINPAGE = "https://up.4share.vn/";
     private static Object       LOCK     = new Object();
     private static final String NOCHUNKS = "NOCHUNKS";
@@ -95,8 +93,15 @@ public class Up4ShareVn extends PluginForHost {
         }
         account.setValid(true);
         getPage("/member");
-
-        ai.setUnlimitedTraffic();
+        final String[] traffic = br.getRegex("<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>\\s*/Tổng số\\s*:\\s*<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>").getRow(0);
+        if (traffic != null) {
+            final long max = SizeFormatter.getSize(traffic[1]);
+            final long left = max - SizeFormatter.getSize(traffic[0]);
+            ai.setTrafficMax(max);
+            ai.setTrafficLeft(left);
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         final String expire = br.getRegex("Ngày hết hạn: <b>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
@@ -188,7 +193,6 @@ public class Up4ShareVn extends PluginForHost {
                 downloadLink.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-
             throw e;
         }
     }
@@ -243,7 +247,6 @@ public class Up4ShareVn extends PluginForHost {
                 link.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-
             throw e;
         }
     }

@@ -34,10 +34,12 @@ import jd.config.SubConfiguration;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
+import jd.http.CallbackAuthenticationFactory;
 import jd.http.Cookies;
 import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLUserInfoAuthentication;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.nutils.SimpleFTP;
@@ -56,7 +58,6 @@ import jd.utils.locale.JDL;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.AuthenticationInfo;
@@ -496,17 +497,17 @@ public class DirectHTTP extends antiDDoSForHost {
         final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
         final URL url = new URL(getDownloadURL(downloadLink));
         if (url.getUserInfo() != null) {
-            authenticationFactories.add(new DefaultAuthenticanFactory());
+            authenticationFactories.add(new URLUserInfoAuthentication());
         }
         authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(url, null));
-        authenticationFactories.add(new DefaultAuthenticanFactory() {
+        authenticationFactories.add(new CallbackAuthenticationFactory() {
             protected Authentication remember = null;
 
-            protected Authentication ask(Browser browser, Request request) {
+            protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
                 try {
-                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), getRealm(request), downloadLink);
+                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), realm, downloadLink);
                     if (login != null) {
-                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), login.getUsername(), login.getPassword()).buildAuthentication(browser, request);
+                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, login.getUsername(), login.getPassword()).buildAuthentication(browser, request);
                         addAuthentication(ret);
                         if (login.isRememberSelected()) {
                             remember = ret;
@@ -532,28 +533,16 @@ public class DirectHTTP extends antiDDoSForHost {
                         AuthenticationController.getInstance().add(auth);
                     } else {
                         try {
-                            final String newURL = URLHelper.createURL(url.getProtocol(), StringUtils.valueOrEmpty(authentication.getUsername()) + ":" + StringUtils.valueOrEmpty(authentication.getPassword()), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
-                            downloadLink.setUrlDownload(newURL);
-                        } catch (MalformedURLException e) {
+                            final String newURL = authentication.getURLWithUserInfo(url);
+                            if (newURL != null) {
+                                downloadLink.setUrlDownload(newURL);
+                            }
+                        } catch (IOException e) {
                             getLogger().log(e);
                         }
                     }
                 }
                 return super.retry(authentication, browser, request);
-            }
-
-            @Override
-            public Authentication buildAuthentication(Browser browser, Request request) {
-                if (request.getAuthentication() == null && requiresAuthentication(request)) {
-                    return ask(browser, request);
-                } else {
-                    return null;
-                }
-            }
-
-            @Override
-            protected Authentication buildDigestAuthentication(Browser browser, Request request, String realm) {
-                return ask(browser, request);
             }
         });
         this.br.setFollowRedirects(true);
@@ -561,7 +550,7 @@ public class DirectHTTP extends antiDDoSForHost {
         try {
             String basicauth = null;
             for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
-                br.setAuthenticationFactory(authenticationFactory);
+                br.setCustomAuthenticationFactory(authenticationFactory);
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
