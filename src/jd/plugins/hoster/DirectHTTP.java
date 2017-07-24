@@ -571,7 +571,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     urlConnection = this.prepareConnection(this.br, downloadLink);
                 }
                 if (urlConnection.getResponseCode() == 401) {
-                    if (urlConnection.getHeaderField("WWW-Authenticate") == null) {
+                    if (urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
                         /* no basic auth */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
