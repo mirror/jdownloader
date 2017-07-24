@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -213,6 +214,8 @@ public class Rlnks extends antiDDoSForDecrypt {
         }
     }
 
+    private static AtomicReference<String> LASTSESSIONPASSWORD = new AtomicReference<String>();
+
     private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
         getPage(partLink);
         allForm = br.getFormbyProperty("name", "form");
@@ -236,9 +239,13 @@ public class Rlnks extends antiDDoSForDecrypt {
         }
         if (allForm != null) {
             final List<String> passwords = getPreSetPasswords();
+            final String lastSessionPassword = LASTSESSIONPASSWORD.get();
+            if (lastSessionPassword != null && !passwords.contains(lastSessionPassword)) {
+                passwords.add(lastSessionPassword);
+            }
             for (int i = 0; i < 5; i++) {
+                final String passCode;
                 if (allForm.containsHTML("password")) {
-                    final String passCode;
                     if (passwords.size() > 0) {
                         passCode = passwords.remove(0);
                         i = 0;
@@ -246,6 +253,8 @@ public class Rlnks extends antiDDoSForDecrypt {
                         passCode = Plugin.getUserInput(null, param);
                     }
                     allForm.put("password", passCode);
+                } else {
+                    passCode = null;
                 }
                 if (allForm.containsHTML("captcha")) {
                     // fail over is circle, but they do randomly show antibotsystem captchas
@@ -299,6 +308,9 @@ public class Rlnks extends antiDDoSForDecrypt {
                     continue;
                 }
                 allForm = null;
+                if (passCode != null) {
+                    LASTSESSIONPASSWORD.set(passCode);
+                }
                 break;
             }
         }

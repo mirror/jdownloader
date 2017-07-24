@@ -38,11 +38,13 @@ import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
+import jd.http.CallbackAuthenticationFactory;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLUserInfoAuthentication;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -72,7 +74,6 @@ import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -788,18 +789,19 @@ public class LinkCrawler {
         for (int i = 0; i < 10; i++) {
             final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
             if (request.getURL().getUserInfo() != null) {
-                authenticationFactories.add(new DefaultAuthenticanFactory());
+                authenticationFactories.add(new URLUserInfoAuthentication());
             }
             authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(request.getURL(), null));
-            authenticationFactories.add(new DefaultAuthenticanFactory() {
+            authenticationFactories.add(new CallbackAuthenticationFactory() {
                 protected Authentication remember = null;
 
-                protected Authentication ask(Browser browser, Request request) {
+                @Override
+                protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
                     final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT.T.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
                     loginDialog.setTimeout(60 * 1000);
                     final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
                     if (handle.getCloseReason() == CloseReason.OK) {
-                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), handle.getUsername(), handle.getPassword()).buildAuthentication(browser, request);
+                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, handle.getUsername(), handle.getPassword()).buildAuthentication(browser, request);
                         addAuthentication(ret);
                         if (handle.isRememberSelected()) {
                             remember = ret;
@@ -823,27 +825,13 @@ public class LinkCrawler {
                     }
                     return super.retry(authentication, browser, request);
                 }
-
-                @Override
-                public Authentication buildAuthentication(Browser browser, Request request) {
-                    if (request.getAuthentication() == null && requiresAuthentication(request)) {
-                        return ask(browser, request);
-                    } else {
-                        return null;
-                    }
-                }
-
-                @Override
-                protected Authentication buildDigestAuthentication(Browser browser, Request request, String realm) {
-                    return ask(browser, request);
-                }
             });
             authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
                     connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
                     br.followConnection();
                 }
-                br.setAuthenticationFactory(authenticationFactory);
+                br.setCustomAuthenticationFactory(authenticationFactory);
                 connection = br.openRequestConnection(request);
                 if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
                     if (connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
@@ -1029,9 +1017,7 @@ public class LinkCrawler {
                                     if (request.getAuthentication() == null) {
                                         brURL = request.getUrl();
                                     } else {
-                                        final URL url = request.getURL();
-                                        final Authentication authentication = request.getAuthentication();
-                                        brURL = URLHelper.createURL(url.getProtocol(), StringUtils.valueOrEmpty(authentication.getUsername()) + ":" + StringUtils.valueOrEmpty(authentication.getPassword()), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
+                                        brURL = request.getAuthentication().getURLWithUserInfo(request.getURL());
                                     }
                                     final List<CrawledLink> possibleCryptedLinks = find(generation, brURL, null, false, false);
                                     if (possibleCryptedLinks != null) {
