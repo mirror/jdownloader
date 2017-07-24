@@ -13,15 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
-
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,9 +28,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "get-my.link" }, urls = { "https?://(?:www\\.)?get\\-my\\.link/page(\\.php\\?f=|\\.html/)[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class GetMyLink extends antiDDoSForDecrypt {
-
     public GetMyLink(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -74,16 +72,16 @@ public class GetMyLink extends antiDDoSForDecrypt {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
     private String getFinalLink() {
-        String finallink = br.getRegex("class=\"dv_btn\" style=\"[^\"]*?\">\\s*?<a href=\"(http[^<>\"]+)>").getMatch(0);
+        final String finallink = br.getRegex("class=\"dv_btn\" style=\"[^\"]*?\">\\s*?<a href=\"(http[^<>\"]+)>").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("href=\"(http[^<>\"]+)\">\\s*?<button type=\"button\" class=\"btn btn\\-primary\">Télécharger le fichier").getMatch(0);
+            return br.getRegex("href=\"(http[^<>\"]+)\">\\s*?<button type=\"button\" class=\"btn btn\\-primary\">Télécharger le fichier").getMatch(0);
+        } else {
+            return finallink;
         }
-        return finallink;
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
@@ -98,5 +96,4 @@ public class GetMyLink extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.OuoIoCryptor;
     }
-
 }
