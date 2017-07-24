@@ -26,6 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,14 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploads.to", "ourupload.com" }, urls = { "https?://(?:www\\.)?(?:uplod\\.it|uploads\\.to)/(?:embed\\-)?[a-z0-9]{12}", "https?://(?:www\\.)?(?:uploadex\\.com|ourupload\\.com)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploads.to" }, urls = { "https?://(?:www\\.)?(?:uplod\\.it|uploads\\.to)/(?:embed\\-)?[a-z0-9]{12}" })
 public class UplodIt extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -142,11 +142,6 @@ public class UplodIt extends antiDDoSForHost {
         if ("uploads.to".equals(currentHost)) {
             if (host == null || "uplod.it".equals(host)) {
                 return "uploads.to";
-            }
-        }
-        if ("ourupload.com".equals(currentHost)) {
-            if (host == null || "uploadex.com".equals(host)) {
-                return "ourupload.com";
             }
         }
         return super.rewriteHost(host);
@@ -637,7 +632,7 @@ public class UplodIt extends antiDDoSForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
@@ -1262,7 +1257,7 @@ public class UplodIt extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
