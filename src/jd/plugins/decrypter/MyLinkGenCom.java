@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
  * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mylinkgen.com" }, urls = { "https?://(?:www\\.)?mylinkgen\\.com/(p|g)/([A-Za-z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkgen.st" }, urls = { "https?://(?:www\\.)?(?:mylinkgen\\.com|linkgen\\.st)/(p|g)/([A-Za-z0-9]+)" }) 
 public class MyLinkGenCom extends antiDDoSForDecrypt {
 
     public MyLinkGenCom(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class MyLinkGenCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
+        final String parameter = param.toString().replace("http://", "https://").replace("mylinkgen.com/", "linkgen.st/");
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         final String type = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // at times they will state redirect to site owner 'http://ganool.ag', set referrer solves this.

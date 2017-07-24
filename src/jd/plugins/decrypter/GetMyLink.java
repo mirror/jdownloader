@@ -19,6 +19,10 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,10 +32,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "get-my.link" }, urls = { "https?://(?:www\\.)?get\\-my\\.link/page(\\.php\\?f=|\\.html/)[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class GetMyLink extends antiDDoSForDecrypt {
@@ -47,25 +47,7 @@ public class GetMyLink extends antiDDoSForDecrypt {
         if (fuid != null) {
             try {
                 final String crypted = Base64.decodeToString(fuid);
-                final StringBuilder sb = new StringBuilder();
-                for (int index = 0; index < crypted.length(); index++) {
-                    char ch = crypted.charAt(index);
-                    if (ch >= 'a' && ch <= 'z') {
-                        sb.append((char) ('z' - (ch - 'a')));
-                    } else if (ch >= 'A' && ch <= 'Z') {
-                        sb.append((char) ('Z' - (ch - 'A')));
-                    } else if (ch >= '0' && ch <= '9') {
-                        sb.append(ch);
-                    } else if (ch == ':') {
-                        sb.append(':');
-                    } else if (ch == '$') {
-                        sb.append('/');
-                    } else if (ch == '+') {
-                        sb.append('.');
-                    } else {
-                        sb.append(ch);
-                    }
-                }
+                final String sb = Encoding.atbashDecode(crypted);
                 final URL url = new URL(sb.toString());
                 decryptedLinks.add(createDownloadlink(url.toExternalForm()));
                 return decryptedLinks;

@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -30,13 +32,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.ch", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me" },
+        names = { "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me" },
 
-urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/([\\w\\-]+/){2}", "https?://(\\w+\\.)?watchseries-online\\.ch/episode/.+", "https?://(www\\.)?scene-rls\\.com/[\\w-]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+" }
+        urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/([\\w\\-]+/){2}", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl)/episode/.+", "https?://(www\\.)?scene-rls\\.com/[\\w-]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+" }
 
 )
 public class Wrdprss extends antiDDoSForDecrypt {
@@ -62,7 +62,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString();
+        parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/");
 
         getPage(parameter);
 
