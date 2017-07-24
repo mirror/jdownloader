@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.ArchiveInfo;
@@ -18,14 +20,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.NZBSAXHandler;
 
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzbsearch.net" }, urls = { "https?://[\\w\\.]*nzbsearch.net/nzb_get.aspx\\?mid=[1-9A-Za-z]+" }) public class NzbSearchNet extends PluginForDecrypt {
-
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzbsearch.net" }, urls = { "https?://[\\w\\.]*nzbsearch.net/nzb_get.aspx\\?mid=[1-9A-Za-z]+" })
+public class NzbSearchNet extends PluginForDecrypt {
 
     public NzbSearchNet(PluginWrapper wrapper) {
         super(wrapper);
