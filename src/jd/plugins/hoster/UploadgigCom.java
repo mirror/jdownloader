@@ -59,12 +59,12 @@ public class UploadgigCom extends antiDDoSForHost {
 
     public UploadgigCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("https://uploadgig.com/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://uploadgig.com/page/content/term-of-service";
+        return "https://uploadgig.com/page/content/term-of-service";
     }
 
     private void setConstants(final Account account) {
