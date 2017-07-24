@@ -35,6 +35,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -110,17 +111,20 @@ public class NicoVideoJp extends PluginForHost {
             loggedin = true;
         }
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>|>This video is for .*? only") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (br.containsHTML("this video inappropriate.<")) {
             String watch = br.getRegex("harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
             br.getPage(watch);
         }
-        if (br.getURL().contains(privatevid)) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>|>This video is for .*? only") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains(privatevid)) {
             link.getLinkStatus().setStatusText("This is a private video");
             link.setName(linkid_url);
             return AvailableStatus.TRUE;
+        } else if (br.containsHTML("<h1>Unable to play video\\.</h1>") && br.containsHTML(">This video is not available in your country\\.</p>")) {
+            link.getLinkStatus().setStatusText("GEO-BLOCKED");
+            link.setName(linkid_url);
+            return AvailableStatus.FALSE;
         }
         final String channel;
         String filename;
@@ -233,27 +237,7 @@ public class NicoVideoJp extends PluginForHost {
         try {
             /* add a download slot */
             controlFree(+1);
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
-                    link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
-                link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
+            dl.startDownload();
         } finally {
             /* remove download slot */
             controlFree(-1);
@@ -310,27 +294,7 @@ public class NicoVideoJp extends PluginForHost {
         try {
             /* add a download slot */
             controlPremium(+1);
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
-                    link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
-                link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
+            dl.startDownload();
         } finally {
             /* remove download slot */
             controlPremium(-1);
@@ -411,7 +375,7 @@ public class NicoVideoJp extends PluginForHost {
             }
             /* Try multiple times - it sometimes just doesn't work :( */
             boolean success = false;
-            for (int i = 0; i <= 5; i++) {
+            for (int i = 0; i <= 2; i++) {
                 br = new Browser();
                 br.setFollowRedirects(true);
                 br.getPage("http://www.nicovideo.jp/");
@@ -423,8 +387,15 @@ public class NicoVideoJp extends PluginForHost {
                 br.getHeaders().put("Referer", "https://account.nicovideo.jp/login");
                 br.postPage("https://account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String redirect = br.getRedirectLocation();
-                if (redirect != null && redirect.contains("//account.nicovideo.jp/login?")) {
-                    br.getPage(redirect);
+                if (redirect != null) {
+                    if (redirect.contains("&message=cant_login")) {
+                        // invalid user:password, no need to retry.
+                        throw new AccountInvalidException();
+                    } else if (redirect.contains("//account.nicovideo.jp/login?")) {
+                        br.getPage(redirect);
+                    } else {
+                        // do nothing!
+                    }
                 }
                 if (br.getCookie(MAINPAGE, "user_session") == null || "deleted".equals(br.getCookie(MAINPAGE, "user_session"))) {
                     continue;
@@ -433,22 +404,16 @@ public class NicoVideoJp extends PluginForHost {
                 break;
             }
             if (!success) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new AccountInvalidException();
             }
             // there are multiple account types (free and paid services)
             br.getPage("//account.nicovideo.jp/my/account");
             if (br.containsHTML("<span class=\"membership--status\">(?:Yearly|Monthly|Weekly|Daily) plan</span>")) {
                 account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium Account");
             } else {
                 account.setType(AccountType.FREE);
-                ai.setStatus("Free Account");
             }
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(this.getHost()), "");
             ai.setUnlimitedTraffic();
             return ai;
         }
