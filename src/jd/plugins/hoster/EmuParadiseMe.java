@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,7 +25,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -44,19 +52,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/(?:\\d{4,}-download-\\d+|\\d{4,})" })
 public class EmuParadiseMe extends PluginForHost {
 
     public EmuParadiseMe(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium();
+        setConfigElements();
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "Download Servers! Note: Just because you select a region doesn't ensure data actually comes from that location", new String[] { "Off", "Auto", "Europe", "North America" }, "Choose default download server").setDefaultValue(0));
     }
 
     @Override
@@ -81,19 +87,90 @@ public class EmuParadiseMe extends PluginForHost {
     private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
     private final int            ACCOUNT_FREE_MAXDOWNLOADS    = 2;
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
-    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = -4;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 4;
 
+    public final String          subURL                       = "(?:https?:)?(?://(?:www\\.)?emuparadise\\.me)?/[^<>/]+/[^<>/]+/\\d{4,}-download-\\d+";
+    private boolean              isSubURL                     = false;
+
+    /*
+     * note: this is on every bloody page, but format is slightly different.
+     */
     /* Books, movies and specials are "directlinks" (no captcha/waittime) */
-    private static final String  HTML_TYPE_DIRECT             = "Direct Download:</h2>";
+    private final String         HTML_TYPE_DIRECT             = "Direct Download:</h2>";
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        link.setName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "emuparadise\\.me/[^<>/]+/([^<>/]+)/").getMatch(0)) + ".zip");
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String url = Encoding.htmlDecode(link.getPluginPatternMatcher());
+        isSubURL = new Regex(url, subURL).matches();
+        link.setName(new Regex(url, "emuparadise\\.me/[^<>/]+/([^<>/]+)/").getMatch(0) + ".zip");
         this.setBrowserExclusive();
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
         br.setFollowRedirects(true);
+        prepBrowser();
+        setCookies();
+        br.getPage(url);
+        if (offlineCheck()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = null;
+        String filesize = null;
+        if (isSubURL || br.containsHTML(HTML_TYPE_DIRECT)) {
+            final Regex result = new Regex(br, ">Download\\s*(.*?)</a><font[^>]+>\\s*-\\s*File Size:\\s*(\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})</font>");
+            filename = result.getMatch(0);
+            filesize = result.getMatch(1);
+        } else {
+            if (!br.containsHTML("id=\"Download\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = getFileName();
+            filesize = getFileSize();
+        }
+        if (false && filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename != null) {
+            link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".zip");
+        }
+        link.setDownloadSize(SizeFormatter.getSize(correctFilesize(filesize)));
+        return AvailableStatus.TRUE;
+    }
+
+    public String correctFilesize(String fileSize) {
+        if (fileSize != null && !fileSize.trim().endsWith("B")) {
+            fileSize = fileSize.trim() + "B";
+        }
+        return fileSize;
+    }
+
+    public String getFileSize() {
+        String filesize = br.getRegex("\\s*title=\"Download.*?\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
+        }
+        return filesize;
+    }
+
+    public String getFileName() {
+        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        }
+        return filename;
+    }
+
+    public boolean offlineCheck() {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
+    }
+
+    public void prepBrowser() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+    }
+
+    public void setCookies() {
         synchronized (LOCK) {
             /* Re-uses saved cookies to avoid captchas */
             final Object ret = this.getPluginConfig().getProperty("cookies", null);
@@ -102,61 +179,35 @@ public class EmuParadiseMe extends PluginForHost {
                 for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
-                    this.br.setCookie(COOKIE_HOST, key, value);
+                    br.setCookie(COOKIE_HOST, key, value);
                 }
             } else {
                 /* Skips the captcha (tries to). */
                 br.setCookie(COOKIE_HOST, "downloadcaptcha", "1");
             }
         }
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = null;
-        String filesize = null;
-        if (br.containsHTML(HTML_TYPE_DIRECT)) {
-            filename = br.getRegex("\"https?://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/([^<>\"/]*?)\"").getMatch(0);
-            filesize = br.getRegex("Size:\\s*(\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})<br>").getMatch(0);
-        } else {
-            if (!br.containsHTML("id=\"Download\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-            }
-            filesize = br.getRegex("\\s*title=\"Download.*?\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
-            }
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (filesize != null && !filesize.trim().endsWith("B")) {
-            filesize = filesize.trim() + "B";
-        }
-        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".zip");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "directlink");
+        handleDownload(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "directlink");
     }
 
-    public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void handleDownload(final Account account, final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = null;
         if (br.containsHTML(HTML_TYPE_DIRECT)) {
             dllink = br.getRegex("\"(https?://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/[^<>\"/]*?)\"").getMatch(0);
-        } else {
+        }
+        if (dllink == null) {
             synchronized (LOCK) {
                 dllink = checkDirectLink(downloadLink, directlinkproperty);
                 if (dllink == null) {
-                    br.getPage(br.getURL() + "-download");
+                    // redirects can be here
+                    br.setFollowRedirects(true);
+                    if (!isSubURL) {
+                        br.getPage(br.getURL() + "-download");
+                    }
                     /* As long as the static cookie set captcha workaround works fine, */
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         /* Premium users should of course not have to enter captchas here! */
@@ -179,7 +230,7 @@ public class EmuParadiseMe extends PluginForHost {
                         }
                         /* Save cookies to avoid captchas in the future */
                         final HashMap<String, String> cookies = new HashMap<String, String>();
-                        final Cookies add = this.br.getCookies(COOKIE_HOST);
+                        final Cookies add = br.getCookies(COOKIE_HOST);
                         for (final Cookie c : add.getCookies()) {
                             cookies.put(c.getKey(), c.getValue());
                         }
@@ -189,30 +240,32 @@ public class EmuParadiseMe extends PluginForHost {
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    dllink = "http://www.emuparadise.me" + Encoding.htmlDecode(dllink);
+                    dllink = Encoding.htmlOnlyDecode(dllink);
                 }
             }
-
-            boolean happyHour = false;
-
-            if (br.containsHTML("id=\"happy\\-hour\"")) {
-                if (br.containsHTML("src=\"/happy_hour.php\"")) {
-                    Browser clone = br.cloneBrowser();
-                    clone.getPage("/happy_hour.php");
-                    if (clone.containsHTML(".style.display=\"block\"")) {
-                        happyHour = true;
+            // do not analyse if accounts been used.
+            if (account == null) {
+                boolean happyHour = false;
+                if (br.containsHTML("id=\"happy\\-hour\"")) {
+                    if (br.containsHTML("src=\"/happy_hour.php\"")) {
+                        final Browser clone = br.cloneBrowser();
+                        clone.getPage("/happy_hour.php");
+                        if (clone.containsHTML(".style.display=\"block\"")) {
+                            happyHour = true;
+                        }
                     }
                 }
-            }
-            if (happyHour) {
-                maxFree.set(FREE_MAXDOWNLOADS);
-            } else {
-                maxFree.set(1);
+                if (happyHour) {
+                    maxFree.set(FREE_MAXDOWNLOADS);
+                } else {
+                    maxFree.set(1);
+                }
             }
         }
+        setDownloadServerCookie();
         /* Without this the directlink won't be accepted! */
-        br.getHeaders().put("Referer", this.br.getURL());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        br.getHeaders().put("Referer", br.getURL());
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             final long responsecode = dl.getConnection().getResponseCode();
             if (responsecode == 400) {
@@ -228,7 +281,26 @@ public class EmuParadiseMe extends PluginForHost {
         downloadLink.setProperty(directlinkproperty, dllink);
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).trim());
         dl.startDownload();
+    }
 
+    private void setDownloadServerCookie() {
+        // 0 = off
+        // 1 = auto
+        // 2 = europe
+        // 3 = north america
+        final String cookieKey = "epdprefs";
+        final String domain = br.getHost();
+        final int server = getPluginConfig().getIntegerProperty("servers", 0);
+        if (server == 0) {
+            // do nothing!
+            return;
+        } else if (server == 1) {
+            br.setCookie(domain, cookieKey, "ephttpdownload");
+        } else if (server == 2) {
+            br.setCookie(domain, cookieKey, "ephttpdownloadloceu");
+        } else if (server == 3) {
+            br.setCookie(domain, cookieKey, "ephttpdownloadlocna");
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -254,16 +326,16 @@ public class EmuParadiseMe extends PluginForHost {
 
     private static Object LOCK_ACC = new Object();
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK_ACC) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    this.br.getPage("http://www." + this.getHost() + "/");
-                    if (this.br.containsHTML("logout=1")) {
+                    br.setCookies(this.getHost(), cookies);
+                    br.getPage("http://www." + this.getHost() + "/");
+                    if (br.containsHTML("logout=1")) {
                         return;
                     }
                     /* Full login */
@@ -282,7 +354,7 @@ public class EmuParadiseMe extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -305,7 +377,6 @@ public class EmuParadiseMe extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium account");
         account.setValid(true);
         return ai;
     }
@@ -313,13 +384,14 @@ public class EmuParadiseMe extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        final String url = br.getURL();
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(url);
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            handleDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
+            handleDownload(account, link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
         }
     }
 
