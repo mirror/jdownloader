@@ -510,7 +510,7 @@ public class ClipboardMonitoring {
                                         final String listDebugContent = debugListContent;
                                         final String htmlFragmentDebugContent = debugHtmlFragment;
                                         if (CrossSystem.isMac()) {
-                                            if (stringContent.equals(listContent) && (stringDebugContent != null && listDebugContent == null) || (stringDebugContent == null && listContent != null)) {
+                                            if (stringContent.equals(listContent) && (stringDebugContent != null && listDebugContent == null) || (stringDebugContent == null && listDebugContent != null)) {
                                                 // Safari: URL copy -> LIST contains URL and String contains URL
                                                 continue;
                                             }
