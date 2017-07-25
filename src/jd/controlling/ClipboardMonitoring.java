@@ -444,65 +444,67 @@ public class ClipboardMonitoring {
                                     String debugStringContent = null;
                                     String debugHtmlFragment = null;
                                     /* change detection for String/HTML content */
-                                    final String newStringContent = getStringTransferData(currentContent, dataFlavors);
-                                    try {
-                                        if (!oldStringContent.equals(newStringContent)) {
-                                            debugStringContent = newStringContent;
-                                            /*
-                                             * we only use normal String Content to detect a change
-                                             */
-                                            handleThisRound = handleThisRound(handleThisRound, newStringContent);
-                                            try {
+                                    if (StringUtils.isEmpty(handleThisRound) || CrossSystem.isMac()) {
+                                        final String newStringContent = getStringTransferData(currentContent, dataFlavors);
+                                        try {
+                                            if (!oldStringContent.equals(newStringContent)) {
+                                                debugStringContent = newStringContent;
                                                 /*
-                                                 * lets fetch fresh HTML Content if available
+                                                 * we only use normal String Content to detect a change
                                                  */
-                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
-                                                if (htmlFragment != null) {
-                                                    if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
-                                                        oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
-                                                        debugHtmlFragment = htmlFragment.getFragment();
+                                                handleThisRound = handleThisRound(handleThisRound, newStringContent);
+                                                try {
+                                                    /*
+                                                     * lets fetch fresh HTML Content if available
+                                                     */
+                                                    final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
+                                                    if (htmlFragment != null) {
+                                                        if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
+                                                            oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
+                                                            debugHtmlFragment = htmlFragment.getFragment();
+                                                            /*
+                                                             * remember that we had HTML content this round
+                                                             */
+                                                            if (htmlFlavorAllowed) {
+                                                                handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
+                                                            }
+                                                            browserURL = htmlFragment.getSourceURL();
+                                                        }
+                                                    } else {
+                                                        oldHTMLFragment = new ClipboardHash(null);
+                                                    }
+                                                } catch (final Throwable e) {
+                                                }
+                                            } else {
+                                                /*
+                                                 * no String Content change detected, let's verify if the HTML content hasn't changed
+                                                 */
+                                                try {
+                                                    /*
+                                                     * lets fetch fresh HTML Content if available
+                                                     */
+                                                    final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
+                                                    if (htmlFragment != null) {
                                                         /*
                                                          * remember that we had HTML content this round
                                                          */
-                                                        if (htmlFlavorAllowed) {
-                                                            handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
+                                                        if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
+                                                            oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
+                                                            debugHtmlFragment = htmlFragment.getFragment();
+                                                            if (htmlFlavorAllowed) {
+                                                                handleThisRound = handleThisRound(newStringContent, htmlFragment.getFragment());
+                                                            }
+                                                            browserURL = htmlFragment.getSourceURL();
                                                         }
-                                                        browserURL = htmlFragment.getSourceURL();
+                                                    } else {
+                                                        oldHTMLFragment = new ClipboardHash(null);
                                                     }
-                                                } else {
-                                                    oldHTMLFragment = new ClipboardHash(null);
+                                                } catch (final Throwable e) {
                                                 }
-                                            } catch (final Throwable e) {
                                             }
-                                        } else {
-                                            /*
-                                             * no String Content change detected, let's verify if the HTML content hasn't changed
-                                             */
-                                            try {
-                                                /*
-                                                 * lets fetch fresh HTML Content if available
-                                                 */
-                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
-                                                if (htmlFragment != null) {
-                                                    /*
-                                                     * remember that we had HTML content this round
-                                                     */
-                                                    if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
-                                                        oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
-                                                        debugHtmlFragment = htmlFragment.getFragment();
-                                                        if (htmlFlavorAllowed) {
-                                                            handleThisRound = handleThisRound(newStringContent, htmlFragment.getFragment());
-                                                        }
-                                                        browserURL = htmlFragment.getSourceURL();
-                                                    }
-                                                } else {
-                                                    oldHTMLFragment = new ClipboardHash(null);
-                                                }
-                                            } catch (final Throwable e) {
-                                            }
+                                        } finally {
+                                            oldStringContent = new ClipboardHash(newStringContent);
                                         }
-                                    } finally {
-                                        oldStringContent = new ClipboardHash(newStringContent);
                                     }
                                     if (handleThisRound != null || CHANGE_FLAG.DETECTED.equals(changeFlag)) {
                                         final ClipboardHash stringContent = oldStringContent;
@@ -521,10 +523,10 @@ public class ClipboardMonitoring {
                                                 final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
                                                     @Override
                                                     public String toString() {
-                                                        if (LogController.getInstance().isDebugMode()) {
+                                                        if (false && LogController.getInstance().isDebugMode()) {
                                                             return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + "|" + stringDebugContent + ")|HTMLFragment:(" + htmlFragment + "|" + htmlFragmentDebugContent + ")|ListContent:(" + listContent + "|" + listDebugContent + ")";
                                                         } else {
-                                                            return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
+                                                            return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + (stringDebugContent != null) + "|" + stringContent + ")|HTMLFragment:(" + (htmlFragmentDebugContent != null) + "|" + htmlFragment + ")|ListContent:(" + (listDebugContent != null) + "|" + listContent + ")";
                                                         }
                                                     };
                                                 };
