@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
 public class BeegCom extends PluginForHost {
@@ -44,9 +44,6 @@ public class BeegCom extends PluginForHost {
     public String getAGBLink() {
         return "http://beeg.com/contacts/";
     }
-
-    private static final String BEEG_VERSION = "2096";
-    private static final String JSALT        = "PwK3K7xvlyx";
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -66,8 +63,20 @@ public class BeegCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getPage("https://api.beeg.com/api/v6/" + BEEG_VERSION + "/video/" + fid);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(downloadLink.getPluginPatternMatcher());
+        String[][] match = br.getRegex("script src=\"([^\"]+/(\\d+)\\.js)").getMatches();
+        if (match == null || match.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String beegVersion = match[0][1];
+        String jsurl = match[0][0];
+        br.getPage(jsurl);
+        String salt = br.getRegex("beeg_salt=\"([^\"]+)").getMatch(0);
+        if (salt == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("//api.beeg.com/api/v6/" + beegVersion + "/video/" + fid);
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -88,7 +97,7 @@ public class BeegCom extends PluginForHost {
         DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.XX");
         final String key = new Regex(this.DLLINK, "/key=([^<>\"=]+)%2Cend=").getMatch(0);
         if (key != null) {
-            String deckey = decryptKey(key);
+            String deckey = decryptKey(key, salt);
             DLLINK = DLLINK.replace(key, deckey).replace("%2C", ",");
         }
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -133,14 +142,14 @@ public class BeegCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String decryptKey(final String key) {
+    private String decryptKey(final String key, final String salt) {
         String decodeKey = Encoding.htmlDecode(key);
-        int s = JSALT.length();
+        int s = salt.length();
         StringBuffer t = new StringBuffer();
         for (int o = 0; o < decodeKey.length(); o++) {
             char l = decodeKey.charAt(o);
             int n = o % s;
-            int i = JSALT.charAt(n) % 21;
+            int i = salt.charAt(n) % 21;
             t.append(String.valueOf(Character.toChars(l - i)));
         }
         String result = t.toString();
