@@ -76,7 +76,7 @@ public class Mangafox extends PluginForDecrypt {
             if (isAbort()) {
                 break;
             }
-            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(http://[^\"]+(\\.[a-z]+)(?:\\?token=[a-f0-9]{32}&ttl=\\d+)?)\"").getRow(0);
+            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(https?://[^\"]+(\\.[a-z]+)+(?:\\?token=(?:[a-f0-9]{32}|[a-f0-9]{40})&ttl=\\d+)?)\"").getRow(0);
             if (unformattedSource == null || unformattedSource.length == 0) {
                 skippedPics++;
                 if (skippedPics > 5) {
