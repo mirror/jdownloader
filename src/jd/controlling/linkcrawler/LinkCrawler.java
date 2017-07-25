@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -125,11 +126,11 @@ public class LinkCrawler {
     private final AtomicBoolean                            runningState                = new AtomicBoolean(false);
     private final AtomicInteger                            crawler                     = new AtomicInteger(0);
     private final static AtomicInteger                     CRAWLER                     = new AtomicInteger(0);
-    private final ConcurrentHashMap<String, Object>        duplicateFinderContainer;
-    private final ConcurrentHashMap<String, Object>        duplicateFinderCrawler;
+    private final Map<String, Object>                      duplicateFinderContainer;
+    private final Map<String, Set<Object>>                 duplicateFinderCrawler;
     private final ConcurrentHashMap<String, CrawledLink>   duplicateFinderFinal;
-    private final ConcurrentHashMap<String, Object>        duplicateFinderDeep;
-    private final ConcurrentHashMap<CrawledLink, Object>   loopPreventionEmbedded;
+    private final Map<String, Object>                      duplicateFinderDeep;
+    private final Map<CrawledLink, Object>                 loopPreventionEmbedded;
     private LinkCrawlerHandler                             handler                     = null;
     protected static final ThreadPoolExecutor              threadPool;
     private LinkCrawlerFilter                              filter                      = null;
@@ -398,11 +399,11 @@ public class LinkCrawler {
             setHandler(parentCrawler.getHandler());
             setDeepInspector(parentCrawler.getDeepInspector());
         } else {
-            duplicateFinderContainer = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-            duplicateFinderCrawler = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            duplicateFinderContainer = new HashMap<String, Object>();
+            duplicateFinderCrawler = new HashMap<String, Set<Object>>();
             duplicateFinderFinal = new ConcurrentHashMap<String, CrawledLink>(8, 0.9f, 1);
-            duplicateFinderDeep = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-            loopPreventionEmbedded = new ConcurrentHashMap<CrawledLink, Object>(8, 0.9f, 1);
+            duplicateFinderDeep = new HashMap<String, Object>();
+            loopPreventionEmbedded = new HashMap<CrawledLink, Object>();
             if (CONFIG.isLinkCrawlerRulesEnabled()) {
                 this.linkCrawlerRules = Collections.unmodifiableList(getLinkCrawlerRules());
             } else {
@@ -733,11 +734,19 @@ public class LinkCrawler {
         /*
          * all tasks are done , we can now cleanup our duplicateFinder
          */
-        duplicateFinderContainer.clear();
-        duplicateFinderCrawler.clear();
+        synchronized (duplicateFinderContainer) {
+            duplicateFinderContainer.clear();
+        }
+        synchronized (duplicateFinderCrawler) {
+            duplicateFinderCrawler.clear();
+        }
         duplicateFinderFinal.clear();
-        duplicateFinderDeep.clear();
-        loopPreventionEmbedded.clear();
+        synchronized (duplicateFinderDeep) {
+            duplicateFinderDeep.clear();
+        }
+        synchronized (loopPreventionEmbedded) {
+            loopPreventionEmbedded.clear();
+        }
     }
 
     protected void crawlerStopped() {
@@ -888,11 +897,30 @@ public class LinkCrawler {
         return urlConnection;
     }
 
+    protected boolean isCrawledLinkDuplicated(Map<String, Object> map, CrawledLink link) {
+        final String url = link.getURL();
+        final String urlDecodedURL = Encoding.urlDecode(url, false);
+        final String value;
+        if (StringUtils.equals(url, urlDecodedURL)) {
+            value = url;
+        } else {
+            value = urlDecodedURL;
+        }
+        synchronized (map) {
+            if (map.containsKey(value)) {
+                return true;
+            } else {
+                map.put(value, this);
+                return false;
+            }
+        }
+    }
+
     protected void crawlDeeperOrMatchingRule(final LinkCrawlerGeneration generation, final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
         source.setBrokenCrawlerHandler(null);
-        if (source == null || source.getURL() == null || duplicateFinderDeep.putIfAbsent(source.getURL(), this) != null || this.isCrawledLinkFiltered(source)) {
+        if (source == null || source.getURL() == null || isCrawledLinkDuplicated(duplicateFinderDeep, source) || this.isCrawledLinkFiltered(source)) {
             return;
         }
         final CrawledLinkModifier lm = new CrawledLinkModifier() {
@@ -2542,7 +2570,7 @@ public class LinkCrawler {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
         cryptedLink.setBrokenCrawlerHandler(null);
-        if (oplg == null || cryptedLink.getURL() == null || duplicateFinderContainer.putIfAbsent(cryptedLink.getURL(), this) != null || this.isCrawledLinkFiltered(cryptedLink)) {
+        if (oplg == null || cryptedLink.getURL() == null || isCrawledLinkDuplicated(duplicateFinderContainer, cryptedLink) || this.isCrawledLinkFiltered(cryptedLink)) {
             return;
         }
         if (checkStartNotify(generation)) {
@@ -2649,14 +2677,26 @@ public class LinkCrawler {
         }
     }
 
-    private boolean isDuplicatedCrawling(LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
+    private boolean isDuplicatedCrawling(LazyPlugin<?> lazyC, final CrawledLink cryptedLink) {
         final String url = cryptedLink.getURL();
         final String urlDecodedURL = Encoding.urlDecode(url, false);
+        final String value;
         if (StringUtils.equals(url, urlDecodedURL)) {
-            return duplicateFinderCrawler.putIfAbsent(lazyC.getDisplayName() + "_" + lazyC.getClassName() + "_" + url, this) != null;
+            value = url;
         } else {
-            final String urlEncodedURL = Encoding.urlEncode(urlDecodedURL);
-            return duplicateFinderCrawler.putIfAbsent(lazyC.getDisplayName() + "_" + lazyC.getClassName() + "_" + urlEncodedURL, this) != null;
+            value = urlDecodedURL;
+        }
+        synchronized (duplicateFinderCrawler) {
+            Set<Object> set = duplicateFinderCrawler.get(value);
+            if (set == null) {
+                set = new HashSet<Object>();
+                duplicateFinderCrawler.put(value, set);
+            }
+            if (true) {
+                return !set.add(lazyC);
+            } else {
+                return !set.add(lazyC.getDisplayName() + "_" + lazyC.getClassName());
+            }
         }
     }
 
@@ -3119,7 +3159,7 @@ public class LinkCrawler {
                 // if link comes from flashgot, origin might be null
                 final boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
                 final CrawledLink existing;
-                if ((existing = duplicateFinderFinal.putIfAbsent(link.getLinkID(), link)) != null && !specialHandling) {
+                if ((existing = duplicateFinderFinal.putIfAbsent(Encoding.urlDecode(link.getLinkID(), false), link)) != null && !specialHandling) {
                     final PluginForHost hPlugin = link.gethPlugin();
                     if (hPlugin == null || hPlugin.onLinkCrawlerDupeFilterEnabled(existing, link)) {
                         return;
