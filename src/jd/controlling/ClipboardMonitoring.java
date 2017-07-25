@@ -379,7 +379,11 @@ public class ClipboardMonitoring {
                             }
                         } else {
                             if (StringUtils.isNotEmpty(add)) {
-                                return existing + "\r\n" + add;
+                                if (existing.equals(add)) {
+                                    return existing;
+                                } else {
+                                    return existing + "\r\n" + add;
+                                }
                             } else {
                                 return existing;
                             }
@@ -439,68 +443,66 @@ public class ClipboardMonitoring {
                                     final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
                                     String debugStringContent = null;
                                     String debugHtmlFragment = null;
-                                    if (StringUtils.isEmpty(handleThisRound)) {
-                                        /* change detection for String/HTML content */
-                                        final String newStringContent = getStringTransferData(currentContent, dataFlavors);
-                                        try {
-                                            if (!oldStringContent.equals(newStringContent)) {
-                                                debugStringContent = newStringContent;
+                                    /* change detection for String/HTML content */
+                                    final String newStringContent = getStringTransferData(currentContent, dataFlavors);
+                                    try {
+                                        if (!oldStringContent.equals(newStringContent)) {
+                                            debugStringContent = newStringContent;
+                                            /*
+                                             * we only use normal String Content to detect a change
+                                             */
+                                            handleThisRound = handleThisRound(handleThisRound, newStringContent);
+                                            try {
                                                 /*
-                                                 * we only use normal String Content to detect a change
+                                                 * lets fetch fresh HTML Content if available
                                                  */
-                                                handleThisRound = handleThisRound(handleThisRound, newStringContent);
-                                                try {
-                                                    /*
-                                                     * lets fetch fresh HTML Content if available
-                                                     */
-                                                    final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
-                                                    if (htmlFragment != null) {
-                                                        if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
-                                                            oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
-                                                            debugHtmlFragment = htmlFragment.getFragment();
-                                                            /*
-                                                             * remember that we had HTML content this round
-                                                             */
-                                                            if (htmlFlavorAllowed) {
-                                                                handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
-                                                            }
-                                                            browserURL = htmlFragment.getSourceURL();
-                                                        }
-                                                    } else {
-                                                        oldHTMLFragment = new ClipboardHash(null);
-                                                    }
-                                                } catch (final Throwable e) {
-                                                }
-                                            } else {
-                                                /*
-                                                 * no String Content change detected, let's verify if the HTML content hasn't changed
-                                                 */
-                                                try {
-                                                    /*
-                                                     * lets fetch fresh HTML Content if available
-                                                     */
-                                                    final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
-                                                    if (htmlFragment != null) {
+                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
+                                                if (htmlFragment != null) {
+                                                    if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
+                                                        oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
+                                                        debugHtmlFragment = htmlFragment.getFragment();
                                                         /*
                                                          * remember that we had HTML content this round
                                                          */
-                                                        if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
-                                                            oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
-                                                            debugHtmlFragment = htmlFragment.getFragment();
-                                                            if (htmlFlavorAllowed) {
-                                                                handleThisRound = handleThisRound(newStringContent, htmlFragment.getFragment());
-                                                            }
-                                                            browserURL = htmlFragment.getSourceURL();
+                                                        if (htmlFlavorAllowed) {
+                                                            handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
                                                         }
-                                                    } else {
-                                                        oldHTMLFragment = new ClipboardHash(null);
+                                                        browserURL = htmlFragment.getSourceURL();
                                                     }
-                                                } catch (final Throwable e) {
+                                                } else {
+                                                    oldHTMLFragment = new ClipboardHash(null);
                                                 }
+                                            } catch (final Throwable e) {
                                             }
-                                        } finally {
-                                            oldStringContent = new ClipboardHash(newStringContent);
+                                        } else {
+                                            /*
+                                             * no String Content change detected, let's verify if the HTML content hasn't changed
+                                             */
+                                            try {
+                                                /*
+                                                 * lets fetch fresh HTML Content if available
+                                                 */
+                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
+                                                if (htmlFragment != null) {
+                                                    /*
+                                                     * remember that we had HTML content this round
+                                                     */
+                                                    if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
+                                                        oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
+                                                        debugHtmlFragment = htmlFragment.getFragment();
+                                                        if (htmlFlavorAllowed) {
+                                                            handleThisRound = handleThisRound(newStringContent, htmlFragment.getFragment());
+                                                        }
+                                                        browserURL = htmlFragment.getSourceURL();
+                                                    }
+                                                } else {
+                                                    oldHTMLFragment = new ClipboardHash(null);
+                                                }
+                                            } catch (final Throwable e) {
+                                            }
                                         }
+                                    } finally {
+                                        oldStringContent = new ClipboardHash(newStringContent);
                                     }
                                     if (handleThisRound != null || CHANGE_FLAG.DETECTED.equals(changeFlag)) {
                                         final ClipboardHash stringContent = oldStringContent;
@@ -509,12 +511,6 @@ public class ClipboardMonitoring {
                                         final String stringDebugContent = debugStringContent;
                                         final String listDebugContent = debugListContent;
                                         final String htmlFragmentDebugContent = debugHtmlFragment;
-                                        if (CrossSystem.isMac()) {
-                                            if (stringContent.equals(listContent) && (stringDebugContent != null && listDebugContent == null) || (stringDebugContent == null && listDebugContent != null)) {
-                                                // Safari: URL copy -> LIST contains URL and String contains URL
-                                                // continue;
-                                            }
-                                        }
                                         final long round = roundIndex.getAndIncrement();
                                         if (StringUtils.isNotEmpty(handleThisRound) && (round > 0 || !skipFirstRound)) {
                                             clipboardChangeDetector.restart();
