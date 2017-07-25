@@ -104,7 +104,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK         = true;
+    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = true;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -133,12 +133,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.4.7<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.4.8<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * protocol: no https<br />
      * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
      * other:<br />
      */
@@ -641,8 +640,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    /*
+                     * 2017-07-25: Waittime for reCaptchaV1 was skipple in older XFS versions over a long period of time but is usually NOT
+                     * skippable anymore.
+                     */
+                    skipWaittime = false;
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();

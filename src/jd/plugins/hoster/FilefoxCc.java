@@ -55,18 +55,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upload.mn" }, urls = { "https?://(?:www\\.)?(?:upload\\.mn|upload\\.af)/(?:embed\\-)?[a-z0-9]{12}" })
-public class UploadMn extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filefox.cc" }, urls = { "https?://(?:www\\.)?filefox\\.cc/(?:embed\\-)?[a-z0-9]{12}" })
+public class FilefoxCc extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://upload.mn";
+    private static final String  COOKIE_HOST                        = "http://filefox.cc";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(upload\\.mn|upload\\.af|uploadcdn\\.net)";
+    private static final String  DOMAINS                            = "(filefox\\.cc)";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -88,12 +88,17 @@ public class UploadMn extends antiDDoSForHost {
     private final boolean        SUPPORTS_HTTPS                     = true;
     private final boolean        SUPPORTS_HTTPS_FORCED              = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
+    /*
+     * true = check via postPage, false = we access the check_files site first and parse the Form to cover eventually required tokens inside
+     * the Form.
+     */
+    private final boolean        SUPPORTS_AVAILABLECHECK_ALT_FAST   = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = false;
+    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = true;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -116,29 +121,19 @@ public class UploadMn extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(3);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
 
-    @Override
-    public String rewriteHost(String host) {
-        if ("upload.af".equals(getHost())) {
-            if (host == null || "upload.af".equals(host)) {
-                return "upload.mn";
-            }
-        }
-        return super.rewriteHost(host);
-    }
-
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.7<br />
-     * mods:<br />
-     * limit-info: premium untested set FREE account limits<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.4.8<br />
+     * mods: scanInfo[Extra filename RegEx], waitTime[Extra waittime RegEx], doFree[Special F1 Form handling], checkErrors[Special Reconnect
+     * waittime RegEx], getDllink[Special dllink RegEx], login[Everything], heavily modified; do NOT upgrade!!<br />
+     * limit-info: account: all untested, set FREE limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * protocol: no https<br />
-     * captchatype: null<br />
+     * captchatype: reCaptchaV1<br />
      * other:<br />
      */
     @SuppressWarnings({ "deprecation" })
@@ -147,7 +142,7 @@ public class UploadMn extends antiDDoSForHost {
         final String fuid = getFUIDFromURL(link);
         /* link cleanup, prefer https if possible */
         final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = buildDownloadURL(fuid);
+        final String corrected_downloadurl = buildDownloadURL(fuid, link.getDownloadURL());
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
@@ -156,8 +151,18 @@ public class UploadMn extends antiDDoSForHost {
         link.setUrlDownload(corrected_downloadurl);
     }
 
-    private String buildDownloadURL(final String fuid) {
-        return String.format("%s%s/%s", correctProtocol("https://"), this.getHost(), fuid);
+    /**
+     * Returns current downloadurl with current domain - for special constellations you should use the original URL as a failover (in case
+     * fuid is null).
+     */
+    private String buildDownloadURL(final String fuid, final String failover) {
+        final String output;
+        if (fuid == null) {
+            output = failover;
+        } else {
+            output = String.format("%s%s/%s", correctProtocol("https://"), this.getHost(), fuid);
+        }
+        return output;
     }
 
     @Override
@@ -175,7 +180,7 @@ public class UploadMn extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UploadMn(PluginWrapper wrapper) {
+    public FilefoxCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -186,9 +191,8 @@ public class UploadMn extends antiDDoSForHost {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
         correctDownloadLink(link);
-        setFUID(link);
-        br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
+        setFUID(link);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -327,10 +331,14 @@ public class UploadMn extends antiDDoSForHost {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (inValidate(fileInfo[0])) {
+            /* 2017-07-25: Special */
+            fileInfo[0] = new Regex(correctedBR, "class=\"pfo pfo\\-dl1\"></i>([^<>]+)<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
             fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
-        if (ENABLE_HTML_FILESIZE_CHECK) {
+        if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
@@ -383,7 +391,19 @@ public class UploadMn extends antiDDoSForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            if (SUPPORTS_AVAILABLECHECK_ALT_FAST) {
+                postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            } else {
+                /* Try to get the Form IF NEEDED as it can contain tokens which are missing otherwise. */
+                br.getPage("/?op=check_files");
+                final Form checkfiles_form = br.getFormByInputFieldKeyValue("op", "check_files");
+                if (checkfiles_form == null) {
+                    logger.info("Failed to find check_files Form --> AltAvailablecheck failed");
+                    return null;
+                }
+                checkfiles_form.put("list", Encoding.urlEncode(dl.getDownloadURL()));
+                submitForm(br, checkfiles_form);
+            }
             filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
@@ -424,7 +444,7 @@ public class UploadMn extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -544,7 +564,11 @@ public class UploadMn extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            /* 2017-07-25: Special */
+            Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
+            // if (dlForm == null) {
+            // dlForm = br.getFormbyProperty("name", "F1");
+            // }
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(downloadLink, false);
@@ -620,7 +644,7 @@ public class UploadMn extends antiDDoSForHost {
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    skipWaittime = false;
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
@@ -826,6 +850,10 @@ public class UploadMn extends antiDDoSForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
+                /* 2017-07-25: Special */
+                dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            }
+            if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
@@ -1010,6 +1038,10 @@ public class UploadMn extends antiDDoSForHost {
             /* More open RegEx */
             ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
         }
+        if (ttt == null) {
+            /* 2017-07-25: Special */
+            ttt = new Regex(correctedBR, "class=\"time\\-remain\">[^<>]*?<span>(\\d+)</span>").getMatch(0);
+        }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
             wait = Integer.parseInt(ttt);
@@ -1081,14 +1113,26 @@ public class UploadMn extends antiDDoSForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
+    /**
+     * Sets XFS file-ID which is usually present inside the downloadurl added by the user. Usually it is [a-z0-9]{12}. <br />
+     * Best to execute AFTER having accessed the downloadurl!
+     */
     private void setFUID(final DownloadLink dl) throws PluginException {
         this.fuid = getFUIDFromURL(dl);
+        /*
+         * Rare case: Hoster has special URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
+         * available via html
+         */
         if (this.fuid == null) {
-            /*
-             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code
-             * has been changed an user still has old URLs in downloadlist --> These are usually offline.
-             */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("fuid not given inside URL, trying to find it inside html");
+            this.fuid = new Regex(correctedBR, "type=\"hidden\" name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
+            if (this.fuid == null) {
+                logger.warning("Failed to find fuid inside html");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                logger.info("Found fuid inside html: " + this.fuid);
+                dl.setUrlDownload(this.buildDownloadURL(this.fuid, dl.getDownloadURL()));
+            }
         }
     }
 
@@ -1140,9 +1184,9 @@ public class UploadMn extends antiDDoSForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|Wait[^<>]*?or )").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+            String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait|Wait[^<>]*?or)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -1305,14 +1349,14 @@ public class UploadMn extends antiDDoSForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(3);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(3);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
@@ -1324,12 +1368,14 @@ public class UploadMn extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 this.br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                getPage(COOKIE_HOST + "/login.html");
+                /* 2017-07-25: Special */
+                getPage(COOKIE_HOST + "/");
                 final Form loginform = this.br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1340,10 +1386,10 @@ public class UploadMn extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
                     }
                 }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (this.br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1352,8 +1398,8 @@ public class UploadMn extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!this.br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
+                if (!this.br.getURL().contains("/profile")) {
+                    getPage("/profile");
                 }
                 if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
                     account.setType(AccountType.FREE);
@@ -1378,7 +1424,7 @@ public class UploadMn extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1404,7 +1450,7 @@ public class UploadMn extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
