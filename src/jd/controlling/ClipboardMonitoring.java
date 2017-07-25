@@ -512,7 +512,7 @@ public class ClipboardMonitoring {
                                         if (CrossSystem.isMac()) {
                                             if (stringContent.equals(listContent) && (stringDebugContent != null && listDebugContent == null) || (stringDebugContent == null && listDebugContent != null)) {
                                                 // Safari: URL copy -> LIST contains URL and String contains URL
-                                                continue;
+                                                // continue;
                                             }
                                         }
                                         final long round = roundIndex.getAndIncrement();
@@ -525,7 +525,7 @@ public class ClipboardMonitoring {
                                                 final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
                                                     @Override
                                                     public String toString() {
-                                                        if (false && LogController.getInstance().isDebugMode()) {
+                                                        if (LogController.getInstance().isDebugMode()) {
                                                             return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + "|" + stringDebugContent + ")|HTMLFragment:(" + htmlFragment + "|" + htmlFragmentDebugContent + ")|ListContent:(" + listContent + "|" + listDebugContent + ")";
                                                         } else {
                                                             return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
