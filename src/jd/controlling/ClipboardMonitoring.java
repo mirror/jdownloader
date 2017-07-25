@@ -503,15 +503,21 @@ public class ClipboardMonitoring {
                                         }
                                     }
                                     if (handleThisRound != null || CHANGE_FLAG.DETECTED.equals(changeFlag)) {
+                                        final ClipboardHash stringContent = oldStringContent;
+                                        final ClipboardHash htmlFragment = oldHTMLFragment;
+                                        final ClipboardHash listContent = oldListContent;
+                                        final String stringDebugContent = debugStringContent;
+                                        final String listDebugContent = debugListContent;
+                                        final String htmlFragmentDebugContent = debugHtmlFragment;
+                                        if (CrossSystem.isMac()) {
+                                            if (stringContent.equals(listContent) && (stringDebugContent != null && listDebugContent == null) || (stringDebugContent == null && listContent != null)) {
+                                                // Safari: URL copy -> LIST contains URL and String contains URL
+                                                continue;
+                                            }
+                                        }
                                         final long round = roundIndex.getAndIncrement();
                                         if (StringUtils.isNotEmpty(handleThisRound) && (round > 0 || !skipFirstRound)) {
                                             clipboardChangeDetector.restart();
-                                            final ClipboardHash stringContent = oldStringContent;
-                                            final ClipboardHash htmlFragment = oldHTMLFragment;
-                                            final ClipboardHash listContent = oldListContent;
-                                            final String stringDebugContent = debugStringContent;
-                                            final String listDebugContent = debugListContent;
-                                            final String htmlFragmentDebugContent = debugHtmlFragment;
                                             // minimum stringContent length: ftp://a,7 or file:/1,7
                                             // minimum htmlFragment length: <*>ftp://a</*>
                                             // minimum listContent length: file:/1,7
@@ -519,7 +525,7 @@ public class ClipboardMonitoring {
                                                 final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
                                                     @Override
                                                     public String toString() {
-                                                        if (LogController.getInstance().isDebugMode()) {
+                                                        if (false && LogController.getInstance().isDebugMode()) {
                                                             return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + "|" + stringDebugContent + ")|HTMLFragment:(" + htmlFragment + "|" + htmlFragmentDebugContent + ")|ListContent:(" + listContent + "|" + listDebugContent + ")";
                                                         } else {
                                                             return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
