@@ -30,14 +30,14 @@ import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DownloadFolderChooserDialogDefaultPath;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DownloadFolderChooserDialogSubfolder;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
-
     private javax.swing.JCheckBox cbPackage;
-    private File                  path;
-    private boolean               packageSubFolderSelectionVisible;
-    private boolean               subfolder = false;
+    private final File            path;
+    private boolean               packageSubFolderSelectionVisible = false;
+    private boolean               subfolderFlag                    = false;
 
     /**
      * @param flag
@@ -47,7 +47,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
      */
     public DownloadFolderChooserDialog(File path, String title, String okOption, String cancelOption) {
         super(0, title, okOption, cancelOption);
-        this.path = path;
         StackTraceElement[] st = new Exception().getStackTrace();
         int i = 1;
         String id = "DownloadFolderChooserDialog-";
@@ -64,14 +63,30 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             e.printStackTrace();
         }
         setDimensor(new RememberLastDialogDimension(id));
+        final GraphicalUserInterfaceSettings config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+        DownloadFolderChooserDialogSubfolder subfolderSettings = config.getDownloadFolderChooserDialogSubfolder();
+        if (subfolderSettings == null) {
+            subfolderSettings = DownloadFolderChooserDialogSubfolder.AUTO;
+        }
         if (path != null) {
             if (path.getAbsolutePath().endsWith(PackagizerController.PACKAGETAG)) {
-                subfolder = true;
-                this.path = path.getParentFile();
+                this.subfolderFlag = true;
+                path = path.getParentFile();
             }
-            setPreSelection(this.path);
+            setPreSelection(path);
         }
-        setView(JsonConfig.create(GraphicalUserInterfaceSettings.class).getFileChooserView());
+        this.path = path;
+        switch (subfolderSettings) {
+        case ENABLED:
+            this.subfolderFlag = true;
+            break;
+        case DISABLED:
+            this.subfolderFlag = false;
+            break;
+        default:
+            break;
+        }
+        setView(config.getFileChooserView());
     }
 
     @Override
@@ -111,11 +126,23 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                     return null;
                 }
             }
-            if (cbPackage != null && cbPackage.isSelected()) {
-                if (cbPackage.isSelected() && f.getAbsolutePath().endsWith(PackagizerController.PACKAGETAG)) {
-                    return new File[] { f };
+            if (cbPackage != null) {
+                if (cbPackage.isSelected()) {
+                    // subfolder enabled
+                    if (f.getAbsolutePath().endsWith(PackagizerController.PACKAGETAG)) {
+                        return new File[] { f };
+                    } else {
+                        // add subfolder
+                        return new File[] { new File(f, PackagizerController.PACKAGETAG) };
+                    }
                 } else {
-                    return new File[] { new File(f, PackagizerController.PACKAGETAG) };
+                    // subfolder disabled
+                    if (f.getAbsolutePath().endsWith(PackagizerController.PACKAGETAG)) {
+                        // remove subfolder
+                        return new File[] { f.getParentFile() };
+                    } else {
+                        return new File[] { f };
+                    }
                 }
             } else {
                 return new File[] { f };
@@ -129,11 +156,9 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         ExtTextField lbl = new ExtTextField();
         if (path != null) {
             lbl.setText(_GUI.T.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
-
             lbl.setEditable(false);
             if (CrossSystem.isOpenFileSupported()) {
                 ret.add(lbl);
-
                 ret.add(new JButton(new AppAction() {
                     {
                         setName(_GUI.T.OpenDownloadFolderAction_actionPerformed_button_());
@@ -143,7 +168,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                     public void actionPerformed(ActionEvent e) {
                         CrossSystem.openFile(path);
                     }
-
                 }), "height 20!");
             } else {
                 ret.add(lbl, "spanx");
@@ -160,7 +184,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             namePanel.setLayout(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[][]"));
             namePanel.add(new JLabel(_GUI.T.SetDownloadFolderInDownloadTableAction_modifiyNamePanel_package_()));
             cbPackage = new javax.swing.JCheckBox();
-            cbPackage.setSelected(subfolder);
+            cbPackage.setSelected(subfolderFlag);
             namePanel.add(cbPackage);
         }
     }
@@ -172,7 +196,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
      * @param file
      * @return
      */
-
     public static File open(File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
         if (path != null && !CrossSystem.isAbsolutePath(path.getPath())) {
             path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path.getPath());
@@ -199,7 +222,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                 public void actionPerformed(ActionEvent e) {
                     CrossSystem.openFile(d.getSelection()[0] == null ? finalPath : d.getSelection()[0]);
                 }
-
             });
         }
         List<String> quick;
@@ -226,5 +248,4 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     public boolean isPackageSubFolderSelectionVisible() {
         return packageSubFolderSelectionVisible;
     }
-
 }

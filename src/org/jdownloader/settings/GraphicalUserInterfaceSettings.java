@@ -33,6 +33,18 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
+    public static enum DownloadFolderChooserDialogSubfolder {
+        AUTO,
+        ENABLED,
+        DISABLED
+    }
+
+    @DefaultEnumValue("AUTO")
+    @AboutConfig
+    DownloadFolderChooserDialogSubfolder getDownloadFolderChooserDialogSubfolder();
+
+    void setDownloadFolderChooserDialogSubfolder(DownloadFolderChooserDialogSubfolder value);
+
     public static class CustomIsConfigViewVisible extends AbstractCustomValueGetter<Boolean> {
         @Override
         public Boolean getValue(KeyHandler<Boolean> keyHandler, Boolean value) {
