@@ -414,11 +414,13 @@ public class ClipboardMonitoring {
                                     }
                                     String handleThisRound = null;
                                     boolean macOSWorkaroundNeeded = false;
+                                    String debugListContent = null;
                                     try {
                                         /* change detection for List/URI content */
                                         final String newListContent = getListTransferData(currentContent, dataFlavors);
                                         try {
                                             if (!oldListContent.equals(newListContent)) {
+                                                debugListContent = newListContent;
                                                 handleThisRound = handleThisRound(handleThisRound, newListContent);
                                             }
                                         } finally {
@@ -435,11 +437,14 @@ public class ClipboardMonitoring {
                                     }
                                     String browserURL = null;
                                     final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
+                                    String debugStringContent = null;
+                                    String debugHtmlFragment = null;
                                     if (StringUtils.isEmpty(handleThisRound)) {
                                         /* change detection for String/HTML content */
                                         final String newStringContent = getStringTransferData(currentContent, dataFlavors);
                                         try {
                                             if (!oldStringContent.equals(newStringContent)) {
+                                                debugStringContent = newStringContent;
                                                 /*
                                                  * we only use normal String Content to detect a change
                                                  */
@@ -450,14 +455,17 @@ public class ClipboardMonitoring {
                                                      */
                                                     final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
                                                     if (htmlFragment != null) {
-                                                        /*
-                                                         * remember that we had HTML content this round
-                                                         */
-                                                        oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
-                                                        if (htmlFlavorAllowed) {
-                                                            handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
+                                                        if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
+                                                            oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
+                                                            debugHtmlFragment = htmlFragment.getFragment();
+                                                            /*
+                                                             * remember that we had HTML content this round
+                                                             */
+                                                            if (htmlFlavorAllowed) {
+                                                                handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
+                                                            }
+                                                            browserURL = htmlFragment.getSourceURL();
                                                         }
-                                                        browserURL = htmlFragment.getSourceURL();
                                                     } else {
                                                         oldHTMLFragment = new ClipboardHash(null);
                                                     }
@@ -478,6 +486,7 @@ public class ClipboardMonitoring {
                                                          */
                                                         if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
                                                             oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
+                                                            debugHtmlFragment = htmlFragment.getFragment();
                                                             if (htmlFlavorAllowed) {
                                                                 handleThisRound = handleThisRound(newStringContent, htmlFragment.getFragment());
                                                             }
@@ -500,6 +509,9 @@ public class ClipboardMonitoring {
                                             final ClipboardHash stringContent = oldStringContent;
                                             final ClipboardHash htmlFragment = oldHTMLFragment;
                                             final ClipboardHash listContent = oldListContent;
+                                            final String stringDebugContent = debugStringContent;
+                                            final String listDebugContent = debugListContent;
+                                            final String htmlFragmentDebugContent = debugHtmlFragment;
                                             // minimum stringContent length: ftp://a,7 or file:/1,7
                                             // minimum htmlFragment length: <*>ftp://a</*>
                                             // minimum listContent length: file:/1,7
@@ -507,7 +519,11 @@ public class ClipboardMonitoring {
                                                 final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound) {
                                                     @Override
                                                     public String toString() {
-                                                        return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
+                                                        if (LogController.getInstance().isDebugMode()) {
+                                                            return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + "|" + stringDebugContent + ")|HTMLFragment:(" + htmlFragment + "|" + htmlFragmentDebugContent + ")|ListContent:(" + listContent + "|" + listDebugContent + ")";
+                                                        } else {
+                                                            return super.toString() + "|ChangeFlag:" + changeFlag + "|Round:" + round + "|StringContent:(" + stringContent + ")|HTMLFragment:(" + htmlFragment + ")|ListContent:(" + listContent + ")";
+                                                        }
                                                     };
                                                 };
                                                 final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
