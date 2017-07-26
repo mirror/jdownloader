@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -84,7 +85,7 @@ public class SaveTv extends PluginForHost {
     /* User has programmed something but it has not aired yet (is not downloadable yet) --> We will change these urls to LINKTYPE_NORMAL */
     private final String          LINKTYPE_MAYBE_NOT_YET_DOWNLOADABLE       = ".+/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
     /* Direct url --> We will change these to LINKTYPE_NORMAL */
-    private final String          LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
+    private final static String   LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
     public static final String    APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double    QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
@@ -231,24 +232,6 @@ public class SaveTv extends PluginForHost {
         return "http://www.save.tv/STV/S/misc/terms.cfm";
     }
 
-    /** Users may add direct URLs as not everyone understands how JDownloader works --> Correct that! */
-    @SuppressWarnings("deprecation")
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        String url = link.getDownloadURL().toLowerCase();
-        final String telecastID;
-        if (url.matches(LINKTYPE_DIRECT)) {
-            /* Convert directurls --> 'Normal' Stv 'telecastID'-URLs */
-            telecastID = new Regex(url, "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)").getMatch(0);
-        } else {
-            telecastID = new Regex(url, "telecastid=(\\d+)$").getMatch(0);
-        }
-        /* Create new url */
-        url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastID=" + telecastID;
-        link.setUrlDownload(url);
-        link.setContentUrl(url);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
@@ -291,10 +274,8 @@ public class SaveTv extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (telecast_ID != null) {
-            if (link.getName() != null && (link.getName().contains(telecast_ID) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
-                link.setName(telecast_ID + EXTENSION_default);
-            }
+        if (link.getName() != null && (link.getName().contains(telecast_ID) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
+            link.setName(telecast_ID + EXTENSION_default);
         }
         Account aa = null;
         final String account_username_via_which_url_is_downloadable = getDownloadableVia(link);
@@ -339,9 +320,6 @@ public class SaveTv extends PluginForHost {
             parseQualityTag(link, null);
         } else {
             login_site(this.br, aa, false);
-            if (telecast_ID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             getPageSafe("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
             if (!br.getURL().contains("/JSON/") || this.br.getHttpConnection().getResponseCode() == 404) {
                 /* Offline#1 - offline */
@@ -1561,8 +1539,15 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private static String getTelecastId(final DownloadLink link) {
-        /** TODO: Remove the "toLowerCase()" after 2016-08-01 */
-        return new Regex(link.getDownloadURL().toLowerCase(), "telecastid=(\\d+)").getMatch(0);
+        final String telecastID;
+        final String url = link.getDownloadURL();
+        if (new Regex(url, Pattern.compile(LINKTYPE_DIRECT)).matches()) {
+            /* Convert directurls --> 'Normal' Stv 'telecastID'-URLs */
+            telecastID = new Regex(url, Pattern.compile("https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        } else {
+            telecastID = new Regex(url, Pattern.compile("telecastid=(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        return telecastID;
     }
 
     /**

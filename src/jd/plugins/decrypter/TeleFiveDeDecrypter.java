@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.ByteArrayOutputStream;
@@ -53,9 +52,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/re(?:\\-)?play/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/.+" })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public TeleFiveDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -78,19 +76,16 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         String json_source;
         FilePackage fp = null;
         br.setFollowRedirects(true);
-
         if (videoid_inside_url != null) {
             /* Single video (date unknown) */
             videoidsToDecrypt.put(videoid_inside_url, null);
         } else {
             /* Multiple videos */
             br.getPage(parameter);
-
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-
             final String player_id = this.br.getRegex("pid=\"(vplayer_\\d+)\"").getMatch(0);
             final String cid = this.br.getRegex("cid=\"(\\d+)\"").getMatch(0);
             String lid = this.br.getRegex("lid=\"([A-Za-z0-9\\-_]+)\"").getMatch(0);
@@ -99,7 +94,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-
             if ((player_id == null || lid == null) && !"0".equals(cid)) {
                 /* Single video */
                 videoidsToDecrypt.put(cid, null);
@@ -111,19 +105,15 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-
                 json_source = this.br.getRegex("\\d+\\s*?:\\s*?(\\{.*?\\}),\\s*?\\}\\);").getMatch(0);
-
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
                 final String name_category_or_series = (String) entries.get("title");
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("entries");
-
                 /* Use FilePackage */
                 if (name_category_or_series != null) {
                     fp = FilePackage.getInstance();
                     fp.setName(name_category_or_series);
                 }
-
                 /* Find videoids (episodes). */
                 for (final Object episodeo : ressourcelist) {
                     entries = (LinkedHashMap<String, Object>) episodeo;
@@ -136,17 +126,14 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 }
             }
         }
-
         /* Crawl videos. */
         final DecimalFormat df = new DecimalFormat("00");
-
         final Iterator<Entry<String, String>> it = videoidsToDecrypt.entrySet().iterator();
         while (it.hasNext()) {
             decryptedLinksTemp.clear();
             final Entry<String, String> videoidEntry = it.next();
             final String videoid = videoidEntry.getKey();
             final String date = videoidEntry.getValue();
-
             if (this.isAbort()) {
                 return decryptedLinks;
             }
@@ -157,7 +144,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
             json_source = this.br.getRegex("setup:(\\{.*?\\}\\})\\s*?},").getMatch(0);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-
             /* Find dash master url. */
             final Object dash_master_url_o = JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/file");
             if (!(dash_master_url_o instanceof String)) {
@@ -166,7 +152,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
             final String dash_master_url = (String) dash_master_url_o;
             final String akamaized_videoid = new Regex(dash_master_url, "kamaized.net/([^/]+)/").getMatch(0);
-
             /* Find information about that video. */
             entries = (LinkedHashMap<String, Object>) entries.get("fw");
             final String name_episode = (String) entries.get("title");
@@ -190,7 +175,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             if (date != null) {
                 date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
             }
-
             DownloadLink bestQuality = null;
             int bitrateMax = 0;
             int bitrateTemp = 0;
@@ -199,7 +183,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             if (season > 0 && episode > 0) {
                 filename_part += "S" + df.format(season) + "E" + df.format(episode) + "_";
             }
-
             this.br.getPage(dash_master_url);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 /* Skip offline content - some content seems to be online from the main page but actually it is offline. */
@@ -240,7 +223,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     bestQuality = dl;
                 }
             }
-
             if (bestonly && bestQuality != null) {
                 /* Add best only. */
                 decryptedLinks.add(bestQuality);
@@ -249,9 +231,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 /* Add everything we found. */
                 decryptedLinks.addAll(decryptedLinksTemp);
             }
-
         }
-
         return decryptedLinks;
     }
 
@@ -276,7 +256,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         final String service_name = new Regex(br.getURL(), "https?://(?:www\\.)([A-Za-z0-9\\-\\.]+)\\.[A-Za-z]+/").getMatch(0);
         /* parse flash url */
         HashMap<String, DownloadLink> foundLinks = new HashMap<String, DownloadLink>();
-
         String entry_id = PluginJSonUtils.getJsonValue(video_source, "entry_id");
         String wid = PluginJSonUtils.getJsonValue(video_source, "wid");
         String uiconf_id = PluginJSonUtils.getJsonValue(video_source, "uiconf_id");
@@ -316,7 +295,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             return null;
         }
         kdpUrl = Encoding.htmlDecode(kdpUrl);
-
         /* put url vars into map */
         Map<String, String> v = new HashMap<String, String>();
         for (String s : kdpUrl.split("&")) {
@@ -355,27 +333,22 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             return foundLinks;
         }
         Document doc = JDUtilities.parseXmlString(br2.toString(), false);
-
         /* xml data --> HashMap */
         // /xml/result/item --> name, ext etc.
         // /xml/result/item/item --> streaminfo entryId bitraten auflösung usw.
         final Node root = doc.getChildNodes().item(0);
         NodeList nl = root.getFirstChild().getChildNodes();
-
         HashMap<String, HashMap<String, String>> KalturaMediaEntry = new HashMap<String, HashMap<String, String>>();
         HashMap<String, String> KalturaFlavorAsset = null;
         HashMap<String, String> fileInfo = new HashMap<String, String>();
-
         for (int i = 0; i < nl.getLength(); i++) {
             Node childNode = nl.item(i);
             NodeList t = childNode.getChildNodes();
-
             for (int j = 0; j < t.getLength(); j++) {
                 Node g = t.item(j);
                 if ("item".equals(g.getNodeName())) {
                     KalturaFlavorAsset = new HashMap<String, String>();
                     NodeList item = g.getChildNodes();
-
                     for (int k = 0; k < item.getLength(); k++) {
                         Node kk = item.item(k);
                         KalturaFlavorAsset.put(kk.getNodeName(), kk.getTextContent());
@@ -390,17 +363,14 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         if (fileInfo.size() == 0) {
             return null;
         }
-
         if (!isEmpty(fileInfo.get("categories"))) {
             fileInfo.put("categories", new String(fileInfo.get("categories").getBytes("ISO-8859-1"), "UTF-8"));
         }
         if (!isEmpty(fileInfo.get("name"))) {
             fileInfo.put("name", new String(fileInfo.get("name").getBytes("ISO-8859-1"), "UTF-8"));
         }
-
         boolean r = true;
         boolean gotPage = false;
-
         /* creating downloadLinks */
         for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
             KalturaFlavorAsset = new HashMap<String, String>(next.getValue());
@@ -448,7 +418,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
             final String date_formatted = formatDate(date);
             final String filename = date_formatted + "_" + service_name + "_" + fileInfo.get("categories") + "_" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + formatString + "." + KalturaFlavorAsset.get("fileExt");
-
             /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
             String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
             vidlink += (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
@@ -531,7 +500,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         partnerid = partnerid.replace("_", "");
         final String vidlink = "http://api.medianac.com/p/" + partnerid + "/sp/" + sp + "/playManifest/entryId/" + entryid + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
         br2.getPage(vidlink);
-
         final String rtmp_base_server = br2.getRegex("<baseURL>rtmp://rtmp\\.(mnac\\-p\\-\\d+)\\.c\\.nmdn\\.net/.+</baseURL>").getMatch(0);
         /* Needed for rtmp --> http */
         if (rtmp_base_server == null) {
@@ -589,7 +557,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             if (formatString.endsWith("_")) {
                 formatString = formatString.substring(0, formatString.lastIndexOf("_"));
             }
-
             final String service_name = new Regex(br.getURL(), "https?://(?:www\\.)?([A-Za-z0-9]+)\\.").getMatch(0);
             final String filename;
             if (title != null) {
@@ -597,7 +564,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             } else {
                 filename = service_name + "_" + partnerid + "_" + entryid + "_" + formatString + ".mp4";
             }
-
             /* make dllink */
             final String dllink = "http://dl." + rtmp_base_server + ".c.nmdn.net/" + rtmp_base_server + "/" + linkpart + ".mp4";
             final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
@@ -632,7 +598,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         if (swfdec == null || swfdec.length == 0) {
             return null;
         }
-
         for (int i = 0; i < swfdec.length; i++) {
             if (swfdec[i] < 33 || swfdec[i] > 127) {
                 swfdec[i] = 35; // #
@@ -696,7 +661,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             decompressor.setInput(strip(b));
             ByteArrayOutputStream bos = new ByteArrayOutputStream(b.length - 8);
             byte[] buffer = new byte[1024];
-
             try {
                 while (true) {
                     int count = decompressor.inflate(buffer);
@@ -712,14 +676,12 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             } finally {
                 decompressor.end();
             }
-
             byte[] swf = new byte[8 + bos.size()];
             System.arraycopy(b, 0, swf, 0, 8);
             System.arraycopy(bos.toByteArray(), 0, swf, 8, bos.size());
             swf[0] = 70; // F
             return swf;
         }
-
     }
 
     private static boolean isEmpty(String ip) {
@@ -730,5 +692,4 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
