@@ -1656,6 +1656,7 @@ ask=Chiedimi
 authtablemodel_column_enabled=Usa accessi
 authtablemodel_column_host=Host/URL
 authtablemodel_column_password=Password
+authtablemodel_column_realm=Dominio
 authtablemodel_column_type=Tipo server
 authtablemodel_column_type_ftp=ftp://
 authtablemodel_column_type_http=http://
