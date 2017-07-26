@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.utils.Application;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -9,8 +11,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.SkipReason;
-
-import jd.controlling.captcha.SkipException;
 
 public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
     private static final RecaptchaChooseFrom3x3Solver INSTANCE = new RecaptchaChooseFrom3x3Solver();
@@ -84,7 +84,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
             Challenge<?> challenge = solverJob.getChallenge();
             if (challenge instanceof RecaptchaV2Challenge) {
                 checkSilentMode(solverJob);
-                AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) ((RecaptchaV2Challenge) solverJob.getChallenge()).createBasicCaptchaChallenge();
+                AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) ((RecaptchaV2Challenge) solverJob.getChallenge()).createBasicCaptchaChallenge(true);
                 if (captchaChallenge == null) {
                     throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
                 }

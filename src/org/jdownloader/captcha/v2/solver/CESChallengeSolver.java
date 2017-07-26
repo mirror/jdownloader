@@ -22,12 +22,10 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
 
     public CESChallengeSolver(int threadCount) {
         super(null, threadCount);
-
     }
 
     public CESChallengeSolver(SolverService service, int threadCount) {
         super(service, threadCount);
-
     }
 
     protected boolean isAccountLoginSupported(Challenge<?> c) {
@@ -45,7 +43,6 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
         if (!isEnabled() || !canHandle(job.getChallenge())) {
             return;
         }
-
         checkInterruption();
         CESSolverJob<T> cesJob = new CESSolverJob<T>(job);
         try {
@@ -58,7 +55,7 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     protected void solveCES(CESSolverJob<T> job) throws InterruptedException, SolverException {
         Challenge<?> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
-            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge(true);
             if (challenge == null) {
                 throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
             }
@@ -73,13 +70,10 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     protected void initServicePanel(final KeyHandler... handlers) {
         if (!org.appwork.utils.Application.isHeadless()) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
                 @SuppressWarnings("unchecked")
                 public void run() {
-
                     for (KeyHandler k : handlers) {
                         k.getEventSender().addListener(new GenericConfigEventListener<Object>() {
-
                             @Override
                             public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
                             }

@@ -241,6 +241,9 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
         final String filesize = br.getRegex("dir=\"ltr\" style=\"text-align: left;\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
+            if (br.containsHTML(">Your ip is been blocked, if you think it is mistake contact us")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your ip is been blocked", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getBooleanProperty("apiInfo", Boolean.FALSE) == Boolean.FALSE) {
