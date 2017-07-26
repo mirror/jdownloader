@@ -115,7 +115,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             return new CaptchaResponse(this, solver, result, 100);
         } else {
             if (hasBasicCaptchaChallenge()) {
-                final BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
+                final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(false);
                 if (basic != null) {
                     return basic.parseAPIAnswer(result, resultFormat, solver);
                 }
@@ -135,7 +135,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             ret.setSameOrigin(isSameOrigin());
             return ret;
         } else {
-            final BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
+            final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(true);
             if (basic != null) {
                 return basic.getAPIStorable(format);
             } else {
@@ -645,12 +645,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         return basicChallenge != null;
     }
 
-    public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge() {
+    public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge(final boolean showInstallDialog) {
         if (basicChallenge != null) {
             return basicChallenge;
         }
         final PhantomJS binding = new PhantomJS();
-        if (!binding.isAvailable()) {
+        if (!binding.isAvailable() && showInstallDialog) {
             try {
                 InstallThread.install(null, _GUI.T.phantomjs_usage());
             } catch (InterruptedException e) {

@@ -80,7 +80,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         if (challenge instanceof RecaptchaV2Challenge) {
             // create fallback challenge here. we do not want to block later
             try {
-                ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+                ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge(false);
             } catch (final Throwable e) {
                 job.getLogger().log(e);
             }
