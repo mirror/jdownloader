@@ -294,7 +294,7 @@ public class LinkCrawler {
                 }
 
                 @Override
-                protected CrawledLink crawledLinkFactorybyURL(final String url) {
+                protected CrawledLink crawledLinkFactorybyURL(final CharSequence url) {
                     final CrawledLink ret;
                     if (parent != null) {
                         ret = parent.crawledLinkFactorybyURL(url);
@@ -455,7 +455,7 @@ public class LinkCrawler {
         return created;
     }
 
-    protected CrawledLink crawledLinkFactorybyURL(final String url) {
+    protected CrawledLink crawledLinkFactorybyURL(final CharSequence url) {
         final LinkCrawler parent = getParent();
         if (parent != null) {
             return parent.crawledLinkFactorybyURL(url);
@@ -552,9 +552,9 @@ public class LinkCrawler {
                 @Override
                 public boolean add(HtmlParserCharSequence e) {
                     final boolean ret = super.add(e);
-                    if (ret && (!e.contains("...") && !e.equals(getBaseURL()))) {
+                    if (ret && (!e.contains("...") && (!e.equals(getBaseURL()) || isSkipBaseURL() == false))) {
                         fastResults.add(e);
-                        final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toURL());
+                        final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toCharSequenceURL());
                         crawledLink.setCrawlDeep(allowDeep);
                         final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
                         crawledLinks.add(crawledLink);
@@ -3114,10 +3114,10 @@ public class LinkCrawler {
     }
 
     public static String cleanURL(String cUrl) {
-        final String protocol = HTMLParser.getProtocol(cUrl);
-        if (protocol != null) {
+        final boolean isSupportedProtocol = HTMLParser.isSupportedProtocol(cUrl);
+        if (isSupportedProtocol) {
             final String host = Browser.getHost(cUrl, true);
-            if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
+            if (!StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
                 if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://") || cUrl.startsWith("file:/")) {
                     return cUrl;
                 } else if (cUrl.startsWith("directhttp://")) {

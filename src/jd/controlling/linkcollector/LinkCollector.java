@@ -257,7 +257,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         @Override
-        protected CrawledLink crawledLinkFactorybyURL(String url) {
+        protected CrawledLink crawledLinkFactorybyURL(CharSequence url) {
             final CrawledLink ret = new CrawledLink(url);
             final LinkCollectingJob job = getJob();
             if (job != null) {
@@ -1320,9 +1320,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {

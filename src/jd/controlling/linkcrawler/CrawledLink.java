@@ -167,8 +167,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getDefaultPlugin();
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**
@@ -178,8 +179,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final Object llink = link;
         if (llink instanceof DownloadLink) {
             return (DownloadLink) llink;
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**
@@ -189,8 +191,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final Object llink = link;
         if (llink instanceof CryptedLink) {
             return (CryptedLink) llink;
+        } else {
+            return null;
         }
-        return null;
     }
 
     private volatile Object          link       = null;
@@ -236,11 +239,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         link = cLink;
     }
 
-    public CrawledLink(String url) {
-        if (url == null) {
-            return;
-        }
-        link = new String(url);
+    public CrawledLink(CharSequence url) {
+        link = url;
     }
 
     public String getName() {
@@ -273,8 +273,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getChunks();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public void setChunks(int chunks) {
@@ -329,8 +330,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getHost();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getURL() {
@@ -343,8 +345,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             } else {
                 return llink.toString();
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
