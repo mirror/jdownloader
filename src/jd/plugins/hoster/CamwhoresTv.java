@@ -43,11 +43,11 @@ public class CamwhoresTv extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.camwhores.tv/");
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension            = ".mp4";
     /* Connection stuff */
@@ -130,7 +130,7 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     private void getDllink(final DownloadLink link) throws PluginException, IOException {
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(link, this.br);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br, link);
         if (dllink != null && dllink.contains("login-required")) {
             dllink = null;
         }

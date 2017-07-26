@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -55,11 +54,9 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgview.net" }, urls = { "https?://(www\\.)?imgview\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgviewNet extends antiDDoSForHost {
-
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
-
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
     private static final String            COOKIE_HOST                     = "http://imgview.net";
@@ -67,10 +64,8 @@ public class ImgviewNet extends antiDDoSForHost {
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
     private static final String            DOMAINS                         = "(imgview\\.net)";
-
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
-
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
@@ -83,19 +78,16 @@ public class ImgviewNet extends antiDDoSForHost {
     private static final boolean           VIDEOHOSTER_2                   = false;
     /* Enable this for imagehosts */
     private static final boolean           IMAGEHOSTER                     = true;
-
     private static final boolean           SUPPORTS_HTTPS                  = false;
     private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = false;
     private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = false;
-
     /* Waittime stuff */
     private static final boolean           WAITFORCED                      = false;
     private static final int               WAITSECONDSMIN                  = 3;
     private static final int               WAITSECONDSMAX                  = 100;
     private static final int               WAITSECONDSFORCED               = 5;
-
     /* Connection stuff */
     private static final boolean           FREE_RESUME                     = false;
     private static final int               FREE_MAXCHUNKS                  = 1;
@@ -106,27 +98,22 @@ public class ImgviewNet extends antiDDoSForHost {
     private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
-
     /* Supported linktypes */
     private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-
     /* Texts displaed to the user in some errorcases */
     private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
     private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
     private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
-
     /* Properties */
     private static final String            PROPERTY_DLLINK_FREE            = "freelink";
     private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
     private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
     private static final String            PROPERTY_PASS                   = "pass";
-
     /* Used variables */
     private String                         correctedBR                     = "";
     private String                         fuid                            = null;
     private String                         passCode                        = null;
-
     private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -146,7 +133,6 @@ public class ImgviewNet extends antiDDoSForHost {
      * captchatype: null 4dignum solvemedia recaptcha<br />
      * other: maybe related to imgrock.net? <br />
      */
-
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -198,9 +184,7 @@ public class ImgviewNet extends antiDDoSForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         altbr = this.br.cloneBrowser();
-
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
@@ -244,15 +228,12 @@ public class ImgviewNet extends antiDDoSForHost {
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-
         scanInfo(fileInfo);
-
         // abbreviated over x chars long
         if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
-
         if (fileInfo[0] == null && IMAGEHOSTER) {
             /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
             fileInfo[0] = this.fuid;
@@ -284,7 +265,6 @@ public class ImgviewNet extends antiDDoSForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
-
         /* standard traits from base page */
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -453,7 +433,7 @@ public class ImgviewNet extends antiDDoSForHost {
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
-                    jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, imghost_next_form);
+                    imghost_next_form = jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, imghost_next_form);
                     submitForm(imghost_next_form);
                     checkErrors(downloadLink, false);
                     dllink = getDllink();
@@ -568,7 +548,6 @@ public class ImgviewNet extends antiDDoSForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -726,14 +705,11 @@ public class ImgviewNet extends antiDDoSForHost {
     private void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -791,26 +767,21 @@ public class ImgviewNet extends antiDDoSForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -1270,5 +1241,4 @@ public class ImgviewNet extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

@@ -38,8 +38,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class YouPornCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
-    String          dllink        = null;
-    private boolean server_issues = false;
+    String          dllink             = null;
+    private boolean server_issues      = false;
+    private boolean temporarilyBlocked = false;
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,6 +88,8 @@ public class YouPornCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
         this.dllink = null;
+        this.server_issues = false;
+        this.temporarilyBlocked = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://youporn.com/", "age_verified", "1");
@@ -96,13 +99,17 @@ public class YouPornCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
-        // Offline link
         if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"|watchRemoved\"|class=\\'video\\-not\\-found\\'")) {
+            /* Offline link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // Invalid link
-        if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+            /* Invalid link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("onload=\"go\\(\\)\"")) {
+            /* 2017-07-26: TODO: Maybe follow that js redirect */
+            logger.info("Temporarily blocked because of too many requests");
+            this.temporarilyBlocked = true;
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
         if (filename == null) {
@@ -192,6 +199,8 @@ public class YouPornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (this.temporarilyBlocked) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Temporarily blocked because of too many requests", 5 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

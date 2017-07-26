@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -49,20 +48,18 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgrock.net" }, urls = { "https?://(www\\.)?imgrock\\.net/(embed\\-)?[a-z0-9]{12}" })
-public class ImgrockNet extends antiDDoSForHost {
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgrock.co" }, urls = { "https?://(www\\.)?imgrock\\.(?:net|co)/(embed\\-)?[a-z0-9]{12}" })
+public class ImgrockCo extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
-
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://imgrock.net";
+    private static final String            COOKIE_HOST                     = "http://imgrock.co";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(imgrock\\.net)";
+    private static final String            DOMAINS                         = "(imgrock\\.net|imgrock\\.co)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -74,7 +71,6 @@ public class ImgrockNet extends antiDDoSForHost {
     private static final boolean           VIDEOHOSTER_2                   = false;
     /* Enable this for imagehosts */
     private static final boolean           IMAGEHOSTER                     = true;
-
     private static final boolean           SUPPORTS_HTTPS                  = false;
     private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
@@ -95,25 +91,21 @@ public class ImgrockNet extends antiDDoSForHost {
     private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
-
     /* Linktypes */
     private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
     private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
     private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
-
     /* Properties */
     private static final String            PROPERTY_DLLINK_FREE            = "freelink";
     private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
     private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
     private static final String            PROPERTY_PASS                   = "pass";
-
     /* Used variables */
     private String                         correctedBR                     = "";
     private String                         fuid                            = null;
     private String                         passCode                        = null;
-
     private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -131,7 +123,6 @@ public class ImgrockNet extends antiDDoSForHost {
     // captchatype: null
     // other: related to imgview.net ?
     // TODO: Add case maintenance + alternative filesize check
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -153,12 +144,22 @@ public class ImgrockNet extends antiDDoSForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("imgrock.net".equals(getHost())) {
+            if (host == null || "imgrock.net".equals(host)) {
+                return "imgrock.co";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
     @SuppressWarnings("deprecation")
-    public ImgrockNet(PluginWrapper wrapper) {
+    public ImgrockCo(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -269,7 +270,6 @@ public class ImgrockNet extends antiDDoSForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
-
         /* standard traits from base page */
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -409,7 +409,7 @@ public class ImgrockNet extends antiDDoSForHost {
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
-                    jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, imghost_next_form);
+                    imghost_next_form = jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, imghost_next_form);
                     submitForm(imghost_next_form);
                     checkErrors(downloadLink, false);
                     dllink = getDllink();
@@ -521,7 +521,6 @@ public class ImgrockNet extends antiDDoSForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -677,14 +676,11 @@ public class ImgrockNet extends antiDDoSForHost {
     private void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -741,26 +737,21 @@ public class ImgrockNet extends antiDDoSForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -1227,7 +1218,6 @@ public class ImgrockNet extends antiDDoSForHost {
     // /* workaround for free/premium issue on stable 09581 */
     // return maxPrem.get();
     // }
-
     @Override
     public void reset() {
     }
@@ -1240,5 +1230,4 @@ public class ImgrockNet extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

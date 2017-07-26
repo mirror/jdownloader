@@ -1448,6 +1448,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(ownerID);
         int currentOffset = 0;
+        int counter_wall_start_from = 0;
+        int counter_items_found = 10;
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
             final Regex info = new Regex(CRYPTEDLINK_ORIGINAL, "\\-maxoffset=(\\d+)\\-currentoffset=(\\d+)");
             total_numberof_entries = Long.parseLong(info.getMatch(0));
@@ -1460,19 +1462,22 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        while (currentOffset < total_numberof_entries) {
+        while (currentOffset < total_numberof_entries && counter_items_found > 0) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user, stopping...");
                 break;
             }
+            counter_items_found = 0;
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
             if (currentOffset > 0) {
-                this.getPageSafe(String.format("https://vk.com/wall-%s?al=-1&local=1&offset=%s&_rndVer=%s", ownerID, currentOffset, "68802"));
+                this.postPageSafe("/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&owner_id=%s&type=own&wall_start_from=%s", "", currentOffset, ownerID, counter_wall_start_from));
                 this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             }
             final String[] htmls = this.br.getRegex("<div class=\"post_content\">.*?reply_fakebox").getColumn(-1);
             for (final String html : htmls) {
                 decryptWallPostHtmlWebsite(html);
+                /* It is NOT about the added items just the found ones as this is a fail-safe --> Abort if an offset contains 0 elements! */
+                counter_items_found++;
             }
             logger.info("Decrypted offset " + currentOffset + " / " + total_numberof_entries);
             logger.info("Found " + decryptedLinks.size() + " links so far");
@@ -1484,6 +1489,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
             currentOffset += API_MAX_ENTRIES_PER_REQUEST;
+            counter_wall_start_from += 10;
         }
     }
 

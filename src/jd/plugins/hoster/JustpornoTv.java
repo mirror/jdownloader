@@ -15,8 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,14 +28,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "pornsexwankdecrypted://.+" })
-public class PornsexwankCom extends PluginForHost {
-    public PornsexwankCom(PluginWrapper wrapper) {
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "justporno.tv", "xxx.justporno.tv" }, urls = { "https?://(?:www\\.)?justporno\\.tv/(?:1|hd)/\\d+/[a-z0-9\\-_]+", "https?://xxx\\.justporno\\.tv/videos/\\d+/[^/]+/" })
+public class JustpornoTv extends PluginForHost {
+    public JustpornoTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Tags:
+    // Tags: Porn plugin
     // protocol: no https
     // other:
     /* Extension which will be used if no correct extension is found */
@@ -48,17 +51,12 @@ public class PornsexwankCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://pornsexwank.com/terms.php";
-    }
-
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("pornsexwankdecrypted://", "http://"));
+        return "https://justporno.tv/";
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = new Browser();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -67,41 +65,38 @@ public class PornsexwankCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "pornsexwank\\.com/([A-Za-z0-9\\-_]+)\\-\\d+\\.html").getMatch(0);
-        String filename = jd.plugins.decrypter.PornsexwankCom.getTitle(this.br);
+        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)/?$").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) \\| justporno\\.tv</title>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br, link);
-        // if (dllink == null) {
-        // dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        // }
-        // if (dllink == null) {
-        // dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        // }
-        // if (dllink == null) {
-        // dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-        // }
+        if (this.br.getURL().contains("xxx.justporno.tv")) {
+            /* KVS script running here ... */
+            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br, link);
+        } else {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, default_extension);
+        final String ext;
+        if (!StringUtils.isEmpty(dllink)) {
+            ext = getFileNameExtensionFromString(dllink, default_extension);
+        } else {
+            ext = default_extension;
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        link.setFinalFileName(filename);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (true) {
+        if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
+            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
-            final Browser br2 = br.cloneBrowser();
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -114,6 +109,9 @@ public class PornsexwankCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
+        } else {
+            /* We cannot be sure whether we have the correct extension or not! */
+            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -123,8 +121,10 @@ public class PornsexwankCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
