@@ -15,10 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -86,7 +87,7 @@ public class MinhatecaComBr extends PluginForHost {
     private static boolean       pluginloaded                 = false;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -111,10 +112,10 @@ public class MinhatecaComBr extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final Account account, final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         handlePWProtected(downloadLink);
         final String requestVerificationToken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String fid = downloadLink.getStringProperty("plain_fid", null);
@@ -136,7 +137,8 @@ public class MinhatecaComBr extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (dllink == null && this.br.containsHTML("class=\"videoWrapper\"") && this.getPluginConfig().getBooleanProperty("ENABLE_MP4_STREAM_DOWNLOAD", true)) {
+        // I assume that premium accounts wont ever need to download the lesser quality
+        if ((account == null || account.getType() == AccountType.FREE) && dllink == null && br.containsHTML("class=\"videoWrapper\"") && this.getPluginConfig().getBooleanProperty("ENABLE_MP4_STREAM_DOWNLOAD", true)) {
             /*
              * 2017-05-09: Captcha can be bypassed by downloading the mp4 stream. Quality is usually much worse than the
              * original-file-download. This can not only skip the captcha but also it makes it possible to download premiumonly video files
@@ -163,6 +165,7 @@ public class MinhatecaComBr extends PluginForHost {
                 logger.warning("req_token is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            Browser br = this.br.cloneBrowser();
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
@@ -182,6 +185,9 @@ public class MinhatecaComBr extends PluginForHost {
                      * This request can contain one more parameter (optional): + "&FileName=" +
                      * Encoding.urlEncode(downloadLink.getFinalFileName())
                      */
+                    br = this.br.cloneBrowser();
+                    br.getHeaders().put("Accept", "*/*");
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.postPage("/action/License/DownloadNotLoggedCaptchaEntered", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&recaptcha_response_field=" + Encoding.urlEncode(captcha));
                     captchaurl = getCaptchaURL();
                     counter++;
@@ -189,6 +195,23 @@ public class MinhatecaComBr extends PluginForHost {
                 if (captchaurl != null) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+            }
+            // can have some type event where you can download/upload to your box... but you can bypass it..
+            if (br.containsHTML("de arquivos sem usar")) {
+                br = this.br.cloneBrowser();
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/action/chomikbox/DontDownloadWithBox", "__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                if (!PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "IsSuccess"))) {
+                    // huston we have a problem
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // we need to re-request the licence url now
+                br = this.br.cloneBrowser();
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                // we should have the link within 'redirectUrl' json response
             }
             dllink = PluginJSonUtils.getJson(br, "redirectUrl");
             if (StringUtils.isEmpty(dllink)) {
@@ -205,7 +228,7 @@ public class MinhatecaComBr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getResponseCode() != 206) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -324,13 +347,13 @@ public class MinhatecaComBr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\t\nNo traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            doFree(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
+            doFree(account, link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
         }
     }
 
-    private void handlePWProtected(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePWProtected(final DownloadLink dl) throws Exception {
         String passCode = dl.getStringProperty("pass", null);
         if (br.containsHTML("class=\"LoginToFolderForm\"")) {
             final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
