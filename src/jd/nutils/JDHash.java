@@ -13,24 +13,22 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.nutils;
 
 import java.io.File;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.formatter.HexFormatter;
-
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.formatter.HexFormatter;
 
 /**
  * TODO: Remove with next major update and change to {@link org.appwork.utils.Hash}
  */
 public class JDHash {
-
     public static String HASH_TYPE_MD5    = Hash.HASH_TYPE_MD5;
     public static String HASH_TYPE_SHA1   = Hash.HASH_TYPE_SHA1;
     public static String HASH_TYPE_SHA256 = Hash.HASH_TYPE_SHA256;
@@ -52,42 +50,18 @@ public class JDHash {
         return Hash.getFileHash(arg, HASH_TYPE_SHA1);
     }
 
-    /**
-     * @author raztoki
-     * @since JD2
-     * @param arg
-     * @return
-     */
     public static String getSHA256(final String arg) {
         return Hash.getStringHash(arg, HASH_TYPE_SHA256);
     }
 
-    /**
-     * @author raztoki
-     * @since JD2
-     * @param arg
-     * @return
-     */
     public static String getSHA256(final File arg) {
         return Hash.getFileHash(arg, HASH_TYPE_SHA256);
     }
 
-    /**
-     * @author raztoki
-     * @since JD2
-     * @param arg
-     * @return
-     */
     public static String getSHA512(final String arg) {
         return Hash.getStringHash(arg, HASH_TYPE_SHA512);
     }
 
-    /**
-     * @author raztoki
-     * @since JD2
-     * @param arg
-     * @return
-     */
     public static String getSHA512(final File arg) {
         return Hash.getFileHash(arg, HASH_TYPE_SHA512);
     }
@@ -114,6 +88,5 @@ public class JDHash {
         } catch (Exception e) {
             return null;
         }
-
     }
 }
