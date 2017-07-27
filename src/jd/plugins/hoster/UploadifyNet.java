@@ -17,9 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,11 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadify.net" }, urls = { "https?://(?:www\\.)?uploadify\\.net/[A-Za-z0-9]+" })
 public class UploadifyNet extends PluginForHost {
@@ -120,7 +119,7 @@ public class UploadifyNet extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
@@ -214,7 +213,7 @@ public class UploadifyNet extends PluginForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());
@@ -242,13 +241,13 @@ public class UploadifyNet extends PluginForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
@@ -258,7 +257,7 @@ public class UploadifyNet extends PluginForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, link);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -279,11 +278,11 @@ public class UploadifyNet extends PluginForHost {
                     final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -338,7 +337,7 @@ public class UploadifyNet extends PluginForHost {
         return isdownloadlink;
     }
 
-    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
             String passCode = dl.getStringProperty("pass", null);
@@ -467,7 +466,7 @@ public class UploadifyNet extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -558,12 +557,11 @@ public class UploadifyNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+        if (!br.containsHTML(">\\s*(?:PAID USER|USUARIO DE PAGO)\\s*</")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
         } else {
             br.getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
@@ -583,12 +581,10 @@ public class UploadifyNet extends PluginForHost {
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
             }
         }
         account.setValid(true);
@@ -608,7 +604,7 @@ public class UploadifyNet extends PluginForHost {
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
             String dllink = link.getDownloadURL();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             checkResponseCodeErrors(dl.getConnection());
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
@@ -621,7 +617,7 @@ public class UploadifyNet extends PluginForHost {
                     handleErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
                 checkResponseCodeErrors(dl.getConnection());
             }
             if (!dl.getConnection().isContentDisposition()) {
