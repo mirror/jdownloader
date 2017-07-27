@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com", "cliplips.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class UnknownPornScript5 extends PluginForHost {
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
@@ -184,6 +184,13 @@ public class UnknownPornScript5 extends PluginForHost {
         if (inValidateDllink(dllink)) {
             /* E.g. worldsex.com */
             dllink = new Regex(jwplayer_source, "file[\t\n\r ]*?:[\t\n\r ]*?('|\")(http.*?)\\1").getMatch(1);
+        }
+        if (inValidateDllink(dllink)) {
+            /*
+             * E.g. kt_player + jwplayer (can also be KernelVideoSharingCom), example: xfig.net[dedicated plugin], cliplips.com)<br />
+             * Important: Do not pickup the slash at the end!
+             */
+            dllink = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*)/\";").getMatch(0);
         }
         if (inValidateDllink(dllink)) {
             /* Check for multiple videoqualities --> Find highest quality */

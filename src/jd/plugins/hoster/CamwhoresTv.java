@@ -130,7 +130,7 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     private void getDllink(final DownloadLink link) throws PluginException, IOException {
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br, link);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
         if (dllink != null && dllink.contains("login-required")) {
             dllink = null;
         }

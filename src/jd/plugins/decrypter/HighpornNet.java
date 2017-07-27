@@ -29,9 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "https?://(?:www\\.)?(highporn\\.net|tanix\\.net)/video/\\d+(?:/[a-z0-9\\-]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net", "tanix.net", "japanhub.net", "thatav.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tanix\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?japanhub\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?thatav\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
-
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }

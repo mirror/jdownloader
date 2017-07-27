@@ -13,13 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,12 +42,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "whatboyswant.com" }, urls = { "https://(www\\.)?whatboyswant\\.com/(babes|movies|cars)/show/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "whatboyswant.com" }, urls = { "https://(?:www\\.)?whatboyswant\\.com/(?:babes|movies|cars)/show/\\d+|https?://(?:www\\.)?whatboyswant\\.com/videos/[a-z0-9\\-]+/[a-z0-9\\-]+\\-\\d+" })
 public class WhatBoysWantCom extends PluginForHost {
-
     public WhatBoysWantCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://whatboyswant.com/register");
@@ -66,14 +64,11 @@ public class WhatBoysWantCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    private static final String  TYPE_BABE                    = "https://(www\\.)?whatboyswant\\.com/babes/show/\\d+";
-    private static final String  TYPE_CAR                     = "https://(www\\.)?whatboyswant\\.com/car/show/\\d+";
-    private static final String  TYPE_MOVIE                   = "https://(www\\.)?whatboyswant\\.com/movies/show/\\d+";
-
+    private static final String  TYPE_BABE                    = "h.+/babes/show/\\d+";
+    private static final String  TYPE_CAR                     = ".+/car/show/\\d+";
+    private static final String  TYPE_MOVIE                   = ".+/(?:movies/show/\\d+|videos/.+)";
     private static final String  default_EXT_video            = ".mp4";
     private static final String  default_EXT_photo            = ".jpg";
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -122,14 +117,7 @@ public class WhatBoysWantCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = getFID(downloadLink);
         if (downloadLink.getDownloadURL().matches(TYPE_MOVIE)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
@@ -174,7 +162,13 @@ public class WhatBoysWantCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "/show/(\\d+)").getMatch(0);
+        final String fid;
+        if (dl.getDownloadURL().contains("/videos/")) {
+            fid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        } else {
+            fid = new Regex(dl.getDownloadURL(), "/show/(\\d+)").getMatch(0);
+        }
+        return fid;
     }
 
     private String getTYPE(final DownloadLink dl) {
@@ -355,5 +349,4 @@ public class WhatBoysWantCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
