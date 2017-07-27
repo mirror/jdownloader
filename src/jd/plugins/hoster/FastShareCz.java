@@ -36,6 +36,7 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "http://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
+
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fastshare.cz/cenik_cs");
@@ -54,15 +55,21 @@ public class FastShareCz extends antiDDoSForHost {
     private static final String MAINPAGE = "http://www.fastshare.cz";
     private static Object       LOCK     = new Object();
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "cs");
         br.setCustomCharset("utf-8");
-        super.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -101,9 +108,9 @@ public class FastShareCz extends antiDDoSForHost {
         }
         if (captchaLink != null) {
             final String captcha = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
-            super.postPage(action, "code=" + Encoding.urlEncode(captcha));
+            postPage(action, "code=" + Encoding.urlEncode(captcha));
         } else {
-            super.postPage(action, "");
+            postPage(action, "");
         }
         if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
@@ -125,7 +132,7 @@ public class FastShareCz extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("No htmlCode read")) {
@@ -172,7 +179,7 @@ public class FastShareCz extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                super.postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -210,7 +217,7 @@ public class FastShareCz extends antiDDoSForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        super.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML("máte dostatečný kredit pro stažení tohoto souboru")) {
             logger.info("Trafficlimit reached!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -228,7 +235,7 @@ public class FastShareCz extends antiDDoSForHost {
             logger.warning("Failed to find final downloadlink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Nemate dostatecny kredit pro stazeni tohoto souboru! Kredit si muzete dobit")) {
