@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotgayporn.com" }, urls = { "http://(www\\.)?gotgayporn\\.com/\\d+[a-z0-9\\-]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotgayporn.com" }, urls = { "http://(www\\.)?gotgayporn\\.com/\\d+[a-z0-9\\-]+(?:/|\\.html)" })
 public class GotgaypornCom extends PluginForHost {
 
     public GotgaypornCom(PluginWrapper wrapper) {
@@ -52,7 +50,7 @@ public class GotgaypornCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -61,14 +59,11 @@ public class GotgaypornCom extends PluginForHost {
         }
         String filename = br.getRegex("itemprop=\"title\"><h1 style=\"color: white;\">([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\- GotGayPorn</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?)\\s*-\\s*(?:GotGayPorn|got gay porn)</title>").getMatch(0);
         }
-        dllink = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("('|\"|)file\\1:\\s*('|\")(http[^<>\"]*?)\\2").getMatch(2);
         if (dllink == null) {
-            dllink = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://(www\\.)?videos\\.cdn\\.gotgayporn\\.com/[^<>\"]*?)\"").getMatch(0);
-            }
+            dllink = br.getRegex("\"(https?://(www\\.)?videos\\.cdn\\.gotgayporn\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -110,7 +105,7 @@ public class GotgaypornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
