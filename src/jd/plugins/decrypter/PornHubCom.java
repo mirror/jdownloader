@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -40,9 +39,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/(?:view_video\\.php\\?viewkey=|embed/)[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/(?:view_video\\.php\\?viewkey=|embed/)[a-z0-9]+" })
 public class PornHubCom extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +50,6 @@ public class PornHubCom extends PluginForDecrypt {
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String                parameter      = null;
     private Account               aa             = null;
-
     private static final String   DOMAIN         = "pornhub.com";
     private static final String   BEST_ONLY      = jd.plugins.hoster.PornHubCom.BEST_ONLY;
     private static final String   FAST_LINKCHECK = jd.plugins.hoster.PornHubCom.FAST_LINKCHECK;
@@ -130,7 +127,6 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return;
         }
-
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName("This_video_is_private_" + fpName + ".mp4");
@@ -141,13 +137,10 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter, fpName + ".mp4", "Private_video_Premium_required"));
             return;
         }
-
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(br);
-
         if (foundLinks_all == null) {
             throw new DecrypterException("Decrypter broken");
         }
-
         final Iterator<Entry<String, String>> it = foundLinks_all.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, String> next = it.next();
@@ -206,5 +199,4 @@ public class PornHubCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
@@ -28,16 +30,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "justporno.tv", "xxx.justporno.tv" }, urls = { "https?://(?:www\\.)?justporno\\.tv/(?:1|hd)/\\d+/[a-z0-9\\-_]+", "https?://xxx\\.justporno\\.tv/videos/\\d+/[^/]+/" })
-public class JustpornoTv extends PluginForHost {
-    public JustpornoTv(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdsmstreak.com" }, urls = { "https?://(?:www\\.)?bdsmstreak\\.com/(?:embed/\\d+|video/\\d+(?:/[a-z0-9\\-]+)?)" })
+public class BdsmstreakCom extends PluginForHost {
+    public BdsmstreakCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
-    // Tags: Porn plugin
+    // Tags:
     // protocol: no https
     // other:
+
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -49,31 +51,37 @@ public class JustpornoTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://justporno.tv/";
+        return "http://bdsmstreak.com/terms";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final String videoid = new Regex(link.getDownloadURL(), "/(?:embed|video)/(\\d+)").getMatch(0);
+        String name_url = new Regex(link.getDownloadURL(), "/video/\\d+(/.+)").getMatch(0);
+        if (name_url == null) {
+            name_url = "";
+        }
+        link.setUrlDownload(String.format("http://%s/video/%s%s", this.getHost(), videoid, name_url));
+        link.setLinkID(videoid);
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 500 });
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)/?$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) \\| justporno\\.tv</title>").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
-        if (this.br.getURL().contains("xxx.justporno.tv")) {
-            /* KVS script running here ... */
-            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
-        } else {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        }
+        dllink = br.getRegex("<source src=\"([^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -82,6 +90,9 @@ public class JustpornoTv extends PluginForHost {
         filename = encodeUnicode(filename);
         final String ext;
         if (!StringUtils.isEmpty(dllink)) {
+            if (dllink.startsWith("//")) {
+                dllink = "http:" + dllink;
+            }
             ext = getFileNameExtensionFromString(dllink, default_extension);
         } else {
             ext = default_extension;
@@ -122,7 +133,7 @@ public class JustpornoTv extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

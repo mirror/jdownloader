@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,11 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
-
     private boolean             DOWNLOADS_STARTED                = false;
     private String              DLLINK                           = null;
     private final String        COOKIE_HOST                      = "http://www.deviantart.com";
@@ -54,7 +52,6 @@ public class DeviantArtCom extends PluginForHost {
     public static String        FASTLINKCHECK_2                  = "FASTLINKCHECK_2";
     public static String        FORCEHTMLDOWNLOAD                = "FORCEHTMLDOWNLOAD";
     public static String        CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
-
     private static final String GENERALFILENAMEREGEX             = "<title>([^<>\"]*?) on deviantART</title>";
     private static final String DLLINK_REFRESH_NEEDED            = "http://(www\\.)?deviantart\\.com/download/.+";
     private static final String TYPE_DOWNLOADALLOWED_PDF         = ">Download PDF<";
@@ -67,7 +64,6 @@ public class DeviantArtCom extends PluginForHost {
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
     private static final String TYPE_ACCOUNTNEEDED               = "has limited the viewing of this artwork<";
     private boolean             HTMLALLOWED                      = false;
-
     private static final String LINKTYPE_ART                     = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
     private static final String LINKTYPE_JOURNAL                 = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
     private static final String LINKTYPE_STATUS                  = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
@@ -267,7 +263,6 @@ public class DeviantArtCom extends PluginForHost {
             if (filesize == null) {
                 filesize = getfileSize();
             }
-
             if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
                 link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
                 link.setName(filename);
@@ -276,7 +271,6 @@ public class DeviantArtCom extends PluginForHost {
                 }
                 return AvailableStatus.TRUE;
             }
-
             ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
             if (ext == null) {
                 ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
@@ -442,7 +436,6 @@ public class DeviantArtCom extends PluginForHost {
                 logger.info(NICE_HOST + ": timesfailed_404servererror - Download must be broken!");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Download broken (deviantart server issue 404)!");
             }
-
         }
     }
 
@@ -493,7 +486,6 @@ public class DeviantArtCom extends PluginForHost {
                             dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
                         }
                     }
-
                 }
             }
             if (dllink == null) {
@@ -533,16 +525,16 @@ public class DeviantArtCom extends PluginForHost {
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /** Load cookies */
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(account.getHoster(), cookies);
                     return;
                 }
-                br.setCookie(account.getHoster(), "lang", "english");
-                br.getPage("https://www.deviantart.com/users/login");
-                Form loginform = br.getFormbyProperty("id", "login");
+                br.getPage("https://www.deviantart.com/");
+                br.getPage("/users/login");
+                final Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -550,9 +542,11 @@ public class DeviantArtCom extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_me", "1");
                 br.submitForm(loginform);
-                if (br.getRedirectLocation() != null) {
-                    if (br.getRedirectLocation().contains("deviantart.com/users/wrong-password?")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getURL().contains("/wrong-password")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -578,7 +572,6 @@ public class DeviantArtCom extends PluginForHost {
     private static final boolean default_FASTLINKCHECK_ALL                = false;
     private static final boolean default_FORCEHTMLDOWNLOAD                = false;
     public static final boolean  default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = false;
-
     private static final String  FASTLINKCHECK_ALL                        = "FASTLINKCHECK_ALL";
 
     public void setConfigElements() {
@@ -619,5 +612,4 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

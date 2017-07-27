@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -15,7 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -27,17 +33,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "justporno.tv", "xxx.justporno.tv" }, urls = { "https?://(?:www\\.)?justporno\\.tv/(?:1|hd)/\\d+/[a-z0-9\\-_]+", "https?://xxx\\.justporno\\.tv/videos/\\d+/[^/]+/" })
-public class JustpornoTv extends PluginForHost {
-    public JustpornoTv(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vivud.com" }, urls = { "https?://(?:www\\.)?vivud\\.com/video/\\d+/" })
+public class VivudCom extends PluginForHost {
+    public VivudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
+
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -49,30 +56,67 @@ public class JustpornoTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://justporno.tv/";
+        return "http://vivud.com/pages/terms-of-use/";
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)/?$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) \\| justporno\\.tv</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        final String videoid = new Regex(link.getDownloadURL(), "(\\d+)/$").getMatch(0);
+        String filename = PluginJSonUtils.getJson(this.br, "videoTitle");
+        if (StringUtils.isEmpty(filename)) {
+            filename = videoid;
         }
-        if (this.br.getURL().contains("xxx.justporno.tv")) {
-            /* KVS script running here ... */
-            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
-        } else {
+        /* RegExes sometimes used for streaming */
+        final String jssource = br.getRegex("\"urls_CDN\"\\s*?:\\s*?(\\{.*?\\})").getMatch(0);
+        if (jssource != null) {
+            try {
+                HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                long quality_temp = 0;
+                long quality_best = 0;
+                String dllink_temp = null;
+                final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Object> entry = it.next();
+                    dllink_temp = (String) entry.getValue();
+                    quality_temp = Long.parseLong(new Regex(entry.getKey(), "(\\d+)").getMatch(0));
+                    if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
+                        continue;
+                    } else if (dllink_temp.contains(".m3u8")) {
+                        /* Skip hls */
+                        continue;
+                    }
+                    if (quality_temp > quality_best) {
+                        quality_best = quality_temp;
+                        dllink = dllink_temp;
+                    }
+                }
+                if (!StringUtils.isEmpty(dllink)) {
+                    logger.info("BEST handling for multiple video source succeeded");
+                }
+            } catch (final Throwable e) {
+                logger.info("BEST handling for multiple video source failed");
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -122,7 +166,7 @@ public class JustpornoTv extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

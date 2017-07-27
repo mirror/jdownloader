@@ -72,7 +72,7 @@ public class PornsexwankCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br, link);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
         // if (dllink == null) {
         // dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         // }
