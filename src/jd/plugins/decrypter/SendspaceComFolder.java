@@ -18,15 +18,21 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
+import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?sendspace\\.com/folder/[0-9a-zA-Z]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(?:www\\.)?sendspace\\.com/(?:folder/[0-9a-zA-Z]+|filegroup/([0-9a-zA-Z%]+))" })
 public class SendspaceComFolder extends PluginForDecrypt {
 
     public SendspaceComFolder(PluginWrapper wrapper) {
@@ -34,23 +40,44 @@ public class SendspaceComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
         br.getPage(parameter);
         if (br.containsHTML("(404 Page Not Found|It has either been moved)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String[] files = br.getRegex("<td class=\"dl\" nowrap><a href=\"(.*?)\" title=").getColumn(0);
-        for (String file : files) {
-            decryptedLinks.add(createDownloadlink(file));
+        if (parameter.contains("/filegroup/")) {
+            // return pro or file links
+            final String[] results = br.getRegex("<div class=\"groupedFile\">.*?</div>\\s*</div>").getColumn(-1);
+            if (results != null && results.length > 0) {
+                for (final String result : results) {
+                    final Regex fs = new Regex(result, "<h4><b>(.*?)</b>\\s*(.*?)</h4>");
+                    final String filename = fs.getMatch(0);
+                    final String filesize = fs.getMatch(1);
+                    final String url = new Regex(result, "<a [^>]*href=(\"|'|)(.*?)\\1").getMatch(1);
+                    final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
+                    dl.setName(Encoding.htmlDecode(filename));
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", ".")));
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
+                final String fpName = "Multiple Downloads " + JDHash.getCRC32(Encoding.urlDecode(new Regex(parameter, this.getSupportedLinks()).getMatch(0), false));
+                if (fpName != null) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName.trim());
+                    fp.addLinks(decryptedLinks);
+                }
+            }
+        } else {
+            // folder
+            String[] files = br.getRegex("<td class=\"dl\" nowrap><a href=\"(.*?)\" title=").getColumn(0);
+            for (String file : files) {
+                decryptedLinks.add(createDownloadlink(file));
+            }
         }
         final String fpName = br.getRegex("Folder: <b>(.*?)</b>").getMatch(0);
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
+
         return decryptedLinks;
     }
 

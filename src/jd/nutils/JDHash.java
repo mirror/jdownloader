@@ -17,8 +17,14 @@
 package jd.nutils;
 
 import java.io.File;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 import org.appwork.utils.Hash;
+import org.appwork.utils.formatter.HexFormatter;
+
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
 
 /**
  * TODO: Remove with next major update and change to {@link org.appwork.utils.Hash}
@@ -28,6 +34,7 @@ public class JDHash {
     public static String HASH_TYPE_MD5    = Hash.HASH_TYPE_MD5;
     public static String HASH_TYPE_SHA1   = Hash.HASH_TYPE_SHA1;
     public static String HASH_TYPE_SHA256 = Hash.HASH_TYPE_SHA256;
+    public static String HASH_TYPE_SHA512 = Hash.HASH_TYPE_SHA512;
 
     public static String getMD5(final String arg) {
         return Hash.getStringHash(arg, HASH_TYPE_MD5);
@@ -63,5 +70,50 @@ public class JDHash {
      */
     public static String getSHA256(final File arg) {
         return Hash.getFileHash(arg, HASH_TYPE_SHA256);
+    }
+
+    /**
+     * @author raztoki
+     * @since JD2
+     * @param arg
+     * @return
+     */
+    public static String getSHA512(final String arg) {
+        return Hash.getStringHash(arg, HASH_TYPE_SHA512);
+    }
+
+    /**
+     * @author raztoki
+     * @since JD2
+     * @param arg
+     * @return
+     */
+    public static String getSHA512(final File arg) {
+        return Hash.getFileHash(arg, HASH_TYPE_SHA512);
+    }
+
+    /**
+     * returns crc32 checksum from input
+     *
+     * @author raztoki
+     * @param input
+     * @return
+     * @throws Exception
+     */
+    public static String getCRC32(final String input) throws Exception {
+        if (input == null) {
+            return null;
+        }
+        try {
+            byte bytes[] = input.getBytes();
+            final Checksum cs = new CRC32();
+            cs.update(bytes, 0, bytes.length);
+            long checksum = cs.getValue();
+            final HashInfo hi = new HashInfo(HexFormatter.byteArrayToHex(new byte[] { (byte) (checksum >>> 24), (byte) (checksum >>> 16), (byte) (checksum >>> 8), (byte) checksum }), TYPE.CRC32);
+            return hi.getHash();
+        } catch (Exception e) {
+            return null;
+        }
+
     }
 }
