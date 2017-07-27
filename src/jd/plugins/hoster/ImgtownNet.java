@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 import java.util.SortedMap;
@@ -25,6 +24,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,11 +52,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgtown.net" }, urls = { "https?://(www\\.)?imgtown\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgtownNet extends PluginForHost {
@@ -712,21 +711,7 @@ public class ImgtownNet extends PluginForHost {
 
     /* Removes HTML code which could break the plugin */
     private void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
-        /* generic cleanup */
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        for (String aRegex : regexStuff) {
-            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
-            if (results != null) {
-                for (String result : results) {
-                    correctedBR = correctedBR.replace(result, "");
-                }
-            }
-        }
+        correctedBR = jd.plugins.hoster.ImgmazeCom.correctBR(this.br);
     }
 
     /** Function to find the final downloadlink. */

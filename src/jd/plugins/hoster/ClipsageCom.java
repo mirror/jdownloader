@@ -55,7 +55,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipsage.com" }, urls = { "https?://(?:www\\.)?clipsage\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipsage.com" }, urls = { "https?://(?:www\\.)?clipsagedecrypted\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class ClipsageCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -128,11 +128,11 @@ public class ClipsageCom extends antiDDoSForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.4.8<br />
-     * mods:<br />
+     * mods: Has decrypter: ClipsageComDecrypter<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: 2017-07-27: null<br />
      * other:<br />
      */
     @SuppressWarnings({ "deprecation" })

@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 import java.util.SortedMap;
@@ -24,6 +23,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,12 +50,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgview.net" }, urls = { "https?://(www\\.)?imgview\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgviewNet extends antiDDoSForHost {
@@ -703,25 +702,10 @@ public class ImgviewNet extends antiDDoSForHost {
 
     /* Removes HTML code which could break the plugin */
     private void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
-        /* generic cleanup */
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        for (String aRegex : regexStuff) {
-            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
-            if (results != null) {
-                for (String result : results) {
-                    correctedBR = correctedBR.replace(result, "");
-                }
-            }
-        }
+        correctedBR = jd.plugins.hoster.ImgmazeCom.correctBR(this.br);
     }
 
     /** Function to find the final downloadlink. */
-    @SuppressWarnings("unused")
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
