@@ -39,7 +39,7 @@ public class FastShareCz extends antiDDoSForHost {
 
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://fastshare.cz/cenik_cs");
+        this.enablePremium("https://fastshare.cz/cenik_cs");
     }
 
     @Override
@@ -49,10 +49,10 @@ public class FastShareCz extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.fastshare.cz/podminky";
+        return "https://www.fastshare.cz/podminky";
     }
 
-    private static final String MAINPAGE = "http://www.fastshare.cz";
+    private static final String MAINPAGE = "https://www.fastshare.cz";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -179,7 +179,7 @@ public class FastShareCz extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                postPage("https://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -207,7 +207,6 @@ public class FastShareCz extends antiDDoSForHost {
         }
         account.setValid(true);
         account.setType(AccountType.PREMIUM);
-        ai.setStatus("Premium Account");
         return ai;
     }
 
