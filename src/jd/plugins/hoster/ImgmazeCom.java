@@ -24,6 +24,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,11 +50,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com" }, urls = { "https?://(www\\.)?imgmaze\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgmazeCom extends PluginForHost {
@@ -745,13 +745,19 @@ public class ImgmazeCom extends PluginForHost {
 
     /* Removes HTML code which could break the plugin */
     private void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
+        correctedBR = correctBR(this.br);
+    }
+
+    public static String correctBR(final Browser br) {
+        String correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
         // remove custom rules first!!! As html can change because of generic cleanup rules.
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        /* 2017-07-27: Remove all scripts to avoid their fake offline messages */
+        regexStuff.add("<script [^>]*?>(.*?)</script>");
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -760,6 +766,7 @@ public class ImgmazeCom extends PluginForHost {
                 }
             }
         }
+        return correctedBR;
     }
 
     /** Function to find the final downloadlink. */

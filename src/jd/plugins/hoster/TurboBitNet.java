@@ -65,12 +65,11 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "https?://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|kilofile\\.com|twobit\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "https?://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|kilofile\\.com|twobit\\.ru|forum\\.flacmania\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" })
 public class TurboBitNet extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "ifolder.com.ua", "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru" };
+        return new String[] { "ifolder.com.ua", "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru" };
     }
 
     /**
@@ -81,12 +80,10 @@ public class TurboBitNet extends PluginForHost {
      * When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
      *
      */
-
     /* Settings */
     private static final String SETTING_JAC                           = "SETTING_JAC";
     private static final String SETTING_FREE_PARALLEL_DOWNLOADSTARTS  = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
     private static final int    FREE_MAXDOWNLOADS_PLUGINSETTING       = 20;
-
     private static final String HTML_RECAPTCHAV1                      = "api\\.recaptcha\\.net";
     private final String        CAPTCHAREGEX                          = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
     private static final String MAINPAGE                              = "http://turbobit.net";
@@ -337,7 +334,6 @@ public class TurboBitNet extends PluginForHost {
             if (br.containsHTML(tb(0))) {
                 waittime = br.getRegex(tb(1)).getMatch(0);
                 final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
-
                 if (wait > 31) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 } else if (wait < 0) {
@@ -350,7 +346,6 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
             }
         }
-
         if (captchaform == null) {
             if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
@@ -425,12 +420,10 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-
         if (br.getHttpConnection().getResponseCode() == 302) {
             // Solving took too long?
             invalidateLastChallengeResponse();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
         }
         simulateBrowser();
         // Ticket Time
@@ -464,19 +457,16 @@ public class TurboBitNet extends PluginForHost {
             waited = true;
         }
         final boolean use_js = false;
-
         if (use_js) {
             final Browser tOut = br.cloneBrowser();
             final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
             tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
             final String fun = escape(tOut.toString());
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
             // realtime update
             String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
             final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
             int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
-
             if (isUpdateNeeded || rtUpdate == null) {
                 final Browser rt = new Browser();
                 try {
@@ -489,7 +479,6 @@ public class TurboBitNet extends PluginForHost {
                 getPluginConfig().setProperty("attemps", attemps++);
                 getPluginConfig().save();
             }
-
             String res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 666);
             if (res == null || res != null && !res.matches(tb(10))) {
                 res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 100);
@@ -497,14 +486,12 @@ public class TurboBitNet extends PluginForHost {
                     res = res.replaceAll("/~ID~/", id);
                 }
             }
-
             if (res != null && res.matches(tb(10))) {
                 sleep(tt * 1001, downloadLink);
                 // Wed Jun 13 12:29:47 UTC 0200 2012
                 SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
                 Date date = new Date();
                 br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
-
                 br.getPage(res);
                 downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
                 if (downloadUrl != null) {
@@ -525,7 +512,6 @@ public class TurboBitNet extends PluginForHost {
                 if (br.containsHTML("The file is not avaliable now because of technical problems")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
                 }
-
                 if (attemps > 1) {
                     getPluginConfig().setProperty("isUpdateNeeded", false);
                     getPluginConfig().setProperty("attemps", 1);
@@ -1165,11 +1151,9 @@ public class TurboBitNet extends PluginForHost {
 
     private void simulateBrowser() throws InterruptedException {
         // dupe.clear();
-
         final AtomicInteger requestQ = new AtomicInteger(0);
         final AtomicInteger requestS = new AtomicInteger(0);
         final ArrayList<String> links = new ArrayList<String>();
-
         String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
@@ -1183,9 +1167,7 @@ public class TurboBitNet extends PluginForHost {
             final String correctedLink = Request.getLocation(link, br.getRequest());
             if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") && !correctedLink.contains("'")) {
                 if (dupe.add(correctedLink)) {
-
                     final Thread simulate = new Thread("SimulateBrowser") {
-
                         public void run() {
                             final Browser rb = br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
@@ -1211,11 +1193,9 @@ public class TurboBitNet extends PluginForHost {
                             }
                             return;
                         }
-
                     };
                     simulate.start();
                     Thread.sleep(100);
-
                 }
             }
         }
@@ -1228,5 +1208,4 @@ public class TurboBitNet extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Turbobit_Turbobit;
     }
-
 }
