@@ -31,6 +31,12 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.zip.Inflater;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -46,12 +52,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/.+" })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
@@ -59,6 +59,8 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // /* Important: Keep this updated & keep this in order: Highest --> Lowest */
+    // private final List<String> all_known_qualities = Arrays.asList("http_2400", "http_1650", "http_1650", "http_620", "http_225");
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load sister-host plugin */
@@ -201,7 +203,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 }
                 bitrateTemp = Integer.parseInt(bitrate_str);
                 final String quality_key = bitrate_str + "k";
-                if (!cfg.getBooleanProperty("GRAB_" + quality_key, true) && !bestonly) {
+                if (!cfg.getBooleanProperty("ALLOW_" + quality_key, true) && !bestonly) {
                     /* Error or quality is not wished by user --> Skip it. */
                     continue;
                 }

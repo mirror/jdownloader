@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -46,8 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
@@ -296,10 +296,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         playlistname = getString(data, "title");
         username = getString(data, "user.username");
+        /* Old: https://api.soundcloud.com/playlists/<playlist_id> */
         final String playlist_uri = getString(data, "uri");
-        if (playlist_uri == null) {
+        final String playlist_id = getString(data, "id");
+        if (playlist_uri == null || playlist_id == null) {
             return;
         }
+        // br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id +
+        // "?representation=full&client_id=JlZIsxg2hY5WnBgtn3jfS0UYCl0K8DOg&app_version=" +
+        // jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+        // data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         List<Map<String, Object>> tracks = (List<Map<String, Object>>) data.get("tracks");
         if (tracks == null || tracks.size() == 0) {
             br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));

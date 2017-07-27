@@ -17,14 +17,18 @@ package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -36,17 +40,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.WdrDeMediathek.WdrDeConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class WdrDeDecrypt extends PluginForDecrypt {
-    private static final String Q_LOW           = "Q_LOW";
-    private static final String Q_MEDIUM        = "Q_MEDIUM";
-    private static final String Q_HIGH          = "Q_HIGH";
-    private static final String Q_720           = "Q_720";
-    private static final String Q_BEST          = "Q_BEST";
-    private static final String Q_SUBTITLES     = "Q_SUBTITLES";
-    private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
-    private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
+    private static final String Q_LOW               = "Q_LOW";
+    private static final String Q_MEDIUM            = "Q_MEDIUM";
+    private static final String Q_HIGH              = "Q_HIGH";
+    private static final String Q_720               = "Q_720";
+    private static final String Q_BEST              = "Q_BEST";
+    private static final String Q_SUBTITLES         = "Q_SUBTITLES";
+    private static final String TYPE_INVALID        = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
+    private static final String TYPE_ROCKPALAST     = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
+    /* Important: Keep this updated & keep this in order: Highest --> Lowest */
+    private final List<String>  all_known_qualities = Arrays.asList("http_720", "http_540", "http_360", "http_288", "http_270", "http_180");
 
     public WdrDeDecrypt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -159,17 +166,41 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             audio.setProperty("plain_filename", plain_name + ".mp3");
             decryptedLinks.add(audio);
         } else {
-            ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-            HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
-            final SubConfiguration cfg = SubConfiguration.getConfig(this.br.getHost());
-            final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
-            boolean grab_low = cfg.getBooleanProperty(Q_LOW, true);
-            boolean grab_medium = cfg.getBooleanProperty(Q_MEDIUM, true);
-            boolean grab_high = cfg.getBooleanProperty(Q_HIGH, true);
-            boolean grab_720 = cfg.getBooleanProperty(Q_720, true);
-            boolean grab_best = cfg.getBooleanProperty(Q_BEST, true);
-            final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.WdrDeMediathek.FAST_LINKCHECK, jd.plugins.hoster.WdrDeMediathek.defaultFAST_LINKCHECK);
-            ArrayList<String> selected_qualities = new ArrayList<String>();
+            final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
+            final WdrDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.WdrDeMediathek.WdrDeConfigInterface.class);
+            final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
+            boolean grab_180 = cfg.isGrabHTTP180pVideoEnabled();
+            boolean grab_270 = cfg.isGrabHTTP270pVideoEnabled();
+            boolean grab_288 = cfg.isGrabHTTP288pVideoEnabled();
+            boolean grab_360 = cfg.isGrabHTTP360pVideoEnabled();
+            boolean grab_540 = cfg.isGrabHTTP540pVideoEnabled();
+            boolean grab_720 = cfg.isGrabHTTP720pVideoEnabled();
+            boolean grab_best = cfg.isGrabBESTEnabled();
+            final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
+            List<String> all_selected_qualities = new ArrayList<String>();
+            if (grab_180) {
+                all_selected_qualities.add("http_180");
+            }
+            if (grab_270) {
+                all_selected_qualities.add("http_270");
+            }
+            if (grab_288) {
+                all_selected_qualities.add("http_288");
+            }
+            if (grab_360) {
+                all_selected_qualities.add("http_360");
+            }
+            if (grab_540) {
+                all_selected_qualities.add("http_540");
+            }
+            if (grab_720) {
+                all_selected_qualities.add("http_720");
+            }
+            final boolean user_selected_nothing = all_selected_qualities.size() == 0;
+            if (user_selected_nothing) {
+                logger.info("User selected no quality at all --> Adding ALL qualities instead");
+                all_selected_qualities = all_known_qualities;
+            }
             String subtitle_url = null;
             String flashvars = null;
             if (date == null) {
@@ -193,12 +224,15 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             String region = hds_convert.getMatch(0);
             final String fsk_url = hds_convert.getMatch(1);
             final String quality_string = hds_convert.getMatch(2);
-            if (region == null || fsk_url == null || quality_string == null) {
+            final String hls_master = new Regex(flashvars, "(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
+            if (region == null || fsk_url == null || quality_string == null || hls_master == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             region = correctRegionString(region);
-            /* Avoid HDS */
+            /* Access HLS master to find correct resolution for each ID ... */
+            br.getPage("http:" + hls_master);
+            final String[] resolutionsInOrder = this.br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
             final String[] qualities = quality_string.split(",");
             if (qualities == null || qualities.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -213,104 +247,99 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
                 String final_url = "http://ondemand-ww.wdr.de/medp/";
                 final_url += fsk_url + "/";
-                final String single_quality_string_correct;
-                String resolution;
-                String quality_name;
-                if (qualities.length == 3) {
-                    /* If we got 3 (basic) qualities, get all */
-                    single_quality_string_correct = qualities[counter];
-                    resolution = getVideoresolutionBasedOnIdPosition(counter);
-                    quality_name = getQualitynameBasedOnIdPosition(counter);
-                } else if (counter == 0) {
-                    /* If we got 4 qualities, pick the best 2 only */
-                    if (qualities.length == 4) {
-                        single_quality_string_correct = qualities[1];
-                    } else {
-                        single_quality_string_correct = qualities[counter];
-                    }
-                    resolution = "960x544";
-                    quality_name = "Q_MEDIUM";
-                } else {
-                    /* If we got 4 or more qualities, pick the best 2 only */
-                    if (qualities.length == 4) {
-                        single_quality_string_correct = qualities[3];
-                    } else {
-                        single_quality_string_correct = qualities[counter];
-                    }
-                    resolution = "512x288";
-                    quality_name = "Q_LOW";
-                }
-                final_url += single_quality_string_correct + ".mp4";
+                final String linkid = qualities[counter];
+                final String resolution = resolutionsInOrder[counter];
+                final String[] height_width = resolution.split("x");
+                final String width = height_width[1];
+                final_url += linkid + ".mp4";
                 String final_video_name = "";
                 if (date_formatted != null) {
                     final_video_name += date_formatted + "_";
                 }
                 final_video_name += tvStationName + "_" + plain_name + "_" + resolution + ".mp4";
-                final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
+                final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution);
                 dl_video.setProperty("mainlink", parameter);
                 dl_video.setProperty("direct_link", final_url);
                 dl_video.setProperty("plain_filename", final_video_name);
                 dl_video.setProperty("plain_resolution", resolution);
                 dl_video.setFinalFileName(final_video_name);
                 dl_video.setContentUrl(parameter);
+                dl_video.setLinkID(linkid);
                 if (fastlinkcheck) {
                     dl_video.setAvailable(true);
                 }
-                best_map.put(quality_name, dl_video);
-                newRet.add(dl_video);
-                /* BEST version always comes first --> Simply take that */
-                if (grab_best) {
-                    selected_qualities.add(quality_name);
-                    break;
-                }
+                all_found_downloadlinks.put("http_" + width, dl_video);
             }
+            HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
+            final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
             if (grab_best) {
-                /* Nothing to do here (yet) */
+                for (final String possibleQuality : this.all_known_qualities) {
+                    if (all_found_downloadlinks.containsKey(possibleQuality)) {
+                        all_selected_downloadlinks.put(possibleQuality, all_found_downloadlinks.get(possibleQuality));
+                        break;
+                    }
+                }
+                if (all_selected_downloadlinks.isEmpty()) {
+                    logger.info("Possible issue: Best selection found nothing --> Adding ALL");
+                    while (iterator_all_found_downloadlinks.hasNext()) {
+                        final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                        all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
+                    }
+                }
             } else {
-                if (grab_low) {
-                    selected_qualities.add(Q_LOW);
+                boolean atLeastOneSelectedItemExists = false;
+                final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
+                while (iterator_all_found_downloadlinks.hasNext()) {
+                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                    final String dl_quality_string = dl_entry.getKey();
+                    if (all_selected_qualities.contains(dl_quality_string)) {
+                        atLeastOneSelectedItemExists = true;
+                        all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                    } else if (!all_known_qualities.contains(dl_quality_string) && grabUnknownQualities) {
+                        logger.info("Found unknown quality: " + dl_quality_string);
+                        if (grabUnknownQualities) {
+                            logger.info("Adding unknown quality: " + dl_quality_string);
+                            all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                        }
+                    }
                 }
-                if (grab_medium) {
-                    selected_qualities.add(Q_MEDIUM);
-                }
-                if (grab_high) {
-                    selected_qualities.add(Q_HIGH);
-                }
-                if (grab_720) {
-                    selected_qualities.add(Q_720);
-                }
-                /* User deselected all --> Add all */
-                if (!grab_low && !grab_medium && !grab_high && !grab_720) {
-                    grab_low = true;
-                    grab_medium = true;
-                    grab_high = true;
-                    grab_720 = true;
+                if (!atLeastOneSelectedItemExists) {
+                    logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
+                    while (iterator_all_found_downloadlinks.hasNext()) {
+                        final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                        all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
+                    }
+                } else {
+                    if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+                        all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+                    }
                 }
             }
-            /* Finally add user selected qualities */
-            for (final String selected_quality : selected_qualities) {
-                final DownloadLink keep = best_map.get(selected_quality);
-                if (keep != null) {
-                    /* Add subtitle link for every quality so players will automatically find it */
-                    if (grab_subtitle && subtitle_url != null) {
-                        String subtitle_filename = "";
-                        if (date_formatted != null) {
-                            subtitle_filename = subtitle_filename + "_";
-                        }
-                        subtitle_filename += "wdr_" + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
-                        final String resolution = keep.getStringProperty("plain_resolution", null);
-                        final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
-                        dl_subtitle.setProperty("mainlink", parameter);
-                        dl_subtitle.setProperty("direct_link", subtitle_url);
-                        dl_subtitle.setProperty("plain_filename", subtitle_filename);
-                        dl_subtitle.setProperty("streamingType", "subtitle");
-                        dl_subtitle.setAvailable(true);
-                        dl_subtitle.setFinalFileName(subtitle_filename);
-                        dl_subtitle.setContentUrl(parameter);
-                        decryptedLinks.add(dl_subtitle);
+            /* Finally add selected URLs */
+            final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, DownloadLink> entry = it.next();
+                final DownloadLink keep = entry.getValue();
+                /* Add subtitle link for every quality so players will automatically find it */
+                if (grab_subtitle && subtitle_url != null) {
+                    String subtitle_filename = "";
+                    if (date_formatted != null) {
+                        subtitle_filename = subtitle_filename + "_";
                     }
-                    decryptedLinks.add(keep);
+                    subtitle_filename += "wdr_" + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                    final String resolution = keep.getStringProperty("plain_resolution", null);
+                    final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution);
+                    dl_subtitle.setProperty("mainlink", parameter);
+                    dl_subtitle.setProperty("direct_link", subtitle_url);
+                    dl_subtitle.setProperty("plain_filename", subtitle_filename);
+                    dl_subtitle.setProperty("streamingType", "subtitle");
+                    dl_subtitle.setLinkID(keep.getLinkID() + "subtitle");
+                    dl_subtitle.setAvailable(true);
+                    dl_subtitle.setFinalFileName(subtitle_filename);
+                    dl_subtitle.setContentUrl(parameter);
+                    decryptedLinks.add(dl_subtitle);
                 }
+                decryptedLinks.add(keep);
             }
             final FilePackage fp = FilePackage.getInstance();
             String packagename = "";
@@ -324,44 +353,62 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getVideoresolutionBasedOnIdPosition(final int position) {
-        final String resolution;
-        switch (position) {
-        case 0:
-            resolution = "960x540";
-            break;
-        case 1:
-            resolution = "640x360";
-            break;
-        case 2:
-            resolution = "512x288";
-            break;
-        default:
-            resolution = "WTF";
-            break;
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
+        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        DownloadLink keep = null;
+        if (bestMap.size() > 0) {
+            for (final String quality : all_known_qualities) {
+                keep = bestMap.get(quality);
+                if (keep != null) {
+                    newMap.put(quality, keep);
+                    break;
+                }
+            }
         }
-        return resolution;
+        if (newMap.isEmpty()) {
+            /* Failover in case of bad user selection or general failure! */
+            newMap = bestMap;
+        }
+        return newMap;
     }
 
-    private String getQualitynameBasedOnIdPosition(final int position) {
-        final String resolution;
-        switch (position) {
-        case 0:
-            resolution = "Q_HIGH";
-            break;
-        case 1:
-            resolution = "Q_MEDIUM";
-            break;
-        case 2:
-            resolution = "Q_LOW";
-            break;
-        default:
-            resolution = "WTF";
-            break;
-        }
-        return resolution;
-    }
-
+    // private String getVideoresolutionBasedOnIdPosition(final int position) {
+    // final String resolution;
+    // switch (position) {
+    // case 0:
+    // resolution = "960x540";
+    // break;
+    // case 1:
+    // resolution = "640x360";
+    // break;
+    // case 2:
+    // resolution = "512x288";
+    // break;
+    // default:
+    // resolution = "WTF";
+    // break;
+    // }
+    // return resolution;
+    // }
+    //
+    // private String getQualitynameBasedOnIdPosition(final int position) {
+    // final String resolution;
+    // switch (position) {
+    // case 0:
+    // resolution = "Q_HIGH";
+    // break;
+    // case 1:
+    // resolution = "Q_MEDIUM";
+    // break;
+    // case 2:
+    // resolution = "Q_LOW";
+    // break;
+    // default:
+    // resolution = "WTF";
+    // break;
+    // }
+    // return resolution;
+    // }
     private String fixVideourl(final String input) {
         String output = input;
         /* Remove unneeded url part */
