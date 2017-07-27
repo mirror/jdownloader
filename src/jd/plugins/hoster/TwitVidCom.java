@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?tellydecrypted\\.com/[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?telly\\.com/[A-Za-z0-9\\-]+" })
 public class TwitVidCom extends PluginForHost {
 
     private String dllink = null;
@@ -48,16 +46,12 @@ public class TwitVidCom extends PluginForHost {
         return -1;
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("tellydecrypted.com/", "telly.com/"));
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage("http://telly.com/?s=api&feed_type=stories&limit=10&guid=" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-        if (!br.containsHTML("video_path")) {
+        br.getPage("http://telly.com/?s=api&feed_type=stories&limit=10&guid=" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-]+)$").getMatch(0));
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("video_path")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJsonValue(br, "title");
@@ -80,7 +74,7 @@ public class TwitVidCom extends PluginForHost {
         }
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
