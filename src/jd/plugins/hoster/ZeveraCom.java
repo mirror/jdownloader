@@ -20,7 +20,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +48,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.ZeveraApiTracker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
@@ -438,22 +438,54 @@ public class ZeveraCom extends antiDDoSForHost {
         }
         ai.setStatus("Premium Account");
         try {
-            getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
-            if (br.containsHTML("<[^>]+>")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Provider issued html", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            String[] hosts = br.getRegex("([^,]+)").getColumn(0);
-            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            supportedHosts.add("icerbox.com");// gethosters is not up2date
-            /*
-             * set ArrayList<String> with all supported multiHosts of this service
-             */
-            // we used local cached links provided by our decrypter, locked to ip addresses. Can not use multihoster
-            ai.setMultiHostSupport(this, supportedHosts);
+            final StringBuilder sb = new StringBuilder();
+            sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?><soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\"><soap12:Body>");
+            sb.append("<GetHosters xmlns=\"http://tempuri.org/\" />");
+            sb.append("</soap12:Body></soap12:Envelope>");
+            br.getHeaders().put("Content-Type", "application/soap+xml; charset=utf-8");
+            br.postPageRaw(mServ + "/downloadapi.asmx", sb.toString());
+            ai.setMultiHostSupport(this, addThis());
         } catch (Throwable e) {
-            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
+            logger.info("Could not fetch ServerList: " + e.toString());
         }
         return ai;
+    }
+
+    private ArrayList<String> addThis() {
+        // try {
+        // final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        // final XPath xPath = XPathFactory.newInstance().newXPath();
+        // String input = "";
+        // Document d = parser.parse(new ByteArrayInputStream(input.getBytes("UTF-8")));
+        // NodeList mediaUrls = (NodeList) xPath.evaluate("/soap:Envelope/soap:Body/GetHostersResponse/GetHostersResult/hosters/hoster", d,
+        // XPathConstants.NODESET);
+        // System.out.println(1);
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
+        final ArrayList<String> r = new ArrayList<String>();
+        final String[] results = getXMLb(br.toString().replace("<hoster><isActive>false</isActive><Limit>0</Limit></hoster>", ""), "hoster");
+        if (results != null) {
+            for (final String result : results) {
+                final String name = getXMLa(result, "hostername");
+                final boolean active = PluginJSonUtils.parseBoolean(getXMLa(result, "isActive"));
+                if (active) {
+                    r.add(name);
+                }
+            }
+        }
+        return r;
+
+    }
+
+    private final String getXMLa(final String input, final String keyname) {
+        final String result = new Regex(input, "<" + Pattern.quote(keyname) + ">(.*?)</" + Pattern.quote(keyname) + ">").getMatch(0);
+        return result;
+    }
+
+    private final String[] getXMLb(final String input, final String keyname) {
+        final String[] result = new Regex(input, "<" + Pattern.quote(keyname) + ">(.*?)</" + Pattern.quote(keyname) + ">").getColumn(0);
+        return result;
     }
 
     @Override
