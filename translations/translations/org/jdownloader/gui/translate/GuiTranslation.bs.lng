@@ -1656,6 +1656,7 @@ ask=Pitaj me
 authtablemodel_column_enabled=Koristi Login podatke
 authtablemodel_column_host=Domaćin/URL
 authtablemodel_column_password=Šifra
+authtablemodel_column_realm=Carstvo
 authtablemodel_column_type=Tip servera
 authtablemodel_column_type_ftp=ftp://
 authtablemodel_column_type_http=http://
