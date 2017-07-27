@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -24,9 +23,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,7 +55,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
 public class SoundcloudCom extends PluginForHost {
-
     public SoundcloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -76,7 +76,6 @@ public class SoundcloudCom extends PluginForHost {
      */
     // public static final String[] streamtypes = { "download", "stream", "streams" };
     private final boolean        ENABLE_TYPE_PRIVATE                         = false;
-
     private static final String  ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES = "ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES";
     private static final String  ALLOW_PREVIEW_DOWNLOAD                      = "ALLOW_PREVIEW_DOWNLOAD";
     private final static String  CUSTOM_DATE                                 = "CUSTOM_DATE";
@@ -86,7 +85,6 @@ public class SoundcloudCom extends PluginForHost {
     private final String         GRABORIGINALTHUMB                           = "GRABORIGINALTHUMB";
     private final String         CUSTOM_PACKAGENAME                          = "CUSTOM_PACKAGENAME";
     private final static String  SETS_ADD_POSITION_TO_FILENAME               = "SETS_ADD_POSITION_TO_FILENAME";
-
     private String               dllink                                      = null;
     private boolean              serverissue                                 = false;
     private boolean              is_officially_downloadable                  = false;
@@ -151,7 +149,6 @@ public class SoundcloudCom extends PluginForHost {
             login(br, aa, false);
         }
         String songid = parameter.getStringProperty("track_id", null);
-
         Map<String, Object> response = null;
         if (songid == null) {
             br.getPage(parameter.getDownloadURL());
@@ -167,7 +164,6 @@ public class SoundcloudCom extends PluginForHost {
         }
         if (secrettoken == null) {
             br.getPage("https://api-v2.soundcloud.com/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + CLIENTID + "&app_version=" + SoundcloudCom.getAppVersion(br));
-
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -307,7 +303,6 @@ public class SoundcloudCom extends PluginForHost {
             return AvailableStatus.FALSE;
         }
         String filename = toString(source.get("title"));
-
         if (filename == null) {
             if (fromHostplugin) {
                 parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
@@ -319,6 +314,7 @@ public class SoundcloudCom extends PluginForHost {
         final String stream_url = toString(source.get("stream_url"));
         final String secret_token = stream_url != null ? new Regex(stream_url, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0) : null;
         final String id = toString(source.get("id"));
+        /* Only availavle in APIV1, at least for playlist-requests */
         final String filesize = toString(source.get("original_content_size"));
         try {
             final String description = toString(source.get("description"));
@@ -349,7 +345,6 @@ public class SoundcloudCom extends PluginForHost {
                 parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
             }
         }
-
         if (url != null) {
             parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
         }
@@ -404,7 +399,6 @@ public class SoundcloudCom extends PluginForHost {
         } else {
             is_definitly_downloadable = downloadable;
         }
-
         return is_definitly_downloadable;
     }
 
@@ -644,11 +638,9 @@ public class SoundcloudCom extends PluginForHost {
         } else {
             ext = ".mp3";
         }
-
         String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
         final String track_id = downloadLink.getStringProperty("track_id", null);
-
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
             // 2011-08-10T22:50:49Z
@@ -660,7 +652,6 @@ public class SoundcloudCom extends PluginForHost {
                 } else {
                     formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                 }
-
                 final Date dateStr = formatter.parse(date);
                 formattedDate = formatter.format(dateStr);
                 final String defaultformattedDate = formattedDate;
@@ -699,7 +690,6 @@ public class SoundcloudCom extends PluginForHost {
         if (cfg.getBooleanProperty(SETS_ADD_POSITION_TO_FILENAME, false) && setsposition != null) {
             formattedFilename = setsposition + formattedFilename;
         }
-
         return formattedFilename;
     }
 
@@ -714,7 +704,6 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-
                                                   {
                                                       put("SETTING_GRAB_PURCHASE_URL", "Grab purchase URL?\r\n<html><b>The purchase-URL sometimes lead to external downloadlinks e.g. mediafire.com.</b></html>");
                                                       put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Only download files which have a download button/are officially downloadable?\r\n<html><p style=\"color:#F62817\"><b>Warning: If you enable this, all soundcloud downloads without an official download possibility will get a red error state and will NOT be downloaded!</b></p></html>");
@@ -736,9 +725,7 @@ public class SoundcloudCom extends PluginForHost {
                                                       put("ERROR_NOT_DOWNLOADABLE", "You disabled stream-downloads! This link is not officially downloadable!");
                                                   }
                                               };
-
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-
                                                   {
                                                       put("SETTING_GRAB_PURCHASE_URL", "Kauflink einfügen?\r\n<html><b>Der Kauflink führt manchmal zu externen Downloadmöglichkeiten z.B. mediafire.com.</b></html>");
                                                       put("SETTING_ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES", "Lade nur Links mit offizieller downloadmöglichkeit/Downloadbutton herunter??\r\n<html><p style=\"color:#F62817\"><b>Warnung: Falls du das aktivierst werden alle Soundcloud Links ohne offizielle Downloadmöglichkeit einen roten Fehlerstatus bekommen und NICHT heruntergeladen!</b></p></html>");
@@ -843,5 +830,4 @@ public class SoundcloudCom extends PluginForHost {
         }
         return false;
     }
-
 }
