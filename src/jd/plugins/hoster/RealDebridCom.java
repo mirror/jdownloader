@@ -23,31 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.captcha.SkipException;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -75,8 +50,34 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
+import jd.controlling.captcha.SkipException;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+(?:/.+)?" })
 public class RealDebridCom extends PluginForHost {
+
     private static final String CLIENT_SECRET_KEY = "client_secret";
     private static final String CLIENT_ID_KEY     = "client_id";
     private static final String CLIENT_SECRET     = "CLIENT_SECRET";
@@ -84,6 +85,7 @@ public class RealDebridCom extends PluginForHost {
     private static final String AUTHORIZATION     = "Authorization";
 
     private static class APIException extends Exception {
+
         private final URLConnectionAdapter connection;
 
         public APIException(URLConnectionAdapter connection, Error error, String msg) {
@@ -145,7 +147,7 @@ public class RealDebridCom extends PluginForHost {
         }
     }
 
-    protected synchronized <T> T callRestAPIInternal(String url, UrlQuery query, TypeRef<T> type) throws IOException, APIException {
+    protected synchronized <T> T callRestAPIInternal(String url, UrlQuery query, TypeRef<T> type) throws Exception {
         if (token != null) {
             apiBrowser.getHeaders().put(AUTHORIZATION, "Bearer " + token.getAccess_token());
         }
@@ -175,9 +177,12 @@ public class RealDebridCom extends PluginForHost {
     private void ensureAPIBrowser() {
         if (apiBrowser == null) {
             apiBrowser = br.cloneBrowser();
+            final int[] responsecodes = new int[400];
+            int start = 0;
             for (int i = 200; i < 600; i++) {
-                apiBrowser.addAllowedResponseCodes(i);
+                responsecodes[start++] = i;
             }
+            apiBrowser.addAllowedResponseCodes(responsecodes);
         }
     }
 
@@ -267,6 +272,7 @@ public class RealDebridCom extends PluginForHost {
         }
         final String host = Browser.getHost(downloadLink);
         final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+
             @Override
             public HashInfo getHashInfo() {
                 if (linkresp == null || linkresp.getCrc() == 1) {
@@ -300,7 +306,7 @@ public class RealDebridCom extends PluginForHost {
         br2.setAllowedResponseCodes(new int[0]);
         boolean increment = false;
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), resume, resume ? maxChunks : 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), resume, resume ? maxChunks : 1);
             if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
                 if (dl.getConnection().getLongContentLength() == 0) {
                     dl.getConnection().disconnect();
@@ -470,7 +476,7 @@ public class RealDebridCom extends PluginForHost {
         return false;
     }
 
-    public ClientSecret checkCredentials(CodeResponse code) throws IOException, APIException {
+    public ClientSecret checkCredentials(CodeResponse code) throws Exception {
         return callRestAPIInternal(API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
     }
 
@@ -518,6 +524,7 @@ public class RealDebridCom extends PluginForHost {
             final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
             final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
+
                 private volatile long lastValidation = -1;
 
                 @Override
