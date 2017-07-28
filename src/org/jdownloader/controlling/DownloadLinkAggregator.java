@@ -13,9 +13,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadLinkAggregator implements MirrorPackageSetup {
-
     private int totalCount;
-
     private int onlineStatusOfflineCount;
     private int onlineStatusOnlineCount;
 
@@ -59,9 +57,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     private long    totalBytes;
     private long    bytesLoaded;
     private int     finishedCount;
-
     private long    eta;
-
     private boolean localFileUsageEnabled = false;
 
     public void setLocalFileUsageEnabled(boolean fileSizeCheckEnabled) {
@@ -69,7 +65,6 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     private boolean mirrorHandlingEnabled = true;
-
     private int     localFileCount;
 
     public boolean isMirrorHandlingEnabled() {
@@ -100,13 +95,14 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
         int enabled = 0;
         int offline = 0;
         int online = 0;
-        long totalBytes = -1;
+        Long totalBytes = null;
         long bytesLoaded = 0;
         long bytesToDo = 0;
         int finished = 0;
         long speed = 0;
         int localFileCount = 0;
         final int total;
+        Long maxEta = null;
         final boolean isLocalFileMode = isLocalFileUsageEnabled();
         if (isMirrorHandlingEnabled()) {
             final HashMap<String, MirrorPackage> mirrorPackages = new HashMap<String, MirrorPackage>();
@@ -128,28 +124,43 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                 }
             }
             total = mirrorPackages.values().size();
-            boolean fileSizeKnown = false;
             for (final MirrorPackage mirrorPackage : mirrorPackages.values()) {
                 final long fileSize = mirrorPackage.getTotalBytes();
                 final long loaded = mirrorPackage.getBytesLoaded();
+                final long toDo;
                 if (fileSize >= 0) {
-                    fileSizeKnown = true;
-                    totalBytes += fileSize;
+                    if (totalBytes == null) {
+                        totalBytes = fileSize;
+                    } else {
+                        totalBytes += fileSize;
+                    }
+                    toDo = Math.max(0, fileSize - loaded);
+                    bytesToDo += toDo;
+                } else {
+                    toDo = 0;
                 }
-
-                if (isLocalFileMode && loaded > 0) {
-                    localFileCount++;
+                if (loaded > 0) {
+                    bytesLoaded += loaded;
+                    if (isLocalFileMode) {
+                        localFileCount++;
+                    }
                 }
-
-                bytesLoaded += loaded;
-                bytesToDo += Math.max(0, fileSize - loaded);
-
                 if (mirrorPackage.isFinished()) {
                     finished++;
                 }
                 if (mirrorPackage.isEnabled()) {
                     enabled++;
-                    speed += mirrorPackage.getSpeed();
+                    final long dlSpeed = mirrorPackage.getSpeed();
+                    if (dlSpeed > 0) {
+                        if (toDo > 0) {
+                            if (maxEta == null) {
+                                maxEta = toDo / dlSpeed;
+                            } else {
+                                maxEta = Math.max(maxEta.longValue(), toDo / dlSpeed);
+                            }
+                        }
+                        speed += dlSpeed;
+                    }
                 }
                 if (mirrorPackage.isOnline()) {
                     online++;
@@ -157,20 +168,11 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                     offline++;
                 }
             }
-            if (fileSizeKnown) {
-                totalBytes += 1;
-            }
         } else {
             final HashSet<String> localFileCheck = new HashSet<String>();
-            boolean fileSizeKnown = false;
             total = children.size();
             for (final DownloadLink link : children) {
                 final DownloadLinkView view = link.getView();
-                final long fileSize = view.getBytesTotal();
-                if (fileSize >= 0) {
-                    fileSizeKnown = true;
-                    totalBytes += fileSize;
-                }
                 final boolean isFinished = FinalLinkState.CheckFinished(link.getFinalLinkState());
                 if (isFinished) {
                     finished++;
@@ -194,12 +196,34 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                 } else {
                     loaded = view.getBytesLoaded();
                 }
+                final long fileSize = view.getBytesTotal();
+                final long toDo;
+                if (fileSize >= 0) {
+                    if (totalBytes == null) {
+                        totalBytes = fileSize;
+                    } else {
+                        totalBytes += fileSize;
+                    }
+                    toDo = Math.max(0, fileSize - loaded);
+                    bytesToDo += toDo;
+                } else {
+                    toDo = 0;
+                }
                 bytesLoaded += loaded;
-                bytesToDo += Math.max(0, fileSize - loaded);
                 if (link.isEnabled()) {
                     enabled++;
                     if (!isFinished && link.getDownloadLinkController() != null) {
-                        speed += view.getSpeedBps();
+                        final long dlSpeed = view.getSpeedBps();
+                        if (dlSpeed > 0) {
+                            if (toDo > 0) {
+                                if (maxEta == null) {
+                                    maxEta = toDo / dlSpeed;
+                                } else {
+                                    maxEta = Math.max(maxEta.longValue(), toDo / dlSpeed);
+                                }
+                            }
+                            speed += dlSpeed;
+                        }
                     }
                 }
                 switch (link.getAvailableStatus()) {
@@ -211,27 +235,28 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                     break;
                 }
             }
-            if (fileSizeKnown) {
-                totalBytes += 1;
-            }
         }
         this.localFileCount = localFileCount;
         this.totalCount = total;
         this.onlineStatusOfflineCount = offline;
         this.onlineStatusOnlineCount = online;
         this.enabledCount = enabled;
-        if (totalBytes == -1 && totalCount == 0) {
-            totalBytes = 0;
+        if (totalBytes == null && totalCount == 0) {
+            totalBytes = 0l;
         }
-        this.totalBytes = totalBytes;
+        this.totalBytes = totalBytes != null ? totalBytes.longValue() : -1l;
         this.bytesLoaded = bytesLoaded;
         this.finishedCount = finished;
-        this.eta = speed > 0 ? (bytesToDo) / speed : -1;
+        final long eta = speed > 0 ? (bytesToDo) / speed : -1;
+        if (maxEta != null && eta > 0) {
+            this.eta = Math.max(maxEta.longValue(), eta);
+        } else {
+            this.eta = eta;
+        }
         if (bytesToDo == 0 && !isFinished()) {
             // filesizes are unknown
-            eta = -1;
+            this.eta = -1;
         }
-
     }
 
     public int getLocalFileCount() {

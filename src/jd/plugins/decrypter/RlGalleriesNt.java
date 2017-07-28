@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +28,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" })
 public class RlGalleriesNt extends PluginForDecrypt {
-
     private static String agent = null;
 
     public RlGalleriesNt(PluginWrapper wrapper) {
@@ -42,7 +40,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
+        final String parameter = param.toString().replace("https://", "http://");
         br.setReadTimeout(3 * 60 * 1000);
         // br.setCookie(".urlgalleries.net", "popundr", "1");
         if (agent == null) {
@@ -52,6 +50,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
+        br.followRedirect();
         if (br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/not_found_adult.php")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -99,7 +98,6 @@ public class RlGalleriesNt extends PluginForDecrypt {
             logger.info(finallink);
             counter++;
         }
-
         return decryptedLinks;
     }
 
@@ -107,5 +105,4 @@ public class RlGalleriesNt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
