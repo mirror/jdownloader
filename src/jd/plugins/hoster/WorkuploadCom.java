@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,6 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/(file|start)/[A-Za-z0-9]+" })
 public class WorkuploadCom extends PluginForHost {
@@ -54,10 +54,11 @@ public class WorkuploadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
         fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         br.getPage("https://workupload.com/file/" + fid);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == (410) || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         passwordprotected = this.br.containsHTML(html_passwordprotected);
