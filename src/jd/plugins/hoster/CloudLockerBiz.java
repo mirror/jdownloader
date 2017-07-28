@@ -214,7 +214,7 @@ public class CloudLockerBiz extends antiDDoSForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
                 getPage(link.getDownloadURL());
@@ -242,7 +242,7 @@ public class CloudLockerBiz extends antiDDoSForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
@@ -250,7 +250,7 @@ public class CloudLockerBiz extends antiDDoSForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
@@ -262,7 +262,7 @@ public class CloudLockerBiz extends antiDDoSForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -285,13 +285,13 @@ public class CloudLockerBiz extends antiDDoSForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&g-recaptcha-response=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -596,7 +596,7 @@ public class CloudLockerBiz extends antiDDoSForHost {
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
             String dllink = link.getDownloadURL();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             checkResponseCodeErrors(dl.getConnection());
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
@@ -609,7 +609,7 @@ public class CloudLockerBiz extends antiDDoSForHost {
                     handleErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
                 checkResponseCodeErrors(dl.getConnection());
             }
             if (!dl.getConnection().isContentDisposition()) {
