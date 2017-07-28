@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -41,6 +38,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.WdrDeMediathek.WdrDeConfigInterface;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class WdrDeDecrypt extends PluginForDecrypt {
@@ -169,6 +169,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
             final WdrDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.WdrDeMediathek.WdrDeConfigInterface.class);
             final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
+            final boolean grabBestWithinUserSelection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
+            final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
+            final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
             boolean grab_180 = cfg.isGrabHTTP180pVideoEnabled();
             boolean grab_270 = cfg.isGrabHTTP270pVideoEnabled();
             boolean grab_288 = cfg.isGrabHTTP288pVideoEnabled();
@@ -176,7 +179,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             boolean grab_540 = cfg.isGrabHTTP540pVideoEnabled();
             boolean grab_720 = cfg.isGrabHTTP720pVideoEnabled();
             boolean grab_best = cfg.isGrabBESTEnabled();
-            final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
             List<String> all_selected_qualities = new ArrayList<String>();
             if (grab_180) {
                 all_selected_qualities.add("http_180");
@@ -270,51 +272,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 }
                 all_found_downloadlinks.put("http_" + width, dl_video);
             }
-            HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
-            final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
-            if (grab_best) {
-                for (final String possibleQuality : this.all_known_qualities) {
-                    if (all_found_downloadlinks.containsKey(possibleQuality)) {
-                        all_selected_downloadlinks.put(possibleQuality, all_found_downloadlinks.get(possibleQuality));
-                        break;
-                    }
-                }
-                if (all_selected_downloadlinks.isEmpty()) {
-                    logger.info("Possible issue: Best selection found nothing --> Adding ALL");
-                    while (iterator_all_found_downloadlinks.hasNext()) {
-                        final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
-                        all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
-                    }
-                }
-            } else {
-                boolean atLeastOneSelectedItemExists = false;
-                final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
-                while (iterator_all_found_downloadlinks.hasNext()) {
-                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
-                    final String dl_quality_string = dl_entry.getKey();
-                    if (all_selected_qualities.contains(dl_quality_string)) {
-                        atLeastOneSelectedItemExists = true;
-                        all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
-                    } else if (!all_known_qualities.contains(dl_quality_string) && grabUnknownQualities) {
-                        logger.info("Found unknown quality: " + dl_quality_string);
-                        if (grabUnknownQualities) {
-                            logger.info("Adding unknown quality: " + dl_quality_string);
-                            all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
-                        }
-                    }
-                }
-                if (!atLeastOneSelectedItemExists) {
-                    logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
-                    while (iterator_all_found_downloadlinks.hasNext()) {
-                        final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
-                        all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
-                    }
-                } else {
-                    if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
-                        all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
-                    }
-                }
-            }
+            final HashMap<String, DownloadLink> all_selected_downloadlinks = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, grab_best, grabBestWithinUserSelection, grabUnknownQualities);
             /* Finally add selected URLs */
             final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
             while (it.hasNext()) {
@@ -353,12 +311,60 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
+    private HashMap<String, DownloadLink> handleQualitySelection(final HashMap<String, DownloadLink> all_found_downloadlinks, final List<String> all_selected_qualities, final boolean grab_best, final boolean grab_best_out_of_user_selection, final boolean grab_unknown) {
+        HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
+        final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
+        if (grab_best) {
+            for (final String possibleQuality : this.all_known_qualities) {
+                if (all_found_downloadlinks.containsKey(possibleQuality)) {
+                    all_selected_downloadlinks.put(possibleQuality, all_found_downloadlinks.get(possibleQuality));
+                    break;
+                }
+            }
+            if (all_selected_downloadlinks.isEmpty()) {
+                logger.info("Possible issue: Best selection found nothing --> Adding ALL");
+                while (iterator_all_found_downloadlinks.hasNext()) {
+                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                    all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
+                }
+            }
+        } else {
+            boolean atLeastOneSelectedItemExists = false;
+            while (iterator_all_found_downloadlinks.hasNext()) {
+                final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                final String dl_quality_string = dl_entry.getKey();
+                if (all_selected_qualities.contains(dl_quality_string)) {
+                    atLeastOneSelectedItemExists = true;
+                    all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                } else if (!all_known_qualities.contains(dl_quality_string) && grab_unknown) {
+                    logger.info("Found unknown quality: " + dl_quality_string);
+                    if (grab_unknown) {
+                        logger.info("Adding unknown quality: " + dl_quality_string);
+                        all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                    }
+                }
+            }
+            if (!atLeastOneSelectedItemExists) {
+                logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
+                while (iterator_all_found_downloadlinks.hasNext()) {
+                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                    all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
+                }
+            } else {
+                if (grab_best_out_of_user_selection) {
+                    all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+                }
+            }
+        }
+        return all_selected_downloadlinks;
+    }
+
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> map_with_downloadlinks) {
         HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
         DownloadLink keep = null;
-        if (bestMap.size() > 0) {
+        if (map_with_downloadlinks.size() > 0) {
             for (final String quality : all_known_qualities) {
-                keep = bestMap.get(quality);
+                keep = map_with_downloadlinks.get(quality);
                 if (keep != null) {
                     newMap.put(quality, keep);
                     break;
@@ -367,7 +373,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
         if (newMap.isEmpty()) {
             /* Failover in case of bad user selection or general failure! */
-            newMap = bestMap;
+            newMap = map_with_downloadlinks;
         }
         return newMap;
     }

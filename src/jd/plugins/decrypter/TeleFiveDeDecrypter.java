@@ -22,23 +22,18 @@ import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.zip.Inflater;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -50,7 +45,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.TeleFiveDe.Tele5DeConfigInterface;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/.+" })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
@@ -59,20 +62,49 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    // private final List<String> all_known_qualities = Arrays.asList("http_2400", "http_1650", "http_1650", "http_620", "http_225");
+    /* Important: Keep this updated & keep this in order: Highest --> Lowest */
+    private final List<String> all_known_qualities = Arrays.asList("http_2400", "http_1650", "http_1250", "http_620", "http_225");
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load sister-host plugin */
         JDUtilities.getPluginForHost(this.getHost());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> decryptedLinksTemp = new ArrayList<DownloadLink>();
         /* Videoids with releasedate */
         final HashMap<String, String> videoidsToDecrypt = new HashMap<String, String>();
         final String parameter = param.toString();
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean fastlinkcheck = cfg.getBooleanProperty("FAST_LINKCHECK", false);
-        final boolean bestonly = cfg.getBooleanProperty("BEST", false);
+        final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
+        final Tele5DeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TeleFiveDe.Tele5DeConfigInterface.class);
+        final boolean grabBestWithinUserSelection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
+        final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
+        final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
+        boolean grab_225 = cfg.isGrabHTTP225kVideoEnabled();
+        boolean grab_620 = cfg.isGrabHTTP620kVideoEnabled();
+        boolean grab_1250 = cfg.isGrabHTTP1250kVideoEnabled();
+        boolean grab_1650 = cfg.isGrabHTTP1650kVideoEnabled();
+        boolean grab_2400 = cfg.isGrabHTTP2400kVideoEnabled();
+        boolean grab_best = cfg.isGrabBESTEnabled();
+        List<String> all_selected_qualities = new ArrayList<String>();
+        if (grab_225) {
+            all_selected_qualities.add("http_225");
+        }
+        if (grab_620) {
+            all_selected_qualities.add("http_620");
+        }
+        if (grab_1250) {
+            all_selected_qualities.add("http_1250");
+        }
+        if (grab_1650) {
+            all_selected_qualities.add("http_1650");
+        }
+        if (grab_2400) {
+            all_selected_qualities.add("http_2400");
+        }
+        final boolean user_selected_nothing = all_selected_qualities.size() == 0;
+        if (user_selected_nothing) {
+            logger.info("User selected no quality at all --> Adding ALL qualities instead");
+            all_selected_qualities = all_known_qualities;
+        }
         final String videoid_inside_url = new Regex(parameter, "v=(\\d+)").getMatch(0);
         LinkedHashMap<String, Object> entries = null;
         String json_source;
@@ -132,7 +164,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("00");
         final Iterator<Entry<String, String>> it = videoidsToDecrypt.entrySet().iterator();
         while (it.hasNext()) {
-            decryptedLinksTemp.clear();
             final Entry<String, String> videoidEntry = it.next();
             final String videoid = videoidEntry.getKey();
             final String date = videoidEntry.getValue();
@@ -153,7 +184,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 continue;
             }
             final String dash_master_url = (String) dash_master_url_o;
-            final String akamaized_videoid = new Regex(dash_master_url, "kamaized.net/([^/]+)/").getMatch(0);
+            final String akamaized_videoid = new Regex(dash_master_url, "kamaized\\.net/([^/]+)/").getMatch(0);
             /* Find information about that video. */
             entries = (LinkedHashMap<String, Object>) entries.get("fw");
             final String name_episode = (String) entries.get("title");
@@ -177,6 +208,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             if (date != null) {
                 date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
             }
+            String bestQualityQualityKey = null;
             DownloadLink bestQuality = null;
             int bitrateMax = 0;
             int bitrateTemp = 0;
@@ -202,13 +234,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     continue;
                 }
                 bitrateTemp = Integer.parseInt(bitrate_str);
-                final String quality_key = bitrate_str + "k";
-                if (!cfg.getBooleanProperty("ALLOW_" + quality_key, true) && !bestonly) {
-                    /* Error or quality is not wished by user --> Skip it. */
-                    continue;
-                }
+                final String quality_key = "http_" + bitrate_str;
                 final DownloadLink dl = this.createDownloadlink("tele5decrypted://tele5.akamaized.net/" + akamaized_videoid + "/" + quality_entry);
-                final String filename_final = filename_part + "_" + quality_key + ".mp4";
+                final String filename_final = filename_part + quality_key + ".mp4";
                 dl.setFinalFileName(filename_final);
                 if (fastlinkcheck) {
                     dl.setAvailable(true);
@@ -216,25 +244,92 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
-                decryptedLinksTemp.add(dl);
-                if (!bestonly) {
-                    distribute(dl);
-                } else if (bitrateTemp > bitrateMax) {
+                if (bitrateTemp > bitrateMax) {
                     /* Save highest quality DownloadLink. */
                     bitrateMax = bitrateTemp;
                     bestQuality = dl;
+                    bestQualityQualityKey = quality_key;
                 }
+                all_found_downloadlinks.put(quality_key, dl);
             }
-            if (bestonly && bestQuality != null) {
-                /* Add best only. */
-                decryptedLinks.add(bestQuality);
-                distribute(bestQuality);
-            } else {
-                /* Add everything we found. */
-                decryptedLinks.addAll(decryptedLinksTemp);
+            final HashMap<String, DownloadLink> all_selected_downloadlinks = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, grab_best, grabBestWithinUserSelection, grabUnknownQualities);
+            /* Finally add selected URLs */
+            final Iterator<Entry<String, DownloadLink>> it_2 = all_selected_downloadlinks.entrySet().iterator();
+            while (it_2.hasNext()) {
+                final Entry<String, DownloadLink> entry = it_2.next();
+                final DownloadLink keep = entry.getValue();
+                decryptedLinks.add(keep);
+                distribute(keep);
             }
         }
         return decryptedLinks;
+    }
+
+    private HashMap<String, DownloadLink> handleQualitySelection(final HashMap<String, DownloadLink> all_found_downloadlinks, final List<String> all_selected_qualities, final boolean grab_best, final boolean grab_best_out_of_user_selection, final boolean grab_unknown) {
+        HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
+        final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
+        if (grab_best) {
+            for (final String possibleQuality : this.all_known_qualities) {
+                if (all_found_downloadlinks.containsKey(possibleQuality)) {
+                    all_selected_downloadlinks.put(possibleQuality, all_found_downloadlinks.get(possibleQuality));
+                    break;
+                }
+            }
+            if (all_selected_downloadlinks.isEmpty()) {
+                logger.info("Possible issue: Best selection found nothing --> Adding ALL");
+                while (iterator_all_found_downloadlinks.hasNext()) {
+                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                    all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
+                }
+            }
+        } else {
+            boolean atLeastOneSelectedItemExists = false;
+            while (iterator_all_found_downloadlinks.hasNext()) {
+                final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                final String dl_quality_string = dl_entry.getKey();
+                if (all_selected_qualities.contains(dl_quality_string)) {
+                    atLeastOneSelectedItemExists = true;
+                    all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                } else if (!all_known_qualities.contains(dl_quality_string) && grab_unknown) {
+                    logger.info("Found unknown quality: " + dl_quality_string);
+                    if (grab_unknown) {
+                        logger.info("Adding unknown quality: " + dl_quality_string);
+                        all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                    }
+                }
+            }
+            if (!atLeastOneSelectedItemExists) {
+                logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
+                while (iterator_all_found_downloadlinks.hasNext()) {
+                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                    all_selected_downloadlinks.put(dl_entry.getKey(), dl_entry.getValue());
+                }
+            } else {
+                if (grab_best_out_of_user_selection) {
+                    all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+                }
+            }
+        }
+        return all_selected_downloadlinks;
+    }
+
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> map_with_downloadlinks) {
+        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        DownloadLink keep = null;
+        if (map_with_downloadlinks.size() > 0) {
+            for (final String quality : all_known_qualities) {
+                keep = map_with_downloadlinks.get(quality);
+                if (keep != null) {
+                    newMap.put(quality, keep);
+                    break;
+                }
+            }
+        }
+        if (newMap.isEmpty()) {
+            /* Failover in case of bad user selection or general failure! */
+            newMap = map_with_downloadlinks;
+        }
+        return newMap;
     }
 
     /**

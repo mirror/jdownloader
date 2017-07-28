@@ -13,14 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,15 +27,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "tele5decrypted://.+" })
 public class TeleFiveDe extends PluginForHost {
-
     private String dllink = null;
 
     @SuppressWarnings("deprecation")
     public TeleFiveDe(final PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @Override
@@ -76,7 +77,6 @@ public class TeleFiveDe extends PluginForHost {
             }
         }
         // downloadLink.setProperty("FLVFIXER", true);
-
         return AvailableStatus.TRUE;
     }
 
@@ -91,7 +91,6 @@ public class TeleFiveDe extends PluginForHost {
             dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
-
         } else {
             br.setFollowRedirects(true);
             if (dllink == null) {
@@ -125,16 +124,106 @@ public class TeleFiveDe extends PluginForHost {
         return "JDownloader's Tele5 plugin helps downloading videoclips from tele5.de.";
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FAST_LINKCHECK", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "BEST", "Load best version ONLY?").setDefaultValue(false);
-        getConfig().addEntry(bestonly);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_225k", "Grab 225k 420x230?").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_620k", "Grab 620k 640x360?").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_225k", "Grab 1250k 850x480?").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_1650k", "Grab 1625k 1024x576?").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_2400k", "Grab 2400k 1280x720?").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return Tele5DeConfigInterface.class;
+    }
 
+    public static interface Tele5DeConfigInterface extends PluginConfigInterface {
+        public static class TRANSLATION {
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
+            }
+
+            public String getGrabBESTEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality();
+            }
+
+            public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
+            }
+
+            public String getAddUnknownQualitiesEnabled_label() {
+                return _JDT.T.lit_add_unknown_formats();
+            }
+
+            public String getGrabHTTP225kVideoEnabled_label() {
+                return "Grab 225k 420x230?";
+            }
+
+            public String getGrabHTTP620kVideoEnabled_label() {
+                return "Grab 620k 640x360?";
+            }
+
+            public String getGrabHTTP1250kVideoEnabled_label() {
+                return "Grab 1250k 850x480?";
+            }
+
+            public String getGrabHTTP1650kVideoEnabled_label() {
+                return "Grab 1625k 1024x576?";
+            }
+
+            public String getGrabHTTP2400kVideoEnabled_label() {
+                return "Grab 2400k 1280x720?";
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isGrabBESTEnabled();
+
+        void setGrabBESTEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(21)
+        boolean isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
+
+        void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(21)
+        boolean isAddUnknownQualitiesEnabled();
+
+        void setAddUnknownQualitiesEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrabHTTP225kVideoEnabled();
+
+        void setGrabHTTP225kVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isGrabHTTP620kVideoEnabled();
+
+        void setGrabHTTP620kVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(50)
+        boolean isGrabHTTP1250kVideoEnabled();
+
+        void setGrabHTTP1250kVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(60)
+        boolean isGrabHTTP1650kVideoEnabled();
+
+        void setGrabHTTP1650kVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(70)
+        boolean isGrabHTTP2400kVideoEnabled();
+
+        void setGrabHTTP2400kVideoEnabled(boolean b);
     }
 
     @Override
@@ -148,5 +237,4 @@ public class TeleFiveDe extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
