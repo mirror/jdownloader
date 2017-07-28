@@ -301,6 +301,10 @@ public class FoxLeechCom extends antiDDoSForHost {
             final AccountInfo ai = new AccountInfo();
             postPage("http://www.foxleech.com/api/jdownloader", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final String error = (String) entries.get("error");
+            if (error != null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             final String accountType = (String) entries.get("account");
             if (!"premium".equalsIgnoreCase(accountType)) {
                 // unsupported account type
