@@ -9,6 +9,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -21,12 +27,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.download.Downloadable;
 
 public class RAFChunk extends Thread {
     private static final String             UNEXPECTED_RANGE_HEADER_FORMAT         = "Unexpected Range Header Format";
@@ -516,20 +516,28 @@ public class RAFChunk extends Thread {
             } else {
                 connection = copyConnection(originalConnection);
             }
-            long[] ContentRange = connection.getRange();
+            final long[] ContentRange = connection.getRange();
+            final long contentLength = connection.getLongContentLength();
             if (startByte >= 0) {
                 /* startByte >0, we should have a Content-Range in response! */
                 if (ContentRange != null && ContentRange.length == 3) {
+                    if (endByte >= 0 && endByte != ContentRange[1]) {
+                        logger.info("EndByte missmatch(1)! " + endByte + "!=" + ContentRange[1]);
+                    }
                     endByte = ContentRange[1];
                 } else if (dl.getChunkNum() > 1) {
                     /* WTF? no Content-Range response available! */
-                    if (connection.getLongContentLength() == startByte) {
+                    if (contentLength == startByte) {
                         /*
                          * Content-Length equals startByte -> Chunk is Complete!
                          */
                         return;
                     }
-                    if (ContentRange == null && startByte == 0 && connection.getLongContentLength() >= endByte) {
+                    if (ContentRange == null && startByte == 0 && contentLength == -1) {
+                        /*
+                         * no contentRange response and no contentLength, we assume the complete content will be served
+                         */
+                    } else if (ContentRange == null && startByte == 0 && contentLength >= endByte) {
                         /*
                          * no contentRange response, but the Content-Length is long enough and startbyte begins at 0, so it might be a
                          * rangeless first Request
@@ -541,18 +549,37 @@ public class RAFChunk extends Thread {
                     }
                 } else {
                     /* only one chunk requested, set correct endByte */
-                    endByte = connection.getLongContentLength() - 1;
+                    if (contentLength > 0) {
+                        final long end = contentLength - 1;
+                        if (endByte >= 0 && endByte != end) {
+                            logger.info("EndByte missmatch(2)! " + endByte + "!=" + end);
+                        }
+                        endByte = end;
+                    } else {
+                        logger.severe("no contentLength available, endByte remains " + endByte);
+                    }
                 }
             } else if (ContentRange != null) {
                 /*
                  * we did not request a range but got a content-range response,WTF?!
                  */
                 logger.severe("No Range Request -> Content-Range Response?!");
+                if (endByte > 0 && endByte != ContentRange[1]) {
+                    logger.info("EndByte missmatch! " + endByte + "!=" + ContentRange[1]);
+                }
                 endByte = ContentRange[1];
             }
             if (endByte <= 0) {
                 /* endByte not yet set!, use Content-Length */
-                endByte = connection.getLongContentLength() - 1;
+                if (contentLength > 0) {
+                    final long end = contentLength - 1;
+                    if (endByte >= 0 && endByte != end) {
+                        logger.info("EndByte missmatch(3)! " + endByte + "!=" + end);
+                    }
+                    endByte = end;
+                } else {
+                    logger.severe("no contentLength available, endByte remains " + endByte);
+                }
             }
             long cRequestedEndByte = requestedEndByte + 1;
             if (cRequestedEndByte > 0 && endByte > cRequestedEndByte) {
