@@ -552,7 +552,7 @@ public class LinkCrawler {
                 @Override
                 public boolean add(HtmlParserCharSequence e) {
                     final boolean ret = super.add(e);
-                    if (ret && (!e.contains("...") && (!e.equals(getBaseURL()) || isSkipBaseURL() == false))) {
+                    if (ret && (!e.contains("...") && ((getBaseURL() != null && !e.equals(getBaseURL())) || isSkipBaseURL() == false))) {
                         fastResults.add(e);
                         final CrawledLink crawledLink;
                         if (true || e.getRetainedLength() > 10) {
