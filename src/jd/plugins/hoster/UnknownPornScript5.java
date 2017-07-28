@@ -15,13 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,6 +37,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com", "cliplips.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class UnknownPornScript5 extends PluginForHost {
+
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,18 +46,30 @@ public class UnknownPornScript5 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     // other: Should work for all (porn) sites that use the "jwplayer" with http URLs: http://www.jwplayer.com/
-    private static final String  type_allow_title_as_filename = ".+FOR_WEBSITES_FOR_WHICH_HTML_TITLE_TAG_CONTAINS_GOOD_FILENAME.+";
-    private static final String  default_Extension            = ".mp4";
+    private static final String type_allow_title_as_filename = ".+FOR_WEBSITES_FOR_WHICH_HTML_TITLE_TAG_CONTAINS_GOOD_FILENAME.+";
+    private static final String default_Extension            = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume                  = true;
-    private static final int     free_maxchunks               = 0;
-    private static final int     free_maxdownloads            = -1;
-    private String               dllink                       = null;
-    private boolean              server_issues                = false;
+    private static final int    free_maxdownloads            = -1;
+    private boolean             resumes                      = true;
+    private int                 chunks                       = 0;
+    private String              dllink                       = null;
+    private boolean             server_issues                = false;
 
     @Override
     public String getAGBLink() {
         return "http://www.boyfriendtv.com/tos.html";
+    }
+
+    private void setConstants(final Account account) {
+        if (account == null) {
+            if ("xogogo.com".equals(getHost())) {
+                resumes = true;
+                chunks = 1;
+            } else {
+                resumes = true;
+                chunks = 0;
+            }
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -59,11 +77,10 @@ public class UnknownPornScript5 extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         final String host = downloadLink.getHost();
-        final Browser br2 = new Browser();
-        this.setBrowserExclusive();
+        br = new Browser();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getHost().equals("bigcamtube.com") && this.br.toString().length() <= 100) {
+        if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
             /*
              * 2017-01-20: Workaround for bug (same via browser). First request sets cookies but server does not return html - 2nd request
              * returns html.
@@ -134,9 +151,17 @@ public class UnknownPornScript5 extends PluginForHost {
             /* Set final filename! */
             downloadLink.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             try {
-                con = br2.openHeadConnection(dllink);
+                if ("xogogo.com".equals(getHost())) {
+                    dllink = Encoding.urlDecode(dllink, true) + "&start=0";
+                    final HeadRequest gr = new HeadRequest(dllink);
+                    gr.setURL(new URL(dllink));
+                    con = br2.openRequestConnection(gr);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -227,13 +252,21 @@ public class UnknownPornScript5 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        setConstants(null);
         requestFileInformation(downloadLink);
         if (inValidateDllink(this.dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        if ("xogogo.com".equals(getHost())) {
+            dllink = Encoding.urlDecode(dllink, true) + "&start=0";
+            final Request gr = new GetRequest(dllink);
+            gr.setURL(new URL(dllink));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, gr, resumes, chunks);
+        } else {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
