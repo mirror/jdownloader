@@ -54,11 +54,11 @@ public class WorkuploadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(410);
+        br.setAllowedResponseCodes(new int[] { 410 });
         fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         br.getPage("https://workupload.com/file/" + fid);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == (410) || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         passwordprotected = this.br.containsHTML(html_passwordprotected);
