@@ -69,7 +69,21 @@ public class GayfilesmonsterCom extends PluginForDecrypt {
         /* Decrypt base64 */
         final String b64_decrypted = Encoding.Base64Decode(b64);
         /* Fix URL inside the decrypted base64 */
-        final String fileid = new Regex(b64_decrypted, "download\\.php\\?id=([^/]+)$").getMatch(0);
+        final String fileid;
+        if (b64_decrypted.contains("sptth")) {
+            fileid = new Regex(b64_decrypted, "download\\.php\\?id=([^/]+)$").getMatch(0);
+        } else {
+            final Regex finfo = new Regex(b64_decrypted, "download\\.php\\?id=(.{5})([^/]+)$");
+            final String fileid_part1_reversed = finfo.getMatch(0);
+            final char[] fileid_part1_reversed_array = fileid_part1_reversed.toCharArray();
+            String fileid_part1 = "";
+            for (int i = fileid_part1_reversed_array.length - 1; i > -1; i--) {
+                final char currentChar = fileid_part1_reversed_array[i];
+                fileid_part1 += currentChar;
+            }
+            final String fileid_part2 = finfo.getMatch(1);
+            fileid = fileid_part1 + fileid_part2;
+        }
         return this.createDownloadlink("https://filesmonster.com/download.php?id=" + fileid);
     }
 }

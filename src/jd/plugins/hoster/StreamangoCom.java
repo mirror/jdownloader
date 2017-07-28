@@ -28,16 +28,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamango.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/embed/[a-z0-9]+(?:/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamango.com", "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/embed/[a-z0-9]+(?:/[^/]+)?", "https?://(?:www\\.)?streamcherry\\.com/embed/[a-z0-9]+(?:/[^/]+)?" })
 public class StreamangoCom extends PluginForHost {
     public StreamangoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other:
-
+    // other: related:
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
