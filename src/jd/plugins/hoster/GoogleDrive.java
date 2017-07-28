@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
 
     public GoogleDrive(PluginWrapper wrapper) {
@@ -96,7 +96,7 @@ public class GoogleDrive extends PluginForHost {
         if (downloadLink == null) {
             return null;
         }
-        String id = new Regex(downloadLink.getDownloadURL(), "/file/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "/(?:file|document)/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
         if (id == null) {
             id = new Regex(downloadLink.getDownloadURL(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
         }
@@ -167,7 +167,7 @@ public class GoogleDrive extends PluginForHost {
              * per page) - we would need a decrypter for this.
              */
             download_might_not_be_possible = true;
-            final String type = br.getRegex("<meta property=\"og:type\" content=\"([^<>\"]+)\">").getMatch(0);
+            final String type = getType(br);
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
             if (filename != null && type != null) {
                 if (type.equals("article") && !filename.endsWith(".pdf")) {
@@ -229,6 +229,11 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public String getType(Browser br) {
+        final String type = br.getRegex("<meta property=\"og:type\" content=\"([^<>\"]+)\">").getMatch(0);
+        return type;
     }
 
     private String constructDownloadUrl(DownloadLink link) {
