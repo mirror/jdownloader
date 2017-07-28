@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
@@ -46,7 +45,6 @@ public class BrowserAdapter {
             dl.setChunkNum(chunksCount < 0 ? Math.min(chunksCount * -1, chunks <= 0 ? JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile() : chunks) : chunksCount);
         }
         dl.setResume(resumeEnabled);
-
         return dl;
     }
 
@@ -144,6 +142,20 @@ public class BrowserAdapter {
     /**
      *
      * @param br
+     * @param downloadLink
+     * @param request
+     * @param resume
+     * @param chunks
+     * @return
+     * @throws Exception
+     */
+    public static DownloadInterface openDownload(final Browser br, final DownloadLink downloadLink, final Request request, final boolean resume, final int chunks) throws Exception {
+        return openDownload(br, getDownloadable(downloadLink, br), request, resume, chunks, false);
+    }
+
+    /**
+     *
+     * @param br
      * @param downloadable
      * @param request
      * @param resume
@@ -209,7 +221,6 @@ public class BrowserAdapter {
                             Thread.sleep(redirect_count * 250l);
                         }
                     }
-
                     if (originalUrl != null) {
                         request.getHeaders().put("Referer", originalUrl);
                     }
@@ -289,14 +300,12 @@ public class BrowserAdapter {
                     // Cache-Control: no-cache
                     // Content-length: 10135
                     // ------------------------------------------------
-
                     // <title>Threat download blocked</title>
                     // ..
                     // <span><font color="black" size=6><p>For security reasons your request was blocked.<p>If you feel you've reached this
                     // page
                     // in error, contact Helpdesk at the email address below</td>
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Zscaler");
-
                 } else if (dl.getConnection().getHeaderField("Server") != null && dl.getConnection().getHeaderField("Server").matches("Protected by WireFilter.+")) {
                     // country filter service.. note that the date is wrong!
                     // happens on standard html pages.. not just data..
@@ -387,5 +396,4 @@ public class BrowserAdapter {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by almaviva.it portal");
         }
     }
-
 }
