@@ -44,7 +44,7 @@ public class SendspaceComFolder extends PluginForDecrypt {
         final String parameter = param.getCryptedUrl();
         br.getPage(parameter);
         if (br.containsHTML("(404 Page Not Found|It has either been moved)")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (parameter.contains("/filegroup/")) {
