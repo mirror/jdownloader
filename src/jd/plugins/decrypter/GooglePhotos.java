@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photos.google.com" }, urls = { "https?://photos\\.google\\.com/share/[A-Za-z0-9\\-_]+\\?key=[A-Za-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photos.google.com" }, urls = { "https?://photos\\.google\\.com/share/[A-Za-z0-9\\-_]+\\?key=[A-Za-z0-9\\-_]+" })
 public class GooglePhotos extends PluginForDecrypt {
 
     public GooglePhotos(PluginWrapper wrapper) {
@@ -38,11 +39,14 @@ public class GooglePhotos extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final boolean fastlinkcheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.GooglePhotos.FAST_LINKCHECK, false);
+        br = new Browser();
+        // use english not german!
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album is empty<")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -50,7 +54,7 @@ public class GooglePhotos extends PluginForDecrypt {
         final String idMAIN = urlinfo.getMatch(0);
         final String key = urlinfo.getMatch(1);
         final String[] ids = br.getRegex("\\[\"([A-Za-z0-9\\-_]{22,})\",\\[\"https").getColumn(0);
-        String fpName = br.getRegex("<title>[A-Za-z0-9 ]+ – ([^<>\"]+) \\- Google Fotos</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(?:Shared album\\s*-\\s*)?[A-Za-z0-9 ]+ – ([^<>\"]+)\\s*-\\s*Google (?:Ph|F)otos</title>").getMatch(0);
         if (fpName == null) {
             fpName = idMAIN;
         }
