@@ -35,13 +35,12 @@ public class GayfilesmonsterCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String b64 = new Regex(parameter, "/go\\.php\\?file=(.+)").getMatch(0);
-        if (b64 != null) {
-            /* Decrypt base64 */
-            final String b64_decrypted = Encoding.Base64Decode(b64);
-            /* Fix URL inside the decrypted base64 */
-            final String finallink = new Regex(b64_decrypted, "(filesmonster\\.com/.+)").getMatch(0);
-            decryptedLinks.add(this.createDownloadlink("http://" + finallink));
+        if (parameter.matches(".+go\\.php.+")) {
+            final DownloadLink dl = decryptSingleURL(parameter);
+            if (dl == null) {
+                return null;
+            }
+            decryptedLinks.add(dl);
         } else {
             br.setFollowRedirects(true);
             br.getPage(parameter);
@@ -54,11 +53,23 @@ public class GayfilesmonsterCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            /* Add these single URLs --> Will go back into this decrypter and get decrypted. */
             for (final String singleLink : links) {
-                decryptedLinks.add(createDownloadlink(singleLink));
+                final DownloadLink dl = decryptSingleURL(singleLink);
+                if (dl == null) {
+                    return null;
+                }
+                decryptedLinks.add(dl);
             }
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink decryptSingleURL(final String url) {
+        final String b64 = new Regex(url, "/go\\.php\\?file=(.+)").getMatch(0);
+        /* Decrypt base64 */
+        final String b64_decrypted = Encoding.Base64Decode(b64);
+        /* Fix URL inside the decrypted base64 */
+        final String fileid = new Regex(b64_decrypted, "download\\.php\\?id=([^/]+)$").getMatch(0);
+        return this.createDownloadlink("https://filesmonster.com/download.php?id=" + fileid);
     }
 }

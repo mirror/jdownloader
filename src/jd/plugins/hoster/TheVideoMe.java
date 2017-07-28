@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
@@ -30,6 +30,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -51,15 +53,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
-
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -77,10 +81,10 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean VIDEOHOSTER_2                = true;
     private static final boolean VIDEOHOSTER_3                = false;
+    /* 'Pairing' */
+    private static final boolean VIDEOHOSTER_4                = true;
     private static final boolean SUPPORTSHTTPS                = false;
-
     private final boolean        ENABLE_HTML_FILESIZE_CHECK   = false;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -109,7 +113,6 @@ public class TheVideoMe extends antiDDoSForHost {
     // matter, we try anyways
     // They fight against DL-managers - other possibility to get dllink easier: https://thevideo.me/pair and
     // https://thevideo.me/pair?file_code=<fuid>&check
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing */
@@ -129,6 +132,7 @@ public class TheVideoMe extends antiDDoSForHost {
     public TheVideoMe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        setConfigElements();
     }
 
     @Override
@@ -251,13 +255,14 @@ public class TheVideoMe extends antiDDoSForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         /* Prevent redirects when we access the main url again later below. */
         final String url_from_availablecheck = this.br.getURL();
-
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
         boolean is_saved_directlink = false;
         boolean is_correct_finallink = false;
-        String special_js_bullshit = getSpecialJsBullshit();
+        /* Required to get 'auth_code' via website-handling (without 'pairing'-mode). */
+        String special_js_bullshit_code = getSpecialJsBullshit();
+        String auth_code = null;
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // dllink = null;
         if (dllink != null) {
@@ -267,7 +272,7 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink == null) {
             dllink = getDllink();
         }
-        final Browser brv = br.cloneBrowser();
+        Browser brv = br.cloneBrowser();
         /* Third, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
             try {
@@ -321,8 +326,8 @@ public class TheVideoMe extends antiDDoSForHost {
                         is_correct_finallink = true;
                         logger.info("VIDEOHOSTER_3 handling: success!");
                         // http://thevideo.me/dljsv/xme2krekhp78
-                        special_js_bullshit = brv.getRegex("/dljsv/([^<>\"\\'/]+)\"").getMatch(0);
-                        if (special_js_bullshit != null) {
+                        special_js_bullshit_code = brv.getRegex("/dljsv/([^<>\"\\'/]+)\"").getMatch(0);
+                        if (special_js_bullshit_code != null) {
                             brv.getPage("/dljsv/" + this.fuid);
                             final String special_id = brv.getRegex("each\\|([A-Za-z0-9]+)").getMatch(0);
                             if (special_id != null) {
@@ -346,7 +351,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "/embed-" + fuid + ".html";
                 getPage(embed_access);
-                special_js_bullshit = getSpecialJsBullshit();
+                special_js_bullshit_code = getSpecialJsBullshit();
                 dllink = getDllink();
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
@@ -361,7 +366,85 @@ public class TheVideoMe extends antiDDoSForHost {
                 getPage(url_from_availablecheck);
             }
         }
-        /* Fourth, continue like normal */
+        if (VIDEOHOSTER_4 && StringUtils.isEmpty(auth_code)) {
+            /*
+             * 2017-07-28: Try pairing as a fallback if we cannot work around it <br /> This is commonly used in KODI.
+             */
+            int count = 0;
+            boolean authenticated = false;
+            do {
+                logger.info("Attempting Pairing: " + count);
+                /* Remove cookies & headers */
+                brv = br.cloneBrowser();
+                brv.getPage(String.format("/pair?file_code=%s&check", this.fuid));
+                authenticated = Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"));
+                if (!authenticated) {
+                    logger.info("Pairing: No authenticated - requires captcha");
+                    brv.getPage("/pair");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv).getToken();
+                    brv.getPage("/pair?activate=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                    /*
+                     * Possible 'response' (String) errormessages here (WITH ""): <br /> "Invalid Captcha!" <br /> "Captcha is required!"
+                     */
+                    if (Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"))) {
+                        logger.info("Pairing: Seems to be successful");
+                    } else {
+                        logger.info("Pairing: Seems to have failed");
+                    }
+                } else {
+                    logger.info("Pairing: Authenticated");
+                    break;
+                }
+                count++;
+            } while (!authenticated && count <= 1);
+            if (authenticated) {
+                logger.info("Pairing successful");
+                try {
+                    String dllink_temp = null;
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brv.toString());
+                    entries = (LinkedHashMap<String, Object>) entries.get("response");
+                    auth_code = (String) entries.get("vt");
+                    /* Quality selection */
+                    final String configuredQuality = getConfiguredVideoHeight();
+                    final boolean downloadBEST = !configuredQuality.matches("\\d+");
+                    if (!downloadBEST) {
+                        dllink_temp = (String) entries.get(configuredQuality + "p");
+                    }
+                    if (StringUtils.isEmpty(dllink_temp)) {
+                        /* User wants best quality or his selected quality was not available. */
+                        dllink_temp = (String) entries.get("1080p");
+                        if (StringUtils.isEmpty(dllink_temp)) {
+                            dllink_temp = (String) entries.get("720p");
+                            if (StringUtils.isEmpty(dllink_temp)) {
+                                dllink_temp = (String) entries.get("480p");
+                                if (StringUtils.isEmpty(dllink_temp)) {
+                                    dllink_temp = (String) entries.get("360p");
+                                    if (StringUtils.isEmpty(dllink_temp)) {
+                                        dllink_temp = (String) entries.get("240p");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!StringUtils.isEmpty(auth_code)) {
+                        logger.info("Pairing: Found auth_code");
+                    } else {
+                        logger.warning("Pairing: Failed to find auth_code");
+                    }
+                    if (!StringUtils.isEmpty(dllink_temp)) {
+                        logger.info("Pairing: Found downloadlink --> Using it");
+                        dllink = dllink_temp;
+                    } else {
+                        logger.warning("Pairing: Failed to find downloadlink");
+                    }
+                } catch (final Throwable e) {
+                    logger.warning("Pairing: json handling failed");
+                }
+            } else {
+                logger.info("Pairing failed");
+            }
+        }
+        /* Fifth, continue like normal */
         if (dllink == null) {
             checkErrors(downloadLink, false);
             final Form download1 = getFormByKey("op", "download1");
@@ -470,7 +553,6 @@ public class TheVideoMe extends antiDDoSForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -527,18 +609,17 @@ public class TheVideoMe extends antiDDoSForHost {
                 }
             }
         }
-        if (!is_correct_finallink && special_js_bullshit != null && dllink != null && !is_saved_directlink) {
+        if (!is_correct_finallink && auth_code == null && dllink != null && !is_saved_directlink) {
             /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
-            getPage(brv, "/jwv/" + special_js_bullshit);
+            getPage(brv, "/vsign/player/" + auth_code);
             final String jscrap = doThis(brv);
-            String vt = new Regex(jscrap, "vt=(.*?)\";").getMatch(0);
-            if (vt != null) {
-                dllink += "?direct=false&ua=1&vt=" + vt;
-            } else {
-
-            }
-        } else if (special_js_bullshit == null && dllink != null && !is_saved_directlink) {
-            logger.info("JDownloader might have been blocked by this host");
+            auth_code = new Regex(jscrap, "vt=(.*?)\";").getMatch(0);
+        }
+        if (auth_code != null) {
+            logger.info("auth_code is present --> Adding it");
+            dllink += "?direct=false&ua=1&vt=" + auth_code;
+        } else {
+            logger.info("auth_code is null --> Possible failure");
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -591,7 +672,7 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     private String getSpecialJsBullshit() {
-        return new Regex(correctedBR, "var try_again\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
+        return new Regex(correctedBR, "app\\.config\\.adblock_domain \\+ location\\.pathname \\+ location\\.search[^<>]*?</script>\\s*?<script>\\s*?var [^=]+=\\'([^<>\"\\']+)\\';").getMatch(0);
     }
 
     private boolean isFakeDllink(final URLConnectionAdapter con) {
@@ -658,14 +739,11 @@ public class TheVideoMe extends antiDDoSForHost {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -689,6 +767,8 @@ public class TheVideoMe extends antiDDoSForHost {
             js = new Regex(br, "var jwConfig_vars = (\\{.*?\\});").getMatch(0);
             if (js != null) {
                 try {
+                    final String configuredQuality = getConfiguredVideoHeight();
+                    final boolean downloadBEST = !configuredQuality.matches("\\d+");
                     final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(js, "sources"));
                     if (sources != null) {
                         final HashMap<String, String> result = new HashMap<String, String>();
@@ -698,15 +778,21 @@ public class TheVideoMe extends antiDDoSForHost {
                             result.put(label, file);
                         }
                         // get best
-                        dllink = result.get("1080p");
+                        if (!downloadBEST) {
+                            dllink = result.get(configuredQuality + "p");
+                        }
                         if (dllink == null) {
-                            dllink = result.get("720p");
+                            /* User wants best quality or his selected quality was not available. */
+                            dllink = result.get("1080p");
                             if (dllink == null) {
-                                dllink = result.get("480p");
+                                dllink = result.get("720p");
                                 if (dllink == null) {
-                                    dllink = result.get("360p");
+                                    dllink = result.get("480p");
                                     if (dllink == null) {
-                                        dllink = result.get("240p");
+                                        dllink = result.get("360p");
+                                        if (dllink == null) {
+                                            dllink = result.get("240p");
+                                        }
                                     }
                                 }
                             }
@@ -755,26 +841,21 @@ public class TheVideoMe extends antiDDoSForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -1288,6 +1369,26 @@ public class TheVideoMe extends antiDDoSForHost {
         return maxPrem.get();
     }
 
+    private String getConfiguredVideoHeight() {
+        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final String selectedResolution = FORMATS[selection];
+        if (selectedResolution.matches("\\d+p")) {
+            final String height = new Regex(selectedResolution, "(\\d+)p").getMatch(0);
+            return height;
+        } else {
+            /* BEST selection */
+            return selectedResolution;
+        }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred videoresolution:").setDefaultValue(0));
+    }
+
+    /* The list of qualities displayed to the user */
+    private final String[] FORMATS               = new String[] { "BEST", "1080p", "720p", "480p", "360p", "240p" };
+    private final String   SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
+
     @Override
     public void reset() {
     }
@@ -1300,5 +1401,4 @@ public class TheVideoMe extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
