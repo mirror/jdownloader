@@ -83,7 +83,7 @@ public class GoogleDrive extends PluginForDecrypt {
             String redirect = br.getRedirectLocation();
             /* Check whether we have a single file or a folder */
             if (redirect != null) {
-                if (redirect.contains("google.com/file/")) {
+                if (new Regex(redirect, "google\\.com/(?:document|file)/d/").matches()) {
                     logger.info("Found single file");
                     decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation(), false));
                     return decryptedLinks;
@@ -92,7 +92,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 do {
                     br.getPage(redirect);
                 } while ((redirect = br.getRedirectLocation()) != null && retry++ <= 3);
-                if ("article".equals(((jd.plugins.hoster.GoogleDrive) plg).getType(br))) {
+                if (new Regex(br.getURL(), "google\\.com/(?:document|file)/d/").matches() || "article".equals(((jd.plugins.hoster.GoogleDrive) plg).getType(br))) {
                     decryptedLinks.add(createDownloadlink(br.getURL()));
                     return decryptedLinks;
                 }
