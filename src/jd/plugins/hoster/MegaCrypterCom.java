@@ -67,7 +67,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
     // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
     // 20160308 encrypterme.ga, no dns
     // 20170112 megacrypter.sytes.net, no dns record
-    // 20170728 megacrypter.neerdi.x10.bz, dead/expired
+    // 20170728 megacrypter.neerdi.x10.bz / megacrypter.neerdi.com, dead/expired
 
     public MegaCrypterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -88,8 +88,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
     }
 
     private void setUrl(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches("(?i).+(megacrypter\\.neerdi\\.com|megacrypter\\.neerdi\\.x10\\.bz)/.+")) {
-            // https seems to some soccer sports page
+        if (false && downloadLink.getDownloadURL().matches("(?i)")) {
             supportsHTTPS = false;
             enforcesHTTPS = false;
         } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/")) {
