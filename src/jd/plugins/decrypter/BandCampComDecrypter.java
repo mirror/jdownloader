@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -46,9 +45,8 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" })
 public class BandCampComDecrypter extends PluginForDecrypt {
-
     public BandCampComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,14 +59,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         CFG = SubConfiguration.getConfig("bandcamp.com");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, that something isn\\'t here\\.<|trackinfo[\t\n\r ]*?:[\t\n\r ]*?\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        }
-        if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
         }
         final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
         final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatches();
@@ -116,7 +112,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             trackcounter++;
         }
-
         final boolean decryptThumb = CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.GRABTHUMB, false);
         final String thumbnail = br.getRegex("<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
         if (decryptThumb && thumbnail != null) {
@@ -132,7 +127,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             thumb.setFinalFileName(formattedFilename);
             decryptedLinks.add(thumb);
         }
-
         final String videos[][] = br.getRegex("<a class=\"has-video\"\\s*href=\"(/video/t/\\d+)\"\\s*data-href-mobile=\"(/.*?)\"").getMatches();
         if (videos != null) {
             final HashSet<String> dups = new HashSet<String>();
@@ -180,7 +174,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 }
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         final String formattedpackagename = getFormattedPackagename(artist, album, date);
         if (!CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.CLEANPACKAGENAME, false)) {
@@ -188,7 +181,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         fp.setName(formattedpackagename);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -202,16 +194,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (!formattedpackagename.contains("*artist*") && !formattedpackagename.contains("*album*")) {
             formattedpackagename = defaultCustomPackagename;
         }
-
         String formattedDate = null;
         if (date != null && formattedpackagename.contains("*date*")) {
             final String userDefinedDateFormat = CFG.getStringProperty(jd.plugins.hoster.BandCampCom.CUSTOM_DATE);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
             Date dateStr = formatter.parse(date);
-
             formattedDate = formatter.format(dateStr);
             Date theDate = formatter.parse(formattedDate);
-
             if (userDefinedDateFormat != null) {
                 try {
                     formatter = new SimpleDateFormat(userDefinedDateFormat);
@@ -232,14 +221,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         // Insert albumname at the end to prevent errors with tags
         formattedpackagename = formattedpackagename.replace("*album*", album);
-
         if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.PACKAGENAMELOWERCASE, false)) {
             formattedpackagename = formattedpackagename.toLowerCase();
         }
         if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.PACKAGENAMESPACE, false)) {
             formattedpackagename = formattedpackagename.replace(" ", "_");
         }
-
         return formattedpackagename;
     }
 
@@ -247,5 +234,4 @@ public class BandCampComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
