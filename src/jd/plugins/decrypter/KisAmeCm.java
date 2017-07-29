@@ -33,9 +33,9 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
+import org.jdownloader.plugins.components.RefreshSessionLink;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -64,7 +64,8 @@ import jd.utils.RazStringBuilder;
  * @author raztoki
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
-public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
+public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
+
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -80,6 +81,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         KISS_CARTOON,
         KISS_MANGA,
         KISS_UNKNOWN;
+
         private static HostType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "kissanime")) {
                 return KISS_ANIME;
@@ -111,12 +113,12 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         br.setFollowRedirects(true);
         getPage(parameter);
         /* Error handling */
-        if (isOffline(this.br)) {
+        if (isOffline(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
-        handleHumanCheck(this.br);
+        handleHumanCheck(br);
         String title;
         if (hostType == HostType.KISS_MANGA) {
             // crypto!
@@ -149,8 +151,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 mirrors = new String[] { "dummy" };
             }
             for (int mirror_number = 0; mirror_number <= mirrors.length - 1; mirror_number++) {
-                if (mirror_number > 0) {
-                    final String mirror_param = mirrors[mirror_number];
+                final String mirror_param = mirrors[mirror_number];
+                // we are already on mirror 0, but the mirrors list might not be in sequence as without parm it could be entry 2 3 etc...
+                if (!"dummy".equals(mirror_param)) {
                     getPage(url_base + mirror_param);
                 }
                 // we have two things we need to base64decode
@@ -189,9 +192,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                         }
                         final String quality = qual[2];
                         final DownloadLink dl = createDownloadlink(decode);
-                        /* md5 of "kissanime.com" */
                         dl.setProperty("refresh_url_plugin", getHost());
-                        dl.setProperty("source_url", parameter);
+                        // we need to know the proper mirror id, as refresh will try with out parameter and will fail
+                        dl.setProperty("source_url", parameter + (!"dummy".equals(mirror_param) ? mirror_param : ""));
                         dl.setProperty("source_quality", quality);
                         dl.setFinalFileName(title + "-" + quality + ".mp4");
                         dl.setAvailableStatus(AvailableStatus.TRUE);
@@ -221,6 +224,48 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                     final String link = br.getRegex("\\$\\('#divContentVideo'\\)\\.html\\('<iframe\\s+[^>]* src=\"(.*?)\"").getMatch(0);
                     if (link != null) {
                         decryptedLinks.add(createDownloadlink(link));
+                        continue;
+                    }
+                    // can be obstructed also
+                    final String obstruction = br.getRegex("\\$\\('#divContentVideo iframe'\\)\\.attr\\('src',\\s*\\$kissenc\\.decrypt\\('([^']+)'\\)").getMatch(0);
+                    if (obstruction != null) {
+                        String skey = null;
+                        String iv = null;
+                        switch (hostType) {
+                        case KISS_ANIME:
+                            skey = getSecretKeyAnime();
+                            iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+                            break;
+                        case KISS_ASIAN:
+                            skey = getSecretKeyAsian();
+                            iv = "32b812e9a1321ae0e84af660c4722b3a";
+                            break;
+                        case KISS_CARTOON:
+                            skey = getSecretKeyCartoon();
+                            iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+                        default:
+                            break;
+                        }
+                        String decode = null;
+                        switch (hostType) {
+                        case KISS_ANIME:
+                        case KISS_ASIAN:
+                        case KISS_CARTOON:
+                            decode = decodeSingleURL(obstruction, skey, iv);
+                            break;
+                        default:
+                            break;
+                        }
+                        if (decode == null) {
+                            continue;
+                        }
+                        final DownloadLink dl = createDownloadlink(decode);
+                        dl.setProperty("refresh_url_plugin", getHost());
+                        // we need to know the proper mirror id, as refresh will try with out parameter and will fail
+                        dl.setProperty("source_url", parameter + (!"dummy".equals(mirror_param) ? mirror_param : ""));
+                        dl.setFinalFileName(title + ".mp4");
+                        dl.setAvailableStatus(AvailableStatus.TRUE);
+                        decryptedLinks.add(dl);
                     }
                 }
             }
@@ -557,21 +602,22 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return stitchedImageOutput;
     }
 
-    public String refreshVideoDirectUrl(final DownloadLink dl, final Browser br) throws Exception {
+    public String refreshVideoDirectUrl(final DownloadLink dl) throws Exception {
+        br = new Browser();
         String directlink = null;
         final String source_url = dl.getStringProperty("source_url", null);
         final String source_quality = dl.getStringProperty("source_quality", null);
         if (source_url == null || source_quality == null) {
             return null;
         }
-        getPage(br, source_url);
+        getPage(source_url);
         if (isOffline(br)) {
             return null;
         }
         handleHumanCheck(br);
         HostType hostType = HostType.parse(source_url);
         /* Find new directlink for original quality */
-        final String[][] quals = getQuals(this.br);
+        final String[][] quals = getQuals(br);
         if (quals != null) {
             String skey = null;
             String iv = null;

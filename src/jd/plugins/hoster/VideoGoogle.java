@@ -3,6 +3,15 @@ package jd.plugins.hoster;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.RefreshSessionLink;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -18,15 +27,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+" })
 public class VideoGoogle extends PluginForHost {
@@ -70,7 +70,7 @@ public class VideoGoogle extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
         if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
             br.followConnection();
             if (br.containsHTML("No htmlCode read")) {
@@ -124,6 +124,8 @@ public class VideoGoogle extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 logger.info("Successfully refreshed directurl");
+                // you must save this refresh! if the user stops download, it will keep trying trying original.. and its expired
+                downloadLink.setPluginPatternMatcher(dllink);
                 con = br2.openGetConnection(dllink);
             }
             if (con.getContentType().contains("video")) {
@@ -164,11 +166,10 @@ public class VideoGoogle extends PluginForHost {
      * @throws Exception
      */
     private String refreshDirectlink(final DownloadLink dl) throws Exception {
-        final String directlink;
         if (dl.getDownloadURL().matches(embed)) {
             final String refresh_url_plugin = dl.getStringProperty("refresh_url_plugin", null);
             if (refresh_url_plugin != null) {
-                return ((GoogleVideoRefresh) JDUtilities.getPluginForDecrypt(refresh_url_plugin)).refreshVideoDirectUrl(dl, this.br);
+                return ((RefreshSessionLink) JDUtilities.getPluginForDecrypt(refresh_url_plugin)).refreshVideoDirectUrl(dl);
             }
         }
         return null;
