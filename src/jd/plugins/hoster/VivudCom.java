@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,16 +32,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vivud.com" }, urls = { "https?://(?:www\\.)?vivud\\.com/video/\\d+/" })
 public class VivudCom extends PluginForHost {
     public VivudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -101,6 +101,7 @@ public class VivudCom extends PluginForHost {
                 }
                 if (!StringUtils.isEmpty(dllink)) {
                     logger.info("BEST handling for multiple video source succeeded");
+                    logger.info("quality_best: " + quality_best + "p, dllink: " + dllink);
                 }
             } catch (final Throwable e) {
                 logger.info("BEST handling for multiple video source failed");
@@ -134,7 +135,7 @@ public class VivudCom extends PluginForHost {
             filename += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
+            // dllink = Encoding.htmlDecode(dllink); // + is encoded as %20 gives error
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
