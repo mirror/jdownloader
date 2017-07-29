@@ -82,7 +82,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             }
             // more steps y0! 20170602
             {
-                final Form click = br.getFormByInputFieldKeyValue("captcha_click", "1");
+                final Form click = getClick();
                 if (click != null) {
                     br.submitForm(click);
                 }
@@ -128,6 +128,16 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             logger.info("User Aborted task!");
         }
         return decryptedLinks;
+    }
+
+    private Form getClick() {
+        final Form[] results = br.getForms();
+        for (final Form result : results) {
+            if (result.hasInputFieldByName("c_click")) {
+                return result;
+            }
+        }
+        return null;
     }
 
     private void handleLink(final Browser br) throws Exception {
