@@ -354,7 +354,7 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     public static String getTitle(final Browser br, final String url) {
-        String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?)( / Embed Player)?</title>").getMatch(0);
         if (title == null) {
             title = new Regex(url, "/videos/\\d+/(.+)").getMatch(0);
         }
