@@ -263,7 +263,6 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        final String linkid_url = getLID(link);
         requestFileInformation(link);
         checkWatchableGeneral();
         /* Can happen if its not clear whether the video is private or offline */
@@ -310,7 +309,7 @@ public class NicoVideoJp extends PluginForHost {
         ajax.postPageRaw(string, string2);
     }
 
-    private String constructJSON() {
+    private String constructJSON() throws PluginException {
         try {
             final LinkedHashMap<String, Object> sesApi = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "video/dmcInfo/session_api");
             final String token = (String) sesApi.get("token");
@@ -319,12 +318,11 @@ public class NicoVideoJp extends PluginForHost {
             // new shit is all within json!
             final String output = "{\"session\":{\"recipe_id\":\"" + (String) sesApi.get("recipe_id") + "\",\"content_id\":\"" + (String) sesApi.get("content_id") + "\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":" + videos + ",\"audio_src_ids\":" + audios + "}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"http_output_download_parameters\":{\"use_well_known_port\":\"no\",\"use_ssl\":\"no\"}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"" + token.replaceAll("\"", "\\\\\"") + "\",\"signature\":\"" + (String) sesApi.get("signature") + "\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":"
                     + JavaScriptEngineFactory.toLong(sesApi.get("content_key_timeout"), 60000) + ",\"service_id\":\"nicovideo\",\"service_user_id\":\"" + sesApi.get("service_user_id") + "\"},\"client_info\":{\"player_id\":\"" + (String) sesApi.get("player_id") + "\"},\"priority\":" + sesApi.get("priority").toString() + "}}";
-
             return output;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Not viewable, please confirm with your favourite webbrowser!");
     }
 
     /* Checks if a video is watch-/downloadable, works for logged in- and unregistered users. */
@@ -359,12 +357,12 @@ public class NicoVideoJp extends PluginForHost {
         synchronized (LOCK) {
             this.setBrowserExclusive();
             final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
+            if (cookies != null && !force) {
                 /* 2016-05-04: Avoid full login whenever possible! */
                 br.setCookies(this.getHost(), cookies);
                 if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
                     /* We trust these cookies --> Do not check them */
-                    return ai;
+                    return null;
                 }
                 br.getPage("http://www.nicovideo.jp/");
                 if (br.containsHTML("/logout\">Log out</a>")) {
