@@ -80,6 +80,16 @@ public class MultiHosterManagement {
         }
     }
 
+    /**
+     * pushes into {@link #handleErrorGeneric(Account, DownloadLink, String, int, long)}, with default long of 1 hour.
+     *
+     * @param account
+     * @param downloadLink
+     * @param error
+     * @param maxRetries
+     * @throws PluginException
+     * @throws InterruptedException
+     */
     public void handleErrorGeneric(final Account account, final DownloadLink downloadLink, final String error, final int maxRetries) throws PluginException, InterruptedException {
         this.handleErrorGeneric(account, downloadLink, error, maxRetries, 1 * 60 * 60 * 1000l);
     }
@@ -98,7 +108,7 @@ public class MultiHosterManagement {
     public void handleErrorGeneric(final Account account, final DownloadLink downloadLink, final String error, final int maxRetries, final long errorWait) throws PluginException, InterruptedException {
         final String errorID = hsFailed + error;
         int timesFailed = downloadLink.getIntegerProperty(errorID, 0);
-        if (timesFailed <= maxRetries) {
+        if (timesFailed < maxRetries) {
             timesFailed++;
             downloadLink.setProperty(errorID, timesFailed);
             // we will apply some grace period here since JD2 core does not apply the wait time parameter with the retry exception.
