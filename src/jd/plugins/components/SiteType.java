@@ -129,6 +129,9 @@ public class SiteType {
 
         /**
          * Script used by some chinese file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what to call this script.
+         *
+         * 'Copyright © 2016 百丽资源中心 版权所有 Powered By XDDrive Private V 1.4' http://vip.belle.la/ ?? xxdrive private? couldnt find much on
+         * google
          */
         Unknown_ChineseFileHosting,
 
@@ -269,8 +272,49 @@ public class SiteType {
          * URL shortening service provider. <br />
          * <a href="http://click.tf/services.html">A list of all supported domains</a>
          */
-        URLShortnerLLP_URLShortner;
+        URLShortnerLLP_URLShortner,
 
+        /**
+         * URL shortening or monetising platform by <a href="https://www.mightyscripts.com/">mightyscripts.com</a><br />
+         * <a href="https://www.mightyscripts.com/downloads/adlinkfly-monetized-url-shortener/">AdLinkFly – Monetized URL
+         * Shortener</a><br />
+         * <a href="https://www.mightyscripts.com/downloads/mighty-url-shortener-short-url-script/">Mighty URL Shortener | Short URL
+         * Script</a><br />
+         * They seem to share the same HTML frame work.
+         */
+        MightyScript_AdLinkFly,
+        MightyScript_MightyURLShortener,
+
+        /**
+         * <a href="https://www.abdulibrahim.com/url-shortener-with-ads-and-powerful-admin-panel/">URL Shortener with Ads and Powerful Admin
+         * Panel</a><br />
+         * <a href="http://abdulibrahim.com/short/">demo site</a><br />
+         * <br />
+         * common traits <br />
+         * top panel 1/9th screen (site title left, right(menu) FIXED<br />
+         * middle panel 5/9th screen (sitename + add link centred) <br />
+         * bottom panel 2/9th screen (left, middle social media , right<br />
+         * bottom bottom 0.8/9th screen ( copy right centred)<br />
+         */
+        AbdulIbrahim_URLShortener,
+
+        /**
+         * <a href="https://codecanyon.net/item/url-shortener-script-with-statistics/4461940">URL Shortener Script with Statistics @
+         * codecanyon.net market place</a> & <a href="https://codepulsar.com/short1/index.php?a=short">demo site</a> <br />
+         *
+         */
+        PricopAlexandru_URLShorterner1,
+
+        /**
+         * <a href="https://codecanyon.net/item/advanced-php-url-shortener/3450738">Advanced PHP URL Shortener @ codecanyon.net market
+         * place</a> & <a href="https://codepulsar.com/short2/index.php?a=short">demo site</a> <br/>
+         * his user/profile name is Pricop, on demo site for url shortener it has his <a href="https://twitter.com/pricop2007">twitter
+         * profile</a> mentioned (also profile picture on twitter is the same as codecanyon). In which his
+         * <a href="https://pricop.info/">personal website</a> is then linked <br />
+         * common traits<br />
+         * chain link image top left in title bar next to site name.
+         */
+        PricopAlexandru_URLShorterner2;
     }
 
 }
