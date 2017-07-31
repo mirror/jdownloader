@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mygirlfriendporn.com", "pornyeah.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
-
     public UnknownPornScript4(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,19 +41,15 @@ public class UnknownPornScript4 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     // other:
-
     /* Extension which will be used if no correct extension is found */
-
     private static final String  type_1            = "^https?://(?:www\\.)?[^/]+/videos/[a-z0-9\\-]+\\-\\d+\\.html$";
     /* E.g. homemoviestube.com */
     private static final String  type_2            = "^http://(?:www\\.)?[^/]+/videos/\\d+/[a-z0-9\\-]+\\.html$";
-
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private String               rtmpurl           = null;
 
@@ -106,7 +100,7 @@ public class UnknownPornScript4 extends PluginForHost {
             if (dllink != null) {
                 dllink = Encoding.htmlDecode(dllink);
                 br2.getPage(dllink);
-                dllink = br2.getRegex("flvMask:(http://[^<>\"]*?)(%7C|;)").getMatch(0);
+                dllink = br2.getRegex("flvMask:(.*?)(%7C|;)").getMatch(0);
                 rtmpurl = br2.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
                 if (dllink == null && rtmpurl == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
