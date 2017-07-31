@@ -23,20 +23,28 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?coinlink\\.co/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es)/[A-Za-z0-9]+" })
 public class CnLnk extends antiDDoSForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "coinlink.co", "adlink.guru", "short.es" };
+    }
 
     public CnLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +56,7 @@ public class CnLnk extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -86,13 +95,25 @@ public class CnLnk extends antiDDoSForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (form.containsHTML("class=(\"|')g-recaptcha\\1")) {
+        } else if (form.containsHTML("(?:id|class)=(\"|')g-recaptcha\\1")) {
             // recaptchav2 is different.
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             submitForm(form);
+            // 10 second wait in new version with possible another form
+            final Form f2 = br.getForm(0);
+            if (f2 != null) {
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                submitForm(f2);
+            }
             final String finallink = getFinallink();
             if (finallink == null) {
+                if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
+                    logger.warning("Hoster has issue");
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -102,15 +123,23 @@ public class CnLnk extends antiDDoSForDecrypt {
     }
 
     private String getFinallink() {
-        String finallink = br.getRegex(".+<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s+Link\\s*</a>").getMatch(1);
+        String finallink = PluginJSonUtils.getJsonValue(br, "url");
         if (inValidate(finallink)) {
-            finallink = br.getRegex(".+<a\\s+[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
+            finallink = br.getRegex(".+<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s+Link\\s*</a>").getMatch(1);
+            if (inValidate(finallink)) {
+                finallink = br.getRegex(".+<a\\s+[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
+            }
         }
         return finallink;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MightyScript_AdLinkFly;
     }
 
 }
