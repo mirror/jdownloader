@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,14 +30,10 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "get-my.link" }, urls = { "https?://(?:www\\.)?get\\-my\\.link/page(\\.php\\?f=|\\.html/)[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class GetMyLink extends antiDDoSForDecrypt {
+
     public GetMyLink(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -92,8 +92,4 @@ public class GetMyLink extends antiDDoSForDecrypt {
         return false;
     }
 
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.OuoIoCryptor;
-    }
 }
