@@ -27,6 +27,11 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,11 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
@@ -170,6 +170,9 @@ public class MountFileNet extends antiDDoSForHost {
             if (reconnectWait != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
             }
+            if (br.containsHTML(">Sorry, you have reached a download limit for today \\([\\w \\.]+\\)\\. Please wait for tomorrow")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit!", 60 * 60 * 1000l);
+            }
             if (br.containsHTML("Recaptcha\\.create\\(\\'")) {
                 rc.reload();
                 continue;
@@ -186,7 +189,7 @@ public class MountFileNet extends antiDDoSForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("not found")) {
@@ -315,7 +318,7 @@ public class MountFileNet extends antiDDoSForHost {
             requestFileInformation(link);
             login(account, false);
             /* First check if user has direct download enabled. */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL(), true, 0);
             if (!dl.getConnection().isContentDisposition()) {
                 /* No direct download? Manually get directurl ... */
                 br.followConnection();
@@ -328,7 +331,7 @@ public class MountFileNet extends antiDDoSForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
                 if (!dl.getConnection().isContentDisposition()) {
                     br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
