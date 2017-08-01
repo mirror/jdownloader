@@ -23,6 +23,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -33,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/((en|cn)/)?dir/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/((en|cn)/)?dir/[A-Za-z0-9]+" })
 public class OneFichierComFolder extends PluginForDecrypt {
 
     public OneFichierComFolder(PluginWrapper wrapper) {
@@ -42,7 +43,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = "https://1fichier.com/dir/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String parameter = Request.getLocation("/dir/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0), br.createGetRequest(param.toString()));
         prepareBrowser(br);
         br.setLoadLimit(Integer.MAX_VALUE);
         br.getPage(parameter + "?e=1");
@@ -50,27 +51,44 @@ public class OneFichierComFolder extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        // password handling
         handlePassword(param, parameter);
-        final String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
-        final String[][] linkInfo = getLinkInfo();
-        if (linkInfo == null || linkInfo.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLinkInfo[] : linkInfo) {
-            final DownloadLink dl = createDownloadlink(singleLinkInfo[1]);
-            dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[2]));
-            dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[3]));
-            if (passCode != null) {
-                dl.setDownloadPassword(passCode);
+        // passCode != null, post handling seems to respond with html instead of what's preferred below.
+        if ("text/plain; charset=utf-8".equals(br.getHttpConnection().getContentType())) {
+            String[][] linkInfo = br.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
+            for (String singleLinkInfo[] : linkInfo) {
+                final DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
+                dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[1].trim()));
+                dl.setVerifiedFileSize(Long.parseLong(singleLinkInfo[2]));
+                if (passCode != null) {
+                    dl.setDownloadPassword(passCode);
+                }
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
             }
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+        } else {
+            // webmode
+            final String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
+            final String[][] linkInfo = getLinkInfo();
+            if (linkInfo == null || linkInfo.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLinkInfo[] : linkInfo) {
+                final DownloadLink dl = createDownloadlink(singleLinkInfo[1]);
+                dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[2]));
+                dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[3]));
+                if (passCode != null) {
+                    dl.setDownloadPassword(passCode);
+                }
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
