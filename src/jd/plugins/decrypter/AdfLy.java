@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,15 +36,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
-    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com", "casualient.com", "battleate.com", "mmoity.com", /**
-                                           * 
-                                           * <-- full domains & subdomains -->
-                                           */
-                                          "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
+    private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com", "casualient.com", "battleate.com", "mmoity.com",
+            "simizer.com", /**
+                            * 
+                            * <-- full domains & subdomains -->
+                            */
+            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
     @Override
     public String[] siteSupportedNames() {

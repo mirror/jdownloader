@@ -303,39 +303,7 @@ public class ClipsageCom extends antiDDoSForHost {
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
-            if (inValidate(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    /* traits from download1 page below */
-                    if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // next two are details from sharing box
-                        if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
-                            if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
-                                if (inValidate(fileInfo[0])) {
-                                    /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (inValidate(fileInfo[0])) {
-            /* 2017-07-27: Special */
-            fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+)</title>").getMatch(0);
-        }
-        if (inValidate(fileInfo[0])) {
-            /* 2017-04-11: Typically for XVideoSharing sites */
-            fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            fileInfo[0] = getFilename(correctedBR, this.fuid);
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -369,6 +337,50 @@ public class ClipsageCom extends antiDDoSForHost {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    /** 2017-08-01: For decrypter */
+    public static String getFilename(final String correctedBR, final String fuid) {
+        String filename = null;
+        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
+        final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        /* standard traits from base page */
+        if (filename == null) {
+            filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            if (filename == null) {
+                filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (filename == null) {
+                    filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    /* traits from download1 page below */
+                    if (filename == null) {
+                        filename = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // next two are details from sharing box
+                        if (filename == null) {
+                            filename = new Regex(correctedBR, sharebox0).getMatch(0);
+                            if (filename == null) {
+                                filename = new Regex(correctedBR, sharebox1).getMatch(0);
+                                if (filename == null) {
+                                    /* Link of the box without filesize */
+                                    filename = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (filename == null) {
+            filename = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (filename == null) {
+            /* 2017-07-27: Special */
+            filename = new Regex(correctedBR, "<title>([^<>\"]+)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            /* 2017-04-11: Typically for XVideoSharing sites */
+            filename = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        return filename;
     }
 
     /**
