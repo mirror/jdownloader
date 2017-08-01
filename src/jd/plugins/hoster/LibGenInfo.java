@@ -110,9 +110,12 @@ public class LibGenInfo extends PluginForHost {
             if (filename != null && extension != null) {
                 filename += extension;
             }
+            final String md5 = new Regex(link.getPluginPatternMatcher(), "md5=([a-f0-9]{32})").getMatch(0);
+            // this is actually the checksum of the file, confirmed
+            link.setMD5Hash(md5);
             if (filename == null) {
                 // some entries wont have details above to construct a filename. so lets set temp nicename
-                filename = new Regex(link.getPluginPatternMatcher(), "md5=([a-f0-9]{32})").getMatch(0);
+                filename = md5;
             }
         } else {
             filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
