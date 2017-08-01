@@ -57,6 +57,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filefox.cc" }, urls = { "https?://(?:www\\.)?filefox\\.cc/(?:embed\\-)?[a-z0-9]{12}" })
 public class FilefoxCc extends antiDDoSForHost {
+
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
@@ -302,24 +303,28 @@ public class FilefoxCc extends antiDDoSForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        final Regex divfile = new Regex(correctedBR, "<div class=\"row file-name\">.*?<p>\\s*(.*?)\\s*<span>\\((\\d+(?:\\.\\d+)?\\s*(?:KB|MB|GB))\\)</span>");
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = divfile.getMatch(0);
             if (inValidate(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    /* traits from download1 page below */
+                    fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                     if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // next two are details from sharing box
+                        fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                        /* traits from download1 page below */
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        /* Link of the box without filesize */
+                                        fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    }
                                 }
                             }
                         }
@@ -340,21 +345,24 @@ public class FilefoxCc extends antiDDoSForHost {
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+                fileInfo[1] = divfile.getMatch(1);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                    // next two are details from sharing box
+                    fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                     if (inValidate(fileInfo[1])) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                        fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                        // next two are details from sharing box
                         if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                            // generic failover#1
+                            fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                            }
-                            // generic failover#2
-                            if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                                fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                                // generic failover#1
+                                if (inValidate(fileInfo[1])) {
+                                    fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)?\\s*(KB|MB|GB))").getMatch(0);
+                                }
+                                // generic failover#2
+                                if (inValidate(fileInfo[1])) {
+                                    fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)?\\s*(?:B(?:ytes?)?))").getMatch(0);
+                                }
                             }
                         }
                     }
@@ -1230,7 +1238,7 @@ public class FilefoxCc extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Error happened when generating Download Link'", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only|>\\s*This file can be downloaded by\\s*<a [^>]+>Premium)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
