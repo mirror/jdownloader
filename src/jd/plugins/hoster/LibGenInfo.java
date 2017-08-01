@@ -29,13 +29,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me|pw)|golibgen\\.io)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?(?:libgen\\.(?:net|io|me|pw)|golibgen\\.io)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|io|me|pw)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
-        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io", "golibgen.io" };
+        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io" };
     }
 
     public LibGenInfo(PluginWrapper wrapper) {
@@ -104,9 +104,15 @@ public class LibGenInfo extends PluginForHost {
             final String author = getBracketResult("author");
             final String title = getBracketResult("title");
             final String extension = new Regex(br, "Download via torrent\\s*</a>\\s*<input\\s*.*?value=\".*?(\\.[a-z0-9]{3,4})\"").getMatch(0);
-            filename = (author == null || author.trim().length() != 0 ? author : "unknown") + " - " + title;
+            if (title != null) {
+                filename = (author == null || author.trim().length() != 0 ? author : "unknown") + " - " + title;
+            }
             if (filename != null && extension != null) {
                 filename += extension;
+            }
+            if (filename == null) {
+                // some entries wont have details above to construct a filename. so lets set temp nicename
+                filename = new Regex(link.getPluginPatternMatcher(), "md5=([a-f0-9]{32})").getMatch(0);
             }
         } else {
             filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
@@ -142,7 +148,7 @@ public class LibGenInfo extends PluginForHost {
         requestFileInformation(downloadLink);
         if (dllink == null) {
             if (downloadLink.getDownloadURL().contains("/ads.php?md5=")) {
-                dllink = br.getRegex("<a href=(\"|')((?:https?:)?(?://[\\w\\-\\.]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
+                dllink = br.getRegex("<a href=(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
