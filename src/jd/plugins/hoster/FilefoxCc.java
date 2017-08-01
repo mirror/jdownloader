@@ -194,7 +194,7 @@ public class FilefoxCc extends antiDDoSForHost {
         correctDownloadLink(link);
         getPage(link.getDownloadURL());
         setFUID(link);
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|>\\s*File could not be found due to expiration or removal by the file owner\\s*<)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = this.br.cloneBrowser();
