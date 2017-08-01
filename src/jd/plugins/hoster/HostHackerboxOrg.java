@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -22,6 +21,9 @@ import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,12 +43,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "host.hackerbox.org" }, urls = { "https?://(www\\.)?host\\.hackerbox\\.org/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "host.hackerbox.org" }, urls = { "https?://(?:www\\.)?host\\.hackerbox\\.org/[a-z0-9]{12}" })
 public class HostHackerboxOrg extends PluginForHost {
-
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://host.hackerbox.org";
@@ -153,7 +151,6 @@ public class HostHackerboxOrg extends PluginForHost {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-
             /* Captcha START */
             if (correctedBR.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -411,26 +408,21 @@ public class HostHackerboxOrg extends PluginForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -512,5 +504,4 @@ public class HostHackerboxOrg extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

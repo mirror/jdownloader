@@ -29,6 +29,15 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,15 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
@@ -264,7 +264,6 @@ public class TheVideoMe extends antiDDoSForHost {
         String special_js_bullshit_code = getSpecialJsBullshit();
         String auth_code = null;
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        // dllink = null;
         if (dllink != null) {
             is_saved_directlink = true;
         }
@@ -366,7 +365,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 getPage(url_from_availablecheck);
             }
         }
-        if (VIDEOHOSTER_4 && StringUtils.isEmpty(auth_code)) {
+        if (VIDEOHOSTER_4 && StringUtils.isEmpty(auth_code) && StringUtils.isEmpty(special_js_bullshit_code)) {
             /*
              * 2017-07-28: Try pairing as a fallback if we cannot work around it <br /> This is commonly used in KODI.
              */
@@ -609,9 +608,9 @@ public class TheVideoMe extends antiDDoSForHost {
                 }
             }
         }
-        if (!is_correct_finallink && auth_code == null && dllink != null && !is_saved_directlink) {
+        if (!is_correct_finallink && auth_code == null && !StringUtils.isEmpty(dllink) && !StringUtils.isEmpty(special_js_bullshit_code) && !is_saved_directlink) {
             /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
-            getPage(brv, "/vsign/player/" + auth_code);
+            getPage(brv, "/vsign/player/" + special_js_bullshit_code);
             final String jscrap = doThis(brv);
             auth_code = new Regex(jscrap, "vt=(.*?)\";").getMatch(0);
         }

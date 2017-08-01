@@ -41,7 +41,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
-
     /**
      * @author raztoki
      */
@@ -151,6 +150,9 @@ public class GoogleDrive extends PluginForDecrypt {
         String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?) - Google Drive</title>").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = br.getRegex("<title>([^<>\"]*?) – Google Drive</title>").getMatch(0);
         }
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);

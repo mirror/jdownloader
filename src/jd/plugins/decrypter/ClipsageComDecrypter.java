@@ -23,6 +23,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipsage.com" }, urls = { "https?://(?:www\\.)?clipsage\\.com/(?:embed\\-)?[a-z0-9]{12}" })
@@ -35,9 +36,16 @@ public class ClipsageComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String fuid = new Regex(param.toString(), "([a-z0-9]{12})$").getMatch(0);
         final String parameter = String.format("http://%s/%s.html", this.getHost(), fuid);
+        final FilePackage fp = FilePackage.getInstance();
+        String fpName = null;
         try {
             /* Try to find that one mirror URL ... */
             br.getPage(parameter);
+            fpName = jd.plugins.hoster.ClipsageCom.getFilename(this.br.toString(), fuid);
+            if (fpName == null) {
+                fpName = fuid;
+            }
+            fp.setName(fpName);
             final String finallink = this.br.getRegex("(https?://host\\.hackerbox\\.org/[a-z0-9]{12})").getMatch(0);
             if (finallink != null) {
                 decryptedLinks.add(createDownloadlink(finallink));
@@ -46,6 +54,7 @@ public class ClipsageComDecrypter extends PluginForDecrypt {
         }
         /* Add main URL to host plugin. */
         decryptedLinks.add(createDownloadlink(parameter.replace("clipsage.com/", "clipsagedecrypted.com/")));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
