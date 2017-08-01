@@ -78,7 +78,7 @@ public class TransloadMe extends PluginForHost {
 
     private Browser prepBrowser(final Browser br) {
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("User-Agent", "JDownloader " + getVersion());
         br.setCookie(getHost(), "lang", "en");
         return br;
     }
@@ -301,14 +301,10 @@ public class TransloadMe extends PluginForHost {
             ai.setTrafficLeft(0);
             ai.setProperty("multiHostSupport", Property.NULL);
             currAcc.setAccountInfo(ai);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account has 0 balance!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account balance 0.00 USD!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
-    /*
-     * 2016-10-21: Added this as an API workaround but the admin(s) fixed the API so this function is not needed and actually it does not
-     * work (yet)!
-     */
     private void loginWebsite(final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -388,7 +384,7 @@ public class TransloadMe extends PluginForHost {
         if (errorcode != null && errorcode.matches("\\d+")) {
             return Integer.parseInt(errorcode);
         }
-        return -1;
+        return 0;
     }
 
     /* Please do not remove this function - future usage!! */
@@ -452,7 +448,7 @@ public class TransloadMe extends PluginForHost {
             throwZeroBalance();
         }
         /* TODO */
-        // there is a javascript class with alot of the pre-defined errors within
+        // the rest
     }
 
     @Override
