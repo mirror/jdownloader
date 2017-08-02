@@ -36,7 +36,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -54,8 +53,6 @@ public class HighpornNet extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension = ".mp4";
     /* Connection stuff */
-    /* 2017-05-31: Disabled resume as it will cause a lot of retries and then fail. */
-    private final boolean       free_resume       = false;
     private final int           free_maxchunks    = 1;
     private final int           free_maxdownloads = 1;
     private String              dllink            = null;
@@ -137,9 +134,13 @@ public class HighpornNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean supportsResume() {
+        return "tanix.net".equals(getHost());
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final boolean resumes = cfg.getBooleanProperty("Allow_resume", free_resume);
+        final boolean resumes = cfg.getBooleanProperty("Allow_resume", supportsResume());
         logger.info("resumes: " + resumes);
         dllink = downloadLink.getStringProperty("directlink");
         if (dllink != null) {
