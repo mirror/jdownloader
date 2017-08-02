@@ -33,6 +33,13 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.zip.Inflater;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -47,13 +54,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TeleFiveDe.Tele5DeConfigInterface;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/.+" })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
@@ -75,6 +75,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final Tele5DeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TeleFiveDe.Tele5DeConfigInterface.class);
+        final boolean grabBest = cfg.isGrabBESTEnabled();
         final boolean grabBestWithinUserSelection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
         final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
@@ -83,7 +84,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         boolean grab_1250 = cfg.isGrabHTTP1250kVideoEnabled();
         boolean grab_1650 = cfg.isGrabHTTP1650kVideoEnabled();
         boolean grab_2400 = cfg.isGrabHTTP2400kVideoEnabled();
-        boolean grab_best = cfg.isGrabBESTEnabled();
         List<String> all_selected_qualities = new ArrayList<String>();
         if (grab_225) {
             all_selected_qualities.add("http_225");
@@ -252,7 +252,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 }
                 all_found_downloadlinks.put(quality_key, dl);
             }
-            final HashMap<String, DownloadLink> all_selected_downloadlinks = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, grab_best, grabBestWithinUserSelection, grabUnknownQualities);
+            final HashMap<String, DownloadLink> all_selected_downloadlinks = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, grabBest, grabBestWithinUserSelection, grabUnknownQualities);
             /* Finally add selected URLs */
             final Iterator<Entry<String, DownloadLink>> it_2 = all_selected_downloadlinks.entrySet().iterator();
             while (it_2.hasNext()) {

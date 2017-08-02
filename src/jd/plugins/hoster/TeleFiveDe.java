@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -26,12 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "tele5decrypted://.+" })
 public class TeleFiveDe extends PluginForHost {
@@ -190,7 +190,7 @@ public class TeleFiveDe extends PluginForHost {
         void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
 
         @DefaultBooleanValue(true)
-        @Order(21)
+        @Order(22)
         boolean isAddUnknownQualitiesEnabled();
 
         void setAddUnknownQualitiesEnabled(boolean b);

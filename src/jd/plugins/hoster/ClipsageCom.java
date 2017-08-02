@@ -380,6 +380,10 @@ public class ClipsageCom extends antiDDoSForHost {
             /* 2017-04-11: Typically for XVideoSharing sites */
             filename = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
+        if (filename != null) {
+            filename = filename.trim();
+            filename = Encoding.htmlDecode(filename);
+        }
         return filename;
     }
 

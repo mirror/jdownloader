@@ -25,6 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,10 +52,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -685,38 +685,36 @@ public class VKontakteRu extends PluginForDecrypt {
                 // webui, youtube stuff within -raztoki20160817
                 jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
                 handleVideoErrors(br);
-                String ajax = br.getRegex("ajax\\.preload\\('al_video\\.php',[^\r\n]+\\);[\r\n]+").getMatch(-1);
-                if (ajax != null) {
-                    // now these are within iframe
-                    ajax = PluginJSonUtils.unescape(ajax);
-                    final String embeddedVideo = new Regex(ajax, "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
+                String ajax_json = br.getRegex("ajax\\.preload\\(\\'al_video\\.php\\', \\{[^\\}]+\\}, (\\[.*?\\])\\);\\s+").getMatch(0);
+                if (ajax_json != null) {
+                    final String embeddedVideo = new Regex(ajax_json, "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
                     if (embeddedVideo != null) {
                         decryptedLinks.add(createDownloadlink(embeddedVideo));
                         return;
                     }
-                    // rutube
-                    final String[] rutube = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(ajax, "params"));
-                    if (rutube != null) {
-                        // usually the first entry
-                        for (final String p : rutube) {
-                            if (p.startsWith("//") || p.startsWith("http")) {
-                                decryptedLinks.add(createDownloadlink(Request.getLocation(p, br.getRequest())));
-                                return;
-                            }
-                        }
-                    }
+                    // // rutube
+                    // final String[] rutube = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(ajax, "params"));
+                    // if (rutube != null) {
+                    // // usually the first entry
+                    // for (final String p : rutube) {
+                    // if (p.startsWith("//") || p.startsWith("http")) {
+                    // decryptedLinks.add(createDownloadlink(Request.getLocation(p, br.getRequest())));
+                    // return;
+                    // }
+                    // }
+                    // }
                     // vk video is also within ajax.preload, so make searches faster below...
-                    correctedBR = ajax;
+                    correctedBR = ajax_json;
                 } else {
                     correctedBR = br.toString();
                 }
             }
-            embedHash = PluginJSonUtils.getJsonValue(correctedBR, "hash");
+            embedHash = PluginJSonUtils.getJsonValue(br.toString(), "hash");
             if (embedHash == null) {
                 logger.info("Video seems to be offline");
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-            filename = PluginJSonUtils.getJsonValue(correctedBR, "md_title");
+            filename = PluginJSonUtils.getJsonValue(br.toString(), "md_title");
             if (filename == null) {
                 /* Fallback */
                 filename = oid_and_id;
@@ -1030,22 +1028,40 @@ public class VKontakteRu extends PluginForDecrypt {
         logger.info("Total videolinks found: " + totalCounter);
     }
 
-    /** Same function in hoster and decrypter plugin, sync it!! */
-    private LinkedHashMap<String, String> findAvailableVideoQualities(String source) {
+    /**
+     * Same function in hoster and decrypter plugin, sync it!!
+     *
+     * @throws Exception
+     */
+    public static LinkedHashMap<String, String> findAvailableVideoQualities(final String source) throws Exception {
         /** Find needed information */
         if (source == null) {
-            source = br.toString().replace("\\", "");
+            return null;
         }
-        /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
-        final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-        for (final String[] qualityInfo : qualities) {
-            String finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[0]);
-            if (finallink == null) {
-                finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[1]);
+        try {
+            /* 2017-08-02: New case: Only ONE hls- and ONE http URL available (e.g. only 1080p) */
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(source);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "player/params/{0}");
+            final String http_url = (String) entries.get("postlive_mp4");
+            final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
+            if (http_url != null && http_quality != null) {
+                foundQualities.put(http_quality + "p", http_url);
             }
-            if (finallink != null) {
-                foundQualities.put(qualityInfo[2], finallink);
+        } catch (final Throwable e) {
+        }
+        if (foundQualities.isEmpty()) {
+            /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
+            final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
+            for (final String[] qualityInfo : qualities) {
+                String finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[0]);
+                if (finallink == null) {
+                    finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[1]);
+                }
+                if (finallink != null) {
+                    foundQualities.put(qualityInfo[2], finallink);
+                }
             }
         }
         return foundQualities;

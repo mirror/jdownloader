@@ -25,6 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,36 +50,31 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.TumblrComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+|/likes)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
     public TumblrComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     GENERALOFFLINE         = ">Not found\\.<";
-    private static final String     TYPE_INVALID           = "https?://(?:(?:www|platform|embed|assets)\\.)tumblr\\.com/.+";
-    private static final String     TYPE_FILE              = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
-    private static final String     TYPE_POST              = ".+tumblr\\.com/post/\\d+";
-    private static final String     TYPE_IMAGE             = ".+tumblr\\.com/image/\\d+";
-    private static final String     TYPE_USER_LOGGEDIN     = "https?://(?:www\\.)?tumblr\\.com/(?:dashboard/)?blog/([^/]+)";
-    private static final String     TYPE_USER_LOGGEDOUT    = "https?://[^/]+\\.tumblr\\.com/.*?";
-    private static final String     TYPE_USER_ARCHIVE      = "https?://[^/]+\\.tumblr\\.com/archive(?:/.*?)?";
-    private static final String     urlpart_passwordneeded = "/blog_auth";
-    private static final String     PLUGIN_DEFECT          = "PLUGINDEFECT";
-    private static final String     OFFLINE                = "OFFLINE";
-    private static final String     PROPERTY_TAGS          = "tags";
-    private ArrayList<DownloadLink> decryptedLinks         = null;
+    private static final String     GENERALOFFLINE            = ">Not found\\.<";
+    private static final String     TYPE_INVALID              = "https?://(?:(?:platform|embed|assets)\\.)tumblr\\.com/.+";
+    private static final String     TYPE_FILE                 = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
+    private static final String     TYPE_POST                 = ".+tumblr\\.com/post/\\d+";
+    private static final String     TYPE_IMAGE                = ".+tumblr\\.com/image/\\d+";
+    private static final String     TYPE_LOGIN_REQUIRED_LIKES = "https?://(?:www\\.)?tumblr\\.com/likes";
+    private static final String     TYPE_USER_LOGGEDIN        = "https?://(?:www\\.)?tumblr\\.com/(?:dashboard/)?blog/([^/]+)";
+    private static final String     TYPE_USER_LOGGEDOUT       = "https?://[^/]+\\.tumblr\\.com/.*?";
+    private static final String     TYPE_USER_ARCHIVE         = "https?://[^/]+\\.tumblr\\.com/archive(?:/.*?)?";
+    private static final String     urlpart_passwordneeded    = "/blog_auth";
+    private static final String     PLUGIN_DEFECT             = "PLUGINDEFECT";
+    private static final String     OFFLINE                   = "OFFLINE";
+    private static final String     PROPERTY_TAGS             = "tags";
+    private ArrayList<DownloadLink> decryptedLinks            = null;
     private CryptedLink             param;
-    private String                  parameter              = null;
-    private String                  passCode               = null;
-    private boolean                 useOriginalFilename    = false;
+    private String                  parameter                 = null;
+    private String                  passCode                  = null;
+    private boolean                 useOriginalFilename       = false;
+    private boolean                 isLoggedin                = false;
 
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
@@ -100,7 +102,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             /* Login whenever possible to be able to download account-only-stuff */
             try {
                 jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
+                isLoggedin = true;
             } catch (final Throwable e) {
+                logger.info("Login failed");
             }
         }
         try {
@@ -110,6 +114,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptPost();
             } else if (parameter.matches(TYPE_IMAGE)) {
                 decryptedLinks.addAll(processImage(parameter, null, null));
+            } else if (parameter.matches(TYPE_LOGIN_REQUIRED_LIKES)) {
+                decryptLikes();
             } else {
                 /*
                  * 2016-08-26: Seems like when logged in, users now get the same view they have when not logged in. Using the "old"
@@ -191,6 +197,34 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             throw new DecrypterException(PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
+    }
+
+    private void decryptLikes() throws Exception {
+        if (!isLoggedin) {
+            logger.info("Not loggedin --> Cannot decrypt likes");
+            return;
+        }
+        br.getPage(this.parameter);
+        final String[] likes_html_snippets = this.br.getRegex("<div\\s*?class=\"post post_full[^\"]*?\"[^>]*?data\\-liked=\\'1\\'[^>]*?>").getColumn(-1);
+        for (final String html_snippet : likes_html_snippets) {
+            String json = new Regex(html_snippet, "data\\-json=\\'([^<>\"\\']+)\\'").getMatch(0);
+            // final String postID = new Regex(html_snippet, "data\\-post\\-id=\\'(\\d+)\\'").getMatch(0);
+            if (json == null) {
+                continue;
+            }
+            json = Encoding.htmlDecode(json);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+            entries = (LinkedHashMap<String, Object>) entries.get("share_popover_data");
+            final String post_url = (String) entries.get("post_url");
+            if (StringUtils.isEmpty(post_url)) {
+                continue;
+            }
+            final DownloadLink dl = this.createDownloadlink(post_url);
+            this.decryptedLinks.add(dl);
+        }
+        if (this.decryptedLinks.isEmpty()) {
+            logger.info("Found nothing --> User does not have any likes??");
+        }
     }
 
     private void decryptPost() throws Exception {
