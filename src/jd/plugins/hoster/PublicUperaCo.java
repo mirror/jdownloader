@@ -15,8 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -33,13 +36,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "public.upera.co" }, urls = { "https?://(?:www\\.)?public\\.upera\\.co/[A-Za-z0-9]+" })
-public class PublicUperaCo extends PluginForHost {
+public class PublicUperaCo extends antiDDoSForHost {
     public PublicUperaCo(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -62,10 +61,10 @@ public class PublicUperaCo extends PluginForHost {
     private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Invalid or Deleted File") || !this.br.containsHTML("id=\"pay_modes\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -106,7 +105,7 @@ public class PublicUperaCo extends PluginForHost {
                     wait = Integer.parseInt(waitStr);
                 }
                 this.sleep(wait * 1001l, downloadLink);
-                this.br.getPage(continueURL);
+                getPage(continueURL);
             }
             String captchaUrl = null;
             boolean success = false;
@@ -191,8 +190,8 @@ public class PublicUperaCo extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                br.getPage("");
-                br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                getPage("");
+                postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(this.getHost(), "") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -254,7 +253,7 @@ public class PublicUperaCo extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {

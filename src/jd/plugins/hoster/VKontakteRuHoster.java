@@ -25,6 +25,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,12 +59,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -295,7 +295,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -342,7 +342,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities();
+                    final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities(br.toString());
                     if (availableQualities == null) {
                         logger.info("vk.com: Couldn't find any available qualities for videolink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -537,18 +537,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /* Same function in hoster and decrypterplugin, sync it!! */
-    private LinkedHashMap<String, String> findAvailableVideoQualities() {
-        /* Find needed information */
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        final String[][] qualities = { { "url1080", "1080p" }, { "url720", "720p" }, { "url480", "480p" }, { "url360", "360p" }, { "url240", "240p" } };
-        final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-        for (final String[] qualityInfo : qualities) {
-            final String finallink = PluginJSonUtils.getJsonValue(br, qualityInfo[0]);
-            if (finallink != null) {
-                foundQualities.put(qualityInfo[1], finallink);
-            }
-        }
-        return foundQualities;
+    private LinkedHashMap<String, String> findAvailableVideoQualities(final String source) throws Exception {
+        return jd.plugins.decrypter.VKontakteRu.findAvailableVideoQualities(source);
     }
 
     private void generalErrorhandling() throws PluginException {

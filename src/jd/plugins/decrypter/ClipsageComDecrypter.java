@@ -38,17 +38,25 @@ public class ClipsageComDecrypter extends PluginForDecrypt {
         final String parameter = String.format("http://%s/%s.html", this.getHost(), fuid);
         final FilePackage fp = FilePackage.getInstance();
         String fpName = null;
+        String clipsage_title = null;
         try {
             /* Try to find that one mirror URL ... */
             br.getPage(parameter);
-            fpName = jd.plugins.hoster.ClipsageCom.getFilename(this.br.toString(), fuid);
-            if (fpName == null) {
+            clipsage_title = jd.plugins.hoster.ClipsageCom.getFilename(this.br.toString(), fuid);
+            if (clipsage_title != null) {
+                fpName = clipsage_title;
+            } else {
                 fpName = fuid;
             }
             fp.setName(fpName);
             final String finallink = this.br.getRegex("(https?://host\\.hackerbox\\.org/[a-z0-9]{12})").getMatch(0);
             if (finallink != null) {
-                decryptedLinks.add(createDownloadlink(finallink));
+                final DownloadLink dl = createDownloadlink(finallink);
+                /* Set final filename here so both mirrors have the same filename. */
+                if (clipsage_title != null) {
+                    dl.setForcedFileName(clipsage_title + ".mp4");
+                }
+                decryptedLinks.add(dl);
             }
         } catch (final Throwable e) {
         }
