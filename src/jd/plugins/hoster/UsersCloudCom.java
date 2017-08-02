@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -27,6 +26,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -50,13 +54,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class UsersCloudCom extends PluginForHost {
@@ -69,7 +68,7 @@ public class UsersCloudCom extends PluginForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(userscloud\\.com)";
+    private static final String            DOMAINS                      = "(userscloud\\.com|usercdn\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode|>Server OFFLINE, Please upload the files again";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -291,7 +290,7 @@ public class UsersCloudCom extends PluginForHost {
         return fileInfo;
     }
 
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
@@ -506,7 +505,7 @@ public class UsersCloudCom extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -583,9 +582,7 @@ public class UsersCloudCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+                agent.set(UserAgents.stringUserAgent());
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
@@ -1133,8 +1130,8 @@ public class UsersCloudCom extends PluginForHost {
              * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } sendForm(dlform); checkErrors(downloadLink, true); dllink = getDllink(); }
              * } if (dllink == null) { logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!"); throw new
              * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } logger.info("Final downloadlink = " + dllink +
-             * " starting the download..."); dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME,
-             * ACCOUNT_PREMIUM_MAXCHUNKS); if (dl.getConnection().getContentType().contains("html")) { if
+             * " starting the download..."); dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink,
+             * ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS); if (dl.getConnection().getContentType().contains("html")) { if
              * (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
              * "Connection limit reached, please contact our support!", 5 * 60 * 1000l); }
              * logger.warning("The final dllink seems not to be a file!"); br.followConnection(); correctBR(); checkServerErrors();
