@@ -71,12 +71,6 @@ public class JulesjordanCom extends antiDDoSForHost {
         return br;
     }
 
-    /**
-     * So far this plugin has no account support which means the plugin itself cannot download anything but the download via MOCH will work
-     * fine.
-     *
-     * @throws Exception
-     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -170,8 +164,6 @@ public class JulesjordanCom extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        resumable = ACCOUNT_PREMIUM_RESUME;
-        maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
