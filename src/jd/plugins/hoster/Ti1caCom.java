@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "http://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "https?://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" })
 public class Ti1caCom extends PluginForHost {
 
     public Ti1caCom(PluginWrapper wrapper) {
@@ -62,10 +60,10 @@ public class Ti1caCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Le fichier n\\'existe pas ou|>Le fichier a été supprimé")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Le fichier n'existe pas ou|>Le fichier a été supprimé")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("title=\"Téléchargez\\s*(.*?)\"").getMatch(0);
@@ -97,7 +95,7 @@ public class Ti1caCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -112,11 +110,7 @@ public class Ti1caCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -132,10 +126,6 @@ public class Ti1caCom extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

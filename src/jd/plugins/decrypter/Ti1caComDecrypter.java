@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ti1ca.com" }, urls = { "http://ti1ca\\.com/Album\\-.+(?!\\.html)$" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ti1ca.com" }, urls = { "https?://ti1ca\\.com/Album\\-.+(?!\\.html)$" })
 public class Ti1caComDecrypter extends PluginForDecrypt {
 
     public Ti1caComDecrypter(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class Ti1caComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = new Regex(parameter, "ti1ca\\.com/(.+)").getMatch(0);
-        final String[] links = br.getRegex("align=\"bottom\"><a href=\"(http://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html)").getColumn(0);
+        final String[] links = br.getRegex("align=\"bottom\"><a href=\"(https?://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
