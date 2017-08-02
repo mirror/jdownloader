@@ -39,6 +39,10 @@ public class Rdrctr extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * 2017-08-02: Do NOT add any workarounds to this code. This is only for websites which redirect to other websites via simple redirect,
+     * NOTHING ELSE!!
+     */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
