@@ -24,6 +24,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -33,7 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+|http://(www\\.)?(?:videobug\\.net|vidzur\\.com)/embed\\.php\\?.+" })
 public class PlayFourtyFourNet extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -42,6 +43,14 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
 
     public PlayFourtyFourNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink downloadLink) throws Exception {
+        dllink = downloadLink.getPluginPatternMatcher();
+        dllink = HTMLEntities.unhtmlentities(dllink);
+        // set linkid
+        setLinkID(downloadLink);
     }
 
     @Override
@@ -57,18 +66,17 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        dllink = downloadLink.getDownloadURL();
-        dllink = HTMLEntities.unhtmlentities(dllink);
-        // Offline links should also have nice filenames
-        final String filename = new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
-        if (filename != null) {
+        correctDownloadLink(downloadLink);
+        final String filename = downloadLink.isNameSet() ? downloadLink.getName() : new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
+        if (!downloadLink.isNameSet() && filename != null) {
+            // Offline links should also have nice filenames
             downloadLink.setName(filename);
         }
         this.setBrowserExclusive();
@@ -149,9 +157,14 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         }
     }
 
+    private final void setLinkID(DownloadLink downloadLink) {
+        final String linkid = new Regex(dllink, "https?://[^/]+(/[^&\\?]+)").getMatch(0);
+        downloadLink.setLinkID("play44.net://" + JDHash.getSHA256(linkid));
+    }
+
     private boolean preferHeadRequest = true;
 
-    private URLConnectionAdapter getConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
+    private URLConnectionAdapter getConnection(final Browser br, final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "ShockwaveFlash/19.0.0.245");
         br.getHeaders().put("Accept", "*/*");
@@ -216,4 +229,11 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        // same as gogoanime disabled, test just times out anyway...
+        return Boolean.TRUE;
+    }
+
 }
