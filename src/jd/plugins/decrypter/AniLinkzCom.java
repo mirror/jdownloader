@@ -17,9 +17,12 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,24 +31,22 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
 /**
  * @author raztoki
  */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends antiDDoSForDecrypt {
-    private final String            supported_hoster = "(4shared\\.com|4vid\\.me|aniupload\\.com|animegg\\.tv|animeultima\\.tv|arkvid\\.tv|byzoo\\.org|chia\\-anime\\.com|cheesestream\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|easyvideo\\.me|facebook\\.com/video|gogoanime\\.com|gorillavid\\.in|mp4star\\.com|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|play44\\.net|playbb\\.me|playpanda\\.net|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|uploadcrazy\\.net|veevr\\.com|veoh\\.com|vidbox\\.yt|vidcrazy\\.net|video44\\.net|videobb\\.com|videobam\\.com|videobull\\.com|videodrive\\.tv|videofun\\.me|videonest\\.net|videous\\.tv|videoweed\\.com|videowing\\.me|vidzur\\.com|videozoo\\.me|vimeo\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|220\\.ro|videos\\.sapo\\.pt)";
-    private final String            invalid_links    = "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
-    private String                  parameter        = null;
-    private String                  fpName           = null;
-    private String                  escapeAll        = null;
-    private int                     spart            = -1;
-    private int                     spart_count      = 0;
-    private Browser                 br2              = new Browser();
-    private ArrayList<DownloadLink> decryptedLinks   = null;
-    private static Object           LOCK             = new Object();
+
+    private final String            invalid_links  = "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private String                  parameter      = null;
+    private String                  fpName         = null;
+    private String                  escapeAll      = null;
+    private int                     spart          = -1;
+    private int                     spart_count    = 0;
+    private Browser                 br2            = new Browser();
+    private ArrayList<DownloadLink> decryptedLinks = null;
+    private static Object           LOCK           = new Object();
 
     public AniLinkzCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -228,22 +229,6 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
             } else {
                 // error
             }
-        }
-        // generic fail overs
-        if (inValidate(link)) {
-            link = new Regex(escapeAll, "<iframe src=\"((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
-        }
-        if (inValidate(link)) {
-            link = new Regex(escapeAll, "(href|url|file)=\"?((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);
-        }
-        if (inValidate(link)) {
-            link = new Regex(escapeAll, "src=\"((?:https?:)?//([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
-        }
-        if (!inValidate(link)) {
-            if (!link.startsWith("http") && link.startsWith("//")) {
-                link = "http:" + link;
-            }
-            decryptedLinks.add(createDownloadlink(link));
         } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.(?:com|tv|io|to)/get/|chia-anime\\.com/|myvideo\\.de/)").matches()) {
             String[] aLinks = new Regex(escapeAll, "((?:https?:)?[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
@@ -281,6 +266,20 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                     }
                 }
             }
+        }
+        // generic fail overs
+        if (inValidate(link)) {
+            link = new Regex(escapeAll, "<iframe src=\"((?:https?:)?//[^/]+/[^<>\"]+)\"").getMatch(0);
+        }
+        if (inValidate(link)) {
+            link = new Regex(escapeAll, "(href|url|file)=\"?((?:https?:)?//[^/]+/[^<>\"]+)\"").getMatch(1);
+        }
+        if (inValidate(link)) {
+            link = new Regex(escapeAll, "src=\"((?:https?:)?//[^/]+/[^<>\"]+)\"").getMatch(0);
+        }
+        if (!inValidate(link)) {
+            link = Request.getLocation(link, br2.getRequest());
+            decryptedLinks.add(createDownloadlink(link));
         }
         // logic to deal with split parts within escapeAll. Uses all existing code within parsePage (see #9373)
         final String[] sprt = new Regex(escapeAll, "(<div class=\"spart\".*?</div>|Part \\d+\r\n)").getColumn(0);
