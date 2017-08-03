@@ -584,7 +584,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("00000");
         final String[][] audioLinks = br.getRegex("\"(https?://cs\\d+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\".*?return false\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\">([^<>\"]*?)</span><span class=\"user\"").getMatches();
         if (audioLinks == null || audioLinks.length == 0) {
-            decryptedLinks = null;
+            logger.info("Failed to find any audioItems --> Probably offline URL which redirected to the current users' 'My Audio'-Tab");
             return;
         }
         for (String audioInfo[] : audioLinks) {

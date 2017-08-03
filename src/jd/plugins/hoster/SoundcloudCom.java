@@ -65,6 +65,7 @@ public class SoundcloudCom extends PluginForHost {
      * Last clientid: b45b1aa10f1ac2941910a7f0d10f8e28 fDoItMDbsbZz8dY16ZzARCZmzgHBPotA
      */
     public final static String   CLIENTID                                    = "2t9loNQH90kzJcsFCODdigxfp325aq4z ";
+    public final static String   CLIENTIDv2                                  = "JlZIsxg2hY5WnBgtn3jfS0UYCl0K8DOg";
     public final static String   CLIENTID_8TRACKS                            = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
     public final static String   CONSUMER_KEY_MYCLOUDPLAYERS_COM             = "PtMyqifCQMKLqwP0A6YQ";
@@ -85,6 +86,7 @@ public class SoundcloudCom extends PluginForHost {
     private final String         GRABORIGINALTHUMB                           = "GRABORIGINALTHUMB";
     private final String         CUSTOM_PACKAGENAME                          = "CUSTOM_PACKAGENAME";
     private final static String  SETS_ADD_POSITION_TO_FILENAME               = "SETS_ADD_POSITION_TO_FILENAME";
+    public final static String   SETS_USE_APIv1                              = "SETS_USE_APIv1";
     private String               dllink                                      = null;
     private boolean              serverissue                                 = false;
     private boolean              is_officially_downloadable                  = false;
@@ -722,7 +724,9 @@ public class SoundcloudCom extends PluginForHost {
                                                       put("SETTING_LABEL_customizepackagenames", "Customize the packagename for playlists and 'soundcloud.com/user' links! Example: '*channelname* - *playlistname*':");
                                                       put("SETTING_LABEL_tags_filename", "Explanation of the available tags:\r\n*url_username* = Username located in the soundcloud url which was added to jd\r\n*channelname* = name of the channel/uploader\r\n*date* = date when the link was posted - appears in the user-defined format above\r\n*songtitle* = name of the song without extension\r\n*linkid* = unique ID of the link - can be used to avoid duplicate filename for different links\r\n*ext* = the extension of the file, in this case usually '.mp3'");
                                                       put("SETTING_LABEL_tags_packagename", "Explanation of the available tags:\r\n*url_username* = Username located in the soundcloud url which was added to jd\r\n*channelname* = name of the channel/uploader\r\n*playlistname* = name of the playlist (= username for 'soundcloud.com/user' links)\r\n*date* = date when the linklist was created - appears in the user-defined format above\r\n");
+                                                      put("SETTING_LABEL_advanced_settings", "Advanced settings (only change them if you know what you're doing)");
                                                       put("ERROR_NOT_DOWNLOADABLE", "You disabled stream-downloads! This link is not officially downloadable!");
+                                                      put("SETS_USE_APIv1", "Sets: Prefer usage of APIv1?\r\nWarning: GEO-blocked items will not appear in the linkgrabber anymore!");
                                                   }
                                               };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
@@ -744,7 +748,9 @@ public class SoundcloudCom extends PluginForHost {
                                                       put("SETTING_LABEL_customizepackagenames", "Lege das Muster für Paketnamen fest für Playlists und 'soundcloud.com/user' Links! Beispiel: '*channelname* - *playlistname*':");
                                                       put("SETTING_LABEL_tags_filename", "Erklärung verfügbarer Tags:\r\n*url_username* = Benutzername, der in der hinzugefügten URL steht\r\n*channelname* = Name des Channels/Uploaders\r\n*date* = Datum an dem die Datei hochgeladen wurde - erscheint im benutzerdefinierten Format\r\n*songtitle* = Name des Songs ohne Endung\r\n*linkid* = Soundcloud-ID des links - Kann benutzt werden um Duplikate zu vermeiden\r\n*ext* = Dateiendung - normalerweise '.mp3'");
                                                       put("SETTING_LABEL_tags_packagename", "Erklärung verfügbarer Tags:\r\n*url_username* = Benutzername, der in der hinzugefügten URL steht\r\n*channelname* = Name des Channels/Uploaders\r\n*playlistname* = Name der Playliste (= Benutzername bei 'soundcloud.com/user' Links)\r\n*date* = Datum an dem die Playliste hochgeladen wurde - erscheint im benutzerdefinierten Format\r\n");
+                                                      put("SETTING_LABEL_advanced_settings", "Erweiterte Einstellungen (verändere diese nur, wenn du weißt was du tust)");
                                                       put("ERROR_NOT_DOWNLOADABLE", "Du hast stream-downloads deaktiviert! Dieser link ist nicht offiziell herunterladbar!");
+                                                      put("SETS_USE_APIv1", "Sets: Verwende APIv1?\r\nBedenke, GEO-gesperrte Einträge fehlen dann im Linksammler!");
                                                   }
                                               };
 
@@ -769,6 +775,7 @@ public class SoundcloudCom extends PluginForHost {
     public static final boolean  defaultGRAB_PURCHASE_URL                           = false;
     public static final boolean  defaultGRAB500THUMB                                = false;
     public static final boolean  defaultGRABORIGINALTHUMB                           = false;
+    public static final boolean  defaultSETS_USE_APIv1                              = false;
     private final static String  defaultCustomDate                                  = "dd.MM.yyyy";
     private final static String  defaultCustomFilename                              = "*songtitle*_*linkid* - *channelname**ext*";
     private final static String  defaultCustomPackagename                           = "*channelname* - *playlistname*";
@@ -796,6 +803,9 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, getPhrase("SETTING_CUSTOM_PACKAGENAME")).setDefaultValue(defaultCustomPackagename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_tags_packagename")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETS_ADD_POSITION_TO_FILENAME, JDL.L("plugins.hoster.soundcloud.sets_add_position", "Sets: Add position to the beginning of the filename e.g. (1.trackname.mp3)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_advanced_settings")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETS_USE_APIv1, getPhrase("SETS_USE_APIv1")).setDefaultValue(defaultSETS_USE_APIv1));
     }
 
     @Override

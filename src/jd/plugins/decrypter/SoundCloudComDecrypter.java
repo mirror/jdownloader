@@ -287,7 +287,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts all tracks of a single set
+     * Decrypts all tracks of a single set / playlist
      *
      * @throws Exception
      */
@@ -302,43 +302,115 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (playlist_uri == null || playlist_id == null) {
             return;
         }
-        // br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id +
-        // "?representation=full&client_id=JlZIsxg2hY5WnBgtn3jfS0UYCl0K8DOg&app_version=" +
-        // jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
-        // data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        List<Map<String, Object>> tracks = (List<Map<String, Object>>) data.get("tracks");
-        if (tracks == null || tracks.size() == 0) {
-            br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
-            data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            tracks = (List<Map<String, Object>>) data.get("tracks");
-        }
+        List<Map<String, Object>> tracks;
         final String usernameOfSet = username;
-        if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
-            if (getString(data, "duration").equals("0")) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            } else if (tracks != null && tracks.size() == 0) {
-                logger.info("Probably GEO-Blocked");
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        if (CFG.getBooleanProperty(jd.plugins.hoster.SoundcloudCom.SETS_USE_APIv1, jd.plugins.hoster.SoundcloudCom.defaultSETS_USE_APIv1)) {
+            /**
+             * APIv1 Fallback: Advantages: <br />
+             * - We only need one request to get all tracks <br />
+             * - Sometimes the filesize of some tracks is included in the json response <br />
+             * Disadvantages: <br />
+             * - GEO-blocked items are simply missing --> Very bad, especially if a user uses the track-position numbers
+             */
+            tracks = (List<Map<String, Object>>) data.get("tracks");
+            if (tracks == null || tracks.size() == 0) {
+                br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+                data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                tracks = (List<Map<String, Object>>) data.get("tracks");
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException("null");
-        }
-        setFilePackage(username, playlistname);
-        int counter = 1;
-        for (final Map<String, Object> item : tracks) {
-            final String permalink = getString(item, "permalink");
-            if (permalink == null) {
+            if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
+                if (getString(data, "duration").equals("0")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                } else if (tracks != null && tracks.size() == 0) {
+                    logger.info("Probably GEO-Blocked");
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 throw new DecrypterException("null");
             }
-            String userPermalink = getString(item, "user.permalink");
-            DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + userPermalink + "/" + permalink);
-            dl.setProperty("setsposition", counter + ".");
-            dl = setDlDataJson(dl, item);
-            addLink(dl);
-            get500Thumbnail(dl, item);
-            getOriginalThumbnail(dl, item);
-            counter++;
+            setFilePackage(username, playlistname);
+            int counter = 1;
+            for (final Map<String, Object> item : tracks) {
+                final String permalink = getString(item, "permalink");
+                if (permalink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    throw new DecrypterException("null");
+                }
+                String userPermalink = getString(item, "user.permalink");
+                DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + userPermalink + "/" + permalink);
+                dl.setProperty("setsposition", counter + ".");
+                dl = setDlDataJson(dl, item);
+                addLink(dl);
+                get500Thumbnail(dl, item);
+                getOriginalThumbnail(dl, item);
+                counter++;
+            }
+        } else {
+            /** Use APIv2 */
+            br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id + "?representation=full&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTIDv2 + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+            data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            tracks = (List<Map<String, Object>>) data.get("tracks");
+            if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
+                if (getString(data, "duration").equals("0")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                } else if (tracks != null && tracks.size() == 0) {
+                    logger.info("Probably GEO-Blocked");
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                throw new DecrypterException("null");
+            }
+            setFilePackage(username, playlistname);
+            /*
+             * We will not get info about all tracks via this request - therefore we need to make another API call, collect the rest and
+             * then add the URLs.
+             */
+            final ArrayList<Object> itemsFound = new ArrayList<Object>();
+            String idsToGrab = "";
+            int counter_item_collector = 0;
+            boolean forceItemsToQueue = false;
+            for (final Map<String, Object> item : tracks) {
+                final String track_id = getString(item, "id");
+                if (track_id == null) {
+                    throw new DecrypterException("null");
+                }
+                final Object permalink = item.get("permalink");
+                if (permalink == null || forceItemsToQueue) {
+                    /* Add IDs for which we have to get the information later. */
+                    forceItemsToQueue = true;
+                    if (counter_item_collector > 0) {
+                        idsToGrab += ",";
+                    }
+                    idsToGrab += track_id;
+                    counter_item_collector++;
+                } else if (permalink != null) {
+                    /* Save full Object for later */
+                    itemsFound.add(item);
+                }
+            }
+            /* Get information about our remaining tracks. */
+            br.getPage("https://api-v2.soundcloud.com/tracks?ids=" + Encoding.urlEncode(idsToGrab) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            for (final Object tracko : ressourcelist) {
+                itemsFound.add(tracko);
+            }
+            int counter = 1;
+            for (final Object tracko : itemsFound) {
+                data = (Map<String, Object>) tracko;
+                final String permalink = getString(data, "permalink");
+                if (permalink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    throw new DecrypterException("null");
+                }
+                String userPermalink = getString(data, "user.permalink");
+                DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + userPermalink + "/" + permalink);
+                dl.setProperty("setsposition", counter + ".");
+                dl = setDlDataJson(dl, data);
+                addLink(dl);
+                get500Thumbnail(dl, data);
+                getOriginalThumbnail(dl, data);
+                counter++;
+            }
         }
     }
 
