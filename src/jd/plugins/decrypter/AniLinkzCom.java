@@ -53,6 +53,11 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
     }
 
     @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
+    @Override
     protected boolean useRUA() {
         return true;
     }
@@ -70,110 +75,107 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
-        // only allow one thread! To minimise/reduce loads.
-        synchronized (LOCK) {
-            getPage(parameter);
-            boolean offline = false;
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
-                logger.info("Incorrect Link! Redirecting to search page...");
-                offline = true;
-            } else if (br.getRedirectLocation() != null) {
-                br.setFollowRedirects(true);
-                getPage(br.getRedirectLocation());
+        getPage(parameter);
+        boolean offline = false;
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
+            logger.info("Incorrect Link! Redirecting to search page...");
+            offline = true;
+        } else if (br.getRedirectLocation() != null) {
+            br.setFollowRedirects(true);
+            getPage(br.getRedirectLocation());
+        }
+        if (br.containsHTML(">Page Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            offline = true;
+        }
+        if (br.containsHTML(">No Results Found|>Search Results for")) {
+            logger.info("Link offline: " + parameter);
+            offline = true;
+        }
+        if (offline) {
+            try {
+                decryptedLinks.add(createOfflinelink(parameter));
+            } catch (final Throwable t) {
             }
-            if (br.containsHTML(">Page Not Found<")) {
-                logger.info("Link offline: " + parameter);
-                offline = true;
+            return decryptedLinks;
+        }
+        if (parameter.matches(".+\\.(?:com|tv|io|to)/series/.+")) {
+            int p = 1;
+            String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
+            if (page != null) {
+                p = Integer.parseInt(page);
             }
-            if (br.containsHTML(">No Results Found|>Search Results for")) {
-                logger.info("Link offline: " + parameter);
-                offline = true;
-            }
-            if (offline) {
-                try {
-                    decryptedLinks.add(createOfflinelink(parameter));
-                } catch (final Throwable t) {
-                }
-                return decryptedLinks;
-            }
-            if (parameter.matches(".+\\.(?:com|tv|io|to)/series/.+")) {
-                int p = 1;
-                String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
-                if (page != null) {
-                    p = Integer.parseInt(page);
-                }
-                for (int i = 0; i != p; i++) {
-                    String host = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
-                    // new
-                    // <script type="text/javascript">
-                    // $(function() {
-                    // $('#pagenavi').pagination({
-                    // pages: 2,
-                    // displayedPages: 7,
-                    // currentPage: 1, selectOnClick: false,
-                    // hrefTextPrefix: '/series/gigant-shooter-tsukasa?page=',
-                    // cssStyle: 'light-theme'
-                    // });
-                    // });
-                    // </script>
-                    String pages = br.getRegex("pages: (\\d+),").getMatch(0);
-                    String txtPrefix = br.getRegex("hrefTextPrefix: '(/series/[^\\?]+\\?page=)").getMatch(0);
-                    String nextPage = (pages != null && Integer.parseInt(pages) >= (p + 1) ? txtPrefix + (p + 1) : null);
-                    String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>\\s*</span>\\s*Series:").getColumn(0);
-                    if (links == null || links.length == 0) {
-                        logger.warning("Could not find series 'links' : " + parameter);
-                        return null;
-                    }
-                    for (String link : links) {
-                        decryptedLinks.add(createDownloadlink(host + link));
-                    }
-                    // if page is provided within parameter only add that page
-                    if (nextPage != null && !parameter.contains("?page=")) {
-                        p++;
-                        getPage(nextPage);
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                // set filepackage
-                fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-                if (fpName == null) {
-                    logger.warning("filepackage == null: " + parameter);
-                    logger.warning("Please report issue to JDownloader Development team!");
+            for (int i = 0; i != p; i++) {
+                String host = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
+                // new
+                // <script type="text/javascript">
+                // $(function() {
+                // $('#pagenavi').pagination({
+                // pages: 2,
+                // displayedPages: 7,
+                // currentPage: 1, selectOnClick: false,
+                // hrefTextPrefix: '/series/gigant-shooter-tsukasa?page=',
+                // cssStyle: 'light-theme'
+                // });
+                // });
+                // </script>
+                String pages = br.getRegex("pages: (\\d+),").getMatch(0);
+                String txtPrefix = br.getRegex("hrefTextPrefix: '(/series/[^\\?]+\\?page=)").getMatch(0);
+                String nextPage = (pages != null && Integer.parseInt(pages) >= (p + 1) ? txtPrefix + (p + 1) : null);
+                String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>\\s*</span>\\s*Series:").getColumn(0);
+                if (links == null || links.length == 0) {
+                    logger.warning("Could not find series 'links' : " + parameter);
                     return null;
                 }
-                if (parameter.matches(".+\\?src=\\d+")) {
-                    // if the user imports src link, just return that link
-                    br2 = br.cloneBrowser();
-                    parsePage();
+                for (String link : links) {
+                    decryptedLinks.add(createDownloadlink(host + link));
+                }
+                // if page is provided within parameter only add that page
+                if (nextPage != null && !parameter.contains("?page=")) {
+                    p++;
+                    getPage(nextPage);
                 } else {
-                    // if the user imports src link, just return that link
-                    br2 = br.cloneBrowser();
-                    parsePage();
-                    // grab src links and process
-                    String[] links = br.getRegex("<a rel=\"nofollow\" title=\"[^\"]+(?!dead) Source\" href=\"(/[^\"]+\\?src=\\d+)\">").getColumn(0);
-                    if (links != null && links.length != 0) {
-                        for (String link : links) {
-                            // we should reset any values that carry over!
-                            spart = -1;
-                            spart_count = 0;
-                            br2 = br.cloneBrowser();
-                            getPage(br2, link);
-                            parsePage();
-                        }
+                    break;
+                }
+            }
+        } else {
+            // set filepackage
+            fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+            if (fpName == null) {
+                logger.warning("filepackage == null: " + parameter);
+                logger.warning("Please report issue to JDownloader Development team!");
+                return null;
+            }
+            if (parameter.matches(".+\\?src=\\d+")) {
+                // if the user imports src link, just return that link
+                br2 = br.cloneBrowser();
+                parsePage();
+            } else {
+                // if the user imports src link, just return that link
+                br2 = br.cloneBrowser();
+                parsePage();
+                // grab src links and process
+                String[] links = br.getRegex("<a rel=\"nofollow\" title=\"[^\"]+(?!dead) Source\" href=\"(/[^\"]+\\?src=\\d+)\">").getColumn(0);
+                if (links != null && links.length != 0) {
+                    for (String link : links) {
+                        // we should reset any values that carry over!
+                        spart = -1;
+                        spart_count = 0;
+                        br2 = br.cloneBrowser();
+                        getPage(br2, link);
+                        parsePage();
                     }
                 }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.setProperty("ALLOW_MERGE", true);
-                fp.addLinks(decryptedLinks);
             }
-            if (decryptedLinks.isEmpty()) {
-                // not necessarily an error...
-                // logger.warning("Decrypter out of date for link: " + parameter);
-                // return null;
-            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.setProperty("ALLOW_MERGE", true);
+            fp.addLinks(decryptedLinks);
+        }
+        if (decryptedLinks.isEmpty()) {
+            // not necessarily an error...
+            // logger.warning("Decrypter out of date for link: " + parameter);
+            // return null;
         }
         return decryptedLinks;
     }
