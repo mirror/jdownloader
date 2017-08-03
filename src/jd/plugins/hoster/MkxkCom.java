@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mkxk.com" }, urls = { "http://(www\\.)?mkxk\\.com/(?:play|down)/\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mkxk.com" }, urls = { "http://(www\\.)?mkxk\\.com/(?:play|down)/\\d+\\.html" })
 public class MkxkCom extends PluginForHost {
-
     public MkxkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,6 +45,7 @@ public class MkxkCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/down/", "/play/"));
     }
 
+    /** 2017-08-03: Downloads (without logging in) seem to be impossible. */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -125,5 +124,4 @@ public class MkxkCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

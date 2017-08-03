@@ -30,6 +30,15 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,15 +62,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
@@ -227,6 +227,11 @@ public class SaveTv extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setContentUrl(buildExternalDownloadURL(link, this));
+    }
+
+    @Override
     public String getAGBLink() {
         /* Old: http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm */
         return "http://www.save.tv/STV/S/misc/terms.cfm";
@@ -298,7 +303,7 @@ public class SaveTv extends PluginForHost {
             checkAccountNeededDialog();
             return AvailableStatus.UNCHECKABLE;
         }
-        /* Set linkID for correct dupe-check */
+        /* Set linkID for correct dupe-check as telecastID is bound to account! */
         if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
             /* Every account has individual telecastIDs, only downloadable via this account. */
             link.setLinkID(aa.getUser() + telecast_ID);
@@ -1906,6 +1911,12 @@ public class SaveTv extends PluginForHost {
         final String account_username = account.getUser();
         final String account_username_from_which_url_was_added = getDownloadableVia(downloadLink);
         return account_username_from_which_url_was_added != null && account_username != null && account_username_from_which_url_was_added.equals(account_username);
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        final String telecastID = getTelecastId(downloadLink);
+        return String.format("https://www.%s/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=%s", this.getHost(), telecastID);
     }
 
     @Override

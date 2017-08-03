@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -36,7 +35,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mvpdj.com" }, urls = { "https?://(?:www\\.)?mvpdj\\.com/song/player/\\d+" })
 public class MvpdjCom extends PluginForHost {
-
     public MvpdjCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.mvpdj.com/user/register");
@@ -68,6 +66,8 @@ public class MvpdjCom extends PluginForHost {
         serverissues = false;
         fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         br = new Browser();
+        /* 2017-08-03: Website randomly returns 500 with regular html content --> Allow response 500 */
+        br.setAllowedResponseCodes(new int[] { 500 });
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* Very old links --> Offline */
@@ -216,7 +216,6 @@ public class MvpdjCom extends PluginForHost {
                 final String code = this.getCaptchaCode("https://www.mvpdj.com/captcha/number2.php", dummyLink);
                 final String postData = "autologin=clicked&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authcode=" + Encoding.urlEncode(code);
                 // this.br.postPage("/user/useraccount", "");
-
                 this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 this.br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");

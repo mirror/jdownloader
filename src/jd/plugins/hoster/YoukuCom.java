@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -22,6 +27,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
@@ -60,8 +66,7 @@ public class YoukuCom extends antiDDoSForHost {
     }
 
     /**
-     * TODO: Add refreshDownloadlink function, add errorhandling (GEO-blocked content!!!), check whether tudou.com belongs to youku.com and
-     * integrate it as well.
+     * TODO: Add refreshDownloadlink function, add errorhandling (GEO-blocked content!!!)
      */
     @SuppressWarnings("deprecation")
     @Override
@@ -69,7 +74,23 @@ public class YoukuCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         dllink = link.getDownloadURL();
+        URLConnectionAdapter con = null;
         if (dllink.contains("m3u8")) {
+            try {
+                con = br.openHeadConnection(dllink);
+                if (con.getResponseCode() == 403) {
+                    /* This should do the job to refresh an HLS URL. */
+                    refreshDirecturl(link);
+                    if (this.dllink != null) {
+                        con = br.openHeadConnection(this.dllink);
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
             checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final StreamInfo streamInfo = downloader.getProbe();
@@ -83,9 +104,14 @@ public class YoukuCom extends antiDDoSForHost {
                 }
             }
         } else {
-            URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
+                if (con.getContentType().contains("html")) {
+                    refreshDirecturl(link);
+                    if (this.dllink != null) {
+                        con = br.openHeadConnection(this.dllink);
+                    }
+                }
                 if (!con.getContentType().contains("html")) {
                     if (link.getFinalFileName() == null) {
                         /* Only use server-filename e.g. for URLs sent over via Flashgot or similar. */
@@ -103,6 +129,81 @@ public class YoukuCom extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void refreshDirecturl(final DownloadLink link) throws Exception {
+        logger.info("Refreshing downloadlink");
+        final String mainlink = link.getStringProperty("mainlink");
+        final String height = link.getStringProperty("quality_height");
+        final long segment_position = link.getLongProperty("segment_position", 0);
+        if (height == null || mainlink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final boolean isHLS = link.getDownloadURL().contains("m3u8");
+        /* Important: Use fresh Browser here!! */
+        this.br = new Browser();
+        jd.plugins.decrypter.YoukuCom.accessVideoJson(this.br, mainlink);
+        /* Check for dead mainlink. */
+        if (jd.plugins.decrypter.YoukuCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        findDirecturlKamikaze(entries, height, (int) segment_position, isHLS);
+        if (this.dllink != null) {
+            logger.info("Successfully refreshed downloadlink");
+        } else {
+            logger.warning("Failed to refresh downloadlink");
+        }
+    }
+
+    /**
+     * Recursive function to find new directurl --> Should work throughout json structure changes.
+     *
+     */
+    @SuppressWarnings("unchecked")
+    private void findDirecturlKamikaze(final Object jsono, final String height, final int segment_position, final boolean isHLS) {
+        LinkedHashMap<String, Object> test;
+        if (jsono instanceof LinkedHashMap) {
+            test = (LinkedHashMap<String, Object>) jsono;
+            if (findDirecturlInJson(test, height, segment_position, isHLS)) {
+                return;
+            } else {
+                final Iterator<Entry<String, Object>> it = test.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Object> thisentry = it.next();
+                    final Object mapObject = thisentry.getValue();
+                    findDirecturlKamikaze(mapObject, height, segment_position, isHLS);
+                }
+            }
+        } else if (jsono instanceof ArrayList) {
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) jsono;
+            for (final Object listo : ressourcelist) {
+                findDirecturlKamikaze(listo, height, segment_position, isHLS);
+            }
+        }
+    }
+
+    private boolean findDirecturlInJson(LinkedHashMap<String, Object> entries, final String height, final int segment_position, final boolean isHLS) {
+        final String m3u8_url = (String) entries.get("m3u8_url");
+        final Object segso = entries.get("segs");
+        final String height_current = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), 0));
+        if (m3u8_url == null && segso == null || height_current.equals("0")) {
+            return false;
+        } else if (!height_current.equals(height)) {
+            /* Not the resolution we're looking for. */
+            return false;
+        }
+        if (isHLS) {
+            /* We found what we wanted */
+            this.dllink = m3u8_url;
+            return true;
+        } else {
+            /* We have to find the segment object which contains the new http downloadurl. */
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) segso;
+            entries = (LinkedHashMap<String, Object>) ressourcelist.get(segment_position);
+            this.dllink = (String) entries.get("cdn_url");
+            return true;
+        }
     }
 
     @Override
@@ -136,7 +237,7 @@ public class YoukuCom extends antiDDoSForHost {
                 }
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
             }
             downloadLink.setProperty("free_directlink", dllink);
             dl.startDownload();
@@ -165,8 +266,8 @@ public class YoukuCom extends antiDDoSForHost {
 
     public static String getURLName(final String inputurl) {
         final String url_name;
-        if (inputurl.matches(".+v_show/id_.+")) {
-            url_name = new Regex(inputurl, "/v_show/id_(.+)\\.html$").getMatch(0);
+        if (inputurl.matches(".+(/v_show/id_|/v/).+")) {
+            url_name = new Regex(inputurl, "(?:/v_show/id_|/v/)(.*?)(?:\\.html)?$").getMatch(0);
         } else if (inputurl.contains("m3u8")) {
             /* Ummm not sure if that is a good idea but this function has to return something ... */
             url_name = new Regex(inputurl, "psid=([a-f0-9]{32})").getMatch(0);
@@ -191,6 +292,7 @@ public class YoukuCom extends antiDDoSForHost {
         return YoukuComConfigInterface.class;
     }
 
+    /** 2017-08-03: Issues with higher HLS versions may appear, http should all be fine though! */
     public static interface YoukuComConfigInterface extends PluginConfigInterface {
         public static class TRANSLATION {
             public String getFastLinkcheckEnabled_label() {
