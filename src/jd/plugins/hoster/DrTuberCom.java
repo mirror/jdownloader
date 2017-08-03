@@ -361,6 +361,7 @@ public class DrTuberCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("http://www.drtuber.com/ajax/popup_forms?form=login");
+                final String brcontent = br.toString();
                 br.postPage("/ajax/login", "submit_login=true&login_remember=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "success")) && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "captcha"))) {
                     // recaptchav2
@@ -368,7 +369,13 @@ public class DrTuberCom extends PluginForHost {
                     try {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
                         this.setDownloadLink(dummyLink);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lel6CQUAAAAANRfiz7Kh8rdyzHgh4An39DbHb67").getToken();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+
+                            public String getSiteKey() {
+                                return getSiteKey(brcontent);
+                            }
+
+                        }.getToken();
                         br.postPage("/ajax/login", "submit_login=true&login_remember=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                     } finally {
                         this.setDownloadLink(orig);
