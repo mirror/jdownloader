@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,10 +38,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.YoukuCom.YoukuComConfigInterface;
 
 /** See also youtube-dl: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/youku.py */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youku.com" }, urls = { "https?://v\\.youku\\.com/v_show/id_[A-Za-z0-9=]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youku.com", "video.tudou.com", "tudou.com" }, urls = { "https?://v\\.youku\\.com/v_show/id_[A-Za-z0-9=]+", "https?://video\\.tudou\\.com/v/[A-Za-z0-9=]+", "https?://(?:www\\.)?tudou\\.com/programs/view/[A-Za-z0-9\\-_]+" })
 public class YoukuCom extends PluginForDecrypt {
     public YoukuCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,8 +54,7 @@ public class YoukuCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         List<String> all_selected_qualities = new ArrayList<String>();
-        final String parameter = param.toString();
-        final String videoid = jd.plugins.hoster.YoukuCom.getURLName(parameter);
+        String parameter = param.toString();
         final YoukuComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.YoukuCom.YoukuComConfigInterface.class);
         final boolean fastLinkcheck = cfg.isFastLinkcheckEnabled();
         final boolean grabBest = cfg.isGrabBESTEnabled();
@@ -94,22 +95,38 @@ public class YoukuCom extends PluginForDecrypt {
         if (all_selected_qualities.isEmpty()) {
             all_selected_qualities = all_known_qualities;
         }
-        br.setCookie(this.getHost(), "xreferrer", "http://www.youku.com");
-        // br.getPage(parameter);
-        // if (isOffline(this.br)) {
-        // decryptedLinks.add(this.createOfflinelink(parameter));
-        // return decryptedLinks;
-        // }
-        br.getPage("https://log.mmstat.com/eg.js");
-        final String cna_value = br.getRegex("goldlog\\.Etag=\"([^<>\"]+)\"").getMatch(0);
-        if (cna_value == null) {
-            return null;
+        if (parameter.matches(".+tudou\\.com/programs/view/.+")) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            /* Old tudou.com URLs with old videoIDs --> Usually redirect to new URLs with new IDs. */
+            final String newURL = this.br.getRedirectLocation();
+            if (newURL == null || !newURL.matches(".+/v/[A-Za-z0-9=]+.*?")) {
+                logger.info("Failed to find new tudou URL --> Offline");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            logger.info("Found new tudou URL: " + newURL);
+            parameter = newURL;
         }
-        br.setCookie(this.getHost(), "cna", cna_value);
-        /* for tudou.com, ccode = 0402 */
-        br.getPage("https://ups.youku.com/ups/get.json?vid=" + videoid + "&ccode=0401&client_ip=192.168.1.1&utid=" + Encoding.urlEncode(cna_value) + "&client_ts=" + System.currentTimeMillis());
+        final String videoid = jd.plugins.hoster.YoukuCom.getURLName(parameter);
+        /* Important: Use fresh Browser here!! */
+        this.br = prepBR(new Browser());
+        accessVideoJson(this.br, parameter);
+        if (isOffline(br)) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
+        /* TODO: Add better errorhandling here */
+        final Object erroro = entries.get("error");
+        final LinkedHashMap<String, Object> errormap = erroro != null ? (LinkedHashMap<String, Object>) erroro : null;
+        if (errormap != null) {
+            /* -4001 == blocked because of copyright [can also happen when using wrong ccode in API request] */
+            final String note = (String) errormap.get("note");
+            final long errorcode = JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
+            logger.info(String.format("Error: Code: %d Message: %s", errorcode, note));
+        }
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("stream");
         ArrayList<Object> segment_list;
         entries = (LinkedHashMap<String, Object>) entries.get("video");
@@ -149,6 +166,7 @@ public class YoukuCom extends PluginForDecrypt {
                 dl.setAvailable(true);
             }
             dl.setLinkID(videoid + quality_key + segment_counter);
+            dl.setProperty("quality_height", height);
             dl.setProperty("mainlink", parameter);
             all_found_downloadlinks.put(quality_key, new DownloadLink[] { dl });
             /* Add http URLs */
@@ -173,6 +191,8 @@ public class YoukuCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 dl.setLinkID(videoid + quality_key + segment_counter);
+                dl.setProperty("quality_height", height);
+                dl.setProperty("segment_position", (long) segment_counter - 1);
                 dl.setProperty("mainlink", parameter);
                 httpSegments[segment_counter - 1] = dl;
                 segment_counter++;
@@ -289,6 +309,31 @@ public class YoukuCom extends PluginForDecrypt {
         return newMap;
     }
 
+    public static void accessVideoJson(final Browser br, final String source_url) throws IOException, InterruptedException {
+        if (br == null || source_url == null) {
+            return;
+        }
+        final String videoid = jd.plugins.hoster.YoukuCom.getURLName(source_url);
+        final String host = Browser.getHost(source_url);
+        br.setCookie(host, "xreferrer", "http://www.youku.com");
+        br.getPage("https://log.mmstat.com/eg.js");
+        final String cna_value = br.getRegex("goldlog\\.Etag=\"([^<>\"]+)\"").getMatch(0);
+        final String ccode;
+        if (host.equals("youku.com")) {
+            ccode = "0401";
+        } else {
+            /* tudou.com */
+            ccode = "0402";
+        }
+        if (cna_value == null) {
+            return;
+        }
+        br.setCookie(host, "cna", cna_value);
+        /* This waittime is important! */
+        Thread.sleep(3000l);
+        br.getPage("https://ups.youku.com/ups/get.json?vid=" + Encoding.urlEncode(videoid) + "&ccode=" + ccode + "&client_ip=192.168.1.1&utid=" + Encoding.urlEncode(cna_value) + "&client_ts=" + System.currentTimeMillis());
+    }
+
     public static String getCnaValue(final Browser br) {
         return br.getCookie(br.getHost(), "cna");
     }
@@ -299,6 +344,9 @@ public class YoukuCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/index/");
+        final String apiError = PluginJSonUtils.getJson(br, "code");
+        final boolean offlineAPI = apiError != null && apiError.equals("-6001");
+        final boolean offlineWebsite = br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/index/");
+        return offlineAPI || offlineWebsite;
     }
 }

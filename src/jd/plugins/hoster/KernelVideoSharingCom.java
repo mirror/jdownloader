@@ -280,7 +280,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
+            /* Last change: 2017-08-03, regarding txxx.com */
+            dllink = br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("(?:file|video)\\s*?:\\s*?(?:\"|')(http[^<>\"\\']*?(?:m3u8|mp4|flv)[^<>\"]*?)(?:\"|')").getMatch(0);

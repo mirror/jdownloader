@@ -169,7 +169,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             logger.info("Failed to find nextbookmark for first round --> Cannot grab more items --> Stopping");
                             break;
                         }
-                        // /resource/BoardFeedResource/get/?source_url=%2Flukazmiojo%2Fstatue%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22561824190953905251%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22LT41NjE4MjQxMjIyNDc3Nzk3NzA6MjU6MjV8Yzk5OTQ2MzQxZjZkZTE2ZWMyZGRjZWY1MGMyNWY3NDc4ZmRhMmMwNmQ5YzI2MmI4MDA2OGUwYjc5YzE0MmQ2Mg%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=1501745267994
                         getpage = "/resource/BoardFeedResource/get/?" + Encoding.urlEncode(source_url) + "%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
                     }
                     // referrer should always be of the first request!
