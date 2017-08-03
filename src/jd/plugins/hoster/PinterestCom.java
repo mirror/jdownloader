@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -40,9 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de)/pin/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de)/pin/[A-Za-z0-9\\-_]+/" })
 public class PinterestCom extends PluginForHost {
     public PinterestCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,26 +56,26 @@ public class PinterestCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        /* Correct link - remove country related language-subdomains (e.g. 'es.pinterest.com'). */
-        final String pin_id = getPinID(link);
+        /* Correct link - remove country related subdomains (e.g. 'es.pinterest.com'). */
+        final String pin_id = getPinID(link.getDownloadURL());
         link.setUrlDownload("https://www.pinterest.com/pin/" + pin_id + "/");
-        link.setLinkID(pin_id);
     }
 
-    public static String getPinID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)/$").getMatch(0);
+    public static String getPinID(final String pin_url) {
+        return new Regex(pin_url, "pin/([^/]+)/?$").getMatch(0);
     }
 
+    public static final long   trust_cookie_age = 300000l;
     /* Site constants */
-    public static final String x_app_version = "6cedd5c";
+    public static final String x_app_version    = "6cedd5c";
     /* don't touch the following! */
-    private String             dllink        = null;
+    private String             dllink           = null;
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         String filename = null;
-        final String pin_id = getPinID(link);
+        final String pin_id = getPinID(link.getDownloadURL());
         /* Display ids for offline links */
         link.setName(pin_id);
         this.setBrowserExclusive();
@@ -172,17 +171,34 @@ public class PinterestCom extends PluginForHost {
         }
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
+        link.setLinkID(getLinkidForInternalDuplicateCheck(link.getDownloadURL(), dllink));
         return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("unchecked")
     private String getDirectlinkFromJson(final ArrayList<Object> ressourcelist, final String pin_id) {
         String directlink = null;
+        logger.info("resource_data_cache size: " + ressourcelist.size());
+        final boolean grabThis;
+        if (ressourcelist.size() == 1) {
+            logger.info("resource_data_cache contains only 1 item --> This should be the one, we want");
+            grabThis = true;
+        } else {
+            logger.info("resource_data_cache contains multiple item --> We'll have to find the correct one");
+            grabThis = false;
+        }
         for (final Object resource_object : ressourcelist) {
             final LinkedHashMap<String, Object> t2 = (LinkedHashMap<String, Object>) resource_object;
             final LinkedHashMap<String, Object> t3 = (LinkedHashMap<String, Object>) t2.get("data");
             final String this_pin_id = (String) t3.get("id");
-            if (this_pin_id.equals(pin_id)) {
+            final boolean pins_matched = this_pin_id.equals(pin_id);
+            if (pins_matched || grabThis) {
+                if (pins_matched) {
+                    logger.info("Found correct item because PINs matched");
+                }
+                if (grabThis) {
+                    logger.info("Found correct item because we only had one");
+                }
                 final LinkedHashMap<String, Object> t4 = (LinkedHashMap<String, Object>) t3.get("images");
                 final LinkedHashMap<String, Object> t5 = (LinkedHashMap<String, Object>) t4.get("orig");
                 directlink = (String) t5.get("url");
@@ -192,7 +208,18 @@ public class PinterestCom extends PluginForHost {
         return directlink;
     }
 
+    /**
+     * Sets Headers for Pinterest API usage. <br />
+     */
     public static void prepAPIBR(final Browser br) throws PluginException {
+        if (br.getRequest() == null) {
+            try {
+                /* Access mainpage to get that cookie which we'll need later. */
+                br.getPage("https://www.pinterest.de/");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        }
         final String csrftoken = br.getCookie(br.getHost(), "csrftoken");
         if (csrftoken == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -235,6 +262,7 @@ public class PinterestCom extends PluginForHost {
         dl.startDownload();
     }
 
+    /** Checks directurl and sets filesize on success. */
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -245,6 +273,8 @@ public class PinterestCom extends PluginForHost {
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
+                } else {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
@@ -259,6 +289,26 @@ public class PinterestCom extends PluginForHost {
         return dllink;
     }
 
+    /**
+     * Returns internal linkid, uses pin_id only if it fails to find something better. pin_ids can vary for usage via account vs. non
+     * account which means one and the same PIN object can have 2 different IDs e.g. <br />
+     * 561824122247791853 == AWgdN4e_KINL2m6FsLk-aGJiMvq_NZ7BIW0pc5rDZqb1BcwCpPxGRAE <br />
+     * Ideal directlink for linkid: https://s-media-cache-ak0.pinimg.com/originals/aa/f2/04/aaf204b422904144d1bb0fd763866d05.jpg <br />
+     * Non-ideal directlink for linkid:
+     * https://s-media-cache-ak0.pinimg.com/736x/aa/f2/04/aaf204b422904144d1bb0fd763866d05--sacred-garden-garden-statues.jpg <br />
+     */
+    public static String getLinkidForInternalDuplicateCheck(final String pin_url, final String directlink) {
+        if (pin_url == null && directlink == null) {
+            return null;
+        }
+        String internal_linkid = directlink != null ? new Regex(directlink, "https?://[^/]+/[^/]+/(.+)").getMatch(0) : null;
+        if (internal_linkid == null) {
+            /* Fallback */
+            internal_linkid = getPinID(pin_url);
+        }
+        return internal_linkid;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -271,6 +321,7 @@ public class PinterestCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                br.setAllowedResponseCodes(new int[] { 401 });
                 String last_used_host = account.getStringProperty("host");
                 if (last_used_host == null) {
                     /* Fallback */
@@ -279,6 +330,10 @@ public class PinterestCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(last_used_host, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
                     return;
                 }
                 br.setFollowRedirects(true);
@@ -289,19 +344,8 @@ public class PinterestCom extends PluginForHost {
                 String postData = "source_url=/login/&data={\"options\":{\"username_or_email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"},\"context\":{}}&module_path=App()>LoginPage()>Login()>Button(class_name=primary,+text=Anmelden,+type=submit,+size=large)";
                 // postData = Encoding.urlEncode(postData);
                 final String urlpart = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0);
-                try {
-                    br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
-                } catch (final BrowserException e) {
-                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    throw e;
-                }
-                if (br.containsHTML("jax CsrfErrorPage Module") || br.getCookie(last_used_host, "_b") == null) {
+                br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
+                if (br.getHttpConnection().getResponseCode() == 401 || br.containsHTML("jax CsrfErrorPage Module") || br.getCookie(last_used_host, "_b") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

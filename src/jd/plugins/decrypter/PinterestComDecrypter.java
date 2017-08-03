@@ -54,6 +54,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     private static final String     unsupported_urls                    = "https://(?:www\\.)?pinterest\\.[A-Za-z]+/(business/create/|android\\-app:/.+|ios\\-app:/.+|categories/.+|resource/.+|explore/.+)";
     private static final boolean    force_api_usage                     = true;
     private ArrayList<DownloadLink> decryptedLinks                      = null;
+    private ArrayList<String>       dupeList                            = new ArrayList<String>();
     private String                  parameter                           = null;
     private FilePackage             fp                                  = null;
     private boolean                 enable_description_inside_filenames = jd.plugins.hoster.PinterestCom.defaultENABLE_DESCRIPTION_IN_FILENAMES;
@@ -139,7 +140,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                      * 2017-07-19: When loggedIN, first batch of results gets loaded via ajax as well so we will only abort if we still got
                      * 0 items after 2 loops.
                      */
-                    if (i > 1 && decryptedLinks.isEmpty()) {
+                    if (i > 1 && dupeList.isEmpty()) {
                         /*
                          * 2017-07-18: It can actually happen that according to the website, one or more PIN items are available but
                          * actually nothing is available ...
@@ -168,7 +169,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             logger.info("Failed to find nextbookmark for first round --> Cannot grab more items --> Stopping");
                             break;
                         }
-                        getpage = "/resource/BoardWithRelatedFeedResource/get/?" + Encoding.urlEncode(source_url) + "%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
+                        // /resource/BoardFeedResource/get/?source_url=%2Flukazmiojo%2Fstatue%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22561824190953905251%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22LT41NjE4MjQxMjIyNDc3Nzk3NzA6MjU6MjV8Yzk5OTQ2MzQxZjZkZTE2ZWMyZGRjZWY1MGMyNWY3NDc4ZmRhMmMwNmQ5YzI2MmI4MDA2OGUwYjc5YzE0MmQ2Mg%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=1501745267994
+                        getpage = "/resource/BoardFeedResource/get/?" + Encoding.urlEncode(source_url) + "%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
                     }
                     // referrer should always be of the first request!
                     final Browser ajax = br.cloneBrowser();
@@ -216,7 +218,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
                     }
                     nextbookmark = (String) JavaScriptEngineFactory.walkJson(resource_data_list, "{1}/resource/options/bookmarks/{0}");
-                    logger.info("Decrypted " + decryptedLinks.size() + " of " + numberof_pins + " pins");
+                    logger.info("Decrypted " + dupeList.size() + " of " + numberof_pins + " pins");
                     i++;
                 } else {
                     // json
@@ -256,6 +258,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     }
                     if (pin_list == null && decryptedLinks.size() > 0) {
                         /* We've probably reached the end ... */
+                        logger.info("No PINs found --< We've probably reached the end");
                         break;
                     }
                     if (pin_list != null) {
@@ -271,10 +274,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         /* Fallback to RegEx */
                         nextbookmark = new Regex(json_source, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
                     }
-                    logger.info("Decrypted " + decryptedLinks.size() + " of " + numberof_pins + " pins");
+                    logger.info("Decrypted " + dupeList.size() + " of " + numberof_pins + " pins");
                     i++;
                 }
-            } while (decryptedLinks.size() < numberof_pins);
+            } while (dupeList.size() < numberof_pins);
         } else {
             decryptSite();
             if (numberof_pins > max_entries_per_page_free) {
@@ -294,12 +297,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final LinkedHashMap<String, Object> single_pinterest_images = (LinkedHashMap<String, Object>) single_pinterest_data.get("images");
         final LinkedHashMap<String, Object> single_pinterest_images_original = (LinkedHashMap<String, Object>) single_pinterest_images.get("orig");
         final Object usernameo = single_pinterest_pinner != null ? single_pinterest_pinner.get("username") : null;
-        final Object pinner_nameo = single_pinterest_pinner != null ? single_pinterest_pinner.get("full_name") : null;
+        // final Object pinner_nameo = single_pinterest_pinner != null ? single_pinterest_pinner.get("full_name") : null;
         LinkedHashMap<String, Object> tempmap = null;
-        final String pin_directlink;
+        final String directlink;
         if (single_pinterest_images_original != null) {
             /* Original image available --> Take that */
-            pin_directlink = (String) single_pinterest_images_original.get("url");
+            directlink = (String) single_pinterest_images_original.get("url");
         } else {
             /* Original image NOT available --> Take the best we can find */
             final Iterator<Entry<String, Object>> it = single_pinterest_images.entrySet().iterator();
@@ -309,18 +312,22 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 /* First image = highest (but original is somewhere 'in the middle') */
                 break;
             }
-            pin_directlink = (String) tempmap.get("url");
+            directlink = (String) tempmap.get("url");
         }
         final String pin_id = (String) single_pinterest_data.get("id");
         final String description = (String) single_pinterest_data.get("description");
         final String username = usernameo != null ? (String) usernameo : null;
         // final String pinner_name = pinner_nameo != null ? (String) pinner_nameo : null;
-        if (pin_id == null || pin_directlink == null) {
+        if (pin_id == null || directlink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+        } else if (dupeList.contains(pin_id)) {
+            logger.info("Skipping duplicate: " + pin_id);
+            return true;
         }
+        dupeList.add(pin_id);
         String filename = pin_id;
-        final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
+        final String content_url = "http://www." + this.getHost() + "/pin/" + pin_id + "/";
         final DownloadLink dl = createDownloadlink(content_url);
         if (description != null) {
             dl.setComment(description);
@@ -331,8 +338,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         filename = encodeUnicode(filename);
         dl.setContentUrl(content_url);
-        dl.setLinkID("pinterest://" + pin_id);
-        dl.setProperty("free_directlink", pin_directlink);
+        dl.setLinkID(jd.plugins.hoster.PinterestCom.getLinkidForInternalDuplicateCheck(content_url, directlink));
+        dl.setProperty("free_directlink", directlink);
         dl.setProperty("boardid", board_id);
         dl.setProperty("source_url", source_url);
         dl.setProperty("username", username);
@@ -410,17 +417,21 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 description = new Regex(sinfo, "<p class=\"pinDescription\">([^<>]*?)<").getMatch(0);
             }
             final String directlink = new Regex(sinfo, "\"(https?://[a-z0-9\\.\\-]+/originals/[^<>\"]*?)\"").getMatch(0);
-            final String pin_id = new Regex(sinfo, "/pin/(\\d+)/").getMatch(0);
+            final String pin_id = new Regex(sinfo, "/pin/([A-Za-z0-9\\-_]+)/").getMatch(0);
             if (pin_id == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
                 return;
+            } else if (dupeList.contains(pin_id)) {
+                logger.info("Skipping duplicate: " + pin_id);
+                continue;
             }
+            dupeList.add(pin_id);
             String filename = pin_id;
             final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
             final DownloadLink dl = createDownloadlink(content_url);
             dl.setContentUrl(content_url);
-            dl.setLinkID("pinterest://" + pin_id);
+            dl.setLinkID(jd.plugins.hoster.PinterestCom.getLinkidForInternalDuplicateCheck(content_url, directlink));
             dl._setFilePackage(fp);
             if (directlink != null) {
                 dl.setProperty("free_directlink", directlink);
