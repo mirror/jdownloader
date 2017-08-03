@@ -50,7 +50,7 @@ public class GogoAnimeTv extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // couple domains down?
-        final String parameter = param.toString().replaceFirst("gogodrame\\.[a-z]+", "gogodramaonline.com");
+        final String parameter = param.toString().replaceFirst("gogodrama\\.[a-z]+", "gogodramaonline.com");
         br.setFollowRedirects(true);
         getPage(parameter);
         /* Error handling */
