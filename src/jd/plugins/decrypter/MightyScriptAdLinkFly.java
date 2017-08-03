@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -38,15 +39,15 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es)/[A-Za-z0-9]+" })
-public class CnLnk extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com)/[A-Za-z0-9]+" })
+public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es" };
+        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com" };
     }
 
-    public CnLnk(PluginWrapper wrapper) {
+    public MightyScriptAdLinkFly(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -69,7 +70,7 @@ public class CnLnk extends antiDDoSForDecrypt {
         if (form == null) {
             return null;
         }
-        // captcha here
+        // original captcha
         if (form.hasInputFieldByName("captcha")) {
             final String code = getCaptchaCode("cp.php", param);
             form.put("captcha", Encoding.urlEncode(code));
@@ -95,10 +96,26 @@ public class CnLnk extends antiDDoSForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (form.containsHTML("(?:id|class)=(\"|')g-recaptcha\\1")) {
-            // recaptchav2 is different.
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        } else if (evalulateCaptcha()) {
+            if (evalulateRecaptchaV2(form)) {
+                // recaptchav2 is different.
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+
+                    @Override
+                    public String getSiteKey() {
+                        final String key = getAppVarsResult("reCAPTCHA_site_key");
+                        if (!inValidate(key)) {
+                            return key;
+                        }
+                        return getSiteKey(br.toString());
+                    }
+
+                }.getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            } else {
+                // unsupported... I've seen reference to solvemedia
+                return null;
+            }
             submitForm(form);
             // 10 second wait in new version with possible another form
             final Form f2 = br.getForm(0);
@@ -120,6 +137,50 @@ public class CnLnk extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    private boolean evalulateSolvemedia(Form form) {
+        return false;
+    }
+
+    private boolean evalulateCaptcha() {
+        // if ("yes" !== app_vars.enable_captcha) return !0;
+        final String hasCaptcha = getAppVarsResult("enable_captcha");
+        if ("yes".equals(hasCaptcha)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean evalulateRecaptchaV2(final Form form) {
+        final String captchaBtn = form.getRegex("<div [^>]*id=\"captchaShortlink\"[^>]*>").getMatch(-1);
+        if (captchaBtn != null) {
+            /*
+             * "recaptcha" === app_vars.captcha_type && ("" === app_vars.user_id && "1" === app_vars.captcha_short_anonymous &&
+             * $("#captchaShort").length && ($("#shorten .btn-captcha").attr("disabled", "disabled"), captchaShort =
+             * grecaptcha.render("captchaShort", {
+             */
+            /*
+             * yes" === app_vars.captcha_shortlink && $("#captchaShortlink").length && ($("#link-view
+             * .btn-captcha").attr("disabled", "disabled"), captchaShortlink = grecaptcha.render("captchaShortlink", {
+             */
+            final String captchaType = getAppVarsResult("captcha_type");
+            final String userId = getAppVarsResult("user_id");
+            if ("recaptcha".equals(captchaType) && "".equals(userId)) {
+                return true;
+            }
+        }
+        // fail over, some seem to be using this
+        if (form.containsHTML("(?:id|class)=(\"|')g-recaptcha\\1")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private String getAppVarsResult(final String input) {
+        final String result = br.getRegex("app_vars\\['" + Pattern.quote(input) + "'\\]\\s*=\\s*'([^']*)'").getMatch(0);
+        return result;
     }
 
     private String getFinallink() {
