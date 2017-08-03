@@ -489,13 +489,19 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      * Use this first to find the filename for KVS websites!
      */
     public static String regexFilenameSiteSpecific(final Browser br) {
-        final String filename;
+        String filename;
         if (br.getHost().equalsIgnoreCase("yourlust.com")) {
             /* 2016-12-21 */
             filename = br.getRegex("<h\\d+ class=\"[^<>]+>([^<>]*?)<").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("theclassicporn.com")) {
             /* 2016-12-18 */
-            filename = br.getRegex("class=\"link\\-blue link\\-no\\-border\">([^<>\"]*?)<").getMatch(0); // theclassicporn.com
+            filename = br.getRegex("class=\"link\\-blue link\\-no\\-border\">([^<>\"]*?)<").getMatch(0);
+        } else if (br.getHost().equalsIgnoreCase("alphaporno.com")) {
+            /* 2017-08-03 */
+            filename = br.getRegex("<h1 class=\"title\" itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
+            if (StringUtils.isEmpty(filename)) {
+                filename = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+            }
         } else {
             filename = null;
         }
