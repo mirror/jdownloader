@@ -143,7 +143,7 @@ public class VideoHaberturkCom extends PluginForHost {
                                 file = tmpfile;
                                 p = tmpP;
                             }
-                        } else if (file != null) {
+                        } else if ("m3u8".equals(key) && file == null) {
                             // hls just has master file?
                             file = tmpfile;
                             break;
