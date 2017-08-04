@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -28,7 +29,9 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,10 +45,6 @@ public class EvilAngelCom extends antiDDoSForHost {
     public EvilAngelCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.evilangel.com/en/join");
-    }
-
-    public static Browser prepBR(final Browser br, final String host) {
-        return br;
     }
 
     @Override
@@ -214,19 +213,13 @@ public class EvilAngelCom extends antiDDoSForHost {
     private static Object LOCK = new Object();
 
     /** Function can be used for all evilangel type of networks/websites. */
-    @SuppressWarnings("deprecation")
-    public void loginEvilAngelNetwork(Browser br, final Account account, String getpage, final String html_loggedin) throws Exception {
+    public void loginEvilAngelNetwork(Browser ibr, final Account account, String getpage, final String html_loggedin) throws Exception {
         synchronized (LOCK) {
             try {
                 final String host_account = account.getHoster();
                 final String url_main = "http://" + host_account + "/";
                 final Cookies cookies = account.loadCookies("");
-                /*
-                 * Set Super br as we sometimes call this function inside other host plugins and we need it especially for the captcha
-                 * handling!
-                 */
-                this.br = prepBR(br, host_account);
-                br = prepBR(br, host_account);
+                br = ibr.cloneBrowser();
                 if (host_account.equals("evilangelnetwork.com")) {
                     getpage = "http://www.evilangelnetwork.com/en/login";
                 } else if (host_account.equalsIgnoreCase("evilangel.com")) {
@@ -238,15 +231,16 @@ public class EvilAngelCom extends antiDDoSForHost {
                     br.setCookies(host_account, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
+                        ibr = br.cloneBrowser();
                         return;
                     }
-
                     getPage(br, getpage);
                     if (br.containsHTML(html_loggedin)) {
                         account.saveCookies(br.getCookies(host_account), "");
+                        ibr = br.cloneBrowser();
                         return;
                     }
-                    br = prepBR(new Browser(), host_account);
+                    br = new Browser();
                 }
                 /* We re over 18 */
                 br.setFollowRedirects(true);
@@ -257,10 +251,8 @@ public class EvilAngelCom extends antiDDoSForHost {
                     account.setAccountInfo(ai);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-
-                final String[] csrftokens = br.getRegex("name=\"csrfToken\" value=\"([^<>\"]*?)\"").getColumn(0);
-                final String back = br.getRegex("name=\"back\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (csrftokens == null || csrftokens.length == 0 || back == null) {
+                final Form login = br.getFormbyProperty("id", "loginForm");
+                if (login == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -269,42 +261,49 @@ public class EvilAngelCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                final String csrftoken = csrftokens[csrftokens.length - 1];
-
-                final Date d = new Date();
-                SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-                final String date = sd.format(d);
-                sd = new SimpleDateFormat("k:mm");
-                final String time = sd.format(d);
-                final String timedatestring = date + " " + time;
-                br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
-                br.setCookie(url_main, "mOffset", "1");
-                br.setCookie(url_main, "origin", "promo");
-                br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
-                final String captcha_id = br.getRegex("name=\"captcha\\[id\\]\" value=\"([A-Za-z0-9\\.]+)\"").getMatch(0);
-                String postData = "csrfToken=" + csrftoken + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Click+here+to+login&mDate=&mTime=&mOffset=&back=" + Encoding.urlEncode(back);
-                String url_language = new Regex(br.getURL(), "https?://[^/]+/([A-Za-z]{2})/").getMatch(0);
-                if (url_language == null) {
-                    url_language = "en";
+                {
+                    final Date d = new Date();
+                    SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+                    final String date = sd.format(d);
+                    sd = new SimpleDateFormat("k:mm");
+                    final String time = sd.format(d);
+                    final String timedatestring = date + " " + time;
+                    br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
+                    br.setCookie(url_main, "mOffset", "1");
+                    br.setCookie(url_main, "origin", "promo");
+                    br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
                 }
-                /* Handle stupid login captcha */
-                if (captcha_id != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", host_account, "http://" + host_account, true);
-                    if (this.getDownloadLink() == null) {
+                login.setAction("/en/login");
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                if (login.containsHTML("g-recaptcha")) {
+                    // recaptchav2
+                    final DownloadLink orig = this.getDownloadLink();
+                    try {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
                         this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+
+                            @Override
+                            public String getSiteKey() {
+                                return getSiteKey(login.getHtmlCode());
+                            }
+
+                        }.getToken();
+                        login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(orig);
                     }
-                    final String captcha_url = "http://www." + host_account + "/" + url_language + "/captcha/" + captcha_id;
-                    final String code = getCaptchaCode(captcha_url, dummyLink);
-                    postData += "&captcha%5Bid%5D=" + captcha_id + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
                 }
-                postPage(br, br.getURL(), postData);
+                login.remove("submit");
+                submitForm(login);
                 if (br.containsHTML(">Your account is deactivated for abuse")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
                     account.setAccountInfo(ai);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (!br.containsHTML(html_loggedin)) {
+                if (br.containsHTML(">Wrong username or password provided. Please try again\\\\.<") || !br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -314,6 +313,8 @@ public class EvilAngelCom extends antiDDoSForHost {
                     }
                 }
                 account.saveCookies(br.getCookies(host_account), "");
+                ibr = br.cloneBrowser();
+                account.setType(AccountType.PREMIUM);
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -334,7 +335,6 @@ public class EvilAngelCom extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium account");
         return ai;
     }
 
@@ -344,7 +344,7 @@ public class EvilAngelCom extends antiDDoSForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
