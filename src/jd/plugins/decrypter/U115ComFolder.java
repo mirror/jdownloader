@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
+
 import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -53,11 +55,8 @@ public class U115ComFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.getPage(parameter);
-        if (br.containsHTML("(>文件夹提取码不存在<|>文件拥有者未分享该文件夹。<)")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.containsHTML(">文件夹提取码不存在<|>文件拥有者未分享该文件夹。<") || br._getURL().getPath().equals("/lb/")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML(PASSCODETEXT)) {
