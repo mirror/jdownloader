@@ -16,11 +16,13 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -32,26 +34,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" })
 public class EdiskCz extends PluginForHost {
 
-    private static final String MAINPAGE = "http://www.edisk.cz/";
+    private static final String MAINPAGE = "https://www.edisk.eu/";
 
     public EdiskCz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("https://www.edisk.eu/credit/");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
         final String linkpart = new Regex(link.getDownloadURL(), "(stahni|download)/(.+)").getMatch(1);
-        link.setUrlDownload("http://www.edisk.cz/en/download/" + linkpart);
+        link.setUrlDownload("http://www.edisk.eu/download/" + linkpart);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.edisk.cz/podminky";
+        return "https://www.edisk.eu/podminky-pouziti-sluzby-1/";
     }
 
     @Override
@@ -65,7 +65,7 @@ public class EdiskCz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
@@ -73,14 +73,14 @@ public class EdiskCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2016-11-23: New */
-        final Regex fileinfo = this.br.getRegex("<h1>([^<>\"]+) \\((\\d+[^<>\"]+)\\)</h1>");
+        final Regex fileinfo = br.getRegex("<h1>([^<>\"]+) \\((\\d+[^<>\"]+)\\)</h1>");
         String filename = fileinfo.getMatch(0);
         if (filename == null) {
-            filename = this.br.getRegex("/filetypes/[a-z0-9]+\\.png\" alt=\"([^<>\"]+)\"").getMatch(0);
+            filename = br.getRegex("/filetypes/[a-z0-9]+\\.png\" alt=\"([^<>\"]+)\"").getMatch(0);
         }
         String filesize = fileinfo.getMatch(1);
         if (filename == null || filesize == null) {
@@ -102,8 +102,8 @@ public class EdiskCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        final String url_download = this.br.getURL();
-        final String fid = this.br.getRegex("data\\.filesId\\s*?=\\s*?(\\d+);").getMatch(0);
+        final String url_download = br.getURL();
+        final String fid = br.getRegex("data\\.filesId\\s*?=\\s*?(\\d+);").getMatch(0);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -111,16 +111,16 @@ public class EdiskCz extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         /* Critical header!! */
         br.getHeaders().put("Requested-With-AngularJS", "true");
-        // this.br.getPage("/files/downloadslow/" + fid);
-        this.br.postPageRaw("/ajax/generatecaptcha", "{\"url\":\"/files/downloadslow/" + fid + "/\"}");
-        final String captchaurl = PluginJSonUtils.getJsonValue(this.br, "captcha");
+        // br.getPage("/files/downloadslow/" + fid);
+        br.postPageRaw("/ajax/generatecaptcha", "{\"url\":\"/files/downloadslow/" + fid + "/\"}");
+        final String captchaurl = PluginJSonUtils.getJsonValue(br, "captcha");
         if (captchaurl == null || captchaurl.equals("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String code = this.getCaptchaCode(captchaurl, downloadLink);
-        this.br.postPageRaw(url_download, "{\"triplussest\":\"devÄt\",\"captcha_id\":\"/files/downloadslow/" + fid + "/\",\"captcha\":\"" + code + "\"}");
-        String dllink = PluginJSonUtils.getJsonValue(this.br, "redirect");
-        final String redirect_because_of_invalid_captcha = PluginJSonUtils.getJsonValue(this.br, "msg");
+        br.postPageRaw(url_download, "{\"triplussest\":\"devÄt\",\"captcha_id\":\"/files/downloadslow/" + fid + "/\",\"captcha\":\"" + code + "\"}");
+        String dllink = PluginJSonUtils.getJsonValue(br, "redirect");
+        final String redirect_because_of_invalid_captcha = PluginJSonUtils.getJsonValue(br, "msg");
         if ((dllink == null || dllink.equals("")) && redirect_because_of_invalid_captcha != null) {
             /* E.g. {"type":"json","msg":"Neplatn\u00fd captcha k\u00f3d","msgtype":"danger","error":true} */
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -130,12 +130,12 @@ public class EdiskCz extends PluginForHost {
         if (!dllink.startsWith("http") && !dllink.startsWith("/")) {
             dllink = "/" + dllink;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getHttpConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultaneous downloads", 10 * 60 * 1000l);
-            } else if (this.br.containsHTML("Pomalu je možné stáhnout pouze 1 soubor") || this.br.getURL().contains("/kredit")) {
+            } else if (br.containsHTML("Pomalu je možné stáhnout pouze 1 soubor") || br.getURL().contains("/kredit")) {
                 /*
                  * E.g. "<p>Pomalu je možné stáhnout pouze 1 soubor / 24 hodin. Pro stažení dalšího souboru si musíš <a href="/kredit/
                  * ">koupit kredit</a>.</p>"
@@ -176,7 +176,7 @@ public class EdiskCz extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -198,22 +198,25 @@ public class EdiskCz extends PluginForHost {
         if (ia == null) {
             ai = account.getAccountInfo();
         }
-        this.setBrowserExclusive();
+        br = new Browser();
         prepBr();
         br.setFollowRedirects(true);
-        br.postPage("http://www.edisk.cz/account/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&form_id=Form_Login");
-        // if (br.getCookie(MAINPAGE, "randStr") == null || br.getCookie(MAINPAGE, "email") == null) {
+        br.getPage("https://www.edisk.eu/account/login");
+        final Form login = br.getFormbyAction("/account/login/");
+        login.put("email", account.getUser());
+        login.put("password", account.getPass());
+        br.submitForm(login);
         if (br.getURL().contains("/account/login/")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (!br.getURL().endsWith("/account/stats/")) {
             br.getPage("/account/stats/");
         }
-        String availabletraffic = br.getRegex("<strong>Kredit\\s*:\\s*</strong>\\s*(\\d+)\\s*</span>").getMatch(0);
-        if (availabletraffic != null) {
+        String availabletraffic = br.getRegex("\\(Credit:\\s*(\\d+)\\s*\\)\\s*</strong>").getMatch(0);
+        if (availabletraffic != null && !"0".equals(availabletraffic)) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "MB"));
             account.setValid(true);
-            ai.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
             if (ia == null) {
                 account.setAccountInfo(ai);
             }
@@ -222,7 +225,9 @@ public class EdiskCz extends PluginForHost {
             /* Check if credit = zero == free account - till now there is no better way to verify this!. */
             /* 20170102 If revert is needed, revert to revision: 35520 */
             account.setValid(true);
-            ai.setStatus("Free Account");
+            account.setType(AccountType.FREE);
+            // can free accounts download? handlePremium would indicate yes
+            ai.setUnlimitedTraffic();
             if (ia == null) {
                 account.setAccountInfo(ai);
             }
@@ -230,7 +235,7 @@ public class EdiskCz extends PluginForHost {
     }
 
     private void prepBr() {
-        br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
     }
 
     @Override
