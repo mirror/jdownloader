@@ -46,7 +46,7 @@ public class HqqTv extends antiDDoSForHost {
 
     /* Connection stuff */
     private static final int FREE_MAXDOWNLOADS = 1;
-    private String           hls_master        = null;
+    private String           hls_downloadurl   = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -66,7 +66,7 @@ public class HqqTv extends antiDDoSForHost {
         // ip
         getPage(ajax, "//hqq.watch/player/ip.php?type=json");
         String ip = PluginJSonUtils.getJsonValue(ajax, "ip");
-        String ipBlacklist = PluginJSonUtils.getJsonValue(ajax, "ip_blacklist");
+        final String ipBlacklist = PluginJSonUtils.getJsonValue(ajax, "ip_blacklist");
         String vid = data[0];
         String at = data[1];
         StringBuffer sb = new StringBuffer();
@@ -87,7 +87,7 @@ public class HqqTv extends antiDDoSForHost {
         sb.append("&embed_from=");
         sb.append(data[6]);
         sb.append("&need_captcha=");
-        if (ipBlacklist.equals("1")) {
+        if (ipBlacklist != null && ipBlacklist.equals("1")) {
             sb.append("1");
         } else {
             sb.append(data[7]);
@@ -130,7 +130,7 @@ public class HqqTv extends antiDDoSForHost {
         if (obfLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        hls_master = decodeLink(obfLink);
+        hls_downloadurl = decodeLink(obfLink);
         return AvailableStatus.TRUE;
     }
 
@@ -172,14 +172,11 @@ public class HqqTv extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // br.getPage(hls_master);
-        // final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-        // if (hlsbest == null) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        final String url_hls = hls_master; // hlsbest.getDownloadurl();
+        if (hls_downloadurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, url_hls);
+        dl = new HLSDownloader(downloadLink, br, hls_downloadurl);
         dl.startDownload();
     }
 
