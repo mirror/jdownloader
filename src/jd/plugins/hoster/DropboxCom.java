@@ -1,6 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
@@ -12,6 +11,14 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,14 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -59,6 +58,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     public interface DropboxConfig extends PluginConfigInterface {
+
         @DefaultBooleanValue(false)
         @AboutConfig
         @DescriptionForConfigEntry("If enabled, the Linkgrabber will offer a zip archive to download folders")
@@ -91,6 +91,10 @@ public class DropboxCom extends PluginForHost {
                     try {
                         br.setFollowRedirects(true);
                         con = i == 0 ? br.openHeadConnection(url) : br.openGetConnection(url);
+                        if (con.getResponseCode() == 400) {
+                            // invalid url
+                            return AvailableStatus.FALSE;
+                        }
                         if (!con.getContentType().contains("html")) {
                             link.setProperty("directlink", con.getURL().toString());
                             link.setDownloadSize(con.getLongContentLength());
@@ -273,7 +277,7 @@ public class DropboxCom extends PluginForHost {
                     url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "?dl=1");
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("Directlink leads to HTML code...");
                 br.followConnection();
@@ -337,7 +341,7 @@ public class DropboxCom extends PluginForHost {
                 dlURL = dlURL + "&dl=1";
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlURL, resume, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlURL, resume, 1);
         final URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200) {
             con.disconnect();
@@ -353,7 +357,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     /* is only used for website logins */
-    private void login(final Account account, boolean refresh) throws IOException, PluginException {
+    private void login(final Account account, boolean refresh) throws Exception {
         boolean ok = false;
         synchronized (LOCK) {
             setBrowserExclusive();
