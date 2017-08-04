@@ -110,6 +110,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              ownerID                                         = null;
     private String              contentID                                       = null;
     private String              mainlink                                        = null;
+    private static final String ALPHANUMERIC                                    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -302,11 +303,15 @@ public class VKontakteRuHoster extends PluginForHost {
                          * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's try
                          * both variants.
                          */
-                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
+                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID + "," + ownerID + "_" + contentID);
                         url = audioGetDirectURL();
                         if (url == null) {
-                            postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
+                            postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
                             url = audioGetDirectURL();
+                            if (url == null) {
+                                postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
+                                url = audioGetDirectURL();
+                            }
                         }
                     }
                     if (url == null) {
@@ -457,10 +462,103 @@ public class VKontakteRuHoster extends PluginForHost {
         dl.startDownload();
     }
 
+    private String decryptURLSubR(String decryptType, String t, String e) {
+        String result = null;
+        StringBuffer sb;
+        if (decryptType == null) {
+        } else {
+            switch (decryptType) {
+            case "v":
+                result = new StringBuffer(t).reverse().toString();
+                break;
+            case "r":
+                int pos = Integer.parseInt(e);
+                sb = new StringBuffer(t);
+                String o = ALPHANUMERIC + ALPHANUMERIC;
+                for (int a = sb.length() - 1; a >= 0; a--) {
+                    int i = o.indexOf(sb.charAt(a));
+                    if (i != -1) {
+                        i = i - pos;
+                        if (i < 0) {
+                            i = o.length() + i;
+                        }
+                        sb.setCharAt(a, o.substring(i, i + 1).charAt(0));
+                    }
+                }
+                result = sb.toString();
+                break;
+            case "x":
+                char eCharValue = e.charAt(0);
+                sb = new StringBuffer();
+                for (int i = 0; i < t.length(); i++) {
+                    sb.append(Character.valueOf((char) (t.charAt(i) ^ eCharValue)));
+                }
+                result = sb.toString();
+                break;
+            }
+        }
+        return result;
+    }
+
+    private String decryptURLSubA(String t) {
+        if (t == null || t.length() % 4 == 1) {
+            return null;
+        }
+        StringBuffer result = new StringBuffer();
+        int e = 0, i, o = 0;
+        for (int a = 0; a < t.length(); a++) {
+            i = ALPHANUMERIC.indexOf(t.charAt(a));
+            if (i != -1) {
+                if (o % 4 != 0) {
+                    e = 64 * e + i;
+                } else {
+                    e = i;
+                }
+                if (o++ % 4 != 0) {
+                    result.append(Character.valueOf((char) (255 & e >> (-2 * o & 6))));
+                }
+            }
+        }
+        return result.toString();
+    }
+
+    private String decryptURL(final String url) {
+        String result = url;
+        if (!url.contains("audio_api_unavailable")) {
+            return result;
+        }
+        String[] hash = url.split("\\?extra=")[1].split("#");
+        String o = decryptURLSubA(hash[1]);
+        String e = decryptURLSubA(hash[0]);
+        if (o == null || e == null) {
+            return result;
+        }
+        String[] oa = o.split(Character.valueOf((char) 9).toString());
+        for (int n = oa.length - 1; n >= 0; n--) {
+            String[] l = oa[n].split(Character.valueOf((char) 11).toString());
+            if (l.length == 0) {
+                return result;
+            }
+            if (!"v".equals(l[0]) && !"r".equals(l[0]) && !"x".equals(l[0])) {
+                return result;
+            }
+            if ("v".equals(l[0])) {
+                e = decryptURLSubR(l[0], e, null);
+            } else {
+                e = decryptURLSubR(l[0], e, l[1]);
+            }
+        }
+        if (e != null && e.startsWith("http")) {
+            result = e;
+        }
+        return result;
+    }
+
     private String audioGetDirectURL() {
         String url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
         if (url != null) {
             url = url.replace("\\", "");
+            url = decryptURL(url);
             if (!audioIsValidDirecturl(url)) {
                 url = null;
             }
