@@ -464,10 +464,10 @@ public class VKontakteRu extends PluginForDecrypt {
         if (album_id != null) {
             postData = "act=load_silent&al=1&album_id=" + album_id + "&band=false&owner_id=" + owner_ID;
         } else {
-            postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
+            postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&is_loading_all=1&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
         }
         br.postPage(getBaseURL() + "/al_audio.php", postData);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(regexJsonInsideHTML(this.br));
         if (StringUtils.isEmpty(fpName)) {
             fpName = (String) entries.get("title");
         }

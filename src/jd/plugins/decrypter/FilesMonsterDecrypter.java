@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+|player/v\\d+/video/[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,6 +43,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     public static final String  FILENAMEREGEX            = "\">File name:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
     public static final String  FILESIZEREGEX            = "\">File size:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
+    private static final String TYPE_EMBEDDED            = ".+/player/v3/video/.+";
 
     /**
      * TODO: Seems like some urls only have a free download option available if a certain Referer is present e.g.
@@ -52,7 +53,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String FAILED = null;
-        final boolean onlyAddNeededLinks = SubConfiguration.getConfig("filesmonster.com").getBooleanProperty(ADDLINKSACCOUNTDEPENDANT, false);
+        final boolean onlyAddNeededLinks = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(ADDLINKSACCOUNTDEPENDANT, false);
         boolean addFree = true;
         boolean addPremium = true;
         if (onlyAddNeededLinks) {
@@ -91,7 +92,13 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
-        final String parameter = param.toString();
+        final String parameter;
+        if (param.toString().matches(TYPE_EMBEDDED)) {
+            final String url_id = new Regex(param.toString(), "/([^/]+)$").getMatch(0);
+            parameter = String.format("https://%s/download.php?id=%s", this.getHost(), url_id);
+        } else {
+            parameter = param.toString();
+        }
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
         String browserReferrer = getBrowserReferrer();
         if (browserReferrer != null) {

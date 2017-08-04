@@ -49,7 +49,9 @@ public class GayfilesmonsterCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String[] links = br.getRegex("\"(https?://gayfilesmonster\\.com/go\\.php\\?file=[a-zA-Z0-9_/\\+\\=\\-%]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
+            /* Embedded filesmonster.com URLs */
+            final String[] links_embedded = br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+)\"").getColumn(0);
+            if (links.length == 0 && links_embedded.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -59,6 +61,9 @@ public class GayfilesmonsterCom extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(dl);
+            }
+            for (final String singleLink : links_embedded) {
+                decryptedLinks.add(this.createDownloadlink(singleLink));
             }
         }
         return decryptedLinks;

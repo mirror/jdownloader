@@ -13,12 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,11 +39,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxetv\\-vimp\\.mivitec\\.net/.*?/?video/[^/]+/[a-f0-9]{32}.*" })
 public class DeluxemusicTv extends PluginForHost {
-
     public DeluxemusicTv(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: https forced
@@ -50,7 +53,6 @@ public class DeluxemusicTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -73,8 +75,13 @@ public class DeluxemusicTv extends PluginForHost {
         final String url_filename = urlregex.getMatch(0);
         /* Set unique videoid. */
         link.setLinkID(fid);
-
         br.getPage(link.getDownloadURL());
+        final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DeluxemusicTv.DeluxemusicTvConfigInterface.class);
+        /*
+         * Usually this setting is for decrypters but in this case their contentservers are very slow which is why users can disable the
+         * filesize check - it speeds up the linkcheck for this plugin!
+         */
+        final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !this.br.getURL().matches(".*?[a-f0-9]{32}.*?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 500) {
@@ -102,17 +109,7 @@ public class DeluxemusicTv extends PluginForHost {
         } else {
             dllink = "https://deluxetv-vimp.mivitec.net/getMedium/" + fid + ".mp4";
         }
-        final String discodeluxe_setnumber_str = new Regex(filename, Pattern.compile("DISCO.*?DELUXE.*?Set.{0,}?(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (discodeluxe_setnumber_str != null) {
-            final int discodeluxe_setnumber = Integer.parseInt(discodeluxe_setnumber_str);
-            final String discodeluxe_setnumber_str_formatted = new DecimalFormat("000").format(discodeluxe_setnumber);
-            filename = "deluxemusictv_disco_deluxe_set_" + discodeluxe_setnumber_str_formatted;
-        } else {
-            filename = "deluxemusictv_" + filename;
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        filename = nicerDicerFilename(filename);
         final String ext;
         if (dllink != null) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -122,7 +119,7 @@ public class DeluxemusicTv extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (dllink != null) {
+        if (dllink != null && !fastlinkcheck) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             final Browser br2 = br.cloneBrowser();
@@ -148,6 +145,23 @@ public class DeluxemusicTv extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static String nicerDicerFilename(String name) {
+        if (name == null) {
+            return null;
+        }
+        final String discodeluxe_setnumber_str = new Regex(name, Pattern.compile("DISCO.*?DELUXE.*?Set.{0,}?(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (discodeluxe_setnumber_str != null) {
+            final int discodeluxe_setnumber = Integer.parseInt(discodeluxe_setnumber_str);
+            final String discodeluxe_setnumber_str_formatted = new DecimalFormat("000").format(discodeluxe_setnumber);
+            name = "deluxemusictv_disco_deluxe_set_" + discodeluxe_setnumber_str_formatted;
+        } else {
+            name = "deluxemusictv_" + name;
+        }
+        name = Encoding.htmlDecode(name);
+        name = name.trim();
+        return name;
     }
 
     private String getLowerQualityVideourl(final String fid) {
@@ -189,6 +203,42 @@ public class DeluxemusicTv extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public String getDescription() {
+        return "Lade Videos aus der DeluxeTV Mediathek herunter";
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return DeluxemusicTvConfigInterface.class;
+    }
+
+    public static interface DeluxemusicTvConfigInterface extends PluginConfigInterface {
+        public static class TRANSLATION {
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
+            }
+
+            public String getEnableCategoryCrawler_label() {
+                return "Enable category crawler? This may add huge amounts of URLs!";
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(false)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isEnableCategoryCrawler();
+
+        void setEnableCategoryCrawler(boolean b);
     }
 
     @Override
