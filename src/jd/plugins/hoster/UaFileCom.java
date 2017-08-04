@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
@@ -27,10 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uafile.com" }, urls = { "http://(www\\.)?uafile\\.com/file/\\d+/[^<>\"/]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uafile.com" }, urls = { "http://(www\\.)?uafile\\.com/file/\\d+/[^<>\"/]+\\.html" })
 public class UaFileCom extends PluginForHost {
 
     public UaFileCom(PluginWrapper wrapper) {
@@ -88,7 +88,7 @@ public class UaFileCom extends PluginForHost {
         }
         final Browser ajaxBR = br.cloneBrowser();
         ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
+        ajaxBR.addAllowedResponseCodes(500);
         final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
         if (rcID != null) {
             final Recaptcha rc = new Recaptcha(br, this);
@@ -101,13 +101,16 @@ public class UaFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (br.containsHTML(this.getHost() + "/captcha\\.php\"")) {
-            final String code = getCaptchaCode("mhfstandard", COOKIE_HOST + "/captcha.php?rand=" + System.currentTimeMillis(), downloadLink);
+            final String code = getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), downloadLink);
             ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&captchacode=" + code);
             if (ajaxBR.containsHTML("Captcha number error or expired")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else {
             ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
+        }
+        if (ajaxBR.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Host issue");
         }
         final String reconnectWaittime = ajaxBR.getRegex("You must wait (\\d+) mins\\. for next download.").getMatch(0);
         if (reconnectWaittime != null) {
@@ -129,7 +132,7 @@ public class UaFileCom extends PluginForHost {
             wait = Integer.parseInt(waittime);
         }
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalLink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
