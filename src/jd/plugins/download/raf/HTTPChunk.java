@@ -167,11 +167,8 @@ public class HTTPChunk extends Thread {
                 } else {
                     requestedRange = null;
                 }
-                if (requestedRange != null) {
-                    request.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, requestedRange, false));
-                } else {
-                    request.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, null, false));
-                }
+                request.getHeaders().remove(HTTPConstants.HEADER_REQUEST_RANGE);
+                request.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, requestedRange, false));
                 try {
                     downloadable.waitForNextConnectionAllowed();
                 } catch (InterruptedException e1) {
