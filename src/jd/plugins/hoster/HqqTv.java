@@ -19,6 +19,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -53,6 +54,10 @@ public class HqqTv extends antiDDoSForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
+        final String url_name = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        /* Set this temporary name so that offline URLs have 'ok'-names. */
+        link.setName(url_name);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,8 +102,10 @@ public class HqqTv extends antiDDoSForHost {
         // html
         getPage(sb.toString());
         //
-        String filename = br.getRegex("title\":\\s*\"([^\"]+)").getMatch(0);
-        link.setFinalFileName(filename + ".mp4");
+        final String filename = br.getRegex("title\":\\s*\"([^\"]+)").getMatch(0);
+        if (filename != null) {
+            link.setFinalFileName(filename + ".mp4");
+        }
         String[] escapedString = br.getRegex("document.write\\(unescape\\(\"([^\"]*)").getColumn(0);
         StringBuffer unescapedString = new StringBuffer();
         for (String es : escapedString) {
