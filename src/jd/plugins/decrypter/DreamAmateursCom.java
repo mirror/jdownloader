@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/.*?\\.html|link/\\d+/|\\d+/\\w+\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/\\w+\\.html|link/\\d+/|\\d+/\\w+\\.html|\\w+/\\d+/\\w+)" })
 public class DreamAmateursCom extends PornEmbedParser {
 
     public DreamAmateursCom(PluginWrapper wrapper) {
@@ -35,9 +35,9 @@ public class DreamAmateursCom extends PornEmbedParser {
     /* Porn_plugin */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
         if (externID != null && !externID.contains("dreamamateurs.com/")) {
@@ -45,10 +45,10 @@ public class DreamAmateursCom extends PornEmbedParser {
             return decryptedLinks;
         } else if (externID != null) {
             /* Follow redirect */
-            this.br.getPage(externID);
+            br.getPage(externID);
             externID = null;
         }
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
