@@ -26,6 +26,15 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,15 +55,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?vidtodo\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class VidtodoCom extends antiDDoSForHost {
@@ -305,24 +305,28 @@ public class VidtodoCom extends antiDDoSForHost {
 
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = new Regex(correctedBR, "<div id=\"content\" class=\"left\">\\s*<h2>\\s*(.*?)\\s*</h2>").getMatch(0);
             if (inValidate(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    /* traits from download1 page below */
+                    fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                     if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // next two are details from sharing box
+                        fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                        /* traits from download1 page below */
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        /* Link of the box without filesize */
+                                        fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    }
                                 }
                             }
+
                         }
                     }
                 }
