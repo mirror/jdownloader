@@ -16,11 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,10 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //IMPORTANT: The name of the plugin is CORRECT!
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2host.com" }, urls = { "http://(www\\.)?f2h(\\.nana\\d+)?\\.co\\.il/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2host.com" }, urls = { "https?://(www\\.)?f2h(\\.nana\\d+)?\\.co\\.il/\\d+" })
 public class File2HostCom extends PluginForHost {
 
     public File2HostCom(PluginWrapper wrapper) {
@@ -44,21 +43,28 @@ public class File2HostCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        // enforce https
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("https?://", "https://"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("HTTP-EQUIV=\"Refresh\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex info = br.getRegex("<div style=\"text\\-align: right; margin\\-top: 2px;\">([^<>\"]*?) <font dir=\"ltr\"><br>\\(([^<>\"]*?)\\) </font>");
+        final Regex info = br.getRegex("<div itemprop=\"name\">\\s*([^<>\"]*?)\\s*</div>\\s*<font dir=\"ltr\"><br>\\s*\\(([^<>\"]*?)\\)\\s*</font>");
         String filename = info.getMatch(0);
         if (filename == null) {
-            filename = this.br.getRegex("itemprop=\"name\">([^<>\"]+)<").getMatch(0);
+            filename = br.getRegex("itemprop=\"name\">([^<>\"]+)<").getMatch(0);
         }
         String filesize = info.getMatch(1);
         if (filesize == null) {
-            filesize = this.br.getRegex("itemprop=\"contentSize\" content=\"([^<>\"]+)\"").getMatch(0);
+            filesize = br.getRegex("itemprop=\"contentSize\" content=\"([^<>\"]+)\"").getMatch(0);
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -72,11 +78,20 @@ public class File2HostCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("\\'(files/\\d+\\|[^<>\"\\']+)\\'").getMatch(0);
+        // now have form
+        Form thanks = br.getFormbyActionRegex(".+/thanks/.+");
+        if (thanks == null) {
+            thanks = br.getForm(0);
+            if (thanks == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        br.submitForm(thanks);
+        final String dllink = br.getRegex("('|\")((?:(?:https?:)?//[^/]+)?/files/\\d+\\|[^<>\"\\']+)\\1").getMatch(1);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "", true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
