@@ -17,7 +17,6 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 
 public class ArchiveSandbox {
-
     private final Archive archive;
 
     public ArchiveSandbox(Archive archive) {
@@ -78,15 +77,17 @@ public class ArchiveSandbox {
     public Object getInfo() {
         if (archive != null) {
             return ((ScriptThread) Thread.currentThread()).toNative(archive.getSettings());
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getArchiveType() {
         if (archive != null) {
             return archive.getSplitType() == null ? (String.valueOf(archive.getArchiveType())) : (String.valueOf(archive.getSplitType()));
+        } else {
+            return ArchiveType.RAR_MULTI.name();
         }
-        return ArchiveType.RAR_MULTI.name();
     }
 
     public String getExtractToFolder() {
