@@ -463,15 +463,15 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private String decryptURLSubR(String decryptType, String t, String e) {
-        String result = null;
-        StringBuffer sb;
+        final String result;
         if (decryptType == null) {
+            result = null;
         } else {
             if ("v".equals(decryptType)) {
                 result = new StringBuffer(t).reverse().toString();
             } else if ("r".equals(decryptType)) {
-                int pos = Integer.parseInt(e);
-                sb = new StringBuffer(t);
+                final int pos = Integer.parseInt(e);
+                final StringBuffer sb = new StringBuffer(t);
                 String o = ALPHANUMERIC + ALPHANUMERIC;
                 for (int a = sb.length() - 1; a >= 0; a--) {
                     int i = o.indexOf(sb.charAt(a));
@@ -485,12 +485,14 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 result = sb.toString();
             } else if ("x".equals(decryptType)) {
-                char eCharValue = e.charAt(0);
-                sb = new StringBuffer();
+                final char eCharValue = e.charAt(0);
+                final StringBuffer sb = new StringBuffer();
                 for (int i = 0; i < t.length(); i++) {
                     sb.append(Character.valueOf((char) (t.charAt(i) ^ eCharValue)));
                 }
                 result = sb.toString();
+            } else {
+                result = null;
             }
         }
         return result;
