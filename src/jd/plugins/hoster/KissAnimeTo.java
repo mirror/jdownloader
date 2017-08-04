@@ -13,7 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
+
+import org.jdownloader.plugins.components.RefreshSessionLink;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -25,11 +28,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.plugins.components.RefreshSessionLink;
-
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "kissanime.to" }, urls = { "http://(www\\.)?51\\.15\\.\\d{1,3}\\.\\d{1,3}(?::\\d+)?/videoplayback\\?hash=[^\"'\\s<>]+" })
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "kissanime.to" }, urls = { "https?://(www\\.)?51\\.15\\.\\d{1,3}\\.\\d{1,3}(?::\\d+)?/videoplayback\\?[^\"'\\s<>]+" })
 public class KissAnimeTo extends PluginForHost {
+
     // raztoki embed video player template.
+
     private String dllink = null;
 
     public KissAnimeTo(PluginWrapper wrapper) {
