@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -65,18 +66,10 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
-    /**
-     * Status 2015-06-26: HD downloads via API work fine again. They have not been working for ~ a month but it's all back to normal now!
-     */
     /* Static information */
-    private static final String   APIKEY_android_1_9_2                      = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
-    /* "Reserve" API Keys - Date: 02.02.2015 */
-    // private static final String APIKEY_android_2_1_0 =
-    // "QTJGQ0YyNjQtMDBCNS00QkZELUE5RUQtNTlENDdGRDE5M0VF";
-    // private static final String APIKEY_windows_xp_dlm_2_2_0_0 =
-    // "RTI4NDVGQUQtRkE2My00RTQ2LTlDRTgtRjlBNUE4REY0N0U4";
-    // private static final String APIKEY_windows_8_beta_app =
-    // "QkQ3NTExRTEtOTk5Ni00QkMwLTlENDctMEI3QjRFNTk4RjI0";
+    // private static final String API_APP_NAME = "JDownloader";
+    private static final String   API_PUBLIC_KEY                            = "NOT_YET_DONE";
+    private static final String   API_SECRET_KEY                            = "NOT_YET_DONE";
     /*
      * Doc of an eventually soon existing new (finally public) API [Date added: 2015-06-25]: https://api.save.tv/v3/docs/index
      */
@@ -86,7 +79,7 @@ public class SaveTv extends PluginForHost {
     private final String          LINKTYPE_MAYBE_NOT_YET_DOWNLOADABLE       = ".+/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
     /* Direct url --> We will change these to LINKTYPE_NORMAL */
     private final static String   LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
-    public static final String    APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
+    public static final String    API_BASE                                  = "https://api.save.tv/v3";
     public static final double    QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
     public static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE         = 4.64;
@@ -259,6 +252,14 @@ public class SaveTv extends PluginForHost {
         this.currAcc = acc;
         this.currDownloadLink = dl;
         this.cfg = this.getPluginConfig();
+    }
+
+    public static String getAPIClientID() {
+        return API_PUBLIC_KEY;
+    }
+
+    public static String getAPISecretKey() {
+        return API_SECRET_KEY;
     }
 
     /**
@@ -883,99 +884,128 @@ public class SaveTv extends PluginForHost {
         return preferAdsFreeConfig;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
+        final AccountInfo ai;
         setConstants(account, null);
         loginSafe(this.br, account, true);
-        /* We're logged in - don't fail here! */
+        if (is_API_enabled()) {
+            ai = fetchAccountInfoAPI(account);
+        } else {
+            ai = fetchAccountInfoWebsite(account);
+        }
+        /* Unlimited traffic == default */
+        // ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    /**
+     * TODO: Can't we find the expire date of the account?
+     *
+     * @throws Exception
+     */
+    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        String package_name = null;
+        api_GET(br, "/user?fields=contract.hasxlpackage%2C%20contract.hasxxlpackage%2C%20contract.islocked%2C%20contract.isrunning%2C%20contract.packagename");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("contract");
+        final boolean isPremium = ((Boolean) entries.get("isRunning")).booleanValue();
+        package_name = (String) entries.get("packageName");
+        if (isPremium) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        if (StringUtils.isEmpty(package_name)) {
+            package_name = ACCOUNTTYPE_UNKNOWN;
+        }
+        ai.setStatus(package_name);
+        account.setProperty(PROPERTY_acc_type, package_name);
+        return ai;
+    }
+
+    private AccountInfo fetchAccountInfoWebsite(final Account account) {
+        final AccountInfo ai = new AccountInfo();
+        /* Do not fail here, TODO: Improve this */
         String package_name = null;
         try {
-            if (is_API_enabled()) {
-                // doSoapRequest("http://tempuri.org/IUser/GetUserStatus", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId>");
-                package_name = ACCOUNTTYPE_DEFAULT;
-            } else {
-                /*
-                 * Get long lasting login cookie. Keep in mind that such a cookie can only exist once for every account so in case a user
-                 * uses multiple JDs it might happen that they "steal" themselves this cookie but it should still work fine for up to 3
-                 * JDownloader instances.
-                 */
-                String long_cookie = br.getCookie("http://" + this.getHost(), "SLOCO");
-                if (long_cookie == null || long_cookie.trim().equals("bAutoLoginActive=1")) {
-                    logger.info("Long session cookie does not exist yet/anymore - enabling it");
-                    br.postPage("https://www." + this.getHost() + "/STV/M/obj/user/submit/submitAutoLogin.cfm", "IsAutoLogin=true&Messages=");
-                    long_cookie = br.getCookie("http://save.tv/", "SLOCO");
-                    if (long_cookie == null || long_cookie.trim().equals("")) {
-                        logger.info("Failed to get long session cookie");
-                    } else {
-                        logger.info("Successfully received long session cookie and saved cookies");
-                        account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
-                    }
+            /*
+             * Get long lasting login cookie. Keep in mind that such a cookie can only exist once for every account so in case a user uses
+             * multiple JDs it might happen that they "steal" themselves this cookie but it should still work fine for up to 3 JDownloader
+             * instances.
+             */
+            String long_cookie = br.getCookie("http://" + this.getHost(), "SLOCO");
+            if (long_cookie == null || long_cookie.trim().equals("bAutoLoginActive=1")) {
+                logger.info("Long session cookie does not exist yet/anymore - enabling it");
+                br.postPage("https://www." + this.getHost() + "/STV/M/obj/user/submit/submitAutoLogin.cfm", "IsAutoLogin=true&Messages=");
+                long_cookie = br.getCookie("http://save.tv/", "SLOCO");
+                if (long_cookie == null || long_cookie.trim().equals("")) {
+                    logger.info("Failed to get long session cookie");
                 } else {
-                    logger.info("Long session cookie exists");
+                    logger.info("Successfully received long session cookie and saved cookies");
+                    account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
                 }
-                /* Find account details */
-                String price = null;
-                br.getPage("https://www." + this.getHost() + "/STV/M/obj/user/JSON/userConfigApi.cfm?iFunction=2");
-                final String acc_username = br.getRegex("\"SUSERNAME\":(\\d+)").getMatch(0);
-                final String user_packet_id = PluginJSonUtils.getJsonValue(br, "CURRENTARTICLEID");
-                /* Find the price of the package which the user uses. */
-                final String all_packages_string = br.getRegex("\"ARRRENEWARTICLES\":\\[(.*?)\\]").getMatch(0);
-                final String[] all_packets = all_packages_string.split("\\},\\{");
-                for (final String packet : all_packets) {
-                    if (packet.contains("\"ID\":" + user_packet_id + ".0")) {
-                        price = PluginJSonUtils.getJsonValue(packet, "IPRICE");
-                        if (price != null) {
-                            break;
-                        }
+            } else {
+                logger.info("Long session cookie exists");
+            }
+            /* Find account details */
+            String price = null;
+            br.getPage("https://www." + this.getHost() + "/STV/M/obj/user/JSON/userConfigApi.cfm?iFunction=2");
+            final String acc_username = br.getRegex("\"SUSERNAME\":(\\d+)").getMatch(0);
+            final String user_packet_id = PluginJSonUtils.getJsonValue(br, "CURRENTARTICLEID");
+            /* Find the price of the package which the user uses. */
+            final String all_packages_string = br.getRegex("\"ARRRENEWARTICLES\":\\[(.*?)\\]").getMatch(0);
+            final String[] all_packets = all_packages_string.split("\\},\\{");
+            for (final String packet : all_packets) {
+                if (packet.contains("\"ID\":" + user_packet_id + ".0")) {
+                    price = PluginJSonUtils.getJsonValue(packet, "IPRICE");
+                    if (price != null) {
+                        break;
                     }
-                }
-                final String expireDate_str = PluginJSonUtils.getJsonValue(br, "DCURRENTARTICLEENDDATE");
-                final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
-                long expireDate_user_display = expireDate_real;
-                final long timeleft = System.currentTimeMillis() - expireDate_real;
-                if ((timeleft > 0 && timeleft < 24 * 60 * 60 * 1000l) || (timeleft < 0 && timeleft > -2 * 60 * 60 * 1000l)) {
-                    /*
-                     * Account expired less then 24 hours ago or is only valid for 2 hours or less --> Add 24 hours to it so in case the
-                     * user has a subscription JD does not deactivate the account because save.tv needs some time to show the new expire
-                     * date.
-                     */
-                    expireDate_user_display += 24 * 60 * 60 * 1000;
-                }
-                ai.setValidUntil(expireDate_user_display);
-                account.setProperty(PROPERTY_acc_expire, expireDate_real);
-                package_name = PluginJSonUtils.getJsonValue(br, "SCURRENTARTICLENAME");
-                if (inValidate(package_name)) {
-                    /* This should never happen */
-                    package_name = ACCOUNTTYPE_DEFAULT;
-                }
-                final String runtime = new Regex(package_name, "(\\d+ Monate)").getMatch(0);
-                account.setProperty(PROPERTY_acc_package, correctData(package_name));
-                if (price != null) {
-                    account.setProperty(PROPERTY_acc_price, correctData(price));
-                }
-                if (runtime != null) {
-                    account.setProperty(PROPERTY_acc_runtime, correctData(runtime));
-                }
-                if (acc_username != null) {
-                    this.getPluginConfig().setProperty(PROPERTY_acc_username, correctData(acc_username));
-                }
-                br.getPage("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1");
-                final String totalLinks = PluginJSonUtils.getJsonValue(br, "ITOTALENTRIES");
-                if (totalLinks != null) {
-                    account.setProperty(PROPERTY_acc_count_telecast_ids, totalLinks);
                 }
             }
+            final String expireDate_str = PluginJSonUtils.getJsonValue(br, "DCURRENTARTICLEENDDATE");
+            final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
+            long expireDate_user_display = expireDate_real;
+            final long timeleft = System.currentTimeMillis() - expireDate_real;
+            if ((timeleft > 0 && timeleft < 24 * 60 * 60 * 1000l) || (timeleft < 0 && timeleft > -2 * 60 * 60 * 1000l)) {
+                /*
+                 * Account expired less then 24 hours ago or is only valid for 2 hours or less --> Add 24 hours to it so in case the user
+                 * has a subscription JD does not deactivate the account because save.tv needs some time to show the new expire date.
+                 */
+                expireDate_user_display += 24 * 60 * 60 * 1000;
+            }
+            ai.setValidUntil(expireDate_user_display);
+            account.setProperty(PROPERTY_acc_expire, expireDate_real);
+            package_name = PluginJSonUtils.getJsonValue(br, "SCURRENTARTICLENAME");
+            if (inValidate(package_name)) {
+                /* This should never happen */
+                package_name = ACCOUNTTYPE_UNKNOWN;
+            }
+            final String runtime = new Regex(package_name, "(\\d+ Monate)").getMatch(0);
+            account.setProperty(PROPERTY_acc_package, correctData(package_name));
+            if (price != null) {
+                account.setProperty(PROPERTY_acc_price, correctData(price));
+            }
+            if (runtime != null) {
+                account.setProperty(PROPERTY_acc_runtime, correctData(runtime));
+            }
+            if (acc_username != null) {
+                this.getPluginConfig().setProperty(PROPERTY_acc_username, correctData(acc_username));
+            }
+            br.getPage("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1");
+            final String totalLinks = PluginJSonUtils.getJsonValue(br, "ITOTALENTRIES");
+            if (totalLinks != null) {
+                account.setProperty(PROPERTY_acc_count_telecast_ids, totalLinks);
+            }
             account.setType(AccountType.PREMIUM);
-            account.setProperty("free", false);
         } catch (final Throwable e) {
             /* Should not happen but a failure of the account detail crawler won't hurt - we logged in fine! */
             logger.info("Extended account check failed");
         }
         ai.setStatus(package_name);
         account.setProperty(PROPERTY_acc_type, package_name);
-        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
@@ -997,7 +1027,6 @@ public class SaveTv extends PluginForHost {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
-                /* Load cookies */
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(COOKIE_HOST, cookies);
@@ -1019,7 +1048,6 @@ public class SaveTv extends PluginForHost {
                 if (acc_count_archive_entries != null) {
                     account.setProperty(PROPERTY_acc_count_archive_entries, acc_count_archive_entries);
                 }
-                /* Save cookies & account data */
                 account.saveCookies(br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -1031,50 +1059,34 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     public static String login_api(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
         api_prepBrowser(br);
-        final String lang = System.getProperty("user.language");
-        String api_sessionid = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
+        String api_access_token = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
         final long lastUse = account.getLongProperty(PROPERTY_lastuse, -1l);
-        /* Only generate new sessionID if we have none or it's older than 6 hours */
-        if (api_sessionid == null || (System.currentTimeMillis() - lastUse) > 360000 || force) {
-            api_doSoapRequest(br, "http://tempuri.org/ISession/CreateSession", "<apiKey>" + api_getAPIKey() + "</apiKey>");
-            api_sessionid = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
-            final String errorcode = br.getRegex("<ErrorCodeID xmlns=\"http://schemas\\.datacontract\\.org/2004/07/SmilingBits\\.Data\\.BusinessLayer\\.Stv\\.Api\\.Contract\\.Common\">(\\d+)</ErrorCodeID>").getMatch(0);
-            if ("1400".equals(errorcode)) {
-                if (SubConfiguration.getConfig(NICE_HOST).getStringProperty(SaveTv.CONFIGURED_APIKEY, SaveTv.defaultCONFIGURED_APIKEY) == SaveTv.defaultCONFIGURED_APIKEY) {
-                    /* Should never ever happen! */
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI-Key ungültig, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI key invalid, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+        long expires_in = account.getLongProperty("expires_in", 0);
+        /* Only generate new access_token if we have none or it's older than 6 hours */
+        if (api_access_token == null || (System.currentTimeMillis() - lastUse) > 360000 || force) {
+            /* New token required */
+            br.postPage("https://auth.save.tv/token", "grant_type=password&client_id=" + getAPIClientID() + "&client_secret=" + getAPISecretKey() + "&username={2}&password={3}");
+            api_POST(br, "https://auth.save.tv/token", "grant_type=password&client_id={0}&client_secret={1}&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            api_access_token = PluginJSonUtils.getJson(br, "access_token");
+            final String refresh_token = PluginJSonUtils.getJson(br, "refresh_token");
+            final String seconds_expires_in_str = PluginJSonUtils.getJson(br, "expires_in");
+            if (br.getHttpConnection().getResponseCode() == 400 || StringUtils.isEmpty(api_access_token) || StringUtils.isEmpty(refresh_token) || StringUtils.isEmpty(seconds_expires_in_str)) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    /* User used invalid custom API key. */
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI-Key ungültig, bitte die Standardeinstellung verwenden oder einen gültigen API-Key eingeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI key invalid, please use the standard setting or enter a valid API-Key!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (api_sessionid == null) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
+            /* 5 seconds of tolerance to avoid requests happening while our token expires. */
+            expires_in = (Long.parseLong(seconds_expires_in_str) - 5) * 1000;
+            setAPIAuthHeaders(br, api_access_token);
             account.setProperty(PROPERTY_lastuse, System.currentTimeMillis());
-            account.setProperty(PROPERTY_ACCOUNT_API_SESSIONID, api_sessionid);
+            account.setProperty(PROPERTY_ACCOUNT_API_SESSIONID, api_access_token);
+            account.setProperty("refresh_token", refresh_token);
+            account.setProperty("expires_in", System.currentTimeMillis() + expires_in);
         }
-        api_doSoapRequest(br, "http://tempuri.org/IUser/Login", "<sessionId>" + api_sessionid + "</sessionId><username>" + account.getUser() + "</username><password>" + account.getPass() + "</password>");
-        if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        return api_sessionid;
+        /* TODO: Check token and refresh it, if expired! */
+        return api_access_token;
     }
 
     /**
@@ -1126,7 +1138,7 @@ public class SaveTv extends PluginForHost {
             if (i > 1) {
                 logger.info("Successfully refreshed cookies to access url: " + url);
             }
-            handleErrorsSiteJson(br);
+            handleErrorsWebsiteJson(br);
             break;
         }
     }
@@ -1134,14 +1146,14 @@ public class SaveTv extends PluginForHost {
     /* Handles website requests + errorhandling. */
     private void postPageSafe(final Browser br, final String url, final String postData) throws Exception {
         br.postPage(url, postData);
-        handleErrorsSiteJson(br);
+        handleErrorsWebsiteJson(br);
     }
 
     /*
      * Handles website json errors.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void handleErrorsSiteJson(final Browser br) throws Exception {
+    private void handleErrorsWebsiteJson(final Browser br) throws Exception {
         /*
          * NOT use the json parser für the first check as especially when used via decrypter, the amount of data can be huge which can lead
          * to parser memory problems/crashes.
@@ -1183,11 +1195,11 @@ public class SaveTv extends PluginForHost {
 
     /**
      * @param dl
-     *            DownloadLink
+     *            :Current DownloadLink Object
      * @param user_selected_video_quality
-     *            : Vom Benutzer bevorzugte Qualitätsstufe
+     *            : Video quality selected by the user
      * @param downloadWithoutAds
-     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
+     *            : Prefer adsfree Videos or videos with ads
      * @throws Exception
      */
     private void site_AccessDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws Exception {
@@ -1204,11 +1216,11 @@ public class SaveTv extends PluginForHost {
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
     private void api_postDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
-        api_doSoapRequest(this.br, "http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + this.API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">" + downloadWithoutAds + "</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
+        api_POST(this.br, "http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + this.API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">" + downloadWithoutAds + "</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
     }
 
     /**
-     * Deletes a desired telecastID.
+     * Deletes a desired telecastID from the users' account(!) <br />
      *
      * @param acc
      *            Account : The users' account which might be needed to log in in case the user uses the API
@@ -1236,16 +1248,22 @@ public class SaveTv extends PluginForHost {
     private static void site_prepBrowser(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
+        /* TODO: Chance User-Agent to 'JDownloader' after APIv3 implementation is complete. */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
     }
 
-    private static void api_prepBrowser(final Browser br) {
+    /** Prepare Browser for API usage. */
+    public static void api_prepBrowser(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
-        br.getHeaders().put("User-Agent", "kSOAP/2.0");
-        br.getHeaders().put("Content-Type", "text/xml");
-        /* Happens e.g. if we attempt to start a download with the HD parameter but HD is not available ... */
-        br.setAllowedResponseCodes(500);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("Accept", "application/json");
+        br.setAllowedResponseCodes(new int[] { 400 });
+    }
+
+    /** Set Authorization header(s) for API usage. */
+    public static void setAPIAuthHeaders(final Browser br, final String auth_token) {
+        br.getHeaders().put("Authorization", "Bearer " + auth_token);
     }
 
     private boolean apiActive() {
@@ -1456,19 +1474,21 @@ public class SaveTv extends PluginForHost {
     }
 
     /**
-     * Performs save.tv API soap requests.
-     *
-     * @param soapAction
-     *            : The soap link which should be accessed
-     * @param soapPost
-     *            : The soap post data
+     * Performs save.tv API POST requests. <br />
+     * TODO: Add errorhandling
      */
-    private static void api_doSoapRequest(final Browser br, final String soapAction, final String soapPost) throws IOException {
-        final String method = new Regex(soapAction, "([A-Za-z0-9]+)$").getMatch(0);
-        br.getHeaders().put("SOAPAction", soapAction);
-        br.getHeaders().put("Content-Type", "text/xml");
-        final String postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + soapPost + "</" + method + "></v:Body></v:Envelope>";
-        br.postPageRaw(APIPAGE, postdata);
+    private static String api_POST(final Browser br, final String url, final String postdata) throws IOException {
+        br.postPage(url, postdata);
+        return br.toString();
+    }
+
+    /**
+     * Performs save.tv API GET requests. <br />
+     * TODO: Add errorhandling
+     */
+    private static String api_GET(final Browser br, final String url) throws IOException {
+        br.getPage(url);
+        return br.toString();
     }
 
     /**
@@ -1485,46 +1505,22 @@ public class SaveTv extends PluginForHost {
         br.getHeaders().put("SOAPAction", soapAction);
         br.getHeaders().put("Content-Type", "text/xml");
         String postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + "<sessionId i:type=\"d:string\">" + acc.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null) + "</sessionId>" + soapPost + "</" + method + "></v:Body></v:Envelope>";
-        br.postPageRaw(APIPAGE, postdata);
+        br.postPageRaw(API_BASE, postdata);
         /* Check for invalid sessionid --> Refresh if needed & perform request again */
         if (br.containsHTML(">invalid session id</ErrorMessage>")) {
             login_api(br, acc, true);
             postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + "<sessionId i:type=\"d:string\">" + acc.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null) + "</sessionId>" + soapPost + "</" + method + "></v:Body></v:Envelope>";
             br.getHeaders().put("SOAPAction", soapAction);
             br.getHeaders().put("Content-Type", "text/xml");
-            br.postPageRaw(APIPAGE, postdata);
+            br.postPageRaw(API_BASE, postdata);
         }
-    }
-
-    /** Returns the (user-defined) API key which is used for the login process. */
-    @SuppressWarnings("deprecation")
-    public static String api_getAPIKey() {
-        String apikey;
-        final String configuredKey = SubConfiguration.getConfig(NICE_HOST).getStringProperty(CONFIGURED_APIKEY, defaultCONFIGURED_APIKEY).trim();
-        if (configuredKey.equals(defaultCONFIGURED_APIKEY)) {
-            apikey = Encoding.Base64Decode(SaveTv.APIKEY_android_1_9_2);
-        } else {
-            apikey = configuredKey;
-        }
-        return apikey;
     }
 
     private boolean is_API_enabled() {
         return this.getPluginConfig().getBooleanProperty(USEAPI);
     }
 
-    /* (Bad) workaround for issues with brackets in String that we regex */
-    @SuppressWarnings("unused")
-    private String getRegexSafe(final String input, final String regex, final int match) {
-        final String regexFixedInput = input.replace("(", "65788jdclipopenjd4684").replace(")", "65788jdclipclosejd4684");
-        String result = new Regex(regexFixedInput, regex).getMatch(match);
-        if (result != null) {
-            result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
-        }
-        return result;
-    }
-
-    /* Corrects all kinds of data which Stv provides, makes filenames look better */
+    /** Corrects all kinds of Strings which Stv provides, makes filenames look nicer */
     @SuppressWarnings("deprecation")
     public static String correctData(final String input) {
         String output = Encoding.htmlDecode(input);
@@ -1944,7 +1940,7 @@ public class SaveTv extends PluginForHost {
     private static final String  defaultCONFIGURED_APIKEY                   = "JDDEFAULT";
     private static final boolean defaultDeleteTelecastIDAfterDownload       = false;
     private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists = false;
-    private static final String  ACCOUNTTYPE_DEFAULT                        = "XL Account";
+    private static final String  ACCOUNTTYPE_UNKNOWN                        = "Unbekanntes Paket";
 
     private void setConfigElements() {
         /* Crawler settings */
@@ -2299,7 +2295,7 @@ public class SaveTv extends PluginForHost {
     public void extendAccountSettingsPanel(Account account, PluginConfigPanelNG panel) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            final String accType = account.getStringProperty(PROPERTY_acc_type, ACCOUNTTYPE_DEFAULT);
+            final String accType = account.getStringProperty(PROPERTY_acc_type, ACCOUNTTYPE_UNKNOWN);
             final String accUsername = account.getStringProperty(PROPERTY_acc_username, "?");
             String acc_expire = "Niemals";
             final String acc_package = account.getStringProperty(PROPERTY_acc_package, "?");
