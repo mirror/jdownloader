@@ -25,12 +25,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,6 +53,12 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -467,11 +467,9 @@ public class VKontakteRuHoster extends PluginForHost {
         StringBuffer sb;
         if (decryptType == null) {
         } else {
-            switch (decryptType) {
-            case "v":
+            if ("v".equals(decryptType)) {
                 result = new StringBuffer(t).reverse().toString();
-                break;
-            case "r":
+            } else if ("r".equals(decryptType)) {
                 int pos = Integer.parseInt(e);
                 sb = new StringBuffer(t);
                 String o = ALPHANUMERIC + ALPHANUMERIC;
@@ -486,15 +484,13 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 result = sb.toString();
-                break;
-            case "x":
+            } else if ("x".equals(decryptType)) {
                 char eCharValue = e.charAt(0);
                 sb = new StringBuffer();
                 for (int i = 0; i < t.length(); i++) {
                     sb.append(Character.valueOf((char) (t.charAt(i) ^ eCharValue)));
                 }
                 result = sb.toString();
-                break;
             }
         }
         return result;
