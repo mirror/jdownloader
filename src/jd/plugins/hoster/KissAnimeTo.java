@@ -13,10 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.plugins.components.RefreshSessionLink;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,11 +25,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.components.RefreshSessionLink;
+
 @HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "kissanime.to" }, urls = { "http://(www\\.)?51\\.15\\.\\d{1,3}\\.\\d{1,3}(?::\\d+)?/videoplayback\\?hash=[^\"'\\s<>]+" })
 public class KissAnimeTo extends PluginForHost {
-
     // raztoki embed video player template.
-
     private String dllink = null;
 
     public KissAnimeTo(PluginWrapper wrapper) {
@@ -55,6 +52,7 @@ public class KissAnimeTo extends PluginForHost {
         dllink = downloadLink.getDownloadURL();
         // they segment and connection will close.
         while (true) {
+            final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
             try {
                 br.setCurrentURL(downloadLink.getStringProperty("source_url", null));
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
@@ -72,13 +70,16 @@ public class KissAnimeTo extends PluginForHost {
                     }
                 }
                 dl.startDownload();
-            } catch (final Exception e) {
-                if ("Download Incomplete".equals(e.getMessage())) {
-                    continue;
-                }
                 break;
+            } catch (final Exception e) {
+                if ("Download Incomplete".equals(e.getMessage()) || (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE)) {
+                    if (downloadLink.getDownloadCurrent() > downloadCurrentRaw && !isAbort()) {
+                        dl.close();
+                        continue;
+                    }
+                }
+                throw e;
             }
-            break;
         }
     }
 

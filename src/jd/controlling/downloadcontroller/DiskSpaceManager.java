@@ -114,10 +114,14 @@ public class DiskSpaceManager {
         String bestRootMatch = null;
         if (Application.getJavaVersion() >= Application.JAVA17 && Application.getJavaVersion() < Application.JAVA19 && (CrossSystem.isUnix() || CrossSystem.isMac())) {
             try {
-                final File guessRootMatch = Files17.guessRoot(reservation.getDestination());
+                final File guessRootMatch = Files17.guessRoot(reservation.getDestination(), true);
                 if (guessRootMatch != null) {
                     bestRootMatch = guessRootMatch.getAbsolutePath();
                 }
+            } catch (final IllegalArgumentException e) {
+                LogController.CL().log(e);
+                SUPPORTED.set(false);
+                return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
             } catch (final IOException e) {
                 LogController.CL().log(e);
                 // https://bugs.openjdk.java.net/browse/JDK-8165852
