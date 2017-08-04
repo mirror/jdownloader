@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,10 +31,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.net" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.net/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.cloud" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.(?:net|cloud)/\\d+" })
 public class FayloobmennikNet extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "fayloobmennik.cloud", "fayloobmennik.net" };
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return "fayloobmennik.cloud";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "fayloobmennik.cloud";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     public FayloobmennikNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +58,7 @@ public class FayloobmennikNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.fayloobmennik.net/pravila.html";
+        return "http://www.fayloobmennik.cloud/pravila.html";
     }
 
     /* Connection stuff */
@@ -62,7 +78,7 @@ public class FayloobmennikNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Загрузка файла<|>Файл не найден\\!<")) {
@@ -95,12 +111,12 @@ public class FayloobmennikNet extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("(https?://(?:www\\.)?fayloobmennik\\.net/files/go/[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("(https?://(?:www\\.)?fayloobmennik\\.(?:net|cloud)/files/go/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
