@@ -566,7 +566,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return url;
     }
 
-    /* 2016-01-05: Check for invalid audioURL! */
+    /* 2016-01-05: Check for invalid audioURL (e.g. decryption fails)! */
     public static boolean audioIsValidDirecturl(final String url) {
         if (url == null || (url != null && url.matches(".+audio_api_unavailable\\.mp3.*?"))) {
             return false;
@@ -1235,8 +1235,9 @@ public class VKontakteRuHoster extends PluginForHost {
         this.mainlink = dl.getStringProperty("mainlink", null);
     }
 
+    /** Returns ArrayList of audio Objects for Playlists/Albums after '/al_audio.php' request. */
     public static ArrayList<Object> getAudioDataArray(final Browser br) throws Exception {
-        final String json = br.getRegex("<\\!json>(.+)").getMatch(0);
+        final String json = jd.plugins.decrypter.VKontakteRu.regexJsonInsideHTML(br);
         if (json == null) {
             return null;
         }

@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -65,9 +66,6 @@ public class YoukuCom extends antiDDoSForHost {
         return br;
     }
 
-    /**
-     * TODO: Add refreshDownloadlink function, add errorhandling (GEO-blocked content!!!)
-     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -143,10 +141,7 @@ public class YoukuCom extends antiDDoSForHost {
         /* Important: Use fresh Browser here!! */
         this.br = new Browser();
         jd.plugins.decrypter.YoukuCom.accessVideoJson(this.br, mainlink);
-        /* Check for dead mainlink. */
-        if (jd.plugins.decrypter.YoukuCom.isOffline(br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        handleGeneralErrors(this.br);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         findDirecturlKamikaze(entries, height, (int) segment_position, isHLS);
         if (this.dllink != null) {
@@ -213,7 +208,6 @@ public class YoukuCom extends antiDDoSForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        handleGeneralErrors();
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -244,8 +238,41 @@ public class YoukuCom extends antiDDoSForHost {
         }
     }
 
-    private void handleGeneralErrors() throws PluginException {
+    public static void handleGeneralErrors(final Browser br) throws PluginException {
         /* Fill me up */
+        LinkedHashMap<String, Object> entries;
+        int errorcode = 0;
+        String errormessage = null;
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("data");
+            final Object erroro = entries.get("error");
+            final LinkedHashMap<String, Object> errormap = erroro != null ? (LinkedHashMap<String, Object>) erroro : null;
+            if (errormap != null) {
+                errormessage = (String) errormap.get("note");
+                errorcode = (int) JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
+            }
+        } catch (final Throwable e) {
+        }
+        if (StringUtils.isEmpty(errormessage)) {
+            errormessage = "Unknown error";
+        }
+        switch (errorcode) {
+        case 0:
+            /* All ok */
+            break;
+        case -4001:
+            /* -4001 == blocked because of copyright [can also happen when using wrong ccode in API request] */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-Blocked: " + errormessage);
+        case -6001:
+            /* Video offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case -6004:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API access forbidden: " + errormessage, 60 * 60 * 1000l);
+        default:
+            /* Undefined error */
+            throw new PluginException(LinkStatus.ERROR_FATAL, errormessage);
+        }
     }
 
     @Override

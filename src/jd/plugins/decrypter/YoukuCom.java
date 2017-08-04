@@ -37,8 +37,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.YoukuCom.YoukuComConfigInterface;
 
 /** See also youtube-dl: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/youku.py */
@@ -112,21 +112,15 @@ public class YoukuCom extends PluginForDecrypt {
         /* Important: Use fresh Browser here!! */
         this.br = prepBR(new Browser());
         accessVideoJson(this.br, parameter);
-        if (isOffline(br)) {
+        try {
+            jd.plugins.hoster.YoukuCom.handleGeneralErrors(this.br);
+        } catch (final PluginException e) {
+            /* No matter what happens, we cannot continue crawling --> Treat as offline content */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
-        /* TODO: Add better errorhandling here */
-        final Object erroro = entries.get("error");
-        final LinkedHashMap<String, Object> errormap = erroro != null ? (LinkedHashMap<String, Object>) erroro : null;
-        if (errormap != null) {
-            /* -4001 == blocked because of copyright [can also happen when using wrong ccode in API request] */
-            final String note = (String) errormap.get("note");
-            final long errorcode = JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
-            logger.info(String.format("Error: Code: %d Message: %s", errorcode, note));
-        }
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("stream");
         ArrayList<Object> segment_list;
         entries = (LinkedHashMap<String, Object>) entries.get("video");
@@ -315,6 +309,7 @@ public class YoukuCom extends PluginForDecrypt {
         }
         final String videoid = jd.plugins.hoster.YoukuCom.getURLName(source_url);
         final String host = Browser.getHost(source_url);
+        /* Required for the next request to be successful */
         br.setCookie(host, "xreferrer", "http://www.youku.com");
         br.getPage("https://log.mmstat.com/eg.js");
         final String cna_value = br.getRegex("goldlog\\.Etag=\"([^<>\"]+)\"").getMatch(0);
@@ -341,12 +336,5 @@ public class YoukuCom extends PluginForDecrypt {
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         return br;
-    }
-
-    public static boolean isOffline(final Browser br) {
-        final String apiError = PluginJSonUtils.getJson(br, "code");
-        final boolean offlineAPI = apiError != null && apiError.equals("-6001");
-        final boolean offlineWebsite = br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/index/");
-        return offlineAPI || offlineWebsite;
     }
 }
