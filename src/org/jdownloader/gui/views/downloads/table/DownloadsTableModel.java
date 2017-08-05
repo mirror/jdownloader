@@ -1,15 +1,12 @@
 package org.jdownloader.gui.views.downloads.table;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.FileTypeColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.HasCaptchaColumn;
+import org.jdownloader.gui.views.components.packagetable.columns.LinkIDColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.CandidateAccountColumn;
@@ -33,6 +30,10 @@ import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class DownloadsTableModel extends PackageControllerTableModel<FilePackage, DownloadLink> {
 
@@ -87,6 +88,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(available = new AvailabilityColumn());
         this.addColumn(new DownloadFolderColumn());
         this.addColumn(new CommentColumn());
+        this.addColumn(new LinkIDColumn());
         this.addColumn(new DownloadPasswordColumn());
         this.addColumn(new ChecksumColumn());
         this.addColumn(new FileTypeColumn());
