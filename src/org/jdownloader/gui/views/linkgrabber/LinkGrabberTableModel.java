@@ -13,6 +13,7 @@ import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.FileTypeColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.HasCaptchaColumn;
+import org.jdownloader.gui.views.components.packagetable.columns.LinkIDColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.EnabledDisabledColumn;
@@ -100,6 +101,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
         this.addColumn(new AvailabilityColumn() {
+
             @Override
             public boolean isDefaultVisible() {
                 return true;
@@ -109,11 +111,13 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         // this.addColumn(new AddedDateColumn());
         this.addColumn(priorityColumn = new PriorityColumn());
         this.addColumn(new CommentColumn() {
+
             @Override
             public boolean isDefaultVisible() {
                 return false;
             }
         });
+        this.addColumn(new LinkIDColumn());
         this.addColumn(new AddedDateColumn());
         this.addColumn(new ChecksumColumn());
         this.addColumn(new FileTypeColumn());
