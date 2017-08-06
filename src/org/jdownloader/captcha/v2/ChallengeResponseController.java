@@ -7,12 +7,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.appwork.storage.config.JsonConfig;
+
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -27,7 +26,6 @@ import org.jdownloader.captcha.v2.challenge.oauth.OAuthDialogSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.antiCaptchaCom.AntiCaptchaComSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
-import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsConfigInterface;
 import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
@@ -49,6 +47,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 
@@ -126,15 +125,10 @@ public class ChallengeResponseController {
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());
-            if (StringUtils.isNotEmpty(JsonConfig.create(CaptchaSolutionsConfigInterface.class).getAPISecret())) {
-                addSolver(CaptchaSolutionsSolver.getInstance());
-            }
-            // if (StringUtils.isNotEmpty(JsonConfig.create(TwoCaptchaConfigInterface.class).getApiKey())) {
+            addSolver(CaptchaSolutionsSolver.getInstance());
             addSolver(TwoCaptchaSolver.getInstance());
             addSolver(AntiCaptchaComSolver.getInstance());
-            // }
             addSolver(EndCaptchaSolver.getInstance());
-            // addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());
             addSolver(Captcha9kwSolverClick.getInstance());
             addSolver(Captcha9kwSolverPuzzle.getInstance());
