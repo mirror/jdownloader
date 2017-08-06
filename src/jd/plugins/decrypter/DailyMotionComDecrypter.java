@@ -435,8 +435,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
         /** Decrypt subtitles if available */
-        final String subsource = new Regex(videoSource, "\"recorded\",(.*?\\}\\})").getMatch(0);
+        String subsource = new Regex(videoSource, "\"recorded\",(.*?\\}\\})").getMatch(0);
         if (subsource != null) {
+            subsource = subsource.replace("\\/", "/");
             final String[] subtitles = new Regex(subsource, "\"(https?://static\\d+(-ssl)?\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
             if (subtitles != null && subtitles.length != 0) {
                 final FilePackage fpSub = FilePackage.getInstance();

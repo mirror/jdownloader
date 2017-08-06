@@ -16,8 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,7 +32,7 @@ import jd.plugins.components.DailyMotionVariant;
 import jd.plugins.hoster.DailyMotionComV2;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" })
 public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
 
     public DailyMotionComDecrypterV2(PluginWrapper wrapper) {
@@ -42,7 +40,7 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
     }
 
     @Override
-    protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws IOException, ParseException {
+    protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         super.decryptSingleVideo(ret);
         ArrayList<DownloadLink> mp4s = new ArrayList<DownloadLink>();
