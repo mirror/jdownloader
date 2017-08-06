@@ -67,10 +67,10 @@ public class FxpanCom extends PluginForHost {
             /* Fallback */
             filename = fuid;
         }
-        String filesize = br.getRegex("文件大小：([\\d\\.]+ [BKMGT])").getMatch(0);
+        String filesize = br.getRegex("文件大小：([\\d\\.]+ [BKMGT]+)").getMatch(0);
         link.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize + "iB"));
         }
         return AvailableStatus.TRUE;
     }
