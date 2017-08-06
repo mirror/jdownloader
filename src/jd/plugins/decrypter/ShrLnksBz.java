@@ -23,9 +23,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -44,16 +53,9 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
+
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
 
@@ -128,7 +130,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         /* Very important! */
         handleImportant();
         br.setFollowRedirects(false);
-        /* Folderpassword */
+        /* Folder password */
         handlePassword(param, parameter);
         /* Captcha handling */
         handleCaptcha(param, parameter);
@@ -175,44 +177,48 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         return result;
     }
 
+    private final boolean containsPasswordHtml() {
+        final boolean result = br.containsHTML("id=\"folderpass\"");
+        return result;
+    }
+
     private void handlePassword(CryptedLink param, String parameter) throws Exception {
-        if (br.containsHTML("id=\"folderpass\"")) {
+        if (containsPasswordHtml()) {
             final List<String> passwords = getPreSetPasswords();
-            final int tries = 3;
-            for (int i = 0; i <= tries; i++) {
-                String latestPassword = null;
-                if (passwords.size() > 0) {
-                    latestPassword = passwords.remove(0);
-                    i = 0;
-                } else {
-                    latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
-                }
+            for (int i = 0; i < 1; i++) {
                 final Form pwform = br.getForm(0);
                 if (pwform == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
                 pwform.setAction(parameter);
+                String latestPassword = null;
+                if (passwords.size() > 0) {
+                    latestPassword = passwords.remove(0);
+                    i = 0;
+                } else if (getPluginConfig().getStringProperty("PASSWORD", null) != null) {
+                    latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
+                    i = 0;
+                }
                 // First try the stored password, if that doesn't work, ask the user to enter it
-                if (latestPassword == null || latestPassword.equals("")) {
+                if (inValidate(latestPassword)) {
                     latestPassword = Plugin.getUserInput("Enter password for: " + parameter, param);
+                    // try only twice
                 }
                 pwform.put("password", Encoding.urlEncode(latestPassword));
                 submitForm(pwform);
-                if (!br.containsHTML("This folder requires a password\\.")) {
+                if (!containsPasswordHtml()) {
                     // Save actual password if it is valid
                     if (getPluginConfig().setProperty("PASSWORD", latestPassword)) {
                         getPluginConfig().save();
                     }
                     return;
                 }
-                if (tries > i) {
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                if (getPluginConfig().setProperty("PASSWORD", null)) {
+                if (getPluginConfig().setProperty("PASSWORD", Property.NULL)) {
                     getPluginConfig().save();
                 }
             }
+            throw new DecrypterException(DecrypterException.PASSWORD);
         }
     }
 
