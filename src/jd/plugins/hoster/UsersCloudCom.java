@@ -95,9 +95,9 @@ public class UsersCloudCom extends PluginForHost {
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
+    private String                         dllink                       = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
@@ -149,6 +149,7 @@ public class UsersCloudCom extends PluginForHost {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setProperty("freelink", link.getDownloadURL());
+                dllink = br.getURL();
                 return AvailableStatus.TRUE;
             }
         } finally {
@@ -297,7 +298,11 @@ public class UsersCloudCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        /* First, bring up saved final links */
+        dllink = checkDirectLink(downloadLink, "freelink");
+        if (dllink == null) {
+            requestFileInformation(downloadLink);
+        }
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
@@ -305,8 +310,6 @@ public class UsersCloudCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
-        /* First, bring up saved final links */
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /* Second, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
@@ -1084,14 +1087,21 @@ public class UsersCloudCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(downloadLink);
+        if (account.getType() == AccountType.FREE) {
+            dllink = checkDirectLink(downloadLink, "freelink2");
+            if (dllink == null) {
+                login(account, false);
+                requestFileInformation(downloadLink);
+            }
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
+            dllink = checkDirectLink(downloadLink, "premiumlink");
+            if (dllink == null) {
+                login(account, false);
+                requestFileInformation(downloadLink);
+            }
             /* Use the free method with premium parameters */
-            doFree(downloadLink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "freelink2");
+            doFree(downloadLink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premiumlink");
             // The following code doesn't work any more
             /*
              * String dllink = checkDirectLink(downloadLink, "premlink"); if (dllink == null) { br.setFollowRedirects(false);
