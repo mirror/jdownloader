@@ -850,7 +850,7 @@ public class Big4SharedCom extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -945,10 +945,10 @@ public class Big4SharedCom extends antiDDoSForHost {
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
-            finallink = new Regex(decoded, "(?:\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(?:\"|\\')").getMatch(0);
+            finallink = new Regex(decoded, "(\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4))\\1").getMatch(1);
             if (finallink == null) {
                 /* Maybe rtmp */
-                finallink = new Regex(decoded, "(?:\"|\\')(rtmp://[^<>\"\\']*?mp4:[^<>\"\\']+)(?:\"|\\')").getMatch(0);
+                finallink = new Regex(decoded, "(\"|')(rtmp://[^<>\"']*?mp4:[^<>\"\\']+)\\1").getMatch(1);
             }
         }
         return finallink;
@@ -962,7 +962,7 @@ public class Big4SharedCom extends antiDDoSForHost {
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        getPage(br, page);
+        super.getPage(br, page);
         if (correctBr) {
             correctBR();
         }
@@ -976,30 +976,10 @@ public class Big4SharedCom extends antiDDoSForHost {
 
     private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        postPage(br, page, postdata);
+        super.postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
-    }
-
-    // /* Handles redirects to prevent getDllink method from picking invalid final download_url in case of a redirect. */
-    // private void handleRedirects(final Browser br, final boolean correctBr) throws Exception {
-    // String redirect = br.getRedirectLocation();
-    // final int redirect_limit = 5;
-    // int counter = 0;
-    // while (redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}.*?") && counter <= redirect_limit) {
-    // br.getPage(redirect);
-    // redirect = br.getRedirectLocation();
-    // counter++;
-    // }
-    // }
-    private String correctProtocol(String url) {
-        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
-            url = url.replaceFirst("http://", "https://");
-        } else if (!SUPPORTS_HTTPS) {
-            url = url.replaceFirst("https://", "http://");
-        }
-        return url;
     }
 
     @Override
@@ -1008,10 +988,31 @@ public class Big4SharedCom extends antiDDoSForHost {
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        submitForm(br, form);
+        super.submitForm(br, form);
         if (correctBr) {
             correctBR();
         }
+    }
+
+    @Override
+    protected void runPostRequestTask(Browser ibr) throws Exception {
+        if (!ibr.isFollowingRedirects()) {
+            final String redirect = ibr.getRedirectLocation();
+            if (redirect != null) {
+                if (!new Regex(redirect, "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]+").matches()) {
+                    super.getPage(ibr, redirect);
+                }
+            }
+        }
+    }
+
+    private String correctProtocol(String url) {
+        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
+            url = url.replaceFirst("http://", "https://");
+        } else if (!SUPPORTS_HTTPS) {
+            url = url.replaceFirst("https://", "http://");
+        }
+        return url;
     }
 
     /**
@@ -1345,14 +1346,12 @@ public class Big4SharedCom extends antiDDoSForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
         }
         return ai;
     }
