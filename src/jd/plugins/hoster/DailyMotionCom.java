@@ -22,6 +22,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,11 +47,6 @@ import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
 
@@ -54,7 +54,7 @@ public class DailyMotionCom extends PluginForHost {
         return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(br);
     }
 
-    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
+    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws Exception {
         return jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(br, parameter, videosource);
     }
 
@@ -93,7 +93,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
@@ -248,7 +248,7 @@ public class DailyMotionCom extends PluginForHost {
          * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
          * corrupted!
          */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         /* Their servers usually return a valid size - if not, it's probably a server error */
         final long contentlength = dl.getConnection().getLongContentLength();
         if (contentlength == -1) {
@@ -392,7 +392,7 @@ public class DailyMotionCom extends PluginForHost {
         return dl.getBooleanProperty("type_subtitle", false);
     }
 
-    private void getRTMPlink() throws IOException, PluginException {
+    private void getRTMPlink() throws Exception {
         final String[] values = br.getRegex("new SWFObject\\(\"(https?://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
         if (values == null || values.length != 2) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
