@@ -9,6 +9,7 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface AntiCaptchaComConfigInterface extends ChallengeSolverConfig {
+
     @AboutConfig
     @DescriptionForConfigEntry("Your anti-captcha.com apiKey (https://anti-captcha.com/clients/reports/dashboard)")
     String getApiKey();
@@ -30,4 +31,8 @@ public interface AntiCaptchaComConfigInterface extends ChallengeSolverConfig {
     boolean isFeedBackSendingEnabled();
 
     void setFeedBackSendingEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    boolean isEnabled();
+
 }
