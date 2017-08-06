@@ -346,15 +346,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String channelName = null;
     private long   date        = 0;
 
-    private String original    = null;
-
     @SuppressWarnings("deprecation")
     protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws Exception {
-        if (original == null) {
-            original = br.toString();
-        }
-        String input = "";
-        br.getRequest().setHtmlCode(input);
         logger.info("Decrypting single video: " + parameter);
         // We can't download live streams
         if (br.containsHTML("DMSTREAMMODE=live")) {
