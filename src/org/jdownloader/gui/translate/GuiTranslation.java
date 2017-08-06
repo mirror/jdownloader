@@ -10,6 +10,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
+
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String action_aboutaction();
 
@@ -401,6 +402,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Comment" })
     String premiumaccounttablemodel_column_comment();
+
+    @Default(lngs = { "en" }, values = { "LinkID" })
+    String LinkIDColumn_LinkIDColumn();
 
     @Default(lngs = { "en" }, values = { "Buy" })
     String settings_accountmanager_buy();
