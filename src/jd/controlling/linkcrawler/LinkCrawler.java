@@ -32,34 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Authentication;
-import jd.http.AuthenticationFactory;
-import jd.http.Browser;
-import jd.http.CallbackAuthenticationFactory;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.DefaultAuthenticanFactory;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.URLUserInfoAuthentication;
-import jd.http.requests.GetRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
@@ -101,7 +73,36 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Authentication;
+import jd.http.AuthenticationFactory;
+import jd.http.Browser;
+import jd.http.CallbackAuthenticationFactory;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.DefaultAuthenticanFactory;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.URLUserInfoAuthentication;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+
 public class LinkCrawler {
+
     private static enum DISTRIBUTE {
         STOP,
         NEXT,
@@ -168,6 +169,7 @@ public class LinkCrawler {
     }
 
     public class LinkCrawlerGeneration {
+
         private final AtomicBoolean validFlag = new AtomicBoolean(true);
 
         public final boolean isValid() {
@@ -242,6 +244,7 @@ public class LinkCrawler {
          * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
          */
         threadPool = new ThreadPoolExecutor(maxThreads, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
+
             public int compare(Runnable o1, Runnable o2) {
                 if (o1 == o2) {
                     return 0;
@@ -251,6 +254,7 @@ public class LinkCrawler {
                 return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
             }
         }), new ThreadFactory() {
+
             public Thread newThread(Runnable r) {
                 /*
                  * our thread factory so we have logger,browser settings available
@@ -281,6 +285,7 @@ public class LinkCrawler {
             }
             final LinkCrawler parent = thread.getCurrentLinkCrawler();
             lc = new LinkCrawler(false, false) {
+
                 @Override
                 protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
                     if (linkCrawler != null && linkCrawler != this) {
@@ -518,6 +523,7 @@ public class LinkCrawler {
                     } else {
                         if (checkStartNotify(generation)) {
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                 @Override
                                 public long getAverageRuntime() {
                                     final Long ret = getDefaultAverageRuntime();
@@ -547,6 +553,7 @@ public class LinkCrawler {
         final HtmlParserResultSet resultSet;
         if (allowInstantCrawl && getCurrentLinkCrawlerThread() != null) {
             resultSet = new HtmlParserResultSet() {
+
                 private final HashSet<HtmlParserCharSequence> fastResults = new HashSet<HtmlParserCharSequence>();
 
                 @Override
@@ -600,6 +607,7 @@ public class LinkCrawler {
             };
         } else {
             resultSet = new HtmlParserResultSet() {
+
                 private LogSource logger = null;
 
                 @Override
@@ -642,8 +650,8 @@ public class LinkCrawler {
                 try {
                     if (insideCrawlerPlugin()) {
                         /*
-                         * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                         * waiting for linkcrawler results
+                         * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                         * results
                          */
                         distribute(generation, possibleCryptedLinks);
                     } else {
@@ -652,6 +660,7 @@ public class LinkCrawler {
                          */
                         if (checkStartNotify(generation)) {
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                 @Override
                                 public long getAverageRuntime() {
                                     final Long ret = getDefaultAverageRuntime();
@@ -807,6 +816,7 @@ public class LinkCrawler {
             }
             authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(request.getURL(), null));
             authenticationFactories.add(new CallbackAuthenticationFactory() {
+
                 protected Authentication remember = null;
 
                 @Override
@@ -929,6 +939,7 @@ public class LinkCrawler {
             return;
         }
         final CrawledLinkModifier lm = new CrawledLinkModifier() {
+
             /*
              * this modifier sets the BrowserURL if not set yet
              */
@@ -1087,6 +1098,7 @@ public class LinkCrawler {
                                             /* first check if the url itself can be handled */
                                             final CrawledLink link = possibleCryptedLinks.get(0);
                                             link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+
                                                 @Override
                                                 public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                                                     /* unhandled url, lets parse the content on it */
@@ -1164,6 +1176,7 @@ public class LinkCrawler {
                 } else {
                     if (checkStartNotify(generation)) {
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                             @Override
                             public long getAverageRuntime() {
                                 final Long ret = getDefaultAverageRuntime();
@@ -1233,8 +1246,8 @@ public class LinkCrawler {
                     if (allPossibleCryptedLinks != null) {
                         if (insideCrawlerPlugin()) {
                             /*
-                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on
-                             * plugin waiting for linkcrawler results
+                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                             * results
                              */
                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                 if (!generation.isValid()) {
@@ -1250,6 +1263,7 @@ public class LinkCrawler {
                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                 if (checkStartNotify(generation)) {
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                         public long getAverageRuntime() {
                                             final Long ret = getDefaultAverageRuntime();
                                             if (ret != null) {
@@ -1301,6 +1315,7 @@ public class LinkCrawler {
                 final CrawledLinkModifier lm;
                 if (pluginC.hideLinks()) {
                     lm = new CrawledLinkModifier() {
+
                         /*
                          * set new LinkModifier, hides the url if needed
                          */
@@ -1322,8 +1337,8 @@ public class LinkCrawler {
                 if (allPossibleCryptedLinks != null) {
                     if (insideCrawlerPlugin()) {
                         /*
-                         * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                         * waiting for linkcrawler results
+                         * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                         * results
                          */
                         for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                             if (!generation.isValid()) {
@@ -1339,6 +1354,7 @@ public class LinkCrawler {
                         for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                             if (checkStartNotify(generation)) {
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                     @Override
                                     public long getAverageRuntime() {
                                         final Long ret = getDefaultAverageRuntime();
@@ -1391,6 +1407,7 @@ public class LinkCrawler {
                         return DISTRIBUTE.NEXT;
                     } else if (checkStartNotify(generation)) {
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                             @Override
                             public long getAverageRuntime() {
                                 final Long ret = getDefaultAverageRuntime();
@@ -1436,6 +1453,7 @@ public class LinkCrawler {
                 } else {
                     if (checkStartNotify(generation)) {
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                             @Override
                             public long getAverageRuntime() {
                                 final Long ret = getDefaultAverageRuntime();
@@ -1678,6 +1696,7 @@ public class LinkCrawler {
                                         synchronized (loopPreventionEmbedded) {
                                             if (!loopPreventionEmbedded.containsKey(possibleCryptedLink)) {
                                                 final UnknownCrawledLinkHandler unknownLinkHandler = new UnknownCrawledLinkHandler() {
+
                                                     @Override
                                                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                                                         lc.distribute(generation, Arrays.asList(new CrawledLink[] { possibleCryptedLink }));
@@ -1732,8 +1751,7 @@ public class LinkCrawler {
                         }
                         if (unnknownHandler != null) {
                             /*
-                             * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link
-                             * handable by a Plugin
+                             * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
                              */
                             try {
                                 unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
@@ -1917,6 +1935,7 @@ public class LinkCrawler {
                 ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
                 try {
                     Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+
                         @Override
                         public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
                             final LazyPluginClass l1 = o1.getLazyPluginClass();
@@ -1931,6 +1950,7 @@ public class LinkCrawler {
                         }
                     });
                     Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+
                         public final int compare(long x, long y) {
                             return (x < y) ? 1 : ((x == y) ? 0 : -1);
                         }
@@ -1941,6 +1961,7 @@ public class LinkCrawler {
                         }
                     });
                     Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+
                         public final int compare(boolean x, boolean y) {
                             return (x == y) ? 0 : (x ? 1 : -1);
                         }
@@ -1970,6 +1991,7 @@ public class LinkCrawler {
                 ret = new ArrayList<LazyHostPlugin>(unsortedLazyHostPlugins);
                 try {
                     Collections.sort(ret, new Comparator<LazyHostPlugin>() {
+
                         public final int compare(long x, long y) {
                             return (x < y) ? 1 : ((x == y) ? 0 : -1);
                         }
@@ -2293,6 +2315,7 @@ public class LinkCrawler {
                 destCrawledLink.setCustomCrawledLinkModifier(sourceLinkModifier);
             } else if (sourceLinkModifier != null) {
                 destCrawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
+
                     @Override
                     public void modifyCrawledLink(CrawledLink link) {
                         if (sourceLinkModifier != null) {
@@ -2629,8 +2652,8 @@ public class LinkCrawler {
                             }
                             if (insideCrawlerPlugin()) {
                                 /*
-                                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on
-                                 * plugin waiting for linkcrawler results
+                                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                                 * results
                                  */
                                 if (!checkStartNotify(generation)) {
                                     /* LinkCrawler got aborted! */
@@ -2641,6 +2664,7 @@ public class LinkCrawler {
                                 if (checkStartNotify(generation)) {
                                     /* enqueue distributing of the links */
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                         @Override
                                         public long getAverageRuntime() {
                                             final Long ret = getDefaultAverageRuntime();
@@ -2763,6 +2787,7 @@ public class LinkCrawler {
                             maximumDelay = -1;
                         }
                         finalLinkCrawlerDistributerDelayer = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
+
                             @Override
                             public String getID() {
                                 return "LinkCrawler";
@@ -2783,6 +2808,7 @@ public class LinkCrawler {
                                 if (checkStartNotify(generation)) {
                                     /* enqueue distributing of the links */
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                         @Override
                                         public long getAverageRuntime() {
                                             final Long ret = getDefaultAverageRuntime();
@@ -2809,6 +2835,7 @@ public class LinkCrawler {
                      * set LinkCrawlerDistributer in case the plugin wants to add links in realtime
                      */
                     wplg.setDistributer(dist = new LinkCrawlerDistributer() {
+
                         final HashSet<DownloadLink> fastDuplicateDetector = new HashSet<DownloadLink>();
                         final AtomicInteger         distributed           = new AtomicInteger(0);
                         final HashSet<DownloadLink> distribute            = new HashSet<DownloadLink>();
@@ -2817,8 +2844,8 @@ public class LinkCrawler {
                             if (links == null || (links.length == 0 && wplg.getDistributer() != null)) {
                                 return;
                             }
-                            for (DownloadLink link : links) {
-                                if (link.getPluginPatternMatcher() != null && !fastDuplicateDetector.contains(link)) {
+                            for (final DownloadLink link : links) {
+                                if (link != null && link.getPluginPatternMatcher() != null && !fastDuplicateDetector.contains(link)) {
                                     distribute.add(link);
                                 }
                             }
@@ -2876,6 +2903,7 @@ public class LinkCrawler {
                                 if (checkStartNotify(generation)) {
                                     /* enqueue distributing of the links */
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
                                         @Override
                                         public long getAverageRuntime() {
                                             final Long ret = getDefaultAverageRuntime();
@@ -3216,6 +3244,7 @@ public class LinkCrawler {
 
     public LinkCrawlerDeepInspector defaultDeepInspector() {
         return new LinkCrawlerDeepInspector() {
+
             @Override
             public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
                 final int limit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
@@ -3250,6 +3279,7 @@ public class LinkCrawler {
 
     public LinkCrawlerHandler defaulHandlerFactory() {
         return new LinkCrawlerHandler() {
+
             public void handleFinalLink(CrawledLink link) {
                 synchronized (crawledLinks) {
                     crawledLinks.add(link);
@@ -3280,6 +3310,7 @@ public class LinkCrawler {
 
     public LinkCrawlerFilter defaultFilterFactory() {
         return new LinkCrawlerFilter() {
+
             public boolean dropByUrl(CrawledLink link) {
                 return false;
             }
