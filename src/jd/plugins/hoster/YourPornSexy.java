@@ -14,7 +14,6 @@ import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html" })
 public class YourPornSexy extends PluginForHost {
-
     public YourPornSexy(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,6 +60,11 @@ public class YourPornSexy extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 5;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')((?:https?:)?//.*?\\.mp4)(\"|')").getMatch(1);
@@ -82,5 +86,4 @@ public class YourPornSexy extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
