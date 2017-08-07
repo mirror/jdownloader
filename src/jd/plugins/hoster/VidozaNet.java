@@ -123,7 +123,7 @@ public class VidozaNet extends antiDDoSForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.7<br />
-     * mods:<br />
+     * mods: File not found regex <br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -178,7 +178,7 @@ public class VidozaNet extends antiDDoSForHost {
         correctDownloadLink(link);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|'video_wait')").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = this.br.cloneBrowser();
