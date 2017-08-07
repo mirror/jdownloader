@@ -53,6 +53,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgoutlet.co" }, urls = { "https?://(?:www\\.)?imgoutlet\\.com?/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgoutletCo extends PluginForHost {
+
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
@@ -177,11 +178,11 @@ public class ImgoutletCo extends PluginForHost {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
         correctDownloadLink(link);
-        prepBrowser(this.br);
+        prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        final String jsredirect = new Regex(correctedBR, "window\\.location = \"((?:http|/)[^<>\"]+)\"").getMatch(0);
-        if (jsredirect != null) {
+        final String jsredirect = new Regex(br, "window\\.location\\s*=\\s*(\"|')((?:http|/)[^<>\"]+)\\1").getMatch(1);
+        if (jsredirect != null && br.toString().replaceAll("<[^>]+>", "").split("\\s+").length < 50) {
             getPage(jsredirect);
         }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
@@ -661,7 +662,7 @@ public class ImgoutletCo extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
