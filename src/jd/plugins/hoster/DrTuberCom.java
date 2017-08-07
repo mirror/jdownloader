@@ -15,23 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -98,7 +92,6 @@ public class DrTuberCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     private String getContinueLink(String fun) {
         if (fun == null) {
@@ -128,7 +121,7 @@ public class DrTuberCom extends PluginForHost {
         dllink = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBR(this.br);
+        prepBR(br);
         br.setCookie("http://drtuber.com", "lang", "en");
         String continueLink = null, filename = null;
         // Check if link is an embedded link e.g. from a decrypter
@@ -148,7 +141,7 @@ public class DrTuberCom extends PluginForHost {
             downloadLink.setUrlDownload(Encoding.htmlDecode(original_video_link));
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // No account support -> No support for private videos
@@ -181,13 +174,13 @@ public class DrTuberCom extends PluginForHost {
         } else {
             /* 2016-04-29: They're playing games with us with their embed html --> Avoid that! */
             if (downloadLink.getDownloadURL().matches(type_embed)) {
-                String source_url = this.br.getRegex("target_url=(http[^<>\"\\'=\\&]+)").getMatch(0);
+                String source_url = br.getRegex("target_url=(http[^<>\"\\'=\\&]+)").getMatch(0);
                 if (source_url != null) {
                     source_url = Encoding.htmlDecode(source_url);
                 }
                 if (source_url != null && source_url.matches(type_normal)) {
                     downloadLink.setUrlDownload(source_url);
-                    this.br.getPage(source_url);
+                    br.getPage(source_url);
                 }
             }
             String vkey = null;
@@ -332,32 +325,26 @@ public class DrTuberCom extends PluginForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://drtuber.com";
+    private static final String MAINPAGE = "http://www.drtuber.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                prepBR(this.br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br = new Browser();
+                    prepBR(br);
+                    br.setCookies(this.getHost(), cookies);
+                    br.getPage(MAINPAGE);
+                    if (!invalidedSession(false)) {
+                        /* Save new cookie timestamp */
+                        br.setCookies(this.getHost(), cookies);
                         return;
                     }
                 }
+                br = new Browser();
+                prepBR(br);
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("http://www.drtuber.com/ajax/popup_forms?form=login");
@@ -381,24 +368,15 @@ public class DrTuberCom extends PluginForHost {
                         this.setDownloadLink(orig);
                     }
                 }
-                if (br.getCookie(MAINPAGE, "remember") == null || !br.containsHTML("\"success\":true")) {
+                if (invalidedSession(true)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* Only free accounts supported so far. */
-                account.setProperty("free", true);
                 // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -406,112 +384,60 @@ public class DrTuberCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean invalidedSession(final boolean postLogin) {
+        if (br.getCookie(MAINPAGE, "remember") == null || "deleted".equals(br.getCookie(MAINPAGE, "remember"))) {
+            return true;
+        }
+        if (postLogin && !br.containsHTML("\"success\":true")) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("free", false)) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                /* Free accounts can't have captchas! */
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
-        } else {
-            /* Not yet supported... */
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium Account");
-        }
-        account.setValid(true);
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         final String ftitle_saved = link.getStringProperty("ftitle", null);
         requestFileInformation(link);
-        /* We don't need the old cookies anymore... */
-        this.br = new Browser();
-        login(account, false);
+        login(account);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("free", false)) {
-            /* Try not to waste new link generation as we can only download 3 videos a day... */
-            dllink = this.checkDirectLink(link, "account_free_directlink");
-            if (dllink == null) {
-                dllink = getUncryptedFinallink();
-            }
-            if (dllink == null) {
-                /* Only 'use the download button' if we cannot find any stream URL as filesizes/video quality should be the same. */
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://www.drtuber.com/video/download/" + getFID(link));
-                if (br.containsHTML("you have reached the download limit")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                dllink = "http://www.drtuber.com/video/download/save/" + getFID(link);
-            }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                handleServerErrors();
-                br.followConnection();
-                if (br.containsHTML("You have exceeded free downloads count")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setFinalFileName(ftitle_saved + ".mp4");
-            link.setProperty("account_free_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
-        } else {
-            dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                handleServerErrors();
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setFinalFileName(ftitle_saved + ".mp4");
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
+        br.getPage(link.getPluginPatternMatcher());
+        /* Try not to waste new link generation as we can only download 3 videos a day... */
+        dllink = this.checkDirectLink(link, "account_free_directlink");
+        if (dllink == null) {
+            dllink = getUncryptedFinallink();
         }
+        if (dllink == null) {
+            /* Only 'use the download button' if we cannot find any stream URL as filesizes/video quality should be the same. */
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("http://www.drtuber.com/video/download/" + getFID(link));
+            if (br.containsHTML("you have reached the download limit")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            dllink = "http://www.drtuber.com/video/download/save/" + getFID(link);
+        }
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            handleServerErrors();
+            br.followConnection();
+            if (br.containsHTML("You have exceeded free downloads count")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setFinalFileName(ftitle_saved + ".mp4");
+        link.setProperty("account_free_directlink", dl.getConnection().getURL().toString());
+        dl.startDownload();
     }
 
     private String getUncryptedFinallink() {
@@ -534,12 +460,6 @@ public class DrTuberCom extends PluginForHost {
     private void prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", normalUA);
         br.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
