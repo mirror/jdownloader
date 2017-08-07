@@ -2,17 +2,16 @@ package org.jdownloader.gui.views.components.packagetable.columns;
 
 import javax.swing.JPopupMenu;
 
-import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.columns.FileColumn;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
-public class LinkIDColumn extends ExtTextAreaColumn<AbstractNode> {
+import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 
+public class LinkIDColumn extends ExtTextAreaColumn<AbstractNode> {
     /**
      *
      */
@@ -35,8 +34,9 @@ public class LinkIDColumn extends ExtTextAreaColumn<AbstractNode> {
     public boolean isEnabled(final AbstractNode obj) {
         if (obj instanceof AbstractPackageNode) {
             return ((AbstractPackageNode) obj).getView().isEnabled();
+        } else {
+            return obj != null && obj.isEnabled();
         }
-        return obj.isEnabled();
     }
 
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
@@ -46,21 +46,23 @@ public class LinkIDColumn extends ExtTextAreaColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode object) {
-        DownloadLink dl = null;
+        final DownloadLink dl;
         if (object instanceof DownloadLink) {
             dl = (DownloadLink) object;
         } else if (object instanceof CrawledLink) {
             dl = ((CrawledLink) object).getDownloadLink();
+        } else {
+            return null;
         }
         if (dl != null) {
             return dl.getLinkID();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
     public boolean isDefaultVisible() {
         return false;
     }
-
 }
