@@ -203,21 +203,26 @@ public class NicoVideoJp extends PluginForHost {
         String accessPOST = null;
         final String linkid_url = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
         /* Most of the times an account is needed to watch/download videos. */
-        if (br.containsHTML(html_account_needed) || !br.getURL().matches(TYPE_WATCH)) {
+        if (br.containsHTML(html_account_needed)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, ONLYREGISTEREDUSERTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
-        br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
-        final String playkey = br.getRegex("thumbPlayKey\\': \\'([^<>\"]*?)\\'").getMatch(0);
-        final String accessFromHash = br.getRegex("accessFromHash\\': \\'([^<>\"]*?)\\'").getMatch(0);
-        if (playkey == null || accessFromHash == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
-        br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
-        String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
+        String dllink;
+        if (JavaScriptEngineFactory.walkJson(entries, "video/dmcInfo") == null) {
+            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/smileInfo/url");
+        } else {
+            br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
+            br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+            final String playkey = br.getRegex("thumbPlayKey\\': \\'([^<>\"]*?)\\'").getMatch(0);
+            final String accessFromHash = br.getRegex("accessFromHash\\': \\'([^<>\"]*?)\\'").getMatch(0);
+            if (playkey == null || accessFromHash == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
+            br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
+            dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
+            }
         }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
