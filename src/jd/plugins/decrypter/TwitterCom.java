@@ -39,6 +39,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
+
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -177,12 +178,12 @@ public class TwitterCom extends PornEmbedParser {
                         }
                     }
                 }
-                if (decryptedLinks.size() == 0 && this.br.containsHTML("class=\"modal\\-title embed\\-video\\-title\"|<meta[^<>]*?property=\"og:type\"[^<>]*?content=\"video\"[^<>]*?>")) {
+                if (this.br.containsHTML("class=\"modal\\-title embed\\-video\\-title\"|<meta[^<>]*?property=\"og:type\"[^<>]*?content=\"video\"[^<>]*?>")) {
                     /* Seems like we have a single video */
                     final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
                     decryptedLinks.add(dl);
                 }
-                if (decryptedLinks.size() == 0 && twitter_text != null) {
+                if (twitter_text != null) {
                     /* Maybe the tweet only consists of text which maybe contains URLs which maybe lead to content. */
                     final String[] urls_in_text = HTMLParser.getHttpLinks(twitter_text, "");
                     if (urls_in_text != null) {
