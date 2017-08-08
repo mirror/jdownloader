@@ -181,14 +181,18 @@ public class RapidGatorNet extends PluginForHost {
                 final int jsFactor = Math.round((float) scriptLen / (float) br.toString().length() * 100);
                 /* min 75% of html contains js */
                 if (jsFactor > 75) {
-                    return executeJavaScriptRedirect(jsRedirectScript);
+                    final String returnValue = new Regex(jsRedirectScript, ";(\\w+)=\'\';$").getMatch(0);
+                    jsRedirectScript = jsRedirectScript.substring(0, jsRedirectScript.lastIndexOf("window.location.href"));
+                    if (scriptLen > jsRedirectScript.length() && returnValue != null) {
+                        return executeJavaScriptRedirect(returnValue, jsRedirectScript);
+                    }
                 }
             }
         }
         return null;
     }
 
-    private String executeJavaScriptRedirect(final String script) throws Exception {
+    private String executeJavaScriptRedirect(final String retVal, final String script) throws Exception {
         try {
             ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = mgr.getEngineByName("JavaScript");
