@@ -21,9 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -38,6 +35,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/(?:view_video\\.php\\?viewkey=|embed/)[a-z0-9]+" })
 public class PornHubCom extends PluginForDecrypt {
@@ -65,6 +65,7 @@ public class PornHubCom extends PluginForDecrypt {
         if (aa != null) {
             jd.plugins.hoster.PornHubCom.login(br, aa, false);
         }
+        br.getPage(parameter);
         if (parameter.matches(".+/users/.+")) {
             decryptAllVideosOfAUser();
         } else {

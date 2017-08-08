@@ -18,17 +18,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -49,6 +38,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 /**
  *
  * @author raztoki
@@ -56,7 +56,6 @@ import jd.plugins.components.UserAgents.BrowserName;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
-
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -289,10 +288,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
-            } catch (final Exception e) {
-                // release lock for any exceptions otherwise we will have deadlocks.
-                captchaLocked.compareAndSet(true, false);
-                throw e;
             }
         }
         runPostRequestTask(ibr);
@@ -326,10 +321,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
-            } catch (final Exception e) {
-                // release lock for any exceptions otherwise we will have deadlocks
-                captchaLocked.compareAndSet(true, false);
-                throw e;
             }
         }
         return ibr.getHttpConnection();
@@ -428,7 +419,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             synchronized (antiDDoSCookies) {
                 antiDDoSCookies.put(ibr.getHost(), cookies);
             }
-            captchaLocked.compareAndSet(true, false);
         }
     }
 
@@ -452,100 +442,103 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (responseCode == 403 && cloudflare != null) {
             // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
             if (captchaLocked.compareAndSet(false, true)) {
-                // set boolean value
-                a_captchaRequirement = true;
-                // recapthcha v2
-                if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                    final Form cf = cloudflare;
-                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
+                try {
+                    // set boolean value
+                    a_captchaRequirement = true;
+                    // recapthcha v2
+                    if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                        final Form cf = cloudflare;
+                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
+                            {
+                                boundToDomain = true;
+                            }
 
-                        {
-                            boundToDomain = true;
-                        }
+                            @Override
+                            public String getSiteKey() {
+                                return getSiteKey(cf.getHtmlCode());
+                            }
 
-                        @Override
-                        public String getSiteKey() {
-                            return getSiteKey(cf.getHtmlCode());
+                            @Override
+                            public String getSecureToken() {
+                                return getSecureToken(cf.getHtmlCode());
+                            }
+                        }.getToken();
+                        // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
+                        final String rayId = getRayID(ibr);
+                        if (inValidate(rayId)) {
+                            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                         }
-
-                        @Override
-                        public String getSecureToken() {
-                            return getSecureToken(cf.getHtmlCode());
+                        cloudflare.put("id", Encoding.urlEncode(rayId));
+                        cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    // recapthca v1
+                    else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                        // we will manually remove all those
+                        while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            cloudflare.remove("recaptcha_response_field");
                         }
-                    }.getToken();
-                    // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
-                    final String rayId = getRayID(ibr);
-                    if (inValidate(rayId)) {
-                        throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-                    }
-                    cloudflare.put("id", Encoding.urlEncode(rayId));
-                    cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                // recapthca v1
-                else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                    // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                    // we will manually remove all those
-                    while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                        cloudflare.remove("recaptcha_response_field");
-                    }
-                    while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                        cloudflare.remove("recaptcha_challenge_field");
-                    }
-                    // this one is null, needs to be ""
-                    if (cloudflare.hasInputFieldByName("message")) {
-                        cloudflare.remove("message");
-                        cloudflare.put("messsage", "\"\"");
-                    }
-                    // recaptcha bullshit,
-                    String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                    if (apiKey == null) {
-                        apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                            cloudflare.remove("recaptcha_challenge_field");
+                        }
+                        // this one is null, needs to be ""
+                        if (cloudflare.hasInputFieldByName("message")) {
+                            cloudflare.remove("message");
+                            cloudflare.put("messsage", "\"\"");
+                        }
+                        // recaptcha bullshit,
+                        String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                         if (apiKey == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                            if (apiKey == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
-                    }
-                    final Recaptcha rc = new Recaptcha(ibr, this);
-                    rc.setId(apiKey);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String response = getCaptchaCode("recaptcha", cf, param);
-                    if (inValidate(response)) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
-                    }
-                    cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                    cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
-                }
-                final Request originalRequest = ibr.getRequest();
-                if (request != null) {
-                    ibr.openFormConnection(cloudflare);
-                } else {
-                    ibr.submitForm(cloudflare);
-                }
-                if (getCloudflareChallengeForm(ibr) != null) {
-                    logger.warning("Wrong captcha");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
-                }
-                // on success cf_clearance cookie is set and a redirect will be present!
-                // we have a problem here when site expects POST request and redirects are always are GETS
-                if (originalRequest instanceof PostRequest) {
-                    try {
-                        sendRequest(ibr, originalRequest.cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
+                        final Recaptcha rc = new Recaptcha(ibr, this);
+                        rc.setId(apiKey);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String response = getCaptchaCode("recaptcha", cf, param);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                         }
-                        t.printStackTrace();
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                        cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                        cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                     }
-                    // because next round could be 200 response code, you need to nullify this value here.
+                    final Request originalRequest = ibr.getRequest();
+                    if (request != null) {
+                        ibr.openFormConnection(cloudflare);
+                    } else {
+                        ibr.submitForm(cloudflare);
+                    }
+                    if (getCloudflareChallengeForm(ibr) != null) {
+                        logger.warning("Wrong captcha");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
+                    }
+                    // on success cf_clearance cookie is set and a redirect will be present!
+                    // we have a problem here when site expects POST request and redirects are always are GETS
+                    if (originalRequest instanceof PostRequest) {
+                        try {
+                            sendRequest(ibr, originalRequest.cloneRequest());
+                        } catch (final Exception t) {
+                            // we want to preserve proper exceptions!
+                            if (t instanceof PluginException) {
+                                throw t;
+                            }
+                            t.printStackTrace();
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                        }
+                        // because next round could be 200 response code, you need to nullify this value here.
+                        a_captchaRequirement = false;
+                        // new sendRequest saves cookie session
+                        return;
+                    } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                        ibr.getPage(ibr.getRedirectLocation());
+                    }
                     a_captchaRequirement = false;
-                    // new sendRequest saves cookie session
-                    return;
-                } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                    ibr.getPage(ibr.getRedirectLocation());
+                } finally {
+                    captchaLocked.compareAndSet(true, false);
                 }
-                a_captchaRequirement = false;
             } else {
                 // we need togo back and re-request!
                 throw new CaptchaLockException();
@@ -781,38 +774,42 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
                 if (captchaLocked.compareAndSet(false, true)) {
-                    a_captchaRequirement = true;
-                    String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                    if (apiKey == null) {
-                        apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
-                    }
-                    final Recaptcha rc = new Recaptcha(ibr, this);
-                    rc.setId(apiKey);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String response = getCaptchaCode("recaptcha", cf, param);
-                    if (inValidate(response)) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    // they have no script value and our form parser adds the input field when it shouldn't
-                    while (captcha.hasInputFieldByName("recaptcha_response_field")) {
-                        captcha.remove("recaptcha_response_field");
-                    }
-                    captcha.put("recaptcha_challenge_field", rc.getChallenge());
-                    captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
-                    ifr.submitForm(captcha);
-                    if (ifr.getFormbyProperty("id", "captcha-form") != null) {
-                        logger.warning("Wrong captcha");
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
-                        // they show z again after captcha...
-                        getPage(ibr.getURL());
-                        // above request saves, as it re-enters this method!
-                        a_captchaRequirement = false;
-                        return;
-                    } else {
-                        // shouldn't happen???
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    try {
+                        a_captchaRequirement = true;
+                        String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
+                        }
+                        final Recaptcha rc = new Recaptcha(ibr, this);
+                        rc.setId(apiKey);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String response = getCaptchaCode("recaptcha", cf, param);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        // they have no script value and our form parser adds the input field when it shouldn't
+                        while (captcha.hasInputFieldByName("recaptcha_response_field")) {
+                            captcha.remove("recaptcha_response_field");
+                        }
+                        captcha.put("recaptcha_challenge_field", rc.getChallenge());
+                        captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
+                        ifr.submitForm(captcha);
+                        if (ifr.getFormbyProperty("id", "captcha-form") != null) {
+                            logger.warning("Wrong captcha");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
+                            // they show z again after captcha...
+                            getPage(ibr.getURL());
+                            // above request saves, as it re-enters this method!
+                            a_captchaRequirement = false;
+                            return;
+                        } else {
+                            // shouldn't happen???
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    } finally {
+                        captchaLocked.compareAndSet(true, false);
                     }
                 } else {
                     // we need togo back and re-request!
@@ -1058,5 +1055,4 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         } while (wait > 15000 && wait < 500);
         return wait;
     }
-
 }
