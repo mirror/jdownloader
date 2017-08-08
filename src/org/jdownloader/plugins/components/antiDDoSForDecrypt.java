@@ -9,12 +9,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,7 +41,6 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.LinkStatus;
@@ -37,17 +49,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 /**
  *
  * @author raztoki
@@ -55,6 +56,7 @@ import org.mozilla.javascript.ScriptableObject;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
+
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -86,19 +88,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         prepBr.addAllowedResponseCodes(new int[] { 429, 503, 504, 520, 521, 522, 523, 525 });
-        synchronized (antiDDoSCookies) {
-            if (!antiDDoSCookies.isEmpty()) {
-                for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    if (key != null && key.equals(host)) {
-                        try {
-                            prepBr.setCookies(key, cookieEntry.getValue(), false);
-                        } catch (final Throwable e) {
-                        }
-                    }
-                }
-            }
-        }
+        loadAntiDDoSCookies(prepBr, host);
         if (setBrowserName() != null && browserName.get() == null) {
             browserName.set(setBrowserName());
         }
@@ -114,6 +104,22 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // we now set
         browserPrepped.put(prepBr, Boolean.TRUE);
         return prepBr;
+    }
+
+    private void loadAntiDDoSCookies(Browser prepBr, final String host) {
+        synchronized (antiDDoSCookies) {
+            if (!antiDDoSCookies.isEmpty()) {
+                for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    if (key != null && key.equals(host)) {
+                        try {
+                            prepBr.setCookies(key, cookieEntry.getValue(), false);
+                        } catch (final Throwable e) {
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -136,46 +142,14 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (ibr == null || page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
-        // use existing browser session to determine host
-        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
-        prepBrowser(ibr, host);
-        URLConnectionAdapter con = null;
-        try {
-            con = ibr.openGetConnection(page);
-            readConnection(con, ibr);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-        antiDDoS(ibr);
-        runPostRequestTask(ibr);
+        sendRequest(ibr, ibr.createGetRequest(page));
     }
 
     protected void postPage(final Browser ibr, String page, final String postData) throws Exception {
         if (ibr == null || page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
-        // use existing browser session to determine host
-        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
-        prepBrowser(ibr, host);
-        ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        URLConnectionAdapter con = null;
-        try {
-            con = ibr.openPostConnection(page, postData);
-            readConnection(con, ibr);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-            ibr.getHeaders().put("Content-Type", null);
-        }
-        antiDDoS(ibr);
-        runPostRequestTask(ibr);
+        sendRequest(ibr, ibr.createPostRequest(page, postData));
     }
 
     /**
@@ -192,24 +166,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (ibr == null || page == null || param == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
-        // use existing browser session to determine host
-        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
-        prepBrowser(ibr, host);
-        ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        URLConnectionAdapter con = null;
-        try {
-            con = ibr.openPostConnection(page, param);
-            readConnection(con, ibr);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-            ibr.getHeaders().put("Content-Type", null);
-        }
-        antiDDoS(ibr);
-        runPostRequestTask(ibr);
+        sendRequest(ibr, ibr.createPostRequest(page, UrlQuery.get(param), null));
     }
 
     /**
@@ -222,50 +179,23 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         postPage(br, page, param);
     }
 
-    protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
+    protected void postPageRaw(final Browser ibr, final String page, final String post, final String encoding) throws Exception {
         if (ibr == null || page == null || post == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final PostRequest request = ibr.createPostRequest(page, new UrlQuery(), null);
+        final PostRequest request = ibr.createPostRequest(page, new UrlQuery(), encoding);
         request.setPostDataString(post);
-        setContentType(request, isJson);
-        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
-        // use existing browser session to determine host
-        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
-        prepBrowser(ibr, host);
-        URLConnectionAdapter con = null;
-        try {
-            con = ibr.openRequestConnection(request);
-            readConnection(con, ibr);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-            ibr.getHeaders().put("Content-Type", null);
-        }
-        antiDDoS(ibr);
-        runPostRequestTask(ibr);
-    }
-
-    protected void setContentType(final PostRequest request, final boolean isJson) {
-        if (request != null) {
-            if (isJson) {
-                request.setContentType("application/json");
-            } else {
-                request.setContentType("application/x-www-form-urlencoded");
-            }
-        }
+        sendRequest(ibr, request);
     }
 
     /**
-     * Wrapper into postPageRaw(importBrowser, page, post), where browser == this.br;
+     * Wrapper into postPageRaw(importBrowser, page, post, encoding)
      *
      * @author raztoki
      *
      */
-    protected void postPageRaw(final String page, final String post) throws Exception {
-        postPageRaw(br, page, post, false);
+    protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
+        postPageRaw(ibr, page, post, isJson ? "application/json" : null);
     }
 
     /**
@@ -279,7 +209,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     /**
-     * Wrapper into postPageRaw(importBrowser, page, post, false);
+     * Wrapper into postPageRaw(importBrowser, page, post, null);
      *
      * @param ibr
      * @param page
@@ -288,37 +218,24 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @throws Exception
      */
     protected void postPageRaw(final Browser ibr, final String page, final String post) throws Exception {
-        postPageRaw(ibr, page, post, false);
+        postPageRaw(ibr, page, post, null);
+    }
+
+    /**
+     * Wrapper into postPageRaw(importBrowser, page, post), where browser == this.br;
+     *
+     * @author raztoki
+     *
+     */
+    protected void postPageRaw(final String page, final String post) throws Exception {
+        postPageRaw(br, page, post);
     }
 
     protected void submitForm(final Browser ibr, final Form form) throws Exception {
         if (ibr == null || form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
-        // use existing browser session to determine host
-        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(form.getAction());
-        prepBrowser(ibr, host);
-        if (Form.MethodType.POST.equals(form.getMethod())) {
-            // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(ibr.getURL());
-            }
-            ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = ibr.openFormConnection(form);
-            readConnection(con, ibr);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-            ibr.getHeaders().put("Content-Type", null);
-        }
-        antiDDoS(ibr);
-        runPostRequestTask(ibr);
+        sendRequest(ibr, ibr.createFormRequest(form));
     }
 
     /**
@@ -331,24 +248,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         submitForm(br, form);
     }
 
-    protected void sendRequest(final Browser ibr, final Request request) throws Exception {
-        final String host = Browser.getHost(request.getUrl());
-        prepBrowser(ibr, host);
-        URLConnectionAdapter con = null;
-        try {
-            con = ibr.openRequestConnection(request);
-            readConnection(con, ibr);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-            ibr.getHeaders().put("Content-Type", null);
-        }
-        antiDDoS(ibr);
-        runPostRequestTask(ibr);
-    }
-
     /**
      * Wrapper into sendRequest(importBrowser, form), where browser == this.br;
      *
@@ -357,6 +256,102 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      */
     protected void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
+    }
+
+    protected void sendRequest(final Browser ibr, final Request request) throws Exception {
+        final String host = Browser.getHost(request.getUrl());
+        prepBrowser(ibr, host);
+        int i = 0;
+        while (true) {
+            i++;
+            // lazy lock
+            if (captchaLocked.get()) {
+                // we will wait, and we will randomise. This will help when lock is removed, not all threads will instantly submit request.
+                Thread.sleep(getRandomWait());
+                continue;
+            }
+            if (i > 1) {
+                // we now need to update to the refreshed/latest cookie session
+                loadAntiDDoSCookies(ibr, host);
+            }
+            URLConnectionAdapter con = null;
+            try {
+                con = ibr.openRequestConnection(request);
+                readConnection(con, ibr);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+            try {
+                antiDDoS(ibr);
+                break;
+            } catch (final CaptchaLockException cle) {
+                continue;
+            } catch (final Exception e) {
+                // release lock for any exceptions otherwise we will have deadlocks.
+                captchaLocked.compareAndSet(true, false);
+                throw e;
+            }
+        }
+        runPostRequestTask(ibr);
+    }
+
+    /**
+     * clone of sendRequest without disconnect and runPostRequestTask & and returns the http connection!
+     *
+     * @author Jiaz
+     * @author raztoki
+     */
+    protected URLConnectionAdapter openAntiDDoSRequestConnection(final Browser ibr, Request request) throws Exception {
+        final String host = Browser.getHost(request.getUrl());
+        prepBrowser(ibr, host);
+        int i = 0;
+        while (true) {
+            i++;
+            // lazy lock
+            if (captchaLocked.get()) {
+                // we will wait, and we will randomise. This will help when lock is removed, not all threads will instantly submit request.
+                Thread.sleep(getRandomWait());
+                continue;
+            }
+            if (i > 1) {
+                // we now need to update to the refreshed/latest cookie session
+                loadAntiDDoSCookies(ibr, host);
+            }
+            ibr.openRequestConnection(request);
+            try {
+                antiDDoS(ibr, request);
+                break;
+            } catch (final CaptchaLockException cle) {
+                continue;
+            } catch (final Exception e) {
+                // release lock for any exceptions otherwise we will have deadlocks
+                captchaLocked.compareAndSet(true, false);
+                throw e;
+            }
+        }
+        return ibr.getHttpConnection();
+    }
+
+    /**
+     * @author razotki
+     * @author jiaz
+     * @param con
+     * @param ibr
+     * @throws IOException
+     * @throws PluginException
+     */
+    public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
+        final InputStream is = getInputStream(con, ibr);
+        final byte[] responseBytes = IO.readStream(-1, is);
+        ibr.getRequest().setResponseBytes(responseBytes);
+        logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
+        if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
+            ibr.getRequest().setKeepByteArray(true);
+            ibr.getRequest().setResponseBytes(responseBytes);
+        }
     }
 
     /**
@@ -380,45 +375,12 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         return con.getInputStream();
     }
 
-    /**
-     * @author razotki
-     * @author jiaz
-     * @param con
-     * @param ibr
-     * @throws IOException
-     * @throws PluginException
-     */
-    public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
-        final InputStream is = getInputStream(con, ibr);
-        final byte[] responseBytes = IO.readStream(-1, is);
-        ibr.getRequest().setResponseBytes(responseBytes);
-        logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
-        if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
-            ibr.getRequest().setKeepByteArray(true);
-            ibr.getRequest().setResponseBytes(responseBytes);
-        }
-    }
-
     private int     a_responseCode429    = 0;
     private int     a_responseCode5xx    = 0;
     private boolean a_captchaRequirement = false;
 
     protected final boolean hasAntiddosCaptchaRequirement() {
         return a_captchaRequirement;
-    }
-
-    /**
-     * uses common method antiDDoS
-     *
-     * @author Jiaz
-     * @author raztoki
-     */
-    protected URLConnectionAdapter openAntiDDoSRequestConnection(final Browser ibr, Request request) throws Exception {
-        final String host = Browser.getHost(request.getURL());
-        prepBrowser(ibr, host);
-        ibr.openRequestConnection(request);
-        antiDDoS(ibr, request);
-        return ibr.getHttpConnection();
     }
 
     /**
@@ -466,8 +428,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             synchronized (antiDDoSCookies) {
                 antiDDoSCookies.put(ibr.getHost(), cookies);
             }
+            captchaLocked.compareAndSet(true, false);
         }
     }
+
+    private static AtomicBoolean captchaLocked = new AtomicBoolean(false);
 
     private void processCloudflare(final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
@@ -485,98 +450,106 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         final Form cloudflare = getCloudflareChallengeForm(ibr);
         if (responseCode == 403 && cloudflare != null) {
-            a_captchaRequirement = true;
-            // recapthcha v2
-            if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                final Form cf = cloudflare;
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
-                    {
-                        boundToDomain = true;
-                    }
+            // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
+            if (captchaLocked.compareAndSet(false, true)) {
+                // set boolean value
+                a_captchaRequirement = true;
+                // recapthcha v2
+                if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                    final Form cf = cloudflare;
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
 
-                    @Override
-                    public String getSiteKey() {
-                        return getSiteKey(cf.getHtmlCode());
-                    }
+                        {
+                            boundToDomain = true;
+                        }
 
-                    @Override
-                    public String getSecureToken() {
-                        return getSecureToken(cf.getHtmlCode());
+                        @Override
+                        public String getSiteKey() {
+                            return getSiteKey(cf.getHtmlCode());
+                        }
+
+                        @Override
+                        public String getSecureToken() {
+                            return getSecureToken(cf.getHtmlCode());
+                        }
+                    }.getToken();
+                    // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
+                    final String rayId = getRayID(ibr);
+                    if (inValidate(rayId)) {
+                        throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                     }
-                }.getToken();
-                // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
-                final String rayId = getRayID(ibr);
-                if (inValidate(rayId)) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    cloudflare.put("id", Encoding.urlEncode(rayId));
+                    cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                cloudflare.getInputFields().add(0, new InputField("id", Encoding.urlEncode(rayId)));
-                cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            }
-            // recapthca v1
-            else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                // we will manually remove all those
-                while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                    cloudflare.remove("recaptcha_response_field");
-                }
-                while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                    cloudflare.remove("recaptcha_challenge_field");
-                }
-                // this one is null, needs to be ""
-                if (cloudflare.hasInputFieldByName("message")) {
-                    cloudflare.remove("message");
-                    cloudflare.put("messsage", "\"\"");
-                }
-                // recaptcha bullshit,
-                String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                if (apiKey == null) {
-                    apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                // recapthca v1
+                else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                    // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                    // we will manually remove all those
+                    while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        cloudflare.remove("recaptcha_response_field");
+                    }
+                    while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                        cloudflare.remove("recaptcha_challenge_field");
+                    }
+                    // this one is null, needs to be ""
+                    if (cloudflare.hasInputFieldByName("message")) {
+                        cloudflare.remove("message");
+                        cloudflare.put("messsage", "\"\"");
+                    }
+                    // recaptcha bullshit,
+                    String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                     if (apiKey == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
-                }
-                final Recaptcha rc = new Recaptcha(ibr, this);
-                rc.setId(apiKey);
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String response = getCaptchaCode("recaptcha", cf, param);
-                if (inValidate(response)) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
-                }
-                cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
-            }
-            final Request originalRequest = ibr.getRequest();
-            if (request != null) {
-                ibr.openFormConnection(cloudflare);
-            } else {
-                ibr.submitForm(cloudflare);
-            }
-            if (getCloudflareChallengeForm(ibr) != null) {
-                logger.warning("Wrong captcha");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
-            }
-            // on success cf_clearance cookie is set and a redirect will be present!
-            // we have a problem here when site expects POST request and redirects are always are GETS
-            if (originalRequest instanceof PostRequest) {
-                try {
-                    sendRequest(ibr, originalRequest.cloneRequest());
-                } catch (final Exception t) {
-                    // we want to preserve proper exceptions!
-                    if (t instanceof PluginException) {
-                        throw t;
+                    final Recaptcha rc = new Recaptcha(ibr, this);
+                    rc.setId(apiKey);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String response = getCaptchaCode("recaptcha", cf, param);
+                    if (inValidate(response)) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                     }
-                    t.printStackTrace();
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                    cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                    cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                 }
-                // because next round could be 200 response code, you need to nullify this value here.
+                final Request originalRequest = ibr.getRequest();
+                if (request != null) {
+                    ibr.openFormConnection(cloudflare);
+                } else {
+                    ibr.submitForm(cloudflare);
+                }
+                if (getCloudflareChallengeForm(ibr) != null) {
+                    logger.warning("Wrong captcha");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
+                }
+                // on success cf_clearance cookie is set and a redirect will be present!
+                // we have a problem here when site expects POST request and redirects are always are GETS
+                if (originalRequest instanceof PostRequest) {
+                    try {
+                        sendRequest(ibr, originalRequest.cloneRequest());
+                    } catch (final Exception t) {
+                        // we want to preserve proper exceptions!
+                        if (t instanceof PluginException) {
+                            throw t;
+                        }
+                        t.printStackTrace();
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                    }
+                    // because next round could be 200 response code, you need to nullify this value here.
+                    a_captchaRequirement = false;
+                    // new sendRequest saves cookie session
+                    return;
+                } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                    ibr.getPage(ibr.getRedirectLocation());
+                }
                 a_captchaRequirement = false;
-                // new sendRequest saves cookie session
-                return;
-            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                ibr.getPage(ibr.getRedirectLocation());
+            } else {
+                // we need togo back and re-request!
+                throw new CaptchaLockException();
             }
-            a_captchaRequirement = false;
         } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
             // website address could be www. or what ever prefixes, need to make sure
             // eg. within 403 response code,
@@ -805,40 +778,45 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 ifr.getPage(iframe);
                 final Form captcha = ifr.getFormbyProperty("id", "captcha-form");
                 if (captcha == null) {
-                    System.out.println("error");
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
-                a_captchaRequirement = true;
-                String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                if (apiKey == null) {
-                    apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
-                }
-                final Recaptcha rc = new Recaptcha(ibr, this);
-                rc.setId(apiKey);
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String response = getCaptchaCode("recaptcha", cf, param);
-                if (inValidate(response)) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                // they have no script value and our form parser adds the input field when it shouldn't
-                while (captcha.hasInputFieldByName("recaptcha_response_field")) {
-                    captcha.remove("recaptcha_response_field");
-                }
-                captcha.put("recaptcha_challenge_field", rc.getChallenge());
-                captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
-                ifr.submitForm(captcha);
-                if (ifr.getFormbyProperty("id", "captcha-form") != null) {
-                    logger.warning("Wrong captcha");
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
-                    // they show z again after captcha...
-                    getPage(ibr.getURL());
-                    // above request saves, as it re-enters this method!
-                    a_captchaRequirement = false;
-                    return;
+                if (captchaLocked.compareAndSet(false, true)) {
+                    a_captchaRequirement = true;
+                    String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                    if (apiKey == null) {
+                        apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
+                    }
+                    final Recaptcha rc = new Recaptcha(ibr, this);
+                    rc.setId(apiKey);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String response = getCaptchaCode("recaptcha", cf, param);
+                    if (inValidate(response)) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    // they have no script value and our form parser adds the input field when it shouldn't
+                    while (captcha.hasInputFieldByName("recaptcha_response_field")) {
+                        captcha.remove("recaptcha_response_field");
+                    }
+                    captcha.put("recaptcha_challenge_field", rc.getChallenge());
+                    captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
+                    ifr.submitForm(captcha);
+                    if (ifr.getFormbyProperty("id", "captcha-form") != null) {
+                        logger.warning("Wrong captcha");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
+                        // they show z again after captcha...
+                        getPage(ibr.getURL());
+                        // above request saves, as it re-enters this method!
+                        a_captchaRequirement = false;
+                        return;
+                    } else {
+                        // shouldn't happen???
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 } else {
-                    // shouldn't happen???
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // we need togo back and re-request!
+                    throw new CaptchaLockException();
                 }
             }
         }
@@ -897,8 +875,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * product <a href="https://blazingfast.io/web">"web"</a>
      *
      * @author raztoki
+     * @throws Exception
      */
-    private void processBlazingFast(final Browser ibr, final Cookies cookies) throws IOException {
+    private void processBlazingFast(final Browser ibr, final Cookies cookies) throws Exception {
         // only one known protection measure (at this time)
         final Browser br = ibr.cloneBrowser();
         // javascript based checks.
@@ -1071,4 +1050,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         return result != null ? result.toString() : null;
     }
+
+    private long getRandomWait() {
+        long wait = 0;
+        do {
+            wait = (new Random().nextInt(999)) * (new Random().nextInt(99));
+        } while (wait > 15000 && wait < 500);
+        return wait;
+    }
+
 }
