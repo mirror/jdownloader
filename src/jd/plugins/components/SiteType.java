@@ -130,7 +130,7 @@ public class SiteType {
         /**
          * Script used by some chinese file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what to call this script.
          *
-         * 'Copyright © 2016 百丽资源中心 版权所有 Powered By XDDrive Private V 1.4' http://vip.belle.la/ ?? xxdrive private? couldnt find much on
+         * 'Copyright © 2016 百丽资源中心 版权所有 Powered By XDDrive Private V 1.4' http://vip.belle.la/ ?? xddrive private? couldnt find much on
          * google
          */
         Unknown_ChineseFileHosting,
@@ -314,7 +314,18 @@ public class SiteType {
          * common traits<br />
          * chain link image top left in title bar next to site name.
          */
-        PricopAlexandru_URLShorterner2;
+        PricopAlexandru_URLShorterner2,
+
+        /**
+         * do not use, raztoki will set as required.
+         */
+        NotApplicable,
+
+        /**
+         * typically word press sites have common traits like file paths(css/plugins/js/etc).
+         */
+        WordPress_Wordpress;
+
     }
 
 }
