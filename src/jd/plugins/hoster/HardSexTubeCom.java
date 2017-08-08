@@ -124,7 +124,7 @@ public class HardSexTubeCom extends antiDDoSForHost {
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setProperty("plain_title", filename);
         if (enable_site) {
-            dllink = this.br.getRegex("\"(http[^<>\"]*?)\" type=\\'video/mp4\\'").getMatch(0);
+            dllink = this.br.getRegex("\"(http[^<>\"]*?)\" type=(\"|\\')video/mp4(\"|\\')").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
