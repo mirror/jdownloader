@@ -191,7 +191,7 @@ public class UploadgigCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private boolean getDllink(final Browser br) throws PluginException {
+    private boolean getDllink(final Browser br) throws Exception {
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         // newest 20170808
         try {
@@ -232,7 +232,7 @@ public class UploadgigCom extends antiDDoSForHost {
         return false;
     }
 
-    private boolean testLink(String dllink) {
+    private boolean testLink(String dllink) throws Exception {
         try {
             final Browser br2 = this.br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(br2, this.getDownloadLink(), dllink, resumes, chunks);
@@ -249,6 +249,9 @@ public class UploadgigCom extends antiDDoSForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable ee) {
             }
+            if (e instanceof PluginException) {
+                throw e;
+            }
             return false;
         }
     }
@@ -257,7 +260,7 @@ public class UploadgigCom extends antiDDoSForHost {
         return new Regex(dl.getDownloadURL(), "/download/([^/]+)").getMatch(0);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) throws Exception {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             if (!testLink(dllink)) {
@@ -295,7 +298,7 @@ public class UploadgigCom extends antiDDoSForHost {
                     br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                getPage("http://" + account.getHoster() + "/login/form");
+                getPage("https://" + account.getHoster() + "/login/form");
                 final Form loginform = br.getForm(0);
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -338,7 +341,7 @@ public class UploadgigCom extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         getPage("/user/my_account");
-        final Regex trafficregex = this.br.getRegex("<dt>Daily traffic usage</dt>\\s*<dd>(\\d+)/(\\d+) MB");
+        final Regex trafficregex = br.getRegex("<dt>Daily traffic usage:?</dt>\\s*<dd>\\s*(\\d+)\\s*/\\s*(\\d+)\\s*MB");
         final String traffic_used_str = trafficregex.getMatch(0);
         final String traffic_max_str = trafficregex.getMatch(1);
         String expire = br.getRegex("Package expire date:</dt>\\s*<dd>(\\d{4}/\\d{2}/\\d{2})").getMatch(0);
