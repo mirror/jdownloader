@@ -193,6 +193,24 @@ public class UploadgigCom extends antiDDoSForHost {
 
     private boolean getDllink(final Browser br) throws PluginException {
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+        // newest 20170808
+        try {
+            String href = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"(.*?\\+pres\\['\\w+'\\].*?)\">Download now</a>'\\);").getMatch(0);
+            if (href != null) {
+                final String[][] pres = new Regex(href, "('\\+pres\\['(\\w+)'\\]\\+')").getMatches();
+                for (final String[] p : pres) {
+                    final String d = PluginJSonUtils.getJson(br, p[1]);
+                    if (d != null) {
+                        href = href.replace(p[0], d);
+                    }
+                }
+                if (dupe.add(href) && testLink(href)) {
+                    return true;
+                }
+            }
+        } catch (final NullPointerException e) {
+        }
+        // old
         final String js = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+\\+?'\">Download now</a>'\\);").getMatch(0);
         if (js != null) {
             String dllink = PluginJSonUtils.getJsonValue(br, js);
@@ -332,13 +350,11 @@ public class UploadgigCom extends antiDDoSForHost {
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(10);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
         }
         if (traffic_used_str != null && traffic_max_str != null) {
             final long traffic_used = SizeFormatter.getSize(traffic_used_str + "MB");
