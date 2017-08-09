@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?(yourupload\\.com|yucache\\.net)/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" })
 public class YourUploadCom extends antiDDoSForHost {
-
     private String dllink     = null;
     private String regexEmbed = ".+(/embed_ext/|embed\\.(?:yourupload\\.com|yucache\\.net)/|yourupload\\.com/embed/).+";
 
@@ -84,6 +82,9 @@ public class YourUploadCom extends antiDDoSForHost {
             dllink = br.getRegex("(?:\\')?file(?:\\')?\\s*?:\\s*?\\'((?:https?://|/).*?)\\'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("property=\"og:video\" content=\"(https?://.*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("<source[^<>]+?src=\"(.*?)\"").getMatch(0);
             }
             if (dllink == null || filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -194,5 +195,4 @@ public class YourUploadCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
