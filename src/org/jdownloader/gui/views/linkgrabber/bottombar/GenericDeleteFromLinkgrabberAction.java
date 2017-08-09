@@ -35,7 +35,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.translate._JDT;
 
 public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
-
     public static final String    CLEAR_FILTERED_LINKS    = "clearFilteredLinks";
     public static final String    CLEAR_SEARCH_FILTER     = "clearSearchFilter";
     public static final String    RESET_TABLE_SORTER      = "resetTableSorter";
@@ -48,12 +47,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
      *
      */
     private static final long     serialVersionUID        = 1L;
-
     private final DelayedRunnable delayer;
     private boolean               deleteAll               = false;
-
     private boolean               deleteDisabled          = false;
-
     private boolean               deleteOffline           = false;
     private boolean               cancelLinkcrawlerJobs   = false;
     private boolean               resetTableSorter        = false;
@@ -63,13 +59,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void loadContextSetups() {
         super.loadContextSetups();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 setName(createName());
             }
         }.getReturnValue();
-
     }
 
     public static String getTranslationForCancelLinkcrawlerJobs() {
@@ -78,7 +72,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     @Customizer(link = "#getTranslationForCancelLinkcrawlerJobs")
     public boolean isCancelLinkcrawlerJobs() {
-
         return cancelLinkcrawlerJobs;
     }
 
@@ -92,7 +85,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     @Customizer(link = "#getTranslationForDeleteDupesEnabled")
     public boolean isdeleteDupes() {
-
         return deleteDupes;
     }
 
@@ -106,7 +98,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     @Customizer(link = "#getTranslationForResetTableSorter")
     public boolean isResetTableSorter() {
-
         return resetTableSorter;
     }
 
@@ -120,7 +111,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     @Customizer(link = "#getTranslationForClearSearchFilter")
     public boolean isClearSearchFilter() {
-
         return clearSearchFilter;
     }
 
@@ -134,7 +124,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     @Customizer(link = "#getTranslationForClearFilteredLinks")
     public boolean isClearFilteredLinks() {
-
         return clearFilteredLinks;
     }
 
@@ -145,12 +134,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     private boolean                                                     clearSearchFilter  = false;
     private boolean                                                     clearFilteredLinks = false;
     //
-
     private boolean                                                     ignoreFiltered     = true;
-
     protected WeakReference<CrawledLink>                                lastLink           = new WeakReference<CrawledLink>(null);
     protected WeakReference<SelectionInfo<CrawledPackage, CrawledLink>> selection          = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(null);
-
     private final ByPassDialogSetup                                     byPassDialog;
     protected IncludedSelectionSetup                                    includedSelection;
 
@@ -158,7 +144,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         super();
         addContextSetup(byPassDialog = new ByPassDialogSetup());
         delayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 1500) {
-
             @Override
             public void delayedrun() {
                 update();
@@ -177,7 +162,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         final SelectionInfo<CrawledPackage, CrawledLink> finalSelection = selection.get();
         if (finalSelection != null) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
@@ -233,13 +217,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         if (keystroke == null) {
             return null;
         }
-
         ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
         Modifier mod = byPassDialog.getByPassDialogToggleModifier();
         if (mod != null) {
             ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
         }
-
         return ret;
     }
 
@@ -261,14 +243,12 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     protected String createName() {
         final StringBuilder sb = new StringBuilder();
-
         if (isClearFilteredLinks()) {
             if (sb.length() > 0) {
                 sb.append(", ");
             }
             sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_clearFiltered());
         }
-
         if (isCancelLinkcrawlerJobs()) {
             if (sb.length() > 0) {
                 sb.append(", ");
@@ -281,7 +261,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             }
             sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_clearSearch());
         }
-
         if (isResetTableSorter()) {
             if (sb.length() > 0) {
                 sb.append(", ");
@@ -302,13 +281,10 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             case UNSELECTED:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_all());
                 break;
-
             case NONE:
                 sb.append("Bad Action Setup");
             }
-
         } else {
-
             switch (includedSelection.getSelectionType()) {
             case ALL:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object());
@@ -319,30 +295,24 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             case UNSELECTED:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_selected());
                 break;
-
             case NONE:
                 sb.append("Bad Action Setup");
             }
-
             boolean first = true;
             if (this.isdeleteDupes()) {
                 if (!first) {
                     sb.append(" & ");
                 }
-
                 sb.append(_GUI.T.lit_duplicates_links());
                 first = false;
             }
-
             if (this.isDeleteDisabled()) {
                 if (!first) {
                     sb.append(" & ");
                 }
-
                 sb.append(_GUI.T.lit_disabled());
                 first = false;
             }
-
             if (this.isDeleteOffline()) {
                 if (!first) {
                     sb.append(" & ");
@@ -413,27 +383,22 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
         update();
-
     }
 
     public void setDeleteAll(final boolean deleteIdle) {
         GenericDeleteFromLinkgrabberAction.this.deleteAll = deleteIdle;
-
     }
 
     public void setDeleteDisabled(final boolean deleteDisabled) {
         GenericDeleteFromLinkgrabberAction.this.deleteDisabled = deleteDisabled;
-
     }
 
     public void setDeleteOffline(final boolean deleteOffline) {
         GenericDeleteFromLinkgrabberAction.this.deleteOffline = deleteOffline;
-
     }
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
         GenericDeleteFromLinkgrabberAction.this.ignoreFiltered = ignoreFiltered;
-
     }
 
     protected void update() {
@@ -473,7 +438,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                 break;
             }
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     setVisible(true);
@@ -520,7 +484,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     private void updateName() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 setName(createName());
@@ -532,5 +495,4 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void onExtTableModelEvent(ExtTableModelEventWrapper listener) {
         delayer.resetAndStart();
     }
-
 }

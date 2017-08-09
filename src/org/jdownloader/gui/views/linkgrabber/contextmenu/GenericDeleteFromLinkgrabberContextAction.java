@@ -15,14 +15,12 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
     public GenericDeleteFromLinkgrabberContextAction() {
         super();
         addContextSetup(tableContext = new TableContext(false, true));
-
     }
 
     protected void initIncludeSelectionSupport() {
         addContextSetup(includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this) {
             @Override
             public void updateListeners() {
-
             }
         });
     }
@@ -34,7 +32,6 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
             SelectionInfo<CrawledPackage, CrawledLink> actualSelection = LinkGrabberTable.getInstance().getSelectionInfo();
             boolean has = actualSelection != null && !actualSelection.isEmpty();
             if (tableContext != null) {
-
                 if (has) {
                     if (tableContext.isItemVisibleForSelections()) {
                         setVisible(true);
@@ -42,7 +39,6 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                         setVisible(false);
                         setEnabled(false);
                     }
-
                 } else {
                     switch (includedSelection.getSelectionType()) {
                     case SELECTED:
@@ -66,13 +62,10 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                         setVisible(false);
                         setEnabled(false);
                         break;
-
                     default:
                         setVisible(false);
                         setEnabled(false);
-
                     }
-
                 }
             } else if (!has) {
                 setVisible(false);
@@ -81,7 +74,6 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                 setVisible(true);
             }
         }
-
     }
 
     @Override
@@ -89,5 +81,4 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
         includedSelection.setIncludeSelectedLinks(true);
         includedSelection.setIncludeUnselectedLinks(false);
     }
-
 }
