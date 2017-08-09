@@ -680,6 +680,7 @@ LinkGrabberTableModel_partcolumn=Dio Arhive
 LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links=Molimo sačekajte. Učitavanje Linkova...
 LinkGrabberTable_onSingleClick_dupe_msg=ovaj link je već u listi za download. Zbog toga ima označen crveno.
 LinkGrabberTable_onSingleClick_dupe_title=Detektovani su Dupli Linkovi!
+LinkIDColumn_LinkIDColumn=ID linka
 LinkURLEditor=Izvorni URL za ovaj Download Link
 LinkURLEditor_onContextMenu_copy_=Kopiraj URL-ove
 LinkgrabberContextMenuManager_getName=Lista GrabiocaLinkova - Meni nakon desnog klika
