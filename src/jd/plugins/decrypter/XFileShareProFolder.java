@@ -25,6 +25,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -37,13 +38,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = {
-        "https?://(www\\.)?(subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|anafile\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|rd\\-fs\\.com|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|movdivx\\.com|faststore\\.org|uptobox\\.com)/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?imgtiger\\.org/g/[a-z0-9]+|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?hotlink.cc/folder/[a-f0-9\\-]+" })
+        "https?://(www\\.)?(subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|anafile\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|rd\\-fs\\.com|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|movdivx\\.com|faststore\\.org|uptobox\\.com|clicknupload\\.org)/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?imgtiger\\.org/g/[a-z0-9]+|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?hotlink.cc/folder/[a-f0-9\\-]+" })
 public class XFileShareProFolder extends antiDDoSForDecrypt {
 
     // DONT FORGET TO MAINTAIN HERE ALSO!
 
     public String[] siteSupportedNames() {
-        return new String[] { "usersfiles.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "anafile.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "rd-fs.com", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "movdivx.com", "faststore.org", "imgtiger.org", "uptobox.com", "hotlink.cc" };
+        return new String[] { "usersfiles.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "anafile.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "rd-fs.com", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "movdivx.com", "faststore.org", "imgtiger.org", "uptobox.com", "hotlink.cc", "clicknupload.org" };
     }
 
     @Override
@@ -72,6 +73,8 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         dupe.clear();
         decryptedLinks.clear();
+        page = null;
+        i = 1;
         parameter = param.toString();
         host = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
         if (host == null) {
@@ -108,9 +111,12 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             }
         }
         dupe.add(parameter);
+        // count value prevents continuous loop.
+        int count = 0;
         do {
+            count = decryptedLinks.size();
             parsePage();
-        } while (parseNextPage());
+        } while (decryptedLinks.size() > count && parseNextPage());
 
         if (fpName != null) {
             fpName = "Folder - " + Encoding.htmlDecode(fpName);
@@ -130,15 +136,19 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
                 }
             }
         }
+        // these should only be shown when its a /user/ decrypt task
         final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(host) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders != null && folders.length > 0) {
             for (String dl : folders) {
-                if (dupe.add(dl)) {
+                if (dl.matches(this.getSupportedLinks().pattern()) && dupe.add(dl) && !parameter.equals(dl)) {
                     decryptedLinks.add(createDownloadlink(dl));
                 }
             }
         }
     }
+
+    private PostRequest page = null;
+    private int         i    = 1;
 
     private boolean parseNextPage() throws Exception {
         // not sure if this is the same for normal folders, but the following
@@ -148,7 +158,28 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             nextPage = HTMLEntities.unhtmlentities(nextPage);
             nextPage = Request.getLocation(nextPage, br.getRequest());
             if (dupe.add(nextPage)) {
-                br.getPage(nextPage);
+                getPage(nextPage);
+                return true;
+            }
+            return false;
+        }
+
+        if (page != null) {
+            page.put("page", ++i + "");
+            sendRequest(page);
+            return true;
+        } else {
+            // pagenation ?
+            final String pageNation = br.getRegex("setPagination\\('\\.files_paging',.*?\\);").getMatch(-1);
+            if (pageNation != null) {
+                final String op = new Regex(pageNation, "op:\\s*'(\\w+)'").getMatch(0);
+                final String usr_login = new Regex(pageNation, "usr_login:\\s*'(\\w+)'").getMatch(0);
+                final String fld_id = new Regex(pageNation, "fld_id:\\s*'(\\w+)'").getMatch(0);
+                page = br.createPostRequest(br.getURL(), "op=" + Encoding.urlEncode(op) + "&load=files&page=" + ++i + "&fld_id=" + Encoding.urlEncode(fld_id) + "&usr_login=" + Encoding.urlEncode(usr_login));
+                // ajax request
+                page.getHeaders().put("Accept", "*/*");
+                page.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                sendRequest(page);
                 return true;
             }
         }
