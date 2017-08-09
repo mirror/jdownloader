@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,9 +31,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "http://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
-
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://fastshare.cz/cenik_cs");
@@ -102,7 +101,7 @@ public class FastShareCz extends antiDDoSForHost {
         }
         br.setFollowRedirects(false);
         final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-        String action = br.getRegex("=(/free/[^<>\"]*?)>").getMatch(0);
+        String action = br.getRegex("=\"(/free/[^<>\"]*?)\"").getMatch(0);
         if (action == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
