@@ -2686,7 +2686,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             if (autoExtensionLearning) {
                                 final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
                                 lc.setDeepInspector(new LinkCrawlerDeepInspector() {
-                                    private final boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+                                    public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
                                         final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
                                         if (urlConnection.getResponseCode() == 200) {
                                             if (urlConnection.isContentDisposition()) {
@@ -2730,7 +2730,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                         urlConnection.disconnect();
                                                     } catch (Throwable e) {
                                                     }
-                                                    return lc.find(generation, "directhttp://" + url, null, false, false);
+                                                    final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                                                    final CrawledLink direct = lc.createDirectHTTPCrawledLink(urlConnection);
+                                                    if (direct != null) {
+                                                        ret.add(direct);
+                                                    }
+                                                    return ret;
                                                 } else {
                                                     final String fileName = Plugin.getFileNameFromURL(url);
                                                     final String fileExtension = Files.getExtension(fileName);
@@ -2746,7 +2751,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                             urlConnection.disconnect();
                                                         } catch (Throwable e) {
                                                         }
-                                                        return lc.find(generation, "directhttp://" + url, null, false, false);
+                                                        final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                                                        final CrawledLink direct = lc.createDirectHTTPCrawledLink(urlConnection);
+                                                        if (direct != null) {
+                                                            ret.add(direct);
+                                                        }
+                                                        return ret;
                                                     }
                                                 }
                                             }

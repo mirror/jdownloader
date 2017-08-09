@@ -1080,7 +1080,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1641,13 +1641,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Override
     public String toString() {
         final UniqueAlltimeID lPreviousParentNodeID = getPreviousParentNodeID();
+        String host = getHost();
+        if (host == null) {
+            host = "";
+        }
         if (lPreviousParentNodeID == null) {
-            return getName().concat("@").concat(getHost());
+            return getName().concat("@").concat(host);
         }
         if (lPreviousParentNodeID.equals(getParentNode().getUniqueID())) {
-            return getName().concat("@").concat(getHost());
+            return getName().concat("@").concat(host);
         }
-        return getName().concat("@").concat(getHost()).concat(" previousParentNode:").concat(lPreviousParentNodeID.toString());
+        return getName().concat("@").concat(host).concat(" previousParentNode:").concat(lPreviousParentNodeID.toString());
     }
 
     /**

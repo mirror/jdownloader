@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,9 +34,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "https://amazondecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "https://amazondecrypted\\.com/\\d+" })
 public class AmazonCloud extends PluginForHost {
-
     public AmazonCloud(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,12 +46,10 @@ public class AmazonCloud extends PluginForHost {
     }
 
     public static final String   JSON_KIND_FILE     = "FILE";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME        = true;
     private static final int     FREE_MAXCHUNKS     = 0;
     private static final int     FREE_MAXDOWNLOADS  = -1;
-
     /* Don't touch this! */
     public static int            max_items_per_page = 200;
 
@@ -66,7 +62,7 @@ public class AmazonCloud extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url = (mainlink != null && mainlink.contains("/gp/drive/share") ? mainlink : "https://www.amazon.com/clouddrive/share?s=" + plain_folder_id);
-        br.getPage(url);
+        getPage(br, url);
         if (br.containsHTML("=\"error_page\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,12 +93,11 @@ public class AmazonCloud extends PluginForHost {
                 /* Check if user still has VERY old links in his list --> Invalid */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             this.setBrowserExclusive();
             prepBR();
             final String plain_folder_id = link.getStringProperty("plain_folder_id", null);
             final String plain_domain = link.getStringProperty("plain_domain", null);
-            br.getPage("https://www." + plain_domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&ContentType=JSON&asset=ALL");
+            getPage(br, "https://www." + plain_domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&ContentType=JSON&asset=ALL");
             if (br.containsHTML("id=\"error_page\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -113,6 +108,13 @@ public class AmazonCloud extends PluginForHost {
             status = AvailableStatus.TRUE;
         }
         return status;
+    }
+
+    private static void getPage(final Browser br, final String url) throws IOException, PluginException {
+        br.getPage(url);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many Requests", 60 * 60 * 1000l);
+        }
     }
 
     public void handleFreeOld(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -131,7 +133,7 @@ public class AmazonCloud extends PluginForHost {
             final String shareid = downloadLink.getStringProperty("plain_folder_id");
             final String getlink = "http://www." + domain + "/gp/drive/share/downloadFile.html?_=" + System.currentTimeMillis() + "&sharedId=" + Encoding.urlEncode(shareid) + "&download=TRUE&deviceType=ubid&deviceSerialNumber=" + deviceserial;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage(getlink);
+            getPage(br, getlink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
@@ -153,7 +155,6 @@ public class AmazonCloud extends PluginForHost {
         }
         requestFileInformation(link);
         String dllink = link.getStringProperty("plain_directlink", null);
-
         boolean needs_new_directlink = false;
         if (dllink == null) {
             needs_new_directlink = true;
@@ -168,7 +169,6 @@ public class AmazonCloud extends PluginForHost {
         if (needs_new_directlink) {
             dllink = refreshDirectlink(link);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -195,9 +195,7 @@ public class AmazonCloud extends PluginForHost {
         final String linkid_target = getLinkid(plain_folder_id, dl.getMD5Hash(), plain_name);
         String linkid_temp = null;
         String finallink = null;
-
         logger.info("Refreshing directlink");
-
         if (plain_folder_id == null) {
             /* Should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -227,7 +225,6 @@ public class AmazonCloud extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-
         try {
             for (final Object data_o : resource_data_list) {
                 final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) data_o;
@@ -248,12 +245,10 @@ public class AmazonCloud extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-
         if (finallink == null) {
             logger.warning("Either something went terribly wrong or maybe the file we're trying to download is offline (or owner changed rights / filename / folder structure)");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: Failed to refresh final downloadurl");
         }
-
         return finallink;
     }
 
@@ -287,13 +282,13 @@ public class AmazonCloud extends PluginForHost {
         return (String) entries.get("tempLink");
     }
 
-    public static void accessFolder(final Browser br, final String domain, final String plain_folder_id) throws IOException {
-        br.getPage("https://www." + domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&resourceVersion=V2&ContentType=JSON&asset=ALL");
+    public static void accessFolder(final Browser br, final String domain, final String plain_folder_id) throws IOException, PluginException {
+        getPage(br, "https://www." + domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&resourceVersion=V2&ContentType=JSON&asset=ALL");
     }
 
     /* Access nodes/subfolders. Does pagination if needed (e.g. more than max_items_per_page items)! */
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
-    public static ArrayList<Object> getListFromNode(final Browser br, final String domain, final String plain_folder_id, final String nodeid) throws IOException {
+    public static ArrayList<Object> getListFromNode(final Browser br, final String domain, final String plain_folder_id, final String nodeid) throws IOException, PluginException {
         ArrayList<Object> resource_data_list_all = new ArrayList<Object>();
         ArrayList<Object> resource_data_list_tmp = null;
         LinkedHashMap<String, Object> entries_tmp = null;
@@ -301,7 +296,7 @@ public class AmazonCloud extends PluginForHost {
         int offset = 0;
         do {
             numberof_found_items = 0;
-            br.getPage("https://www." + domain + "/drive/v1/nodes/" + nodeid + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&offset=" + offset + "&limit=" + max_items_per_page + "&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
+            getPage(br, "https://www." + domain + "/drive/v1/nodes/" + nodeid + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&offset=" + offset + "&limit=" + max_items_per_page + "&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
             try {
                 entries_tmp = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 resource_data_list_tmp = (ArrayList) entries_tmp.get("data");
@@ -331,6 +326,7 @@ public class AmazonCloud extends PluginForHost {
 
     private void prepBR() {
         br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(429);
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
     }
 
@@ -346,5 +342,4 @@ public class AmazonCloud extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
