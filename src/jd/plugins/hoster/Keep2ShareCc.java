@@ -226,8 +226,8 @@ public class Keep2ShareCc extends K2SApi {
     /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
     public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
         /*
-         * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a
-         * downloadlimit is reached!
+         * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a downloadlimit
+         * is reached!
          */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -255,8 +255,8 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /**
-     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on
-     * his IP and possibly offer the free download without having to enter another captcha.
+     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on his
+     * IP and possibly offer the free download without having to enter another captcha.
      */
     public boolean freeDownloadImmediatelyPossible() {
         return br.containsHTML(">To download this file with slow speed, use");
@@ -415,10 +415,10 @@ public class Keep2ShareCc extends K2SApi {
                     sleep(wait * 1001l, downloadLink);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
-                    handleFreeErrors();
                     br.getHeaders().put("X-Requested-With", null);
                     dllink = getDllink();
                     if (inValidate(dllink)) {
+                        handleFreeErrors();
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -476,6 +476,9 @@ public class Keep2ShareCc extends K2SApi {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalwait + 10000l);
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        if (br.containsHTML(">\\s*At the moment all free slots are busy, try later\\.<br>")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         }
     }
 
