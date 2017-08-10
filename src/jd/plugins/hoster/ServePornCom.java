@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -33,14 +32,12 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
         "https?://(?:www\\.)?koloporno\\.com/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?einfachporno\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?vielerporno\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bubbaporn\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodrome\\.tv/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?nedporno\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?sexoquente\\.tv/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?filmikiporno\\.tv/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornjam\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?canalporno\\.com/ver/[a-z0-9\\-_]+/", "https?://(?:www\\.)?prendiporno\\.com/video/[a-z0-9\\-_]+/",
         "https?://(?:www\\.)?prendiporno\\.tv/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?guterporn\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?guterporn\\.xxx/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornalia\\.xxx/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bundesporno\\.(?:xxx|com)/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornburst\\.xxx/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?gauleporno\\.xxx/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?muchoporno\\.xxx/videos/[a-z0-9\\-_]+/" })
 public class ServePornCom extends antiDDoSForHost {
-
     public ServePornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     private String dllink = null;
 
     @Override
@@ -55,7 +52,7 @@ public class ServePornCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/(.+)/").getMatch(0);
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/videos?/(.+)/").getMatch(0);
         downloadLink.setName(url_filename + ".flv");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -63,7 +60,7 @@ public class ServePornCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("content=\\'([^<>\"]*?)\\' property=\\'og:title\\'/>").getMatch(0);
+        String filename = br.getRegex("content=(?:\"|\\')([^<>\"]*?)(?:\"|\\') property=(?:\"|\\')og:title(?:\"|\\')/>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
