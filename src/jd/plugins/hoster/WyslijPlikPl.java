@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,10 +31,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wyslij-plik.pl" }, urls = { "http://(?:www\\.)?wyslij\\-plik\\.pl/pokaz/\\d+[^/]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadfile.pl" }, urls = { "http://(?:www\\.)?(?:wyslij\\-plik|uploadfile)\\.pl/pokaz/\\d+[^/]+\\.html" })
 public class WyslijPlikPl extends PluginForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "uploadfile.pl", "wyslij-plik.pl" };
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return "uploadfile.pl";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "uploadfile.pl";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     public WyslijPlikPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +58,7 @@ public class WyslijPlikPl extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.wyslij-plik.pl/regulamin.html";
+        return "http://www.uploadfile.pl/regulamin.html";
     }
 
     /* Connection stuff */
@@ -51,13 +67,20 @@ public class WyslijPlikPl extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("wyslij-plik.pl/", "uploadfile.pl/").replace("//www.", "//"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
-        this.br.setCookie(this.getHost(), "agreeCookies", "yes");
-        this.br.setCookie(this.getHost(), "lang", "en");
+        br.setFollowRedirects(true);
+        br.setCookie(this.getHost(), "agreeCookies", "yes");
+        br.setCookie(this.getHost(), "lang", "en");
         br.getPage(link.getDownloadURL());
         /* E.g. <div class="error">Plik nie istnieje!</div> */
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -85,16 +108,16 @@ public class WyslijPlikPl extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final Form dlform = this.br.getFormbyKey("down_id");
+            final Form dlform = br.getFormbyKey("down_id");
             if (dlform != null) {
-                this.br.submitForm(dlform);
+                br.submitForm(dlform);
             }
-            dllink = this.br.getURL().replace("/pokaz/", "/pobierz/");
+            dllink = br.getURL().replace("/pokaz/", "/pobierz/");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
