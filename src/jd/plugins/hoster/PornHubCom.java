@@ -32,8 +32,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,9 +59,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" })
 public class PornHubCom extends PluginForHost {
-
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
@@ -71,27 +70,22 @@ public class PornHubCom extends PluginForHost {
     private static final boolean                  ACCOUNT_FREE_RESUME       = true;
     private static final int                      ACCOUNT_FREE_MAXCHUNKS    = 0;
     private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 5;
-
     public static final long                      trust_cookie_age          = 300000l;
     public static final boolean                   use_download_workarounds  = true;
-
     private static final String                   type_photo                = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
     public static final String                    html_privatevideo         = "id=\"iconLocked\"";
     public static final String                    html_premium_only         = "<h2>Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
     private String                                dlUrl                     = null;
-
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-
-                                                                                {
+        {
                                                                                     put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
                                                                                     put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
                                                                                     put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
                                                                                     put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
                                                                                 }
                                                                             });
-
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -163,14 +157,12 @@ public class PornHubCom extends PluginForHost {
             viewkey = getViewkeyFromURL(source_url);
             /* Offline links should also have nice filenames */
             downloadLink.setName(viewkey + ".mp4");
-
             String filename = downloadLink.getStringProperty("decryptedfilename", null);
             dlUrl = downloadLink.getStringProperty("directlink", null);
             if (dlUrl == null || filename == null) {
                 /* This should never happen as every url goes into the decrypter first! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             prepBr(br);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
@@ -185,6 +177,9 @@ public class PornHubCom extends PluginForHost {
             }
             if (br.containsHTML(html_premium_only)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium only File", PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
+            if (br.containsHTML(">This video has been removed<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (source_url == null || filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -214,6 +209,9 @@ public class PornHubCom extends PluginForHost {
                     getPage(br, source_url);
                     this.dlUrl = fresh_directurls.get(quality);
                     if (this.dlUrl == null) {
+                        if (br.containsHTML(">This video has been removed<")) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
                         logger.warning("Failed to get fresh directurl");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -243,7 +241,6 @@ public class PornHubCom extends PluginForHost {
     // private void getVideoLinkAccount() {
     // dlUrl = br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
     // }
-
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static LinkedHashMap<String, String> getVideoLinksFree(final Browser br) throws Exception {
         boolean success = false;
@@ -255,7 +252,6 @@ public class PornHubCom extends PluginForHost {
         if (flashVars != null) {
             flashVars = flashVars.replaceAll("(\"\\s*\\+\\s*\")", "");
             final LinkedHashMap<String, Object> values = flashVars == null ? null : (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
-
             if (values == null || values.size() < 1) {
                 return null;
             }
@@ -289,7 +285,6 @@ public class PornHubCom extends PluginForHost {
                 qualities.put(quality, dllink_temp);
             }
         }
-
         if (!success) {
             String[][] var_player_quality_dp;
             /* 0 = match for quality, 1 = match for url */
@@ -355,7 +350,6 @@ public class PornHubCom extends PluginForHost {
                     }
                 }
             }
-
         }
         return qualities;
     }
@@ -602,7 +596,6 @@ public class PornHubCom extends PluginForHost {
         byte[] data = Base64.decode(cipherText.toCharArray());
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] k = Arrays.copyOf(key.getBytes(), nBits);
-
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         SecretKey secretKey = generateSecretKey(k, nBits);
         byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
@@ -632,7 +625,6 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static class BouncyCastleAESCounterModeDecrypt {
-
         private String decrypt(String cipherText, String key, int nBits) throws Exception {
             if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
                 return "Error: Must be a key mode of either 128, 192, 256 bits";
@@ -817,5 +809,4 @@ public class PornHubCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
