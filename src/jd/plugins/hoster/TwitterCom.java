@@ -39,6 +39,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
+
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://twitter.com/signup");
@@ -47,6 +48,11 @@ public class TwitterCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://twitter.com/tos";
+    }
+
+    @Override
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
@@ -235,7 +241,7 @@ public class TwitterCom extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, this.dllink);
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
