@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,11 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 /**
  *
  * @author raztoki
@@ -52,6 +52,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
+
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/premium.html");
@@ -181,15 +182,15 @@ public class Keep2ShareCc extends K2SApi {
         super.prepBrowserForWebsite(br);
         getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
-        if (this.isNewLayout2017()) {
-            return this.requestFileInformationNew2017(link);
+        if (isNewLayout2017()) {
+            return requestFileInformationNew2017(link);
         } else {
             return requestFileInformationOld(link);
         }
     }
 
     public AvailableStatus requestFileInformationOld(final DownloadLink link) throws Exception {
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Keep2Share\\.cc - Error</title>")) {
             link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -225,8 +226,8 @@ public class Keep2ShareCc extends K2SApi {
     /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
     public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
         /*
-         * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a downloadlimit
-         * is reached!
+         * TODO: Add error handling here - filename might not be available or located in a different place for abused content or when a download
+         * limit is reached!
          */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -263,14 +264,15 @@ public class Keep2ShareCc extends K2SApi {
 
     /** Determines via html strings whether we are on the new- or the old keep2share website. */
     public boolean isNewLayout2017() {
-        return br.containsHTML("class=\"footer\\-nav\"|class=\"list\\-services\"");
+        return br.containsHTML("class=\"footer-nav\"|class=\"list-services\"");
     }
 
     public String getFileNameNew2017() {
         String fileName = br.getRegex("<span class=\"name-file\">\\s*(.*?)\\s*<em").getMatch(0);
         if (fileName == null) {
-            fileName = br.getRegex("class=\"title\\-file\">([^<>\"]+)<").getMatch(0);
+            fileName = br.getRegex("class=\"title-file\">([^<>\"]+)<").getMatch(0);
             if (fileName == null) {
+                // 20170811 only available for premium users. note does not display filesize.
                 fileName = br.getRegex("<strong>\\s*(.*?)\\s*</strong>\\s*available only for premium members").getMatch(0);
             }
         }
@@ -293,9 +295,6 @@ public class Keep2ShareCc extends K2SApi {
             if (fileName == null) {
                 // offline/deleted
                 fileName = br.getRegex("File name:</b>(.*?)<br>").getMatch(0);
-                if (fileName == null) {
-                    fileName = br.getRegex("<strong>\\s*(.*?)\\s*</strong>\\s*available only for premium members").getMatch(0);
-                }
             }
         }
         return fileName;
@@ -487,7 +486,6 @@ public class Keep2ShareCc extends K2SApi {
         }
     }
 
-    /** TODO: Add/Check compatibility for new layout! */
     private boolean isPremiumOnly() {
         return br.containsHTML("File size to large!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members");
     }
@@ -536,7 +534,7 @@ public class Keep2ShareCc extends K2SApi {
                     }
                 }
                 getPage(this.MAINPAGE + "/login.html");
-                String csrftoken = br.getRegex("value=\"([^<>\"\\']+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
+                String csrftoken = br.getRegex("value=\"([^<>\"']+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
                 if (StringUtils.isEmpty(csrftoken)) {
                     csrftoken = br.getCookie(account.getHoster(), "YII_CSRF_TOKEN");
                 }
