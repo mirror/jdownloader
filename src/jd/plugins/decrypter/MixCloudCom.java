@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,9 +33,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
 public class MixCloudCom extends antiDDoSForDecrypt {
@@ -70,7 +70,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
 
-        final String url_thumbnail = this.br.getRegex("class=\"album\\-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
+        final String url_thumbnail = br.getRegex("class=\"album\\-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) {
             theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
@@ -85,9 +85,9 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         theName = Encoding.htmlDecode(theName).trim();
 
         /* 2017-05-02: Set useful information as comment (user request) */
-        final String textinfo_playing_tracks_by = this.br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
-        final String textinfo_chart_positions = this.br.getRegex("<h3>Chart Positions</h3><p>([^<>]+)</p>").getMatch(0);
-        final String textinfo_tagged = this.br.getRegex("<h3>Tagged</h3>(<a.*?</a>)</div>").getMatch(0);
+        final String textinfo_playing_tracks_by = br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
+        final String textinfo_chart_positions = br.getRegex("<h3>Chart Positions</h3><p>([^<>]+)</p>").getMatch(0);
+        final String textinfo_tagged = br.getRegex("<h3>Tagged</h3>(<a.*?</a>)</div>").getMatch(0);
         String comment = "";
         if (textinfo_playing_tracks_by != null) {
             comment += textinfo_playing_tracks_by + ";";
@@ -118,20 +118,20 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             tempLinks.add(url_mp3_preview);
         }
 
-        String result = null;
-        try {
-            /*
-             * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
-             */
-            result = decrypt(playInfo);
-        } catch (final Throwable e) {
-            return null;
-        }
+        final String[] keys = new String[] { "cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=", "d2luZG93LmFkZEV2ZW50TGlzdGVuZXIgPSB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lciB8fCBmdW5jdGlvbigpIHt9Ow==" };
+        for (final String key : keys) {
+            String result = null;
+            try {
+                result = decrypt(playInfo, key);
+            } catch (final Throwable e) {
+                return null;
+            }
 
-        final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
-        if (links != null && links.length != 0) {
-            for (final String temp : links) {
-                tempLinks.add(temp);
+            final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
+            if (links != null && links.length != 0) {
+                for (final String temp : links) {
+                    tempLinks.add(temp);
+                }
             }
         }
         if (tempLinks.size() == 0) {
@@ -143,7 +143,8 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         for (final String dl : tempLinks) {
             streamFailed = false;
-            if (!dl.endsWith(".mp3") && !dl.endsWith(".m4a")) {
+            final String ext = getFileNameExtensionFromString(dl, null);
+            if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
                 continue;
             }
             URLConnectionAdapter con = null;
@@ -152,7 +153,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             if (!StringUtils.isEmpty(comment)) {
                 dlink.setComment(comment);
             }
-            dlink.setFinalFileName(theName + new Regex(dl, "(\\..{3}$)").getMatch(0));
+            dlink.setFinalFileName(theName + ext);
             /* Nicht alle Links im Array sets[] sind verfügbar. */
             try {
                 try {
@@ -192,7 +193,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(theName));
         fp.addLinks(decryptedLinks);
-        if ((decryptedLinks == null || decryptedLinks.size() == 0) && links != null && links.length > 0) {
+        if ((decryptedLinks == null || decryptedLinks.size() == 0) && tempLinks.size() > 0) {
             logger.info("Found urls but all of them were offline");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -203,8 +204,8 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private String decrypt(String e) {
-        final byte[] key = JDHexUtils.getByteArray(JDHexUtils.getHexString(Encoding.Base64Decode("cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=")));
+    private String decrypt(final String e, final String k) {
+        final byte[] key = JDHexUtils.getByteArray(JDHexUtils.getHexString(Encoding.Base64Decode(k)));
         final byte[] enc = jd.crypt.Base64.decode(e);
         byte[] plain = new byte[enc.length];
         int count = enc.length;
