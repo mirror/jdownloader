@@ -88,6 +88,14 @@ public class NicoVideoJp extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+        if (account == null) {
+            return false;
+        }
+        return true;
+    }
+
     private LinkedHashMap<String, Object> entries = null;
 
     /**
@@ -125,19 +133,35 @@ public class NicoVideoJp extends PluginForHost {
             link.getLinkStatus().setStatusText("GEO-BLOCKED");
             link.setName(linkid_url);
             return AvailableStatus.FALSE;
+        } else if (br.containsHTML("<h1>The viewing period of the video you were searching for has expired\\.</h1>")) {
+            // expired
+            link.setName(linkid_url);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String channel;
         String filename;
         String date = null;
         if (loggedin) {
+            // newest
             final String player = br.getRegex("data-api-data=\"(\\{.*?\\})\" hidden").getMatch(0);
-            final String json = Encoding.htmlOnlyDecode(player);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            filename = (String) JavaScriptEngineFactory.walkJson(entries, "video/title");
-            channel = (String) JavaScriptEngineFactory.walkJson(entries, "owner/nickname");
-            // originalPostedDateTime can be null
-            date = (String) JavaScriptEngineFactory.walkJson(entries, "video/postedDateTime");
+            if (player != null) {
+                // html5 json (works 20170811)
+                final String json = Encoding.htmlOnlyDecode(player);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                filename = (String) JavaScriptEngineFactory.walkJson(entries, "video/title");
+                channel = (String) JavaScriptEngineFactory.walkJson(entries, "owner/nickname");
+                // originalPostedDateTime can be null
+                date = (String) JavaScriptEngineFactory.walkJson(entries, "video/postedDateTime");
+            } else {
+                // older flv crap, (works 20170811)
+                filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("class=\"videoTitle\">([^<>\"]+)<").getMatch(0);
+                }
+                channel = br.getRegex("data\\-click\\-target=\"userName\">([^<>\"]+)<").getMatch(0);
+            }
         } else {
+            // (works 20170811)
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
@@ -204,7 +228,7 @@ public class NicoVideoJp extends PluginForHost {
         if (br.containsHTML(html_account_needed)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, ONLYREGISTEREDUSERTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        final String dllink = getDllink();
+        final String dllink = getDllinkFree();
         int maxChunks = FREE_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
@@ -250,12 +274,12 @@ public class NicoVideoJp extends PluginForHost {
         /* Can happen if its not clear whether the video is private or offline */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) {
+        } else if (Encoding.htmlDecode(br.toString()).contains("closed=1&done=true")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         } else if (br.containsHTML(">This is a private video and not available")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
         }
-        String dllink = getDllink();
+        String dllink = getDllinkAccount();
         int maxChunks = ACCOUNT_FREE_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false) && getPluginConfig().getBooleanProperty(NOCHUNKS, true)) {
             maxChunks = 1;
@@ -282,35 +306,61 @@ public class NicoVideoJp extends PluginForHost {
         return fuid;
     }
 
-    private String getDllink() throws Exception {
+    private String getDllinkFree() throws Exception {
         String dllink = null;
+        // really old shit (from free), not sure if this actually works.
+        final String linkid_url = getLinkId();
+        br.getPage("//ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
+        br.getPage("//ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+        final String playkey = br.getRegex("thumbPlayKey':\\s*'([^<>\"]*?)'").getMatch(0);
+        final String accessFromHash = br.getRegex("accessFromHash':\\s*'([^<>\"]*?)'").getMatch(0);
+        if (playkey == null || accessFromHash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
+        br.postPage("//ext.nicovideo.jp/thumb_watch", accessPOST);
+        dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(https?://.*?)\\&").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(https?://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dllink;
+    }
+
+    private String getDllinkAccount() throws Exception {
+        String dllink = null;
+        // newest html5 (works 20170811)
         if (JavaScriptEngineFactory.walkJson(entries, "video/dmcInfo") != null) {
             ajaxPost("//api.dmc.nico:2805/api/sessions?_format=json", constructJSON());
             dllink = PluginJSonUtils.getJson(ajax, "content_uri");
         }
         if (dllink == null) {
+            // seems to be some fail over html5 (works 20170811)
             dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/smileInfo/url");
             if (dllink == null || "".equals(dllink)) {
-                final String linkid_url = getLinkId();
-                br.getPage("//ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
-                br.getPage("//ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
-                final String playkey = br.getRegex("thumbPlayKey':\\s*'([^<>\"]*?)'").getMatch(0);
-                final String accessFromHash = br.getRegex("accessFromHash':\\s*'([^<>\"]*?)'").getMatch(0);
-                if (playkey == null || accessFromHash == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
-                br.postPage("//ext.nicovideo.jp/thumb_watch", accessPOST);
-                dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(https?://.*?)\\&").getMatch(0);
-                if (dllink == null) {
-                    dllink = new Regex(Encoding.htmlDecode(br.toString()), "(https?://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
-                }
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // really old shit (from premium), (works 20170811)
+                String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
+                if (flashvars != null) {
+                    if (br.getURL().matches(TYPE_SO)) {
+                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
+                    } else if (br.getURL().matches(TYPE_NM) || this.getDownloadLink().getDownloadURL().matches(TYPE_SM)) {
+                        final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
+                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
+                    }
+                    dllink = getDllink_account(flashvars != null ? flashvars : br.toString());
                 }
             }
         }
+        return dllink;
+    }
+
+    private String getDllink_account(final String flashvars) {
+        final String singleDecode = Encoding.htmlDecode(flashvars);
+        String dllink = PluginJSonUtils.getJsonValue(singleDecode, "flvInfo");
+        dllink = dllink != null ? asdf(dllink) : asdf(singleDecode);
         return dllink;
     }
 
