@@ -53,6 +53,14 @@ public class UploadgigCom extends antiDDoSForHost {
     }
 
     @Override
+    protected long getStartIntervall(DownloadLink downloadLink, Account account) {
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return 2000;
+        }
+        return super.getStartIntervall(downloadLink, account);
+    }
+
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
@@ -60,6 +68,14 @@ public class UploadgigCom extends antiDDoSForHost {
     public UploadgigCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://uploadgig.com/premium");
+    }
+
+    @Override
+    public void init() {
+        try {
+            Browser.setRequestIntervalLimitGlobal("uploadgig.com", 500, 10, 20000);
+        } catch (Throwable t) {
+        }
     }
 
     @Override
@@ -419,6 +435,18 @@ public class UploadgigCom extends antiDDoSForHost {
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
+    }
+
+    @Override
+    protected void runPostRequestTask(Browser ibr) throws Exception {
+        if (ibr.getHttpConnection() != null && ibr.getHttpConnection().getResponseCode() == 429) {
+            if ("ERROR 702".equals(ibr.toString())) {
+                // I have no idea what this means
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "702 Error", 2 * 60 * 1000l);
+            }
+            // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429", 5 * 60 * 1000l);
+        }
+        super.runPostRequestTask(ibr);
     }
 
     @Override
