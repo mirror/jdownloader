@@ -28,9 +28,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net", "tanix.net", "japanhub.net", "thatav.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tanix\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?japanhub\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?thatav\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
+
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,7 +42,7 @@ public class HighpornNet extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("www.", "");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (isOffline(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -76,6 +79,12 @@ public class HighpornNet extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private void getPage(final String parameter) throws Exception {
+        final PluginForHost plugin = JDUtilities.getPluginForHost("highporn.net");
+        ((jd.plugins.hoster.HighpornNet) plugin).setBrowser(br);
+        ((jd.plugins.hoster.HighpornNet) plugin).getPage(parameter);
     }
 
     public static boolean isOffline(final Browser br) {

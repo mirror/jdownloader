@@ -15,7 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -31,11 +31,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
-public class HighpornNet extends PluginForHost {
+public class HighpornNet extends antiDDoSForHost {
+
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -67,7 +67,7 @@ public class HighpornNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -76,7 +76,7 @@ public class HighpornNet extends PluginForHost {
             /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(url_source);
+        getPage(url_source);
         dllink = br.getRegex("data-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         if (jd.plugins.decrypter.HighpornNet.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -146,7 +146,7 @@ public class HighpornNet extends PluginForHost {
         if (dllink != null) {
             // cached downloadlink doesn't have a browser session, which leads to 403.
             br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null));
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403 || dl.getConnection().getLongContentLength() == -1 || (dl.getConnection().getLongContentLength() < 10 && dl.getConnection().getContentType().equals("application/octet-stream"))) {
                 downloadLink.setProperty("directlink", Property.NULL);
                 dllink = null;
@@ -163,7 +163,7 @@ public class HighpornNet extends PluginForHost {
             if (dllink == null) {
                 final Browser br = this.br.cloneBrowser();
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/play.php", "v=" + fid);
+                postPage(br, "/play.php", "v=" + fid);
                 dllink = br.toString();
                 if (br.toString().equals("fail")) {
                     server_issues = true;
@@ -176,7 +176,7 @@ public class HighpornNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl == null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -216,4 +216,9 @@ public class HighpornNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
+
+    public void getPage(final String page) throws Exception {
+        super.getPage(page);
+    }
+
 }
