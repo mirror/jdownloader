@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,9 +30,8 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jianguoyun.com" }, urls = { "https?://(?:www\\.)?jianguoyun\\.com/p/[A-Za-z0-9\\-_]+(?:#dir=[^<>\"/:]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jianguoyun.com" }, urls = { "https?://(?:www\\.)?jianguoyun\\.com/p/[A-Za-z0-9\\-_]+(?:#dir=[^<>\"/:]+)?" })
 public class JianguoyunCom extends antiDDoSForDecrypt {
-
     public JianguoyunCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -54,8 +52,9 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        this.br.getPage(parameter);
-        final String pageJson = jd.plugins.hoster.JianguoyunCom.getWebsiteJson(this.br);
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        final String pageJson = jd.plugins.hoster.JianguoyunCom.getWebsiteJson(br);
         DownloadLink dl = null;
         final String isdir = new Regex(pageJson, "isdir[\t\n\r ]*?:[\t\n\r ]*?(true|false)").getMatch(0);
         if ("false".equals(isdir)) {
@@ -65,12 +64,11 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
             dl.setProperty("folderid", fid);
             dl.setProperty("relPath", subfolder);
             dl.setProperty("mainlink", parameter);
-            jd.plugins.hoster.JianguoyunCom.scanFileinfoFromWebsite(this.br, dl);
+            jd.plugins.hoster.JianguoyunCom.scanFileinfoFromWebsite(br, dl);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
-        this.br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRBrowse?hash=" + fid + "&relPath=" + subfolder + "&_=" + System.currentTimeMillis());
+        br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRBrowse?hash=" + fid + "&relPath=" + subfolder + "&_=" + System.currentTimeMillis());
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("objects");
         for (final Object foldero : ressourcelist) {
@@ -104,8 +102,6 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
-
 }
