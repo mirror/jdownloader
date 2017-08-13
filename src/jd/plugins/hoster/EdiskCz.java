@@ -13,10 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,9 +31,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" })
 public class EdiskCz extends PluginForHost {
-
     private static final String MAINPAGE = "https://www.edisk.eu/";
 
     public EdiskCz(PluginWrapper wrapper) {
@@ -73,7 +71,7 @@ public class EdiskCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje|>This file does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2016-11-23: New */
@@ -107,7 +105,6 @@ public class EdiskCz extends PluginForHost {
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         /* Critical header!! */
         br.getHeaders().put("Requested-With-AngularJS", "true");
@@ -245,5 +242,4 @@ public class EdiskCz extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
