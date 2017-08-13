@@ -72,6 +72,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         super(wrapper);
         this.enablePremium(null);
         setConfigElement();
+        Browser.setRequestIntervalLimitGlobal("nitroflare.com", 500);
     }
 
     @Override
