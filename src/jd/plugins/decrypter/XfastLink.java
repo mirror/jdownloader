@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,10 +28,9 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xfast.link" }, urls = { "https?://(?:www\\.)?xfast\\.link/[A-Za-z0-9]+" })
-public class XfastLink extends PluginForDecrypt {
+public class XfastLink extends antiDDoSForDecrypt {
 
     public XfastLink(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,7 +40,7 @@ public class XfastLink extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("he entered link does not exist")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -57,7 +57,7 @@ public class XfastLink extends PluginForDecrypt {
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
         br.setFollowRedirects(false);
-        br.submitForm(dlform);
+        submitForm(dlform);
         final String finallink = br.getRedirectLocation();
         if (finallink == null || finallink.contains(this.getHost() + "/")) {
             return null;
