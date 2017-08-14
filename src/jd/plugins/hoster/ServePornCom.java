@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,14 +28,26 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com", "lanporno.com", "serviporno.com", "pornodingue.com", "seansporno.com", "koloporno.com", "einfachporno.com", "vielerporno.com", "pornozot.com", "voglioporno.com", "pornodoido.com", "bubbaporn.com", "pornodrome.tv", "nedporno.com", "sexoquente.tv", "filmikiporno.tv", "pornjam.com", "canalporno.com", "prendiporno.com", "prendiporno.tv", "guterporn.com", "guterporn.xxx", "pornalia.xxx", "bundesporno.xxx", "pornburst.xxx", "gauleporno.xxx", "muchoporno.xxx" }, urls = { "https?://(?:www\\.)?serveporn.com\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?lanporno\\.com\\.com/videolar/[a-z0-9\\-_]+/", "https?://(?:www\\.)?serviporno\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodingue\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/",
-        "https?://(?:www\\.)?koloporno\\.com/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?einfachporno\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?vielerporno\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bubbaporn\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodrome\\.tv/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?nedporno\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?sexoquente\\.tv/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?filmikiporno\\.tv/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornjam\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?canalporno\\.com/ver/[a-z0-9\\-_]+/", "https?://(?:www\\.)?prendiporno\\.com/video/[a-z0-9\\-_]+/",
-        "https?://(?:www\\.)?prendiporno\\.tv/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?guterporn\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?guterporn\\.xxx/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornalia\\.xxx/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bundesporno\\.(?:xxx|com)/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornburst\\.xxx/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?gauleporno\\.xxx/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?muchoporno\\.xxx/videos/[a-z0-9\\-_]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com", "lanporno.com", "serviporno.com", "pornodingue.com", "seansporno.com", "koloporno.com", "einfachporno.com", "vielerporno.com", "pornozot.com", "voglioporno.com", "pornodoido.com", "bubbaporn.com", "pornodrome.tv", "nedporno.com", "sexoquente.tv", "filmikiporno.tv", "pornjam.com", "canalporno.com", "prendiporno.com", "prendiporno.tv", "guterporn.com", "guterporn.xxx", "pornalia.xxx", "bundesporno.xxx", "pornburst.xxx", "gauleporno.xxx", "muchoporno.xxx" }, urls = { "https?://(?:www\\.)?serveporn.com\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?lanporno\\.com\\.com/videolar/[a-z0-9\\-_]+/", "https?://(?:www\\.)?serviporno\\.com/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodingue\\.com/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/",
+        "https?://(?:www\\.)?koloporno\\.com/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?(?:einfachporno\\.com|pornomenge\\.com)/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?vielerporno\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bubbaporn\\.com/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodrome\\.tv/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?nedporno\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?sexoquente\\.tv/video(s?/)?[a-z0-9\\-_]+/", "https?://(?:www\\.)?filmikiporno\\.tv/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornjam\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?canalporno\\.com/ver/[a-z0-9\\-_]+/", "https?://(?:www\\.)?prendiporno\\.com/video/[a-z0-9\\-_]+/",
+        "https?://(?:www\\.)?prendiporno\\.tv/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?guterporn\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?guterporn\\.xxx/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornalia\\.xxx/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bundesporno\\.(?:xxx|com)/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornburst\\.xxx/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?(?:gauleporno\\.xxx/(?:videos/|video-|filme/)|pornalia\\.xxx/video/)[a-z0-9\\-_]+/", "https?://(?:www\\.)?muchoporno\\.xxx/(?:videos|ver)/[a-z0-9\\-_]+/" })
 public class ServePornCom extends antiDDoSForHost {
+
     public ServePornCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        if ("muchoporno.xxx".equals(this.getHost())) {
+            // spanish to english.
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/ver/", "/videos/"));
+        } else if ("einfachporno.com".equals(this.getHost())) {
+            // new domain
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("einfachporno.com/", "pornomenge.com/"));
+        } else if ("vielerporno.com".equals(this.getHost())) {
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("vielerporno.com/", "pornomenge.com/"));
+        }
     }
 
     /* DEV NOTES */
@@ -52,21 +66,23 @@ public class ServePornCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/videos?/(.+)/").getMatch(0);
-        downloadLink.setName(url_filename + ".flv");
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "(?:/video(?:s?/)?|/filme/)(.+?)/?$").getMatch(0);
+        if (url_filename != null && !downloadLink.isNameSet()) {
+            downloadLink.setName(url_filename + ".flv");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("content=(?:\"|\\')([^<>\"]*?)(?:\"|\\') property=(?:\"|\\')og:title(?:\"|\\')/>").getMatch(0);
+        String filename = br.getRegex("content=(\"|')([^<>\"]*?)\\1 property=(\"|')og:title\\3\\s*/\\s*>").getMatch(1);
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = br.getRegex("url: \\'(https?://[^/]+/[^<>\"\\']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)\\'").getMatch(0);
+        dllink = br.getRegex("url: '(https?://[^/]+/[^<>\"']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("url: \\'(https?://cdn[^/]+/[^<>\"\\']*?\\.(?:flv|mp4)[^<>\"/]*?)\\'").getMatch(0);
+            dllink = br.getRegex("url: '(https?://cdn[^/]+/[^<>\"']*?\\.(?:flv|mp4)[^<>\"/]*?)'").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("src=\"([^\"]*?//cdn[^\"]+)\"").getMatch(0);
@@ -102,7 +118,7 @@ public class ServePornCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
