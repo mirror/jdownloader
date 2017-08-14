@@ -39,12 +39,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.co)/[A-Za-z0-9]+" })
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co" };
+        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co" };
     }
 
     public MightyScriptAdLinkFly(PluginWrapper wrapper) {
