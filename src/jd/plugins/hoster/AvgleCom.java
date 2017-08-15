@@ -15,13 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.SkipReasonException;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,16 +26,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "avgle.com" }, urls = { "https?://(?:www\\.)?avgle\\.com/video/\\d+" })
 public class AvgleCom extends PluginForHost {
     public AvgleCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension = ".mp4";
     /* Connection stuff */
@@ -59,7 +56,7 @@ public class AvgleCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, SkipReasonException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -64,7 +63,6 @@ import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" })
 public class TwitchTv extends PluginForHost {
-
     public TwitchTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://secure.twitch.tv/products/turbo_year/ticket");
@@ -87,9 +85,7 @@ public class TwitchTv extends PluginForHost {
     private final static String CUSTOM_FILENAME_3         = "CUSTOM_FILENAME_3";
     private final static String CUSTOM_FILENAME_4         = "CUSTOM_FILENAME_4";
     private final static String PARTNUMBERFORMAT          = "PARTNUMBERFORMAT";
-
     private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
     private String              dllink                    = null;
 
     private Browser ajaxSubmitForm(final Form form) throws Exception {
@@ -238,7 +234,7 @@ public class TwitchTv extends PluginForHost {
         dl.startDownload();
     }
 
-    private HLSDownloader getHLSDownloader(final DownloadLink downloadLink, Browser br, final String m3u8Url) throws IOException, PluginException {
+    private HLSDownloader getHLSDownloader(final DownloadLink downloadLink, Browser br, final String m3u8Url) throws Exception {
         final FFmpegMetaData ffMpegMetaData;
         final SubConfiguration config = getPluginConfig();
         if (config.getBooleanProperty("meta", true)) {
@@ -279,7 +275,7 @@ public class TwitchTv extends PluginForHost {
             }
 
             @Override
-            protected List<M3U8Playlist> getM3U8Playlists() throws IOException {
+            protected List<M3U8Playlist> getM3U8Playlists() throws Exception {
                 final List<M3U8Playlist> ret = super.getM3U8Playlists();
                 for (final M3U8Playlist playList : ret) {
                     for (int index = playList.size() - 1; index >= 0; index--) {
@@ -442,7 +438,6 @@ public class TwitchTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
-
         final SubConfiguration cfg = SubConfiguration.getConfig("twitch.tv");
         String formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? cfg.getStringProperty(CUSTOM_FILENAME_4, defaultCustomFilenameHls) : cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilenameWeb);
         if (formattedFilename == null || formattedFilename.equals("")) {
@@ -455,7 +450,6 @@ public class TwitchTv extends PluginForHost {
         if (partnumberformat == null || partnumberformat.equals("")) {
             partnumberformat = "00";
         }
-
         final DecimalFormat df = new DecimalFormat(partnumberformat);
         final String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
@@ -466,7 +460,6 @@ public class TwitchTv extends PluginForHost {
         final int audioBitrate = downloadLink.getIntegerProperty("audioBitrate", -1);
         final String audioCodec = downloadLink.getStringProperty("audioCodec", "");
         final String extension = downloadLink.getStringProperty("extension", ".flv");
-
         String formattedDate = null;
         if (date != null) {
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE_2, "dd.MM.yyyy_HH-mm-ss");
@@ -476,7 +469,6 @@ public class TwitchTv extends PluginForHost {
             Date dateStr = formatter.parse(input);
             formattedDate = formatter.format(dateStr);
             Date theDate = formatter.parse(formattedDate);
-
             formatter = new SimpleDateFormat(userDefinedDateFormat);
             formattedDate = formatter.format(theDate);
         }
@@ -491,7 +483,6 @@ public class TwitchTv extends PluginForHost {
         } else {
             formattedFilename = formattedFilename.replace("*partnumber*", df.format(partNumber));
         }
-
         formattedFilename = formattedFilename.replace("*quality*", quality);
         formattedFilename = formattedFilename.replace("*channelname*", channelName);
         final String videoQualityString;
