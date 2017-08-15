@@ -17,6 +17,17 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -36,17 +47,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 /**
  *
  * @author raztoki
@@ -54,6 +54,7 @@ import org.mozilla.javascript.ScriptableObject;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForHost extends PluginForHost {
+
     public antiDDoSForHost(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -458,6 +459,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     this.setDownloadLink(dllink);
                     final Form cf = cloudflare;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+
                         {
                             boundToDomain = true;
                         }
@@ -570,6 +572,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
             long answer = ((Number) engine.eval(sb.toString())).longValue();
             cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+            Thread.sleep(5500);
             // if it works, there should be a redirect.
             if (request != null) {
                 ibr.openFormConnection(cloudflare);
