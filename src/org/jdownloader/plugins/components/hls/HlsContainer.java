@@ -75,7 +75,6 @@ public class HlsContainer {
                 if (framerate != null) {
                     hls.framerate = Integer.parseInt(framerate);
                 }
-                hls.setReferer(br);
                 hlsqualities.add(hls);
             }
         }
@@ -203,15 +202,6 @@ public class HlsContainer {
         } else {
             return ".mp4";
         }
-    }
-
-    public final void setReferer(Browser br) {
-        // since current browser address is of the m3u8
-        this.referer = br.getHeaders().get("Referer");
-    }
-
-    public final String getReferer() {
-        return this.referer;
     }
 
 }
