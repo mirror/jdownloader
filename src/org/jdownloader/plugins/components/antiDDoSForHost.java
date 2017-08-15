@@ -268,19 +268,38 @@ public abstract class antiDDoSForHost extends PluginForHost {
             if (i > 1) {
                 // we now need to update to the refreshed/latest cookie session
                 loadAntiDDoSCookies(ibr, host);
+                // reset request
+                request.resetConnection();
             }
             URLConnectionAdapter con = null;
             try {
                 con = ibr.openRequestConnection(request);
                 readConnection(con, ibr);
             } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                if (con != null) {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
             try {
                 antiDDoS(ibr);
+                if (ibr.getRequest() != request && request instanceof PostRequest) {
+                    // redo post request
+                    try {
+                        request.resetConnection();
+                        con = ibr.openRequestConnection(request);
+                        readConnection(con, ibr);
+                    } finally {
+                        if (con != null) {
+                            try {
+                                con.disconnect();
+                            } catch (Throwable e) {
+                            }
+                        }
+                    }
+                }
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
@@ -310,10 +329,16 @@ public abstract class antiDDoSForHost extends PluginForHost {
             if (i > 1) {
                 // we now need to update to the refreshed/latest cookie session
                 loadAntiDDoSCookies(ibr, host);
+                // reset request
+                request.resetConnection();
             }
             ibr.openRequestConnection(request);
             try {
                 antiDDoS(ibr, request);
+                if (ibr.getRequest() != request && request instanceof PostRequest) {
+                    request.resetConnection();
+                    ibr.openRequestConnection(request);
+                }
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
