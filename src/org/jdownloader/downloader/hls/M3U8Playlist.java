@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+
+import jd.http.Browser;
 
 public class M3U8Playlist {
 
@@ -175,7 +175,7 @@ public class M3U8Playlist {
     /*
      * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20
      */
-    public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws IOException {
+    public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws Exception {
         final List<M3U8Playlist> ret = new ArrayList<M3U8Playlist>();
         M3U8Playlist current = new M3U8Playlist();
         long lastSegmentDuration = -1;
@@ -185,6 +185,9 @@ public class M3U8Playlist {
         String xKeyIV = null;
         String xKeyURI = null;
         br.getPage(m3u8);
+        if (br.getHttpConnection().getResponseCode() != 200 && br.getHttpConnection().getResponseCode() != 206) {
+            throw new IOException("ResponseCode must be 200 or 206!");
+        }
         br.followRedirect();
         for (final String line : Regex.getLines(br.toString())) {
             if (StringUtils.isEmpty(line)) {
