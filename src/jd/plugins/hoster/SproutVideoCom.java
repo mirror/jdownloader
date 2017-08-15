@@ -121,6 +121,9 @@ public class SproutVideoCom extends PluginForHost {
         if (dllink.contains(".m3u8")) {
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br, dllink));
             String dllink = hlsbest.getDownloadurl();
+            String betterFilename = link.getName();
+            betterFilename = betterFilename.replace(".mp4", "") + "-" + hlsbest.getHeight() + "p.mp4";
+            link.setName(betterFilename);
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, dllink, this.dllink.substring(this.dllink.indexOf("?")));
             dl.startDownload();
