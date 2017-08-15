@@ -285,21 +285,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
             }
             try {
                 antiDDoS(ibr);
-                if (ibr.getRequest() != request && request instanceof PostRequest) {
-                    // redo post request
-                    try {
-                        request.resetConnection();
-                        con = ibr.openRequestConnection(request);
-                        readConnection(con, ibr);
-                    } finally {
-                        if (con != null) {
-                            try {
-                                con.disconnect();
-                            } catch (Throwable e) {
-                            }
-                        }
-                    }
-                }
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
@@ -335,10 +320,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
             ibr.openRequestConnection(request);
             try {
                 antiDDoS(ibr, request);
-                if (ibr.getRequest() != request && request instanceof PostRequest) {
-                    request.resetConnection();
-                    ibr.openRequestConnection(request);
-                }
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
@@ -465,6 +446,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             }
         }
         final Form cloudflare = getCloudflareChallengeForm(ibr);
+        final Request originalRequest = ibr.getRequest();
         if (responseCode == 403 && cloudflare != null) {
             // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
             if (captchaLocked.compareAndSet(null, lockObject)) {
@@ -533,7 +515,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                     cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                 }
-                final Request originalRequest = ibr.getRequest();
                 if (request != null) {
                     ibr.openFormConnection(cloudflare);
                 } else {
@@ -589,14 +570,29 @@ public abstract class antiDDoSForHost extends PluginForHost {
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
             long answer = ((Number) engine.eval(sb.toString())).longValue();
             cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
-            Thread.sleep(5500);
+            // if it works, there should be a redirect.
             if (request != null) {
                 ibr.openFormConnection(cloudflare);
             } else {
                 ibr.submitForm(cloudflare);
             }
-            // if it works, there should be a redirect.
-            if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+            // ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets > need to
+            // resubmit original request.
+            if (originalRequest instanceof PostRequest) {
+                try {
+                    sendRequest(ibr, originalRequest.cloneRequest());
+                } catch (final Exception t) {
+                    // we want to preserve proper exceptions!
+                    if (t instanceof PluginException) {
+                        throw t;
+                    }
+                    t.printStackTrace();
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                }
+                // new sendRequest saves cookie session
+                return;
+            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                // since we might not be following redirect, we need to get this one so we have correct html!
                 ibr.getPage(ibr.getRedirectLocation());
             }
         } else if (responseCode == 521) {
