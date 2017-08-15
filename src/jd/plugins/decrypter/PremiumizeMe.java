@@ -26,8 +26,8 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(www\\.)?premiumize\\.me/browsetorrent\\?hash=[a-f0-9]+" }) public class PremiumizeMe extends PluginForDecrypt {
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(www\\.)?premiumize\\.me/browsetorrent\\?hash=[a-f0-9]+" })
+public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -90,7 +90,7 @@ import org.appwork.utils.os.CrossSystem;
     }
 
     public static Map<String, PremiumizeBrowseNode> getNodes(Browser br, Account account, final String hash) throws IOException {
-        final String responseString = br.postPage("https://www.premiumize.me/api/torrent/browse", "customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&hash=" + hash);
+        final String responseString = br.getPage("https://www.premiumize.me/api/torrent/browse?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&hash=" + hash);
         final Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP, null);
         final String status = (String) responseMap.get("status");
         if (StringUtils.equals("success", status)) {
@@ -101,5 +101,4 @@ import org.appwork.utils.os.CrossSystem;
         }
         return null;
     }
-
 }
