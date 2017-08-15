@@ -3,10 +3,10 @@ package org.jdownloader.plugins.components.hls;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+
+import jd.http.Browser;
 
 public class HlsContainer {
 
@@ -24,6 +24,13 @@ public class HlsContainer {
             }
         }
         return best;
+    }
+
+    public static List<HlsContainer> getHlsQualities(final Browser br, final String m3u8) throws Exception {
+        final Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept", "*/*");
+        br2.getPage(m3u8);
+        return getHlsQualities(br2);
     }
 
     public static List<HlsContainer> getHlsQualities(final Browser br) throws Exception {
@@ -68,6 +75,7 @@ public class HlsContainer {
                 if (framerate != null) {
                     hls.framerate = Integer.parseInt(framerate);
                 }
+                hls.setReferer(br);
                 hlsqualities.add(hls);
             }
         }
@@ -76,6 +84,7 @@ public class HlsContainer {
 
     private String codecs;
     private String downloadurl;
+    private String referer;
 
     private int    width     = -1;
     private int    height    = -1;
@@ -194,6 +203,15 @@ public class HlsContainer {
         } else {
             return ".mp4";
         }
+    }
+
+    public final void setReferer(Browser br) {
+        // since current browser address is of the m3u8
+        this.referer = br.getHeaders().get("Referer");
+    }
+
+    public final String getReferer() {
+        return this.referer;
     }
 
 }
