@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -21,13 +20,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.SkipReasonException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -42,15 +38,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
-
     private String  dllink        = null;
     private boolean server_issues = false;
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
     @Override
@@ -68,7 +65,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException, InterruptedException, SkipReasonException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = downloadLink.getDownloadURL();
         /* Load this plugin as we use functions of it. */
         JDUtilities.getPluginForHost("br-online.de");
@@ -78,7 +75,6 @@ public class ARDMediathek extends PluginForHost {
             finalName = getTitle(br) + ".mp4";
         }
         downloadLink.setFinalFileName(finalName);
-
         br.setFollowRedirects(true);
         if (dllink.contains(".m3u8")) {
             checkFFProbe(downloadLink, "Download a HLS Stream");
@@ -189,10 +185,8 @@ public class ARDMediathek extends PluginForHost {
      */
     private boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         final StringBuilder xml = new StringBuilder();
         final String lineseparator = System.getProperty("line.separator");
-
         Scanner in = null;
         try {
             in = new Scanner(new FileReader(source));
@@ -217,7 +211,6 @@ public class ARDMediathek extends PluginForHost {
             } catch (IOException e1) {
                 return false;
             }
-
             final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
             try {
                 /* Find style --> color assignments */
@@ -233,7 +226,6 @@ public class ARDMediathek extends PluginForHost {
                     }
                 }
                 styles_color_names.put("s1", "black");
-
                 for (final String info : matches) {
                     dest.write(counter++ + lineseparator);
                     final DecimalFormat df = new DecimalFormat("00");
@@ -246,7 +238,6 @@ public class ARDMediathek extends PluginForHost {
                     final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(".", ",");
                     final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(".", ",");
                     dest.write(start + " --> " + end + lineseparator);
-
                     final String[][] color_texts = new Regex(info, "style=\"(s\\d+)\">?(.*?)</p>").getMatches();
                     String text = "";
                     for (final String[] style_text : color_texts) {
@@ -267,11 +258,9 @@ public class ARDMediathek extends PluginForHost {
                         if (remove_color != null) {
                             text = text.replace(remove_color, "");
                         }
-
                         final String color = styles_color_names.get(style);
                         final String color_code = getColorCode(color);
                         text = "<font color=#" + color_code + ">" + text + "</font>";
-
                     }
                     dest.write(text + lineseparator + lineseparator);
                 }
@@ -286,7 +275,6 @@ public class ARDMediathek extends PluginForHost {
             }
             source.delete();
         }
-
         return success;
     }
 
@@ -327,5 +315,4 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

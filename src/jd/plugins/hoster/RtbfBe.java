@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -31,14 +28,12 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://rtbf\\.bedecrypted/\\d+" })
 public class RtbfBe extends PluginForHost {
-
     public RtbfBe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,20 +53,17 @@ public class RtbfBe extends PluginForHost {
     private boolean possibly_geo_blocked = false;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, SkipReasonException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         server_issues = false;
         possibly_geo_blocked = false;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         dllink = downloadLink.getStringProperty("directlink", null);
         final String filename = downloadLink.getStringProperty("directfilename", null);
-
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         downloadLink.setFinalFileName(filename);
-
         if (dllink.contains("m3u8")) {
             checkFFProbe(downloadLink, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
@@ -102,7 +94,6 @@ public class RtbfBe extends PluginForHost {
                 }
             }
         }
-
         return AvailableStatus.TRUE;
     }
 
@@ -146,9 +137,7 @@ public class RtbfBe extends PluginForHost {
     }
 
     public static interface RtbfBeConfigInterface extends PluginConfigInterface {
-
         public static class TRANSLATION {
-
             public String getFastLinkcheckEnabled_label() {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }
@@ -192,7 +181,6 @@ public class RtbfBe extends PluginForHost {
         // boolean isAddUnknownQualitiesEnabled();
         //
         // void setAddUnknownQualitiesEnabled(boolean b);
-
         @DefaultBooleanValue(true)
         @Order(30)
         boolean isGrabHLS200pVideoEnabled();
@@ -240,7 +228,6 @@ public class RtbfBe extends PluginForHost {
         boolean isGrabHTTP720VideoEnabled();
 
         void setGrabHTTP720VideoEnabled(boolean b);
-
     }
 
     @Override
