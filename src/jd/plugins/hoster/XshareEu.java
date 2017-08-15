@@ -48,6 +48,7 @@ import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xshare.eu" }, urls = { "https?://(?:www\\.)?xshare\\.eu/[A-Za-z0-9]+" })
 public class XshareEu extends antiDDoSForHost {
+
     public XshareEu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -214,7 +215,7 @@ public class XshareEu extends antiDDoSForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (enable_embed) {
                 try {
@@ -262,13 +263,13 @@ public class XshareEu extends antiDDoSForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
@@ -278,7 +279,7 @@ public class XshareEu extends antiDDoSForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, link);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -299,11 +300,11 @@ public class XshareEu extends antiDDoSForHost {
                     final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -581,25 +582,23 @@ public class XshareEu extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|VIP|USUARIO DE PAGO)</span>")) {
+        if (!br.containsHTML("class=\"badge badge-success\">(?:PAID USER|VIP|USUARIO DE PAGO|KONTO PREMIUM)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
         } else {
             getPage("/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
                 /* More wide RegEx to be more language independant */
-                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+                expire = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
             }
             if (expire == null) {
                 /* 2017-08-01: Special, premium account without expire date */
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
             } else {
                 long expire_milliseconds = 0;
                 expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
@@ -608,12 +607,10 @@ public class XshareEu extends antiDDoSForHost {
                     account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                     /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                     account.setConcurrentUsePossible(false);
-                    ai.setStatus("Registered (free) user");
                 } else {
                     ai.setValidUntil(expire_milliseconds);
                     account.setType(AccountType.PREMIUM);
                     account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                    ai.setStatus("Premium account");
                 }
             }
         }
