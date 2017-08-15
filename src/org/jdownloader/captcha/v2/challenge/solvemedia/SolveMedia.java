@@ -3,8 +3,6 @@ package org.jdownloader.captcha.v2.challenge.solvemedia;
 import java.io.File;
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -14,6 +12,8 @@ import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
 
 public class SolveMedia {
     private final Browser      br;
@@ -53,7 +53,6 @@ public class SolveMedia {
 
     private void load() throws Exception {
         smBr = br.cloneBrowser();
-
         // this has to be first as it sets secure value based on results!
         if (this.challenge == null) {
             getChallengeKey();
@@ -61,7 +60,6 @@ public class SolveMedia {
         // then this next...
         setServer();
         setPath();
-
         // solvemedia works off API key, and javascript. The imported browser session isn't actually needed.
         /*
          * Randomise user-agent to prevent tracking by solvemedia, each time we load(). Without this they could make the captchas images
@@ -72,7 +70,6 @@ public class SolveMedia {
          */
         /* we first have to load the plugin, before we can reference it */
         smBr.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-
         if (smBr.getURL() == null || !smBr.getURL().contains("solvemedia.com/")) {
             // this prevents solvemedia group from seeing referrer
             if (clearReferer) {
@@ -113,7 +110,7 @@ public class SolveMedia {
             secure = true;
             challenge = br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
             if (challenge == null) {
-                challenge = br.getRegex("https://api\\-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+                challenge = br.getRegex("https://api-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
             }
             if (challenge == null) {
                 secure = false;
@@ -158,9 +155,7 @@ public class SolveMedia {
         if (verifyUrl == null) {
             return null;
         }
-
         String challenge = null;
-
         for (int i = 0; i != retry; i++) {
             smBr = smbr.cloneBrowser();
             try {
@@ -243,5 +238,4 @@ public class SolveMedia {
     public void setClearReferer(final boolean clearReferer) {
         this.clearReferer = clearReferer;
     }
-
 }

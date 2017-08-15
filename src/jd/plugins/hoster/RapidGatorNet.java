@@ -448,7 +448,7 @@ public class RapidGatorNet extends PluginForHost {
                     break;
                 }
             } else {
-                if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api\\.adscapchta\\.com/")) {
+                if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api\\.adscapchta\\.com/") || br.containsHTML("//api-secure\\.solvemedia\\.com/papi")) {
                     final Form captcha = br.getFormbyProperty("id", "captchaform");
                     if (captcha == null) {
                         logger.info(br.toString());
@@ -457,7 +457,7 @@ public class RapidGatorNet extends PluginForHost {
                     captcha.put("DownloadCaptchaForm[captcha]", "");
                     String code = null, challenge = null;
                     final Browser capt = br.cloneBrowser();
-                    if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                    if (br.containsHTML("//api\\.solvemedia\\.com/papi") || br.containsHTML("//api-secure\\.solvemedia\\.com/papi")) {
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
                         final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         code = getCaptchaCode(cf, downloadLink);
@@ -477,7 +477,7 @@ public class RapidGatorNet extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         capt.getPage(captchaAdress);
-                        challenge = capt.getRegex("<img src=\"(http://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
+                        challenge = capt.getRegex("<img src=\"(https?://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
                         code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
                         if (challenge == null || code == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
