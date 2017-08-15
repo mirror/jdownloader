@@ -114,7 +114,7 @@ public class MobilismOrg extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
 
@@ -190,7 +190,7 @@ public class MobilismOrg extends antiDDoSForHost {
             maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
@@ -199,7 +199,7 @@ public class MobilismOrg extends antiDDoSForHost {
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
             br.followConnection();
-            handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         try {
             controlSlot(+1);
@@ -265,10 +265,10 @@ public class MobilismOrg extends antiDDoSForHost {
                 // <div id="mesg" width="100%" align="center">Processing. Remain patient.</div><div align="center"><span
                 // class='htmlerror'><b>Login Error: Cannot find 'user__' cookie.</b></span>
                 final boolean header = br.containsHTML("<div id=\"mesg\" width=\"100%\" align=\"center\">.*?</div>");
-                final String error = br.getRegex("<span class='htmlerror'><b>(.*?</b></span>").getMatch(0);
+                final String error = br.getRegex("<span class='htmlerror'><b>(.*?)</b></span>").getMatch(0);
                 if (header && error != null) {
                     // server side issues...
-                    handleErrorRetries("multihoster_issue", 2, 10 * 60 * 1000l);
+                    mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "multihoster_issue", 2, 10 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -287,7 +287,7 @@ public class MobilismOrg extends antiDDoSForHost {
             }
             if (dllink == null && time > wait) {
                 logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 2, 10 * 60 * 1000l);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "dllinknull", 2, 10 * 60 * 1000l);
             }
         }
         handleDL(account, link, dllink);
@@ -310,30 +310,6 @@ public class MobilismOrg extends antiDDoSForHost {
             }
         }
         return dllink;
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            mhm.putError(this.currAcc, this.currDownloadLink, disableTime, error);
-        }
     }
 
     @SuppressWarnings({ "deprecation" })
@@ -366,7 +342,6 @@ public class MobilismOrg extends antiDDoSForHost {
         }
         ai.setMultiHostSupport(this, new ArrayList<String>(supported));
         account.setType(AccountType.PREMIUM);
-        ai.setStatus("Premium Account");
         ai.setUnlimitedTraffic();
         account.setValid(true);
         account.setConcurrentUsePossible(true);
