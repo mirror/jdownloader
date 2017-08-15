@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,10 +28,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rg\\.to)/folder/\\d+/[^/]+\\.html" })
 @SuppressWarnings("deprecation")
 public class RapidGatorNetFolder extends PluginForDecrypt {
-
     private String parameter = null;
     private String uid       = null;
 
@@ -44,7 +42,7 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString();
+        parameter = param.toString().replace("http://", "https://");
         uid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
         // standardise browser configurations to avoid detection.
         /* we first have to load the plugin, before we can reference it */
@@ -54,7 +52,6 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
-
         if (br.containsHTML("E_FOLDERNOTFOUND") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -77,7 +74,6 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                 break;
             }
         }
-
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -89,7 +85,6 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
     private void parsePage(ArrayList<DownloadLink> ret) {
         final String[] subfolders = this.br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
         String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
-
         if ((links == null || links.length == 0) && (subfolders == null || subfolders.length == 0)) {
             logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
             return;
@@ -103,19 +98,16 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                 ret.add(link);
             }
         }
-
         if (subfolders != null && subfolders.length != 0) {
             for (final String folder : subfolders) {
                 final DownloadLink link = createDownloadlink(Request.getLocation(folder, br.getRequest()));
                 ret.add(link);
             }
         }
-
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

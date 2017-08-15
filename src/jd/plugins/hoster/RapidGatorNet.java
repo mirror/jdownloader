@@ -34,14 +34,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,16 +60,23 @@ import jd.plugins.components.ThrowingRunnable;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
-public class RapidGatorNet extends PluginForHost {
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
+public class RapidGatorNet extends PluginForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://rapidgator.net/article/premium");
+        this.enablePremium("https://rapidgator.net/article/premium");
         this.setConfigElements();
     }
 
-    private static final String            MAINPAGE                        = "http://rapidgator.net/";
+    private static final String            MAINPAGE                        = "https://rapidgator.net/";
     private static Object                  LOCK                            = new Object();
     private static AtomicReference<String> agent                           = new AtomicReference<String>();
     private static final String            PREMIUMONLYTEXT                 = "This file can be downloaded by premium only</div>";
@@ -99,7 +98,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://rapidgator.net/article/terms";
+        return "https://rapidgator.net/article/terms";
     }
 
     @Override
@@ -118,6 +117,7 @@ public class RapidGatorNet extends PluginForHost {
             url = url.replaceFirst("rg.to/", "rapidgator.net/");
             link.setUrlDownload(url);
         }
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
         final String linkID = new Regex(link.getPluginPatternMatcher(), "/file/([a-z0-9]{32}|\\d+)").getMatch(0);
         if (linkID != null) {
             link.setLinkID(getHost() + "://" + linkID);
@@ -197,7 +197,6 @@ public class RapidGatorNet extends PluginForHost {
             engine.eval("history=[];");
             // load java environment trusted
             JavaScriptEngineFactory.runTrusted(new ThrowingRunnable<ScriptException>() {
-
                 @Override
                 public void run() throws ScriptException {
                     ScriptEnv env = new ScriptEnv(engine);
@@ -227,7 +226,6 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     public static class ScriptEnv {
-
         private ScriptEngine engine;
 
         public ScriptEnv(ScriptEngine engine) {
@@ -383,7 +381,7 @@ public class RapidGatorNet extends PluginForHost {
             RapidGatorNet.prepareBrowser(br2);
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br2.getPage("http://rapidgator.net/download/AjaxStartTimer?fid=" + fid);
+            br2.getPage("https://rapidgator.net/download/AjaxStartTimer?fid=" + fid);
             final String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
             String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
             if (!"started".equalsIgnoreCase(state)) {
@@ -402,7 +400,7 @@ public class RapidGatorNet extends PluginForHost {
             br2 = br.cloneBrowser();
             RapidGatorNet.prepareBrowser(br2);
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.getPage("http://rapidgator.net/download/AjaxGetDownloadLink?sid=" + sid);
+            br2.getPage("https://rapidgator.net/download/AjaxGetDownloadLink?sid=" + sid);
             state = br2.getRegex("state\":\"(.*?)\"").getMatch(0);
             if (!"done".equalsIgnoreCase(state)) {
                 if (br2.containsHTML("wait specified time")) {
@@ -411,7 +409,7 @@ public class RapidGatorNet extends PluginForHost {
                 logger.info(br2.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final URLConnectionAdapter con1 = br.openGetConnection("http://rapidgator.net/download/captcha");
+            final URLConnectionAdapter con1 = br.openGetConnection("https://rapidgator.net/download/captcha");
             if (con1.getResponseCode() == 302) {
                 try {
                     con1.disconnect();
@@ -506,7 +504,7 @@ public class RapidGatorNet extends PluginForHost {
             }
             // Old regex
             if (dllink == null) {
-                dllink = br.getRegex("location\\.href = '(http://.*?)'").getMatch(0);
+                dllink = br.getRegex("location\\.href = '(https?://.*?)'").getMatch(0);
             }
             if (dllink == null) {
                 logger.info(br.toString());
@@ -548,16 +546,16 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     /**
-     * If users need more than X seconds to enter the captcha and we actually send the captcha input after this time has passed, rapidgator will
-     * 'ban' the IP of the user for at least 60 minutes. This function is there to avoid this case. Instead of sending the captcha it throws a
-     * retry exception, avoiding the 60+ minutes IP 'ban'.
+     * If users need more than X seconds to enter the captcha and we actually send the captcha input after this time has passed, rapidgator
+     * will 'ban' the IP of the user for at least 60 minutes. This function is there to avoid this case. Instead of sending the captcha it
+     * throws a retry exception, avoiding the 60+ minutes IP 'ban'.
      */
     private void checkForExpiredCaptcha(final long timeBefore) throws PluginException {
         final long passedTime = System.currentTimeMillis() - timeBefore;
         if (passedTime >= (FREE_CAPTCHA_EXPIRE_TIME - 1000)) {
             /*
-             * Do NOT throw a captcha Exception here as it is not the users' fault that we cannot download - he simply took too much time to enter the
-             * captcha!
+             * Do NOT throw a captcha Exception here as it is not the users' fault that we cannot download - he simply took too much time to
+             * enter the captcha!
              */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha session expired");
         }
@@ -594,7 +592,8 @@ public class RapidGatorNet extends PluginForHost {
                     final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
                     if (expire_date != null && traffic_left != null) {
                         /*
-                         * expire date and traffic left are available, so it is a premium account, add one day extra to prevent it from expiring too early
+                         * expire date and traffic left are available, so it is a premium account, add one day extra to prevent it from
+                         * expiring too early
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
                         final long left = Long.parseLong(traffic_left);
@@ -666,7 +665,7 @@ public class RapidGatorNet extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setUnlimitedTraffic();
         } else {
-            br.getPage("http://rapidgator.net/profile/index");
+            br.getPage("https://rapidgator.net/profile/index");
             String availableTraffic = br.getRegex(">Bandwith available</td>\\s+<td>\\s+([^<>\"]*?) of").getMatch(0);
             final String availableTrafficMax = br.getRegex(">Bandwith available</td>\\s+<td>\\s+[^<>\"]*? of (\\d+(\\.\\d+)? (?:MB|GB|TB))").getMatch(0);
             logger.info("availableTraffic = " + availableTraffic);
@@ -691,7 +690,7 @@ public class RapidGatorNet extends PluginForHost {
                 /**
                  * eg subscriptions
                  */
-                br.getPage("http://rapidgator.net/Payment/Payment");
+                br.getPage("https://rapidgator.net/Payment/Payment");
                 // expireDate = br.getRegex("style=\"width:60px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
                 expireDate = br.getRegex("style=\"width.*?style=\"width.*?style=\"width.*?>([^<>\"]*?)<").getMatch(0);
             }
@@ -719,8 +718,8 @@ public class RapidGatorNet extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && account.isValid()) {
                     /*
-                     * Make sure that we're logged in. Doing this for every downloadlink might sound like a waste of server capacity but really it doesn't hurt
-                     * anybody.
+                     * Make sure that we're logged in. Doing this for every downloadlink might sound like a waste of server capacity but
+                     * really it doesn't hurt anybody.
                      */
                     br.setCookies(getHost(), cookies);
                     /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
@@ -811,7 +810,7 @@ public class RapidGatorNet extends PluginForHost {
         final boolean isFollowRedirects = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            br.getPage("http://rapidgator.net");// required to prevent being blocked by firewall
+            br.getPage("https://rapidgator.net");// required to prevent being blocked by firewall
             if (br.getRedirectLocation() != null) {
                 br.getPage(br.getRedirectLocation());
             }
@@ -842,7 +841,8 @@ public class RapidGatorNet extends PluginForHost {
                         final String traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
                         if (expire_date != null && traffic_left != null) {
                             /*
-                             * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from expiring too early
+                             * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
+                             * expiring too early
                              */
                             final AccountInfo ai = new AccountInfo();
                             ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
@@ -970,8 +970,8 @@ public class RapidGatorNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount Locked! Violation of Terms of Service!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (errorMessage.contains("Parameter login or password is missing")) {
                     /*
-                     * Unusual case but this may also happen frequently if users use strange chars as usernme/password so simply treat this as
-                     * "login/password wrong"!
+                     * Unusual case but this may also happen frequently if users use strange chars as usernme/password so simply treat this
+                     * as "login/password wrong"!
                      */
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1105,8 +1105,8 @@ public class RapidGatorNet extends PluginForHost {
             // disable api?
             // {"response":{"url":false},"response_status":200,"response_details":null}
             /*
-             * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to reproduce this so
-             * this is just a bad workaround! Correct server response would be:
+             * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
+             * reproduce this so this is just a bad workaround! Correct server response would be:
              *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
              *
@@ -1169,11 +1169,11 @@ public class RapidGatorNet extends PluginForHost {
                     logger.info("JSRedirect in premium");
                     br.getPage(link.getDownloadURL() + "?" + reDirHash);
                 }
-                dllink = br.getRegex("var premium_download_link = '(http://[^<>\"']+)';").getMatch(0);
+                dllink = br.getRegex("var premium_download_link = '(https?://[^<>\"']+)';").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                    dllink = br.getRegex("'(https?://pr_srv\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                        dllink = br.getRegex("'(https?://pr\\d+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
                         if (dllink == null) {
                             if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
                                 logger.info("You've reached daily download quota for " + account.getUser() + " account");
