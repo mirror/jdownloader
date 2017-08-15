@@ -18,25 +18,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -78,28 +59,49 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
+
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
-    private final AtomicLong                        bytesWritten         = new AtomicLong(0);
-    private final DownloadLinkDownloadable          downloadable;
-    private final DownloadLink                      link;
-    private long                                    startTimeStamp       = -1;
-    private final LogInterface                      logger;
-    private URLConnectionAdapter                    currentConnection;
-    private final ManagedThrottledConnectionHandler connectionHandler;
-    private File                                    outputCompleteFile;
-    private PluginException                         caughtPluginException;
-    private final String                            m3uUrl;
-    private HttpServer                              server;
-    private final Browser                           sourceBrowser;
-    private long                                    processID;
-    protected MeteredThrottledInputStream           meteredThrottledInputStream;
-    protected final AtomicReference<byte[]>         instanceBuffer       = new AtomicReference<byte[]>();
-    private final List<M3U8Playlist>                m3u8Playlists;
-    private final List<File>                        outputPartFiles      = new ArrayList<File>();
-    private final AtomicInteger                     currentPlayListIndex = new AtomicInteger(0);
-    private final HashMap<String, SecretKeySpec>    aes128Keys           = new HashMap<String, SecretKeySpec>();
-    private final boolean                           isJared              = Application.isJared(HLSDownloader.class);
+
+    private final AtomicLong                     bytesWritten         = new AtomicLong(0);
+    private DownloadLinkDownloadable             downloadable;
+    private DownloadLink                         link;
+    private long                                 startTimeStamp       = -1;
+    private LogInterface                         logger;
+    private URLConnectionAdapter                 currentConnection;
+    private ManagedThrottledConnectionHandler    connectionHandler;
+    private File                                 outputCompleteFile;
+    private PluginException                      caughtPluginException;
+    private String                               m3uUrl;
+    private String                               persistentParameters;
+    private HttpServer                           server;
+    private Browser                              sourceBrowser;
+    private long                                 processID;
+    protected MeteredThrottledInputStream        meteredThrottledInputStream;
+    protected final AtomicReference<byte[]>      instanceBuffer       = new AtomicReference<byte[]>();
+    private List<M3U8Playlist>                   m3u8Playlists;
+    private final List<File>                     outputPartFiles      = new ArrayList<File>();
+    private final AtomicInteger                  currentPlayListIndex = new AtomicInteger(0);
+    private final HashMap<String, SecretKeySpec> aes128Keys           = new HashMap<String, SecretKeySpec>();
+    private final boolean                        isJared              = Application.isJared(HLSDownloader.class);
 
     public int getCurrentPlayListIndex() {
         return currentPlayListIndex.get();
@@ -113,13 +115,15 @@ public class HLSDownloader extends DownloadInterface {
         return m3u8Playlists;
     }
 
-    public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) throws IOException, PluginException {
-        this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
-        this.sourceBrowser = br2.cloneBrowser();
+    private final void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters) throws Exception {
+        this.persistentParameters = setPersistentParameters(persistantParameters);
+        this.m3uUrl = Request.getLocation(m3uUrl, br.getRequest());
+        this.sourceBrowser = br.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
         connectionHandler = new ManagedThrottledConnectionHandler();
         downloadable = new DownloadLinkDownloadable(link) {
+
             @Override
             public boolean isResumable() {
                 return link.getBooleanProperty("RESUME", true);
@@ -134,6 +138,37 @@ public class HLSDownloader extends DownloadInterface {
         m3u8Playlists = getM3U8Playlists();
         if (m3u8Playlists.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    public HLSDownloader(final DownloadLink link, Browser br, String m3uUrl, final String persistentParameters) throws Exception {
+        init(link, br, m3uUrl, persistentParameters);
+    }
+
+    public HLSDownloader(final DownloadLink link, final Browser br, final String m3uUrl) throws Exception {
+        init(link, br, m3uUrl, null);
+    }
+
+    private final String setPersistentParameters(final String persistentParameters) {
+        if (persistentParameters == null) {
+            return null;
+        }
+        final String parameter = persistentParameters.trim();
+        if (parameter.startsWith("?") || parameter.startsWith("&")) {
+            return parameter.substring(1);
+        } else {
+            return parameter;
+        }
+    }
+
+    private final String setPersistentDownloadUrl(final String input) {
+        if (this.persistentParameters == null) {
+            return input;
+        }
+        if (input.contains("?")) {
+            return input + "&" + this.persistentParameters;
+        } else {
+            return input + "?" + this.persistentParameters;
         }
     }
 
@@ -288,6 +323,7 @@ public class HLSDownloader extends DownloadInterface {
     private void runConcat() throws IOException, PluginException {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
+
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                 };
             };
@@ -295,6 +331,7 @@ public class HLSDownloader extends DownloadInterface {
             initPipe(ffmpeg);
             final AtomicReference<File> outputFile = new AtomicReference<File>();
             final FFMpegProgress progress = new FFMpegProgress() {
+
                 final long total;
                 {
                     long total = 0;
@@ -420,6 +457,7 @@ public class HLSDownloader extends DownloadInterface {
             final AtomicLong completeTime = new AtomicLong(0);
             final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
+
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     try {
                         final String trimmedLine = line.trim();
@@ -528,7 +566,7 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    protected boolean isMapMetaDataEnabled() {
+    protected final boolean isMapMetaDataEnabled() {
         return false;
     }
 
@@ -638,7 +676,7 @@ public class HLSDownloader extends DownloadInterface {
         return ret;
     }
 
-    protected List<M3U8Playlist> getM3U8Playlists() throws IOException {
+    protected List<M3U8Playlist> getM3U8Playlists() throws Exception {
         final Browser br = getRequestBrowser();
         // work around for longggggg m3u pages
         final int was = br.getLoadLimit();
@@ -660,6 +698,7 @@ public class HLSDownloader extends DownloadInterface {
         server.start();
         instanceBuffer.set(new byte[512 * 1024]);
         finalServer.registerRequestHandler(new HttpRequestHandler() {
+
             final byte[] readBuf = new byte[512];
 
             @Override
@@ -703,7 +742,7 @@ public class HLSDownloader extends DownloadInterface {
             }
 
             @Override
-            public boolean onGetRequest(GetRequest request, HttpResponse response) {
+            public boolean onGetRequest(GetRequest request, HttpResponse response) throws Exception {
                 requestsInProcess.incrementAndGet();
                 boolean requestOkay = false;
                 try {
@@ -838,7 +877,7 @@ public class HLSDownloader extends DownloadInterface {
                                 br.disconnect();
                             } catch (final Throwable e) {
                             }
-                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(downloadURL);
+                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(setPersistentDownloadUrl(downloadURL));
                             if (fileBytesMap.getFinalSize() > 0) {
                                 if (logger != null) {
                                     logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
@@ -1021,6 +1060,7 @@ public class HLSDownloader extends DownloadInterface {
                 }
                 return true;
             }
+
         });
     }
 
@@ -1060,6 +1100,7 @@ public class HLSDownloader extends DownloadInterface {
             // TODO: update to handle 2x disk space usage (download + concat)
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
+
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
