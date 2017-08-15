@@ -17,6 +17,17 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -37,17 +48,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 /**
  *
  * @author raztoki
@@ -55,6 +55,7 @@ import org.mozilla.javascript.ScriptableObject;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
+
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -288,21 +289,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             try {
                 antiDDoS(ibr);
-                if (ibr.getRequest() != request && request instanceof PostRequest) {
-                    // redo post request
-                    try {
-                        request.resetConnection();
-                        con = ibr.openRequestConnection(request);
-                        readConnection(con, ibr);
-                    } finally {
-                        if (con != null) {
-                            try {
-                                con.disconnect();
-                            } catch (Throwable e) {
-                            }
-                        }
-                    }
-                }
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
@@ -338,10 +324,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             ibr.openRequestConnection(request);
             try {
                 antiDDoS(ibr, request);
-                if (ibr.getRequest() != request && request instanceof PostRequest) {
-                    request.resetConnection();
-                    ibr.openRequestConnection(request);
-                }
                 break;
             } catch (final CaptchaLockException cle) {
                 continue;
@@ -422,9 +404,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
-            // Cloudflare
             final Object lockObject = new Object();
             try {
+                // Cloudflare
                 // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
                 if (containsCloudflareCookies(ibr)) {
                     processCloudflare(lockObject, ibr, request, cookies);
@@ -468,6 +450,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
         }
         final Form cloudflare = getCloudflareChallengeForm(ibr);
+        final Request originalRequest = ibr.getRequest();
         if (responseCode == 403 && cloudflare != null) {
             // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
             if (captchaLocked.compareAndSet(null, lockObject)) {
@@ -477,6 +460,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                     final Form cf = cloudflare;
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
+
                         {
                             boundToDomain = true;
                         }
@@ -533,7 +517,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                     cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                 }
-                final Request originalRequest = ibr.getRequest();
                 if (request != null) {
                     ibr.openFormConnection(cloudflare);
                 } else {
@@ -589,14 +572,29 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
             long answer = ((Number) engine.eval(sb.toString())).longValue();
             cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
-            Thread.sleep(5500);
+            // if it works, there should be a redirect.
             if (request != null) {
                 ibr.openFormConnection(cloudflare);
             } else {
                 ibr.submitForm(cloudflare);
             }
-            // if it works, there should be a redirect.
-            if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+            // ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets > need to
+            // resubmit original request.
+            if (originalRequest instanceof PostRequest) {
+                try {
+                    sendRequest(ibr, originalRequest.cloneRequest());
+                } catch (final Exception t) {
+                    // we want to preserve proper exceptions!
+                    if (t instanceof PluginException) {
+                        throw t;
+                    }
+                    t.printStackTrace();
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                }
+                // new sendRequest saves cookie session
+                return;
+            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                // since we might not be following redirect, we need to get this one so we have correct html!
                 ibr.getPage(ibr.getRedirectLocation());
             }
         } else if (responseCode == 521) {
@@ -796,7 +794,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 ifr.getPage(iframe);
                 final Form captcha = ifr.getFormbyProperty("id", "captcha-form");
                 if (captcha == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (captchaLocked.compareAndSet(null, lockObject)) {
                     a_captchaRequirement = true;
