@@ -11,10 +11,12 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -47,6 +49,27 @@ public class SproutVideoCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (!br.getURL().contains("/embed/")) {
+            if (containsPassword()) {
+                Form f = br.getFormByInputFieldPropertyKeyValue("id", "password");
+                String password = link.getDownloadPassword();
+                if (password != null) {
+                    f.put("password", Encoding.urlEncode(password));
+                    br.submitForm(f);
+                }
+                if (containsPassword()) {
+                    // invalid cache
+                    link.setDownloadPassword(null);
+                    f = br.getFormByInputFieldPropertyKeyValue("id", "password");
+                    password = Plugin.getUserInput("Password?", link);
+                    f.put("password", Encoding.urlEncode(password));
+                    br.submitForm(f);
+                    if (containsPassword()) {
+                        // since we dont have a password linkstatus
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Incorrect Password");
+                    }
+                }
+                link.setDownloadPassword(password);
+            }
             // embed required, you can get it from omebed json/xml or iframe or 'meta content twitter'
             // prefer iframe as it can have ?type=hd parameter
             String embed = br.getRegex("<iframe src=('|\"|)(.*?)\\1 ").getMatch(1);
@@ -85,6 +108,11 @@ public class SproutVideoCom extends PluginForHost {
         }
 
         return AvailableStatus.TRUE;
+    }
+
+    private boolean containsPassword() {
+        final boolean result = br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("<title>Password Protected Video");
+        return result;
     }
 
     @Override
