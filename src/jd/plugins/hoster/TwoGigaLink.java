@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "2giga.link" }, urls = { "https?://(?:www\\.)?2giga\\.link/d(?:ownload)?/[A-Za-z0-9]+" })
 public class TwoGigaLink extends PluginForHost {
@@ -59,7 +58,6 @@ public class TwoGigaLink extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -90,9 +88,20 @@ public class TwoGigaLink extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("(https?://[^<>\"]+/openbar/[^<>\"]+)").getMatch(0);
             if (dllink == null) {
+                // decrypterLink
+                final String decrypterLink = br.getRegex("href=\"([^\"]+)\"[^>]*>Download</a>").getMatch(0);
+                if (decrypterLink != null) {
+                    dllink = returnDecrypterTaskResult(decrypterLink);
+                    if (dllink == null) {
+                        // its not a plugin defect in this plugin, could be another plugin OR unsupported host..
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Special case error!! Please report this error to JDownloader Development Team!");
+                    }
+                    br = new Browser();
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                dllink = Encoding.htmlOnlyDecode(dllink);
             }
-            dllink = Encoding.htmlDecode(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -144,5 +153,4 @@ public class TwoGigaLink extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
