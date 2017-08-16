@@ -118,13 +118,12 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             tempLinks.add(url_mp3_preview);
         }
 
-        final String[] keys = new String[] { "cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=", "d2luZG93LmFkZEV2ZW50TGlzdGVuZXIgPSB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lciB8fCBmdW5jdGlvbigpIHt9Ow==" };
+        final String[] keys = new String[] { "cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=", "d2luZG93LmFkZEV2ZW50TGlzdGVuZXIgPSB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lciB8fCBmdW5jdGlvbigpIHt9Ow==", "cmV0dXJuIHsgcmVxdWVzdEFuaW1hdGlvbkZyYW1lOiBmdW5jdGlvbihjYWxsYmFjaykgeyBjYWxsYmFjaygpOyB9LCBpbm5lckhlaWdodDogNTAwIH07" };
         for (final String key : keys) {
             String result = null;
             try {
                 result = decrypt(playInfo, key);
             } catch (final Throwable e) {
-                return null;
             }
 
             final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
