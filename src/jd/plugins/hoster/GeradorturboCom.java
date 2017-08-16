@@ -124,14 +124,25 @@ public class GeradorturboCom extends antiDDoSForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            postPage("http://" + this.getHost() + "/07/8037/gerador-all.php?rand=0." + System.currentTimeMillis(), "captcha=none&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
+            getPage("http://" + this.getHost() + "/downloader");
+            // javascript reference is important
+            final String js = br.getRegex("\"(/\\d+/\\d+/)ajax-all\\.js").getMatch(0);
+            if (js == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            postPage(js + "gerador-all.php?rand=0." + System.currentTimeMillis(), "captcha=none&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = br.getRegex("title='click here to download' href='(http[^<>\"']+)'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("href='(http[^<>\"']+)'").getMatch(0);
             }
             if (dllink == null) {
+                if (br.containsHTML("Servidor indisponível no momento")) {
+                    // Servidor indisponível no momento (Erro #3)
+                    // Server currently unavailable
+                    mhm.putError(this.currAcc, this.currDownloadLink, 10 * 60 * 1000l, " Server currently unavailable");
+                }
                 /* Should never happen */
-                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "dllinknull", 50, 2 * 60 * 1000l);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "dllinknull", 10, 2 * 60 * 1000l);
             }
         }
         handleDL(dllink);
