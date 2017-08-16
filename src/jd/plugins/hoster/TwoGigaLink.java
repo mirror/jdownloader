@@ -98,7 +98,9 @@ public class TwoGigaLink extends PluginForHost {
                     }
                     br = new Browser();
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
                 dllink = Encoding.htmlOnlyDecode(dllink);
             }
