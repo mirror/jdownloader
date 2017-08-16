@@ -18,24 +18,33 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.captcha.SkipException;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,13 +54,9 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" })
 public class NovaFileCom extends antiDDoSForHost {
+
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "https://novafile.com";
@@ -75,6 +80,7 @@ public class NovaFileCom extends antiDDoSForHost {
     // protocol: redirects to https
     // captchatype: recaptcha
     // other: OLD standard-JD User-Agent is blocked!
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
@@ -141,7 +147,7 @@ public class NovaFileCom extends antiDDoSForHost {
         // scan the second page. filesize[1] and md5hash[2] are not mission
         // critical
         if (fileInfo[0] == null) {
-            Form download1 = getFormByKey("op", "download1");
+            Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 submitForm(download1);
@@ -215,9 +221,6 @@ public class NovaFileCom extends antiDDoSForHost {
 
     public void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
-        if (br.containsHTML("<div id=\"premium-only\">")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
@@ -227,7 +230,7 @@ public class NovaFileCom extends antiDDoSForHost {
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, account, false, passCode);
-            Form download1 = getFormByKey("op", "download1");
+            Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 submitForm(download1);
@@ -236,7 +239,7 @@ public class NovaFileCom extends antiDDoSForHost {
             dllink = getDllink();
         }
         if (dllink == null) {
-            Form dlForm = getFormByKey("op", "download2");
+            Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -326,11 +329,10 @@ public class NovaFileCom extends antiDDoSForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && (getFormByKey("op", "download2") == null || i == repeat)) {
+                if (dllink == null && (br.getFormByInputFieldKeyValue("op", "download2") == null || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && getFormByKey("op", "download2") != null) {
-                    dlForm = getFormByKey("op", "download2");
+                } else if (dllink == null && (dlForm = br.getFormByInputFieldKeyValue("op", "download2")) != null) {
                     invalidateLastChallengeResponse();
                     continue;
                 } else {
@@ -341,7 +343,7 @@ public class NovaFileCom extends antiDDoSForHost {
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dllink = Encoding.urlEncode_light(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume failed --> Retrying from zero");
             downloadLink.setChunksProgress(null);
@@ -460,18 +462,60 @@ public class NovaFileCom extends antiDDoSForHost {
         correctBR();
     }
 
+    @Override
+    protected void runPostRequestTask(Browser ibr) throws Exception {
+        if (!ibr.isFollowingRedirects()) {
+            final String redirect = ibr.getRedirectLocation();
+            if (redirect != null) {
+                // this effectively prevents redirect of direct downloadable content.
+                if (!new Regex(redirect, "https?://(?:[\\w\\-\\.]+)(?::\\d{1,4})?/(?:files|d|cgi-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]+").matches()) {
+                    getPage(ibr, redirect);
+                    return;
+                }
+            }
+        }
+        // they can show silly recaptcha challenge I believe at anytime within download routine.
+        if (ibr.getRequest().getURL().getFile().matches("(?i)/\\?op=captcha&id=[a-z0-9]{12}")) {
+            try {
+                // only one form on page
+                final Form captcha = br.getForm(0);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                submitForm(captcha);
+                return;
+            } catch (final Exception e) {
+                boolean isCaptcha;
+                if (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
+                    isCaptcha = true;
+                } else if (e instanceof SkipException || e instanceof CaptchaException) {
+                    isCaptcha = true;
+                } else {
+                    isCaptcha = false;
+                }
+                if (isCaptcha && accountType != null) {
+                    throw new AccountInvalidException(e, "'imNotARobot' captcha was not answered");
+                } else {
+                    throw e;
+                }
+
+            }
+        }
+    }
+
     public void checkErrors(final DownloadLink theLink, final Account account, boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
         if (account != null) {
             synchronized (LOCK) {
                 final String hours = new Regex(correctedBR, "class=\"error_page\">\\s*You've used \\d+ different IPs to download in last \\d+ hours\\. You're not allowed to download for (\\d+) hours\\.").getMatch(0);
                 // recommend to users that they disable IP reconnection!
                 if (hours != null) {
-                    final AccountInfo ai = account.getAccountInfo();
-                    ai.setStatus("Account Disabled due to logging in too many times from different IP address over short period");
-                    account.setAccountInfo(ai);
-                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(hours) * 60 * 60 * 1001l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Account Disabled due to logging in too many times from different IP address over short period", Long.parseLong(hours) * 60 * 60 * 1001l);
                 }
+                if (br.containsHTML("class=\"error_page\">\\s*You can't access this account from your IP\\.<br>")) {
+                    throw new AccountInvalidException("You can't access this account from your current IP Address");
+                }
+            }
+            if (theLink == null) {
+                return;
             }
         }
         if (checkAll) {
@@ -534,7 +578,7 @@ public class NovaFileCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "(can only download| can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|This file can only be downloaded by Premium Users)").matches()) {
+        if (new Regex(correctedBR, "(can only download| can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|This file can only be downloaded by Premium Users|<div id=\"premium-only\">)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit == null) {
                 filesizelimit = new Regex(correctedBR, "Free Users can only download files sized up to(.*?)\\.<").getMatch(0);
@@ -631,15 +675,11 @@ public class NovaFileCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        br = new Browser();
         // reset value
         account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
             ai.setUsedSpace(space[0][0] + " " + space[0][1]);
@@ -659,51 +699,42 @@ public class NovaFileCom extends antiDDoSForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Free Account");
+        String expire = new Regex(correctedBR, ">Premium expires:</td>.+<div>(\\d{1,2} [A-Za-z]+ \\d{4})</div>").getMatch(0);
+        if (expire == null) {
+            expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
+        }
+        if (expire != null) {
+            expire = expire.replaceAll("(<b>|</b>)", "");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
+            account.setMaxSimultanDownloads(10);
+            account.setConcurrentUsePossible(false);
+            account.setType(AccountType.PREMIUM);
+        }
+        if (ai.isExpired() || expire == null) {
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
-        } else {
-            String expire = new Regex(correctedBR, ">Premium expires:</td>.+<div>(\\d{1,2} [A-Za-z]+ \\d{4})</div>").getMatch(0);
-            if (expire == null) {
-                expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
-            }
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
-                account.setMaxSimultanDownloads(10);
-                account.setConcurrentUsePossible(false);
-            }
-            ai.setStatus("Premium Account");
+            account.setType(AccountType.FREE);
         }
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
+                /* Load cookies */
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    if (!force) {
                         return;
                     }
+                    getPage(COOKIE_HOST + "/?op=my_account");
+                    if (validateAccountCookies()) {
+                        return;
+                    }
+                    br.setCookiesExclusive(true);
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login");
@@ -724,6 +755,11 @@ public class NovaFileCom extends antiDDoSForHost {
                         }
                     }
                     postPage(COOKIE_HOST + "/login", postData);
+                    checkErrors(null, account, false, null);
+                    // no point doing another post request when password is incorrect... only captcha!
+                    if (new Regex(correctedBR, ">\\s*Incorrect Login or Password\\s*<").matches()) {
+                        invalidAccountException();
+                    }
                     if (!br.containsHTML(regexRecaptcha)) {
                         break;
                     } else if (br.containsHTML(regexRecaptcha) && i + 1 >= repeat) {
@@ -733,37 +769,52 @@ public class NovaFileCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    final String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login-captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!validateAccountCookies()) {
+                    invalidAccountException();
                 }
-                getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )(Account )?expires|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
+                if (!br.getRequest().getURL().getFile().equals("/?op=my_account")) {
+                    getPage("/?op=my_account");
+                }
+                if (!new Regex(correctedBR, "(Premium[- ](Account )?expires|>Renew premium<)").matches()) {
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setType(AccountType.PREMIUM);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(COOKIE_HOST));
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
+    private void invalidAccountException() throws PluginException {
+        final String lang = System.getProperty("user.language");
+        if ("de".equalsIgnoreCase(lang)) {
+            throw new AccountInvalidException("Ungültiger Benutzername, Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!");
+        } else {
+            throw new AccountInvalidException("Invalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!");
+        }
+    }
+
+    private boolean validateAccountCookies() {
+        final String xfss = br.getCookie(COOKIE_HOST, "xfss");
+        if (xfss != null && !("".equals(xfss) || "deleted".equals(xfss))) {
+            return true;
+        }
+        return false;
+    }
+
     private final String regexRecaptcha = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
+
+    private AccountType  accountType    = null;
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
+        accountType = account.getType();
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
@@ -794,7 +845,7 @@ public class NovaFileCom extends antiDDoSForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dllink = Encoding.urlEncode_light(dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
                 link.setChunksProgress(null);
@@ -805,9 +856,6 @@ public class NovaFileCom extends antiDDoSForHost {
                 br.followConnection();
                 correctBR();
                 checkServerErrors();
-                if (br.containsHTML("imNotARobot") && br.containsHTML("g-recaptcha")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Premium Captcha Workaround", 5 * 60 * 1000l);
-                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode != null) {
@@ -845,34 +893,6 @@ public class NovaFileCom extends antiDDoSForHost {
                 sleep(tt * 1000l, downloadLink);
             }
         }
-    }
-
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
-    /**
-     * Returns the first form that has a 'key' that equals 'value'.
-     *
-     * @param key
-     * @param value
-     * @return
-     */
-    private Form getFormByKey(final String key, final String value) {
-        Form[] workaround = br.getForms();
-        if (workaround != null) {
-            for (Form f : workaround) {
-                for (InputField field : f.getInputFields()) {
-                    if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) {
-                            return f;
-                        }
-                        if (value != null && value.equals(field.getValue())) {
-                            return f;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     @Override
