@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -39,7 +38,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|\\?[^\\s<>\"']*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
-
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
@@ -85,11 +83,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             // invalid link
             return ret;
         }
-        return parse(param, br, referer, cookiesString, null);
-
+        return parseM3U8(param, br, referer, cookiesString, null);
     }
 
-    public ArrayList<DownloadLink> parse(final CryptedLink param, final Browser br, final String referer, final String cookiesString, final String filename) throws IOException {
+    public ArrayList<DownloadLink> parseM3U8(final CryptedLink param, final Browser br, final String referer, final String cookiesString, final String filename) throws IOException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
             final ArrayList<String> infos = new ArrayList<String>();
@@ -149,5 +146,4 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
         }
     }
-
 }

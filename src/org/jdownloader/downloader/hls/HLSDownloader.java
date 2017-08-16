@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +19,25 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -32,6 +53,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -59,28 +81,8 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
-
     private final AtomicLong                     bytesWritten         = new AtomicLong(0);
     private DownloadLinkDownloadable             downloadable;
     private DownloadLink                         link;
@@ -116,14 +118,13 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     private final void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters) throws Exception {
-        this.persistentParameters = setPersistentParameters(persistantParameters);
+        setPersistentParameters(persistantParameters);
         this.m3uUrl = Request.getLocation(m3uUrl, br.getRequest());
         this.sourceBrowser = br.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
         connectionHandler = new ManagedThrottledConnectionHandler();
         downloadable = new DownloadLinkDownloadable(link) {
-
             @Override
             public boolean isResumable() {
                 return link.getBooleanProperty("RESUME", true);
@@ -149,26 +150,33 @@ public class HLSDownloader extends DownloadInterface {
         init(link, br, m3uUrl, null);
     }
 
-    protected String setPersistentParameters(final String persistentParameters) {
-        if (persistentParameters == null) {
-            return null;
-        }
-        final String parameter = persistentParameters.trim();
-        if (parameter.startsWith("?") || parameter.startsWith("&")) {
-            return parameter.substring(1);
+    protected void setPersistentParameters(final String persistentParameters) {
+        if (StringUtils.isEmpty(persistentParameters)) {
+            this.persistentParameters = null;
         } else {
-            return parameter;
+            final String parameter = persistentParameters.trim();
+            if (parameter.startsWith("?") || parameter.startsWith("&")) {
+                this.persistentParameters = parameter.substring(1);
+            } else {
+                this.persistentParameters = parameter;
+            }
         }
     }
 
-    protected String setPersistentDownloadUrl(final String input) {
-        if (this.persistentParameters == null) {
-            return input;
-        }
-        if (input.contains("?")) {
-            return input + "&" + this.persistentParameters;
+    protected String buildDownloadUrl(final String url) {
+        final String persistentParameters = this.persistentParameters;
+        if (persistentParameters == null) {
+            return url;
         } else {
-            return input + "?" + this.persistentParameters;
+            try {
+                return URLHelper.parseLocation(new URL(url), "&" + persistentParameters);
+            } catch (MalformedURLException e) {
+                if (url.contains("?")) {
+                    return url + "&" + persistentParameters;
+                } else {
+                    return url + "?" + persistentParameters;
+                }
+            }
         }
     }
 
@@ -323,7 +331,6 @@ public class HLSDownloader extends DownloadInterface {
     private void runConcat() throws IOException, PluginException {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
-
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                 };
             };
@@ -331,7 +338,6 @@ public class HLSDownloader extends DownloadInterface {
             initPipe(ffmpeg);
             final AtomicReference<File> outputFile = new AtomicReference<File>();
             final FFMpegProgress progress = new FFMpegProgress() {
-
                 final long total;
                 {
                     long total = 0;
@@ -457,7 +463,6 @@ public class HLSDownloader extends DownloadInterface {
             final AtomicLong completeTime = new AtomicLong(0);
             final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
-
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     try {
                         final String trimmedLine = line.trim();
@@ -698,7 +703,6 @@ public class HLSDownloader extends DownloadInterface {
         server.start();
         instanceBuffer.set(new byte[512 * 1024]);
         finalServer.registerRequestHandler(new HttpRequestHandler() {
-
             final byte[] readBuf = new byte[512];
 
             @Override
@@ -877,7 +881,7 @@ public class HLSDownloader extends DownloadInterface {
                                 br.disconnect();
                             } catch (final Throwable e) {
                             }
-                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(setPersistentDownloadUrl(downloadURL));
+                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(buildDownloadUrl(downloadURL));
                             if (fileBytesMap.getFinalSize() > 0) {
                                 if (logger != null) {
                                     logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
@@ -933,7 +937,7 @@ public class HLSDownloader extends DownloadInterface {
                                         if (key == null) {
                                             final Browser br2 = getRequestBrowser();
                                             br2.setFollowRedirects(true);
-                                            final URLConnectionAdapter con = br2.openGetConnection(setPersistentDownloadUrl(keyURI));
+                                            final URLConnectionAdapter con = br2.openGetConnection(buildDownloadUrl(keyURI));
                                             try {
                                                 if (con.getResponseCode() == 200) {
                                                     final byte[] buf = IO.readStream(20, con.getInputStream());
@@ -1099,7 +1103,6 @@ public class HLSDownloader extends DownloadInterface {
             // TODO: update to handle 2x disk space usage (download + concat)
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);

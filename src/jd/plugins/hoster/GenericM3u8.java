@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.URL;
@@ -33,11 +32,11 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8?(\\?.+)?|$)" })
 public class GenericM3u8 extends PluginForHost {
-
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -104,6 +103,10 @@ public class GenericM3u8 extends PluginForHost {
         if (streamInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final int hlsBandwidth = downloadLink.getIntegerProperty("hlsBandwidth", -1);
+        for (M3U8Playlist playList : downloader.getPlayLists()) {
+            playList.setAverageBandwidth(hlsBandwidth);
+        }
         final long estimatedSize = downloader.getEstimatedSize();
         if (downloadLink.getKnownDownloadSize() == -1) {
             downloadLink.setDownloadSize(estimatedSize);
@@ -133,22 +136,24 @@ public class GenericM3u8 extends PluginForHost {
                 }
             }
         }
-        String name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
-        if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
-            name = name.substring(0, name.length() - 5);
-        }
-        if (videoq != null && audioq != null) {
-            name += " (" + videoq + "_" + audioq + ")";
-        } else if (videoq != null) {
-            name += " (" + videoq + ")";
-        } else if (audioq != null) {
-            name += " (" + audioq + ")";
-            if (StringUtils.containsIgnoreCase(audioq, "mp3")) {
-                extension = "mp3";
+        if (downloadLink.getFinalFileName() == null) {
+            String name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
+            if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
+                name = name.substring(0, name.length() - 5);
             }
+            if (videoq != null && audioq != null) {
+                name += " (" + videoq + "_" + audioq + ")";
+            } else if (videoq != null) {
+                name += " (" + videoq + ")";
+            } else if (audioq != null) {
+                name += " (" + audioq + ")";
+                if (StringUtils.containsIgnoreCase(audioq, "mp3")) {
+                    extension = "mp3";
+                }
+            }
+            name += "." + extension;
+            downloadLink.setFinalFileName(name);
         }
-        name += "." + extension;
-        downloadLink.setFinalFileName(name);
         return AvailableStatus.TRUE;
     }
 
