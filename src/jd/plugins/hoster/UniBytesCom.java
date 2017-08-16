@@ -16,10 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -31,12 +33,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/([a-zA-Z0-9\\-\\.\\_]{11}B|[a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/([a-zA-Z0-9\\-\\.\\_]{11}B|[a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB)" })
 public class UniBytesCom extends PluginForHost {
 
     // DEV NOTES
@@ -65,15 +64,13 @@ public class UniBytesCom extends PluginForHost {
         br.setCookie(MAINPAGE, "lang", "en");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent = UserAgents.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
@@ -88,7 +85,7 @@ public class UniBytesCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("Download file:</small><br/>([^<>\"]*?)<small>").getMatch(0);
+        String filename = br.getRegex("Download file:</small><br/>\\s*([^<>\"]*?)\\s*<small>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
@@ -144,9 +141,10 @@ public class UniBytesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        br = new Browser();
         requestFileInformation(downloadLink);
         String offer = br.getRegex("<a href=\"/([^\"]+&referer=)").getMatch(0); // Russian only
-        if (offer != null) {
+        if (offer != null && !offer.contains("/buy?")) {
             br.postPage(MAINPAGE + offer, "");
         }
         if (br.containsHTML(SECURITYCAPTCHA)) {
@@ -224,7 +222,7 @@ public class UniBytesCom extends PluginForHost {
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(FATALSERVERERROR)) {
@@ -263,7 +261,7 @@ public class UniBytesCom extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
