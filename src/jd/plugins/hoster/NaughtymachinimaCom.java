@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -58,9 +56,15 @@ public class NaughtymachinimaCom extends PluginForHost {
         return "http://www.naughtymachinima.com/static/terms";
     }
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("https://", "http://"));
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -131,7 +135,7 @@ public class NaughtymachinimaCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
