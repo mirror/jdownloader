@@ -4,15 +4,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.http.Browser;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
-import jd.http.Browser;
-
 public class M3U8Playlist {
-
     public static class M3U8Segment {
-
         public static enum X_KEY_METHOD {
             // Media Segments are not encrypted
             NONE("NONE"),
@@ -20,7 +18,6 @@ public class M3U8Playlist {
             AES_128("AES-128"),
             // SAMPLE-AES means that the Media Segments contain media samples, such as audio or video, that are encrypted
             SAMPLE_AES("SAMPLE-AES");
-
             private final String method;
 
             public String getMethod() {
@@ -127,7 +124,6 @@ public class M3U8Playlist {
         }
 
         private final String url;
-
         private boolean      isLoaded = false;
 
         public boolean isLoaded() {
@@ -180,7 +176,6 @@ public class M3U8Playlist {
         M3U8Playlist current = new M3U8Playlist();
         long lastSegmentDuration = -1;
         int sequenceOffset = 0;
-
         M3U8Segment.X_KEY_METHOD xKeyMethod = M3U8Segment.X_KEY_METHOD.NONE;
         String xKeyIV = null;
         String xKeyURI = null;
@@ -252,6 +247,15 @@ public class M3U8Playlist {
 
     protected final ArrayList<M3U8Segment> segments            = new ArrayList<M3U8Segment>();
     protected int                          mediaSequenceOffset = 0;
+    protected long                         averageBandwidth    = -1;
+
+    public void setAverageBandwidth(long averageBandwidth) {
+        this.averageBandwidth = averageBandwidth;
+    }
+
+    public long getAverageBandwidth() {
+        return averageBandwidth;
+    }
 
     public int getMediaSequenceOffset() {
         return mediaSequenceOffset;
@@ -379,9 +383,13 @@ public class M3U8Playlist {
         long unknownSizeDuration = 0;
         if (list != null) {
             for (M3U8Playlist playList : list) {
+                final long averageBandwidth = playList.getAverageBandwidth();
                 for (final M3U8Segment segment : playList.segments) {
                     if (segment.getSize() != -1) {
                         size += segment.getSize();
+                        duration += segment.getDuration();
+                    } else if (averageBandwidth > 0 && segment.getDuration() > 0) {
+                        size += averageBandwidth / 8 * (segment.getDuration() / 1000);
                         duration += segment.getDuration();
                     } else {
                         unknownSizeDuration += segment.getDuration();
@@ -403,9 +411,13 @@ public class M3U8Playlist {
         long size = -1;
         long duration = 0;
         long unknownSizeDuration = 0;
+        final long averageBandwidth = getAverageBandwidth();
         for (final M3U8Segment segment : segments) {
             if (segment.getSize() != -1) {
                 size += segment.getSize();
+                duration += segment.getDuration();
+            } else if (averageBandwidth > 0 && segment.getDuration() > 0) {
+                size += averageBandwidth / 8 * (segment.getDuration() / 1000);
                 duration += segment.getDuration();
             } else {
                 unknownSizeDuration += segment.getDuration();
@@ -428,5 +440,4 @@ public class M3U8Playlist {
             return null;
         }
     }
-
 }
