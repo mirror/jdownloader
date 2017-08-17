@@ -63,7 +63,7 @@ public class XxxBunkerCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,6 +117,9 @@ public class XxxBunkerCom extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        if (ext.equals(".php")) {
+            ext = ".mp4";
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -164,7 +167,7 @@ public class XxxBunkerCom extends PluginForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            if (this.br.containsHTML(">SITE MAINTENANCE<")) {
+            if (br.containsHTML(">SITE MAINTENANCE<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Site maintenance'", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
