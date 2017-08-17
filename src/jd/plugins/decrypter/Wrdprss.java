@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,21 +30,16 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
-
-        names = { "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me" },
-
-        urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/([\\w\\-]+/){2}", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl)/episode/.+", "https?://(www\\.)?scene-rls\\.com/[\\w-]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+" }
-
-)
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me", "linx.cloud" }, urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/([\\w\\-]+/){2}", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl)/episode/.+", "https?://(www\\.)?scene-rls\\.com/[\\w-]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html",
+        "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+", "https?://(www\\.)?linx\\.cloud/[\\w\\-]+-\\d+/" })
 public class Wrdprss extends antiDDoSForDecrypt {
 
     private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
     public Wrdprss(PluginWrapper wrapper) {
         super(wrapper);
-
         /* Die defaultpasswörter der einzelnen seiten */
         defaultPasswords.put("doku.cc", new String[] { "doku.cc", "doku.dl.am" });
         defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
@@ -63,9 +57,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/");
-
         getPage(parameter);
-
         /* Defaultpasswörter der Seite setzen */
         final ArrayList<String> link_passwds = new ArrayList<String>();
         final String[] passwords = defaultPasswords.get(this.getHost());
@@ -129,7 +121,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
                 }
             }
         }
-
         return decryptedLinks;
     }
 
@@ -152,4 +143,8 @@ public class Wrdprss extends antiDDoSForDecrypt {
         return false;
     }
 
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.WordPress_Wordpress;
+    }
 }
