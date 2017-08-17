@@ -16,10 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -45,7 +42,7 @@ public class XxxBunkerCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
@@ -62,7 +59,7 @@ public class XxxBunkerCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -93,7 +90,8 @@ public class XxxBunkerCom extends PluginForHost {
         if (externID_extern == null && externID == null && externID3 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (externID_extern != null) {
+        // leads to incorrect shit.
+        if (false && externID_extern != null) {
             /* E.g. http://xxxbunker.com/3568499 pornhub direct */
             externID_extern = Encoding.htmlDecode(externID_extern);
             externID_extern = Encoding.htmlDecode(externID_extern);
@@ -107,13 +105,14 @@ public class XxxBunkerCom extends PluginForHost {
                 dllink = externID;
             }
         } else {
-            br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID3 + "&autoplay=true&ageconfirm=true&title=true&html5=false&hasflash=true&r=" + System.currentTimeMillis());
-            dllink = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
+            // html5!
+            br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&autoplay=false&index=false");
+            dllink = br.getRegex(".+<source src=(\"|')(http[^<>\"]*?)\\1").getMatch(1);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        dllink = Encoding.htmlOnlyDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -122,7 +121,6 @@ public class XxxBunkerCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        this.br = new Browser();
         br.getHeaders().put("Accept-Encoding", "identity");
         return AvailableStatus.TRUE;
         // // In case the link redirects to the finallink
@@ -154,7 +152,7 @@ public class XxxBunkerCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
