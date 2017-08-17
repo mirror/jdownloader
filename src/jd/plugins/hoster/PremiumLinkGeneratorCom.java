@@ -103,7 +103,7 @@ public class PremiumLinkGeneratorCom extends antiDDoSForHost {
         }
     }
 
-    private final String API            = "https://premiumlinkgenerator.com/api/jdownloader/";
+    private final String API            = "https://ww.premiumlinkgenerator.com/api/jdownloader/";
     private final String TOKEN_PROPERTY = "token";
 
     private Map<String, Object> callAPI(final Account account, final String token, final String method, Object[]... params) throws Exception {
