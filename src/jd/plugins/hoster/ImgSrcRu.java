@@ -38,7 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -92,9 +92,7 @@ public class ImgSrcRu extends PluginForHost {
         }
         prepBr.setFollowRedirects(true);
         if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neu) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            userAgent.set(UserAgents.stringUserAgent());
             uaInt.set(0);
         }
         prepBr.getHeaders().put("User-Agent", userAgent.get());
@@ -146,6 +144,8 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
+        final String[] qual = { "pic_o", "pic_b" };
+        boolean done = false;
         String js = br.getRegex("<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+)</script>").getMatch(1);
         if (js != null) {
             Object result = null;
@@ -154,7 +154,17 @@ public class ImgSrcRu extends PluginForHost {
                 final String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
                 final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
                 js = js.replace(var[0], "");
-                js = js.replaceFirst("document.getElementById\\('\\w+'\\)\\.src=", "var result=");
+                for (final String q : qual) {
+                    if (js.contains("document.getElementById('" + q + "')")) {
+                        if (!done) {
+                            js = js.replaceFirst("document.getElementById\\('" + q + "'\\)\\.\\w+=", "var result=");
+                            done = true;
+                        } else {
+                            // we don't need
+                            js = js.replaceFirst("document.getElementById\\('" + q + "'\\)[^\r\n]+", "");
+                        }
+                    }
+                }
                 final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = mgr.getEngineByName("javascript");
                 engine.put(var[1], varsrc);
