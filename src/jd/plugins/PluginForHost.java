@@ -47,6 +47,46 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
@@ -138,62 +178,22 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                  /**
+                                                   * these patterns should split filename and fileextension (extension must include the
+                                                   * point)
+                                                   */
+                                                  // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
@@ -621,7 +621,6 @@ public abstract class PluginForHost extends Plugin {
     protected PluginConfigPanelNG createConfigPanel() {
         if (getConfigInterface() != null || isPremiumEnabled()) {
             final PluginConfigPanelNG ret = new PluginConfigPanelNG() {
-
                 private PluginConfigPanel oldStyle;
 
                 @Override
@@ -805,7 +804,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
+     * one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -1140,16 +1140,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not
-         * equal link host!
-         *
-         *
-         *
+         * 
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
+         * does not equal link host!
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1191,7 +1191,6 @@ public abstract class PluginForHost extends Plugin {
             return;
         }
         final PluginProgress progress = new PluginProgress(0, 0, null) {
-
             private String pluginMessage = null;
 
             @Override
@@ -1605,8 +1604,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this
-     * based on other downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
+     * this based on other downloadlinks
      *
      * @param cache
      *            TODO
@@ -1704,7 +1703,8 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
+                         * same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {
@@ -1935,7 +1935,6 @@ public abstract class PluginForHost extends Plugin {
     protected JMenuItem createChangeURLMenuItem(final DownloadLink downloadLink) {
         if (downloadLink != null && !UrlProtection.PROTECTED_CONTAINER.equals(downloadLink.getUrlProtection())) {
             return new JMenuItem(new BasicAction() {
-
                 /**
                  *
                  */
@@ -1959,7 +1958,6 @@ public abstract class PluginForHost extends Plugin {
                             final boolean isNewFTP = StringUtils.startsWithCaseInsensitive(newURLText, "ftp");
                             if (isOldFTP == isNewFTP) {
                                 DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-
                                     @Override
                                     public boolean isHighPriority() {
                                         return false;
@@ -1978,7 +1976,6 @@ public abstract class PluginForHost extends Plugin {
                                             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
                                         } else {
                                             con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
                                                 @Override
                                                 public void execute(DownloadSession currentSession) {
                                                     downloadLink.setPluginPatternMatcher(newURL.toString());
@@ -2020,7 +2017,6 @@ public abstract class PluginForHost extends Plugin {
             // setVariants.setVisible(false);
             // addVariants.setVisible(false);
             new Thread("Collect Variants") {
-
                 public void run() {
                     try {
                         Thread.sleep(2000);
@@ -2048,14 +2044,12 @@ public abstract class PluginForHost extends Plugin {
                         return;
                     }
                     Collections.sort(list, new Comparator<GenericVariants>() {
-
                         @Override
                         public int compare(GenericVariants o1, GenericVariants o2) {
                             return o1.name().compareTo(o2.name());
                         }
                     });
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             setVariants.setEnabled(true);
@@ -2064,7 +2058,6 @@ public abstract class PluginForHost extends Plugin {
                             addVariants.setVisible(true);
                             for (final GenericVariants gv : list) {
                                 setVariants.add(new JMenuItem(new BasicAction() {
-
                                     {
                                         setName(gv._getName(link));
                                     }
@@ -2087,7 +2080,6 @@ public abstract class PluginForHost extends Plugin {
                                     }
                                 }));
                                 addVariants.add(new JMenuItem(new BasicAction() {
-
                                     {
                                         setName(gv._getName(link));
                                     }
@@ -2129,7 +2121,6 @@ public abstract class PluginForHost extends Plugin {
     public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
         if (br != null) {
             return new DownloadLinkDownloadable(downloadLink) {
-
                 @Override
                 public Browser getContextBrowser() {
                     return br.cloneBrowser();
@@ -2173,7 +2164,6 @@ public abstract class PluginForHost extends Plugin {
      */
     protected void showFreeDialog(final String domain) {
         final AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this) {
-
             @Override
             public String getDontShowAgainKey() {
                 return "adsPremium_" + domain;
@@ -2230,7 +2220,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public static class FilePair {
-
         public FilePair(File oldFile, File newFile) {
             this.oldFile = oldFile;
             this.newFile = newFile;
@@ -2250,8 +2239,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Do not call directly. This method is called from the DownloadWatchdog.rename method only. The DownloadWatchdog assures, that the method
-     * is not called during a processing download, but afterwards. Avoid to override this method. if possible, try to override
+     * Do not call directly. This method is called from the DownloadWatchdog.rename method only. The DownloadWatchdog assures, that the
+     * method is not called during a processing download, but afterwards. Avoid to override this method. if possible, try to override
      * #listFilePairsToMove instead
      *
      * @param link
@@ -2322,7 +2311,6 @@ public abstract class PluginForHost extends Plugin {
         }
         progress.setFile(newFile);
         revertList.add(new ExceptionRunnable() {
-
             @Override
             public void run() throws Exception {
                 renameOrMove(progress, downloadLink, newFile, currentFile);
@@ -2378,13 +2366,11 @@ public abstract class PluginForHost extends Plugin {
         if (JSonStorage.getPlainStorage("Dialogs").get(COPY_MOVE_FILE, -1) < 0) {
             // System.out.println("Thread start");
             thread = new Thread() {
-
                 public void run() {
                     try {
                         Thread.sleep(3000);
                         // System.out.println("Dialog go");
                         ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
                             @Override
                             public void run() throws Exception {
                                 while (true) {
@@ -2408,7 +2394,6 @@ public abstract class PluginForHost extends Plugin {
                                 return null;
                             }
                         }, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.PluginForHost_copyMove_progressdialog_title(), null, new AbstractIcon(IconKey.ICON_SAVETO, 32), null, _JDT.T.lit_hide()) {
-
                             @Override
                             public String getDontShowAgainKey() {
                                 return COPY_MOVE_FILE;
@@ -2466,7 +2451,6 @@ public abstract class PluginForHost extends Plugin {
         }
         try {
             IO.copyFile(new ProgressFeedback() {
-
                 @Override
                 public void setBytesTotal(long length) {
                     progress.setTotal(length);
@@ -2576,14 +2560,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Designed to return first result from decrypter task. This way we don't need to separate decrypters into separate classes like we had todo
-     * with adfly just for jd.plugins.hoster.IdupIn.getDllink() rev30650
+     * Designed to return first result from decrypter task. This way we don't need to separate decrypters into separate classes like we had
+     * todo with adfly just for jd.plugins.hoster.IdupIn.getDllink() rev30650
      *
      * @author raztoki
      * @param url
      * @return
      */
-    public final String returnDecrypterTaskResult(final String url) {
+    public String returnDecrypterTaskResult(final String url) {
         final LinkCrawler lc = LinkCrawler.newInstance();
         lc.crawl(url);
         lc.waitForCrawling();
