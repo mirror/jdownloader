@@ -85,12 +85,11 @@ public class SpankBangCom extends PluginForDecrypt {
         /* Decrypt start */
         final FilePackage fp = FilePackage.getInstance();
         /* Decrypt qualities START */
-        String title = br.getRegex("<title>([^<>\"]*?) \\- SpankBang</title>").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?) - SpankBang.*?</title>").getMatch(0);
         final String fid = getFid(parameter);
         foundQualities = findQualities(this.br, parameter);
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         title = Encoding.htmlDecode(title.trim());
         fp.setName(title);
@@ -223,7 +222,7 @@ public class SpankBangCom extends PluginForDecrypt {
         } else if ("medium".equalsIgnoreCase(q)) {
             return "480p";
         } else if ("low".equalsIgnoreCase(q)) {
-            return "280p";
+            return "240p";
         }
         throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
     }
