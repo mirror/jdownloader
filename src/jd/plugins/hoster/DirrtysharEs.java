@@ -48,6 +48,7 @@ import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dirrtyshar.es" }, urls = { "https?://(?:www\\.)?(?:dirrtyshar\\.es|sharing\\.wtf)/[A-Za-z0-9]+" })
 public class DirrtysharEs extends antiDDoSForHost {
+
     public DirrtysharEs(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -68,14 +69,13 @@ public class DirrtysharEs extends antiDDoSForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://dirrtyshar.es";
+    private final String                   mainpage                                     = "https://www.dirrtyshar.es";
     private final String                   domains                                      = "(dirrtyshar\\.es|sharing\\.wtf)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
     private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = false;
-    private static final boolean           supportshttps_FORCED                         = false;
+    private static final boolean           supportsHttps                                = true;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean           useOldLoginMethod                            = false;
@@ -110,9 +110,7 @@ public class DirrtysharEs extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        if (!supportshttps) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
-        } else if (supportshttps && supportshttps_FORCED) {
+        if (supportsHttps) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
     }
@@ -121,7 +119,7 @@ public class DirrtysharEs extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(this.br);
+        prepBrowser(br);
         final String fid = getFID(link);
         link.setLinkID(fid);
         String filename;
@@ -131,15 +129,15 @@ public class DirrtysharEs extends antiDDoSForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
+            final String[] tableData = br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+            filename = br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
             if (filename == null) {
                 /* "Information about"-filename-trait without the animation(delay). */
-                filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
+                filename = br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
             }
             if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                filename = br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             }
             filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             try {
@@ -213,11 +211,11 @@ public class DirrtysharEs extends antiDDoSForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (enable_embed) {
                 try {
-                    final Browser br2 = this.br.cloneBrowser();
+                    final Browser br2 = br.cloneBrowser();
                     getPage(br2, String.format("/embed/u=%s/", this.getFID(link)));
                     continue_link = this.getStreamUrl(br2);
                 } catch (final BrowserException e) {
@@ -255,23 +253,23 @@ public class DirrtysharEs extends antiDDoSForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
-                    final Recaptcha rc = new Recaptcha(this.br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, link);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -292,11 +290,11 @@ public class DirrtysharEs extends antiDDoSForHost {
                     final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -346,7 +344,7 @@ public class DirrtysharEs extends antiDDoSForHost {
     }
 
     private String getDllink() {
-        return getDllink(this.br);
+        return getDllink(br);
     }
 
     private String getDllink(final Browser br) {
@@ -354,7 +352,7 @@ public class DirrtysharEs extends antiDDoSForHost {
     }
 
     private String getStreamUrl() {
-        return getStreamUrl(this.br);
+        return getStreamUrl(br);
     }
 
     private String getStreamUrl(final Browser br) {
@@ -397,10 +395,10 @@ public class DirrtysharEs extends antiDDoSForHost {
             int wait = 0;
             int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             /* Ticket Time */
-            String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+            String ttt = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
             if (ttt == null) {
                 /* Special */
-                ttt = this.br.getRegex("var\\s*?seconds\\s*?= (\\d+);").getMatch(0);
+                ttt = br.getRegex("var\\s*?seconds\\s*?= (\\d+);").getMatch(0);
             }
             if (ttt != null) {
                 logger.info("Found waittime, parsing waittime: " + ttt);
@@ -438,7 +436,7 @@ public class DirrtysharEs extends antiDDoSForHost {
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
         }
-        checkResponseCodeErrors(this.br.getHttpConnection());
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -461,7 +459,7 @@ public class DirrtysharEs extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            final Browser br2 = this.br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
@@ -488,14 +486,6 @@ public class DirrtysharEs extends antiDDoSForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    private String getProtocol() {
-        if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
-            return "https://";
-        } else {
-            return "http://";
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_MAXDOWNLOADS;
@@ -518,18 +508,17 @@ public class DirrtysharEs extends antiDDoSForHost {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
+                prepBrowser(br);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                getPage(this.getProtocol() + this.getHost() + "/");
+                getPage(mainpage);
                 final String lang = System.getProperty("user.language");
-                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    postPage("/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -538,11 +527,10 @@ public class DirrtysharEs extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    getPage("/login." + type);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage("/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -551,8 +539,8 @@ public class DirrtysharEs extends antiDDoSForHost {
                         }
                     }
                 }
-                getPage(loginstart + this.getHost() + "/account_home." + type);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                getPage("/account_home." + type);
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -564,18 +552,12 @@ public class DirrtysharEs extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
         } else {
             getPage("/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
@@ -595,12 +577,10 @@ public class DirrtysharEs extends antiDDoSForHost {
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
             }
         }
         account.setValid(true);
@@ -617,40 +597,6 @@ public class DirrtysharEs extends antiDDoSForHost {
         } else {
             handleDownload(link, null, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS, "premium_acc_directlink");
         }
-    }
-
-    @Override
-    protected void getPage(String page) throws Exception {
-        page = correctProtocol(page);
-        getPage(br, page);
-    }
-
-    @Override
-    protected void getPage(final Browser br, String page) throws Exception {
-        page = correctProtocol(page);
-        super.getPage(br, page);
-    }
-
-    @Override
-    protected void postPage(String page, final String postdata) throws Exception {
-        page = correctProtocol(page);
-        postPage(br, page, postdata);
-    }
-
-    @Override
-    protected void postPage(final Browser br, String page, final String postdata) throws Exception {
-        page = correctProtocol(page);
-        super.postPage(br, page, postdata);
-    }
-
-    private String correctProtocol(String url) {
-        if (supportshttps && supportshttps_FORCED) {
-            /* Prefer https whenever possible */
-            url = url.replaceFirst("http://", "https://");
-        } else if (!supportshttps) {
-            url = url.replaceFirst("https://", "http://");
-        }
-        return url;
     }
 
     @Override
