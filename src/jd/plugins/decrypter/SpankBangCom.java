@@ -85,7 +85,7 @@ public class SpankBangCom extends PluginForDecrypt {
         /* Decrypt start */
         final FilePackage fp = FilePackage.getInstance();
         /* Decrypt qualities START */
-        String title = br.getRegex("<title>([^<>\"]*?) - SpankBang.*?</title>").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?)( free HD Porn Video)? - SpankBang.*?</title>").getMatch(0);
         final String fid = getFid(parameter);
         foundQualities = findQualities(this.br, parameter);
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
