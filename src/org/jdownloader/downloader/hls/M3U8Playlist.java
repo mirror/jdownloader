@@ -440,4 +440,13 @@ public class M3U8Playlist {
             return null;
         }
     }
+
+    public boolean addSegment(int index, M3U8Segment segment) {
+        if (segment != null && index >= 0) {
+            segments.add(index, segment);
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

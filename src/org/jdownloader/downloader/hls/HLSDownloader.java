@@ -20,6 +20,25 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -62,28 +81,8 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
-
     private final AtomicLong                     bytesWritten         = new AtomicLong(0);
     private DownloadLinkDownloadable             downloadable;
     private DownloadLink                         link;
@@ -126,7 +125,6 @@ public class HLSDownloader extends DownloadInterface {
         logger = initLogger(link);
         connectionHandler = new ManagedThrottledConnectionHandler();
         downloadable = new DownloadLinkDownloadable(link) {
-
             @Override
             public boolean isResumable() {
                 return link.getBooleanProperty("RESUME", true);
@@ -228,8 +226,17 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    public StreamInfo getProbe() throws IOException, InterruptedException {
+    public StreamInfo getProbe() throws Exception {
+        return getProbe(0);
+    }
+
+    public StreamInfo getProbe(int index) throws Exception {
         try {
+            if (index < getM3U8Playlists().size()) {
+                currentPlayListIndex.set(index);
+            } else {
+                throw new IllegalArgumentException("Index " + index + " > m3u8 playlist size " + getM3U8Playlists().size());
+            }
             final FFprobe ffprobe = new FFprobe();
             if (!ffprobe.isAvailable()) {
                 logger.info("FFProbe is not available");
@@ -271,7 +278,7 @@ public class HLSDownloader extends DownloadInterface {
         return null;
     }
 
-    protected String getFFmpegFormat(final FFmpeg ffmpeg) throws PluginException, IOException, InterruptedException, FFMpegException {
+    protected String getFFmpegFormat(final FFmpeg ffmpeg) throws Exception {
         String name = link.getForcedFileName();
         if (StringUtils.isEmpty(name)) {
             name = link.getFinalFileName();
@@ -333,7 +340,6 @@ public class HLSDownloader extends DownloadInterface {
     private void runConcat() throws IOException, PluginException {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
-
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                 };
             };
@@ -341,7 +347,6 @@ public class HLSDownloader extends DownloadInterface {
             initPipe(ffmpeg);
             final AtomicReference<File> outputFile = new AtomicReference<File>();
             final FFMpegProgress progress = new FFMpegProgress() {
-
                 final long total;
                 {
                     long total = 0;
@@ -467,7 +472,6 @@ public class HLSDownloader extends DownloadInterface {
             final AtomicLong completeTime = new AtomicLong(0);
             final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
-
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     try {
                         final String trimmedLine = line.trim();
@@ -708,7 +712,6 @@ public class HLSDownloader extends DownloadInterface {
         server.start();
         instanceBuffer.set(new byte[512 * 1024]);
         finalServer.registerRequestHandler(new HttpRequestHandler() {
-
             final byte[] readBuf = new byte[512];
 
             @Override
@@ -1109,7 +1112,6 @@ public class HLSDownloader extends DownloadInterface {
             // TODO: update to handle 2x disk space usage (download + concat)
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);

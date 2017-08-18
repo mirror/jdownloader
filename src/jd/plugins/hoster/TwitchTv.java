@@ -126,19 +126,17 @@ public class TwitchTv extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
                 br.getHeaders().put("Referer", downloadLink.getContentUrl());
                 final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
-                final StreamInfo streamInfo = downloader.getProbe();
+                StreamInfo streamInfo = applyMissingVideoStreamWorkaround(downloader, downloadLink);
+                if (streamInfo == null) {
+                    streamInfo = downloader.getProbe();
+                }
                 if (downloadLink.getBooleanProperty("encrypted")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
                 }
                 if (streamInfo == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final long estimatedSize = downloader.getEstimatedSize();
-                if (downloadLink.getKnownDownloadSize() == -1) {
-                    downloadLink.setDownloadSize(estimatedSize);
-                } else {
-                    downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
-                }
+                estimateSize(downloader, downloadLink);
                 String extension = ".m4a";
                 for (Stream s : streamInfo.getStreams()) {
                     if ("video".equalsIgnoreCase(s.getCodec_type())) {
@@ -393,12 +391,65 @@ public class TwitchTv extends PluginForHost {
         };
     }
 
+    private void estimateSize(HLSDownloader dl, DownloadLink downloadLink) {
+        if (!downloadLink.hasProperty(twitchEstimatedSize)) {
+            downloadLink.setProperty(twitchEstimatedSize, Boolean.TRUE);
+            final int hlsBandwidth = downloadLink.getIntegerProperty("hlsBandwidth", -1);
+            if (hlsBandwidth > 0) {
+                for (M3U8Playlist playList : dl.getPlayLists()) {
+                    playList.setAverageBandwidth(hlsBandwidth);
+                }
+            }
+            final long estimatedSize = dl.getEstimatedSize();
+            if (downloadLink.getKnownDownloadSize() == -1) {
+                downloadLink.setDownloadSize(estimatedSize);
+            } else {
+                downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+            }
+        }
+    }
+
+    private StreamInfo applyMissingVideoStreamWorkaround(HLSDownloader dl, DownloadLink downloadLink) throws Exception {
+        final Object apply = downloadLink.getProperty(applyMissingVideoStreamWorkaround);
+        if (apply == null) {
+            StreamInfo streamInfo = dl.getProbe();
+            if (streamInfo != null) {
+                if (streamInfo.getVideoStreams().size() == 0) {
+                    if (dl.getPlayLists().size() == 1) {
+                        logger.info("Apply workaround for first chunk missing video stream!");
+                        final M3U8Segment removed = dl.getPlayLists().get(0).removeSegment(0);
+                        streamInfo = dl.getProbe();
+                        if (streamInfo != null) {
+                            if (streamInfo.getVideoStreams().size() == 0) {
+                                dl.getPlayLists().get(0).addSegment(0, removed);
+                                logger.info("Workaround failed");
+                            } else {
+                                downloadLink.setProperty(applyMissingVideoStreamWorkaround, Boolean.TRUE);
+                                logger.info("Workaround successfull");
+                            }
+                        }
+                    }
+                } else {
+                    downloadLink.setProperty(applyMissingVideoStreamWorkaround, Boolean.FALSE);
+                }
+            }
+            return streamInfo;
+        } else if (Boolean.TRUE.equals(apply)) {
+            logger.info("Apply workaround for first chunk missing video stream!");
+            dl.getPlayLists().get(0).removeSegment(0);
+        }
+        return null;
+    }
+
     private final void doHLS(final DownloadLink downloadLink) throws Exception {
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         if (downloadLink.getBooleanProperty("encrypted")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
         }
-        dl = getHLSDownloader(downloadLink, br, dllink);
+        final HLSDownloader dl = getHLSDownloader(downloadLink, br, dllink);
+        this.dl = dl;
+        estimateSize(dl, downloadLink);
+        applyMissingVideoStreamWorkaround(dl, downloadLink);
         dl.startDownload();
     }
 
@@ -725,8 +776,15 @@ public class TwitchTv extends PluginForHost {
     public void reset() {
     }
 
+    private final String twitchEstimatedSize               = "twitchEstimatedSize";
+    private final String applyMissingVideoStreamWorkaround = "applyMissingVideoStreamWorkaround";
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(twitchEstimatedSize);
+            link.removeProperty(applyMissingVideoStreamWorkaround);
+        }
     }
 
     @Override

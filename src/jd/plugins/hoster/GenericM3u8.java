@@ -104,8 +104,10 @@ public class GenericM3u8 extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final int hlsBandwidth = downloadLink.getIntegerProperty("hlsBandwidth", -1);
-        for (M3U8Playlist playList : downloader.getPlayLists()) {
-            playList.setAverageBandwidth(hlsBandwidth);
+        if (hlsBandwidth > 0) {
+            for (M3U8Playlist playList : downloader.getPlayLists()) {
+                playList.setAverageBandwidth(hlsBandwidth);
+            }
         }
         final long estimatedSize = downloader.getEstimatedSize();
         if (downloadLink.getKnownDownloadSize() == -1) {
