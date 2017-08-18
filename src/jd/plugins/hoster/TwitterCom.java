@@ -15,11 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,9 +32,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
-
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://twitter.com/signup");
@@ -163,14 +163,20 @@ public class TwitterCom extends PluginForHost {
                     } else if (br.getHttpConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                    this.dllink = hlsbest.getDownloadurl();
+                    final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                    this.dllink = hlsBest.getDownloadurl();
                     final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
                     final StreamInfo streamInfo = downloader.getProbe();
                     if (streamInfo == null) {
                         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         server_issues = true;
                     } else {
+                        final int hlsBandwidth = hlsBest.getBandwidth();
+                        if (hlsBandwidth > 0) {
+                            for (M3U8Playlist playList : downloader.getPlayLists()) {
+                                playList.setAverageBandwidth(hlsBandwidth);
+                            }
+                        }
                         final long estimatedSize = downloader.getEstimatedSize();
                         if (estimatedSize > 0) {
                             link.setDownloadSize(estimatedSize);
