@@ -12,18 +12,39 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(\\w*\\.)?dancehallarena\\.com/[a-zA-Z0-9\\-/]+" }) public class DncHllArCom extends antiDDoSForDecrypt {
+/**
+ * category not designed to do spanning page support!
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+|category/(?:(?:dancehall|reggae)/(?:singles/|dancehall-albums/|instrumental-dancehall/)?|soca/|mixtapes/(?:dancehall-mixtapes/|reggae-mixtapes/|hiphoprb/)?|videos/(?:music-videos/|viral-videos/)?|efx/)(?:page/\\d+)?)" })
+public class DncHllArCom extends antiDDoSForDecrypt {
 
     public DncHllArCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         getPage(parameter);
         // invalid url
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+            return decryptedLinks;
+        }
+        if (parameter.contains("/category/")) {
+            final String filter = br.getRegex("(<div class=\"blog-lists-blog clearfix\">.*?)<div class=\"pagination clearfix\">").getMatch(0);
+            if (filter == null) {
+                return null;
+            }
+            String[] results = new Regex(filter, "<a class=\"tpcrn-read-more\" href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(1);
+            if (results == null || results.length == 0) {
+                results = new Regex(filter, "<h3><a href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(0);
+                if (results == null || results.length == 0) {
+                    return null;
+                }
+            }
+            for (final String result : results) {
+                decryptedLinks.add(createDownloadlink(result));
+            }
             return decryptedLinks;
         }
         // all external links pass via there own tracking url
