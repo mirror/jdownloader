@@ -66,6 +66,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
+
     /* Static information */
     // private static final String API_APP_NAME = "JDownloader";
     private static final String   API_PUBLIC_KEY                            = "NOT_YET_DONE";
@@ -286,7 +287,11 @@ public class SaveTv extends PluginForHost {
         Account aa = null;
         final String account_username_via_which_url_is_downloadable = getDownloadableVia(link);
         final ArrayList<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
-        if (account_username_via_which_url_is_downloadable == null && all_stv_accounts.size() == 1) {
+        if (all_stv_accounts == null) {
+            link.getLinkStatus().setStatusText("Kann Links ohne güntigen und dazugehörigen Account nicht überprüfen");
+            checkAccountNeededDialog();
+            return AvailableStatus.UNCHECKABLE;
+        } else if (account_username_via_which_url_is_downloadable == null && all_stv_accounts.size() == 1) {
             /* User probably added save.tv urls manually and has only one account --> Allow these to be downloaded via this account! */
             aa = all_stv_accounts.get(0);
             link.setProperty(PROPERTY_downloadable_via, aa.getUser());
@@ -783,7 +788,7 @@ public class SaveTv extends PluginForHost {
         if (link.getBooleanProperty(SaveTv.PROPERTY_DOWNLOADLINK_NOCHUNKS, false) || resume == false) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 404", 60 * 60 * 1000l);
@@ -1021,7 +1026,7 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    public static void login_site(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
+    public static void login_site(final Browser br, final Account account, final boolean force) throws Exception {
         final String lang = System.getProperty("user.language");
         site_prepBrowser(br);
         synchronized (LOCK) {
@@ -1057,7 +1062,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public static String login_api(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
+    public static String login_api(final Browser br, final Account account, final boolean force) throws Exception {
         api_prepBrowser(br);
         String api_access_token = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
         final long lastUse = account.getLongProperty(PROPERTY_lastuse, -1l);
@@ -1189,7 +1194,7 @@ public class SaveTv extends PluginForHost {
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
     @SuppressWarnings("unused")
-    private void api_PostDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
+    private void api_PostDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws Exception {
         br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + getTelecastId(dl) + "&" + user_selected_video_quality + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
     }
 
@@ -1215,7 +1220,7 @@ public class SaveTv extends PluginForHost {
      * @param downloadWithoutAds
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
-    private void api_postDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
+    private void api_postDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws Exception {
         api_POST(this.br, "http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + this.API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">" + downloadWithoutAds + "</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
     }
 
@@ -1477,7 +1482,7 @@ public class SaveTv extends PluginForHost {
      * Performs save.tv API POST requests. <br />
      * TODO: Add errorhandling
      */
-    private static String api_POST(final Browser br, final String url, final String postdata) throws IOException {
+    private static String api_POST(final Browser br, final String url, final String postdata) throws Exception {
         br.postPage(url, postdata);
         return br.toString();
     }
@@ -1486,7 +1491,7 @@ public class SaveTv extends PluginForHost {
      * Performs save.tv API GET requests. <br />
      * TODO: Add errorhandling
      */
-    private static String api_GET(final Browser br, final String url) throws IOException {
+    private static String api_GET(final Browser br, final String url) throws Exception {
         br.getPage(url);
         return br.toString();
     }
@@ -1500,7 +1505,7 @@ public class SaveTv extends PluginForHost {
      *            : The soap post data
      * @throws PluginException
      */
-    public static void api_doSoapRequestSafe(final Browser br, final Account acc, final String soapAction, final String soapPost) throws IOException, PluginException {
+    public static void api_doSoapRequestSafe(final Browser br, final Account acc, final String soapAction, final String soapPost) throws Exception {
         final String method = new Regex(soapAction, "([A-Za-z0-9]+)$").getMatch(0);
         br.getHeaders().put("SOAPAction", soapAction);
         br.getHeaders().put("Content-Type", "text/xml");
@@ -2106,6 +2111,7 @@ public class SaveTv extends PluginForHost {
     private static void showAccNeededDialog() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
+
                 @Override
                 public void run() {
                     try {
@@ -2158,6 +2164,7 @@ public class SaveTv extends PluginForHost {
     private static void showFeatureDialogAll() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
+
                 @Override
                 public void run() {
                     try {
@@ -2211,6 +2218,7 @@ public class SaveTv extends PluginForHost {
     private static void showFeatureDialogCrawler() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
+
                 @Override
                 public void run() {
                     try {
@@ -2265,6 +2273,7 @@ public class SaveTv extends PluginForHost {
     private static void showFeatureDialogNew() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
+
                 @Override
                 public void run() {
                     try {
