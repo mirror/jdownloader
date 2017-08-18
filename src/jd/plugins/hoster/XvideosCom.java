@@ -15,9 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,10 +30,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" })
 public class XvideosCom extends PluginForHost {
-
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -200,6 +199,9 @@ public class XvideosCom extends PluginForHost {
             sleep(2000, link);
             final Browser br2 = br.cloneBrowser();
             br2.getPage(dllink);
+            if (br2.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
