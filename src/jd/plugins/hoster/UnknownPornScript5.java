@@ -37,7 +37,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to", "porneq.com", "cliplips.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-;]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class UnknownPornScript5 extends PluginForHost {
-
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -129,10 +128,13 @@ public class UnknownPornScript5 extends PluginForHost {
         String filename = regexStandardTitleWithHost(host);
         if (filename == null) {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
-            filename = this.br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
+            filename = br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
         }
         if (filename == null && downloadLink.getDownloadURL().matches(type_allow_title_as_filename)) {
-            filename = this.br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>XOgogo.com - ([^<>]+)</title>").getMatch(0);
         }
         if (filename == null) {
             filename = url_filename;
@@ -142,7 +144,7 @@ public class UnknownPornScript5 extends PluginForHost {
         downloadLink.setName(filename + default_Extension);
         getDllink();
         String ext = default_Extension;
-        if (!inValidateDllink(this.dllink)) {
+        if (!inValidateDllink(dllink)) {
             filename = filename.trim();
             ext = getFileNameExtensionFromString(dllink);
             if (ext == null || ext.length() > 5) {
@@ -181,11 +183,11 @@ public class UnknownPornScript5 extends PluginForHost {
     private void getDllink() throws PluginException {
         /* Find correct js-source, then find dllink inside of it. */
         String jwplayer_source = null;
-        final String[] scripts = this.br.getRegex("<script[^>]*?>(.*?)</script>").getColumn(0);
+        final String[] scripts = br.getRegex("<script[^>]*?>(.*?)</script>").getColumn(0);
         for (final String script : scripts) {
             if (script.contains("jwplayer")) {
-                this.dllink = searchDllinkInsideJWPLAYERSource(script);
-                if (this.dllink != null) {
+                dllink = searchDllinkInsideJWPLAYERSource(script);
+                if (dllink != null) {
                     jwplayer_source = script;
                     break;
                 }
@@ -194,7 +196,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             *
+             * 
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
@@ -214,7 +216,7 @@ public class UnknownPornScript5 extends PluginForHost {
              * E.g. kt_player + jwplayer (can also be KernelVideoSharingCom), example: xfig.net[dedicated plugin], cliplips.com)<br />
              * Important: Do not pickup the slash at the end!
              */
-            dllink = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*)/\";").getMatch(0);
+            dllink = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*)/?\";").getMatch(0);
         }
         if (inValidateDllink(dllink)) {
             /* Check for multiple videoqualities --> Find highest quality */
@@ -253,7 +255,7 @@ public class UnknownPornScript5 extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         setConstants(null);
         requestFileInformation(downloadLink);
-        if (inValidateDllink(this.dllink)) {
+        if (inValidateDllink(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
