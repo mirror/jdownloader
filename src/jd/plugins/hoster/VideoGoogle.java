@@ -28,11 +28,11 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+|https?://[\\w\\-\\.]+drive\\.google\\.com/videoplayback\\?.+" })
 public class VideoGoogle extends PluginForHost {
 
     private String       dllink = null;
-    private final String embed  = "https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+";
+    private final String embed  = "https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+|https?://[\\w\\-\\.]+drive\\.google\\.com/videoplayback\\?.+";
 
     public VideoGoogle(PluginWrapper wrapper) {
         super(wrapper);
@@ -128,24 +128,36 @@ public class VideoGoogle extends PluginForHost {
                 downloadLink.setPluginPatternMatcher(dllink);
                 con = br2.openGetConnection(dllink);
             }
+            String fileName = null;
             if (con.getContentType().contains("video")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                String fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
-                if (fileName == null) {
-                    fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
-                    final String ext = Files.getExtension(fileName);
-                    final ExtensionsFilterInterface compiledExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
-                    if (compiledExt == null || !(compiledExt instanceof CompiledFiletypeFilter.VideoExtensions)) {
-                        fileName = null;
+                if (downloadLink.isNameSet()) {
+                    // maybe we set a filename but doesn't have extension yet!
+                    fileName = downloadLink.getName();
+                    final String ext = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getContentType());
+                    if (ext != null && !fileName.contains("." + ext)) {
+                        fileName = fileName + "." + ext;
+                        downloadLink.setName(fileName);
                     }
                 }
-                fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
-                if (fileName != null) {
-                    if (downloadLink.getFinalFileName() == null) {
-                        // filenames can be set by other plugins.. ie. decrypters, dont fuck with this.
-                        downloadLink.setFinalFileName(fileName);
-                    } else {
-                        downloadLink.setName(fileName);
+                if (fileName == null) {
+                    fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
+                    if (fileName == null) {
+                        fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
+                        final String ext = Files.getExtension(fileName);
+                        final ExtensionsFilterInterface compiledExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                        if (compiledExt == null || !(compiledExt instanceof CompiledFiletypeFilter.VideoExtensions)) {
+                            fileName = null;
+                        }
+                    }
+                    fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
+                    if (fileName != null) {
+                        if (downloadLink.getFinalFileName() == null) {
+                            // filenames can be set by other plugins.. ie. decrypters, dont fuck with this.
+                            downloadLink.setFinalFileName(fileName);
+                        } else {
+                            downloadLink.setName(fileName);
+                        }
                     }
                 }
             } else {
