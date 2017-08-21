@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -34,14 +33,13 @@ import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai2read.com" }, urls = { "https?://(www\\.)?hentai2read.com/(?!latest)[a-z0-9\\-_]+/\\d+" })
 public class Hentai2ReadCom extends PluginForDecrypt {
-
     public Hentai2ReadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http:", "https:");
         br.getPage(parameter + "/1/");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -110,14 +108,11 @@ public class Hentai2ReadCom extends PluginForDecrypt {
                 }
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
