@@ -26,11 +26,26 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
@@ -55,25 +70,12 @@ import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|\"|\r|\n))" })
 public class DirectHTTP extends antiDDoSForHost {
+
     public static final String ENDINGS               = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2}|\\d{1,4}(?=\\?|$|\"|\r|\n))";
     public static final String NORESUME              = "nochunkload";
     public static final String NOCHUNKS              = "nochunk";
@@ -309,9 +311,9 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         try {
             if (downloadLink.getStringProperty("post", null) != null) {
-                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
+                this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
             } else {
-                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
+                this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
             }
         } catch (final IllegalStateException e) {
             logger.log(e);
@@ -331,12 +333,8 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         try {
             if (!this.dl.startDownload()) {
-                try {
-                    if (this.dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                    // not stable compatible
+                if (this.dl.externalDownloadStop()) {
+                    return;
                 }
             }
         } catch (Exception e) {
@@ -509,6 +507,7 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(url, null));
         authenticationFactories.add(new CallbackAuthenticationFactory() {
+
             protected Authentication remember = null;
 
             protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
@@ -709,9 +708,12 @@ public class DirectHTTP extends antiDDoSForHost {
                 if (fileName == null) {
                     fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
                     if (fileName == null) {
+                        // this can produce numerous false positives -raztoki20170820
                         fileName = Plugin.extractFileNameFromURL(urlConnection.getRequest().getUrl());
-                        if (StringUtils.equalsIgnoreCase("php", Files.getExtension(fileName))) {
-                            fileName = null;
+                        if (fileName != null) {
+                            if (StringUtils.equalsIgnoreCase("php", Files.getExtension(fileName)) || fileName.matches(IP.IP_PATTERN)) {
+                                fileName = null;
+                            }
                         }
                     }
                     if (fileName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", true)) {
@@ -808,7 +810,7 @@ public class DirectHTTP extends antiDDoSForHost {
      * @param mimeType
      * @return
      */
-    public String getExtensionFromMimeType(final String mimeType) {
+    public static String getExtensionFromMimeType(final String mimeType) {
         if (mimeType == null) {
             return null;
         }
