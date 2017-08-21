@@ -32,6 +32,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -215,7 +216,10 @@ public class PobierzTo extends PluginForHost {
                     link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
                 }
             }
-            if (new Regex(br.getURL(), Pattern.compile("Musisz\\+poczeka%C4%87\\+1\\+godzin%C4%99\\+pomi%C4%99dzy", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (br.containsHTML("Osiągnąłeś maksymalna liczbę pobieranych plików") || new Regex(br.getURL(), Pattern.compile("Osi%C4%85gn%C4%85%C5%82e%C5%9B\\+maksymalna\\+liczb%C4%99\\+pobieranych\\+plik", Pattern.CASE_INSENSITIVE)).matches()) {
+                link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
+                return AvailableStatus.TRUE;
+            } else if (br.containsHTML("Musisz poczekać 1 godzinę pomiędzy pobraniami") || new Regex(br.getURL(), Pattern.compile("Musisz\\+poczeka%C4%87\\+1\\+godzin%C4%99\\+pomi%C4%99dzy", Pattern.CASE_INSENSITIVE)).matches()) {
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
                 return AvailableStatus.TRUE;
             } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_SERVER, Pattern.CASE_INSENSITIVE)).matches()) {
@@ -228,7 +232,7 @@ public class PobierzTo extends PluginForHost {
             if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            handleErrors();
+            handleErrors(link, null);
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -278,7 +282,7 @@ public class PobierzTo extends PluginForHost {
                 br.getPage(link.getDownloadURL());
             }
             if (continue_link == null) {
-                handleErrors();
+                handleErrors(link, aa);
             }
             /* Passwords are usually before waittime. */
             handlePassword(link);
@@ -354,7 +358,7 @@ public class PobierzTo extends PluginForHost {
                     break;
                 }
                 br.followConnection();
-                handleErrors();
+                handleErrors(link, aa);
                 if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Wrong captcha");
                     continue;
@@ -367,7 +371,7 @@ public class PobierzTo extends PluginForHost {
             if (captcha && !success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            handleErrors();
+            handleErrors(link, aa);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         continue_link = dl.getConnection().getURL().toString();
@@ -468,7 +472,23 @@ public class PobierzTo extends PluginForHost {
         }
     }
 
-    private void handleErrors() throws PluginException {
+    private void handleErrors(DownloadLink downloadLink, Account account) throws PluginException {
+        if (br.containsHTML("Osiągnąłeś maksymalna liczbę pobieranych plików")) {
+            final String hours = br.getRegex("Zakup konto Premium, lub odczekaj\\s*(\\d+)\\s*godziny").getMatch(0);
+            if (hours != null) {
+                if (account != null) {
+                    throw new AccountUnavailableException(Integer.parseInt(hours) * 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(hours) * 60 * 60 * 1000l);
+                }
+            } else {
+                if (account != null) {
+                    throw new AccountUnavailableException(24 * 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 24 * 60 * 60 * 1000l);
+                }
+            }
+        }
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_SIMULTANDLSLIMIT, Pattern.CASE_INSENSITIVE)).matches()) {

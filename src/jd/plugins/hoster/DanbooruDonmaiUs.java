@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/\\d+" })
 public class DanbooruDonmaiUs extends PluginForHost {
-
     public DanbooruDonmaiUs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,12 +41,10 @@ public class DanbooruDonmaiUs extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -73,14 +69,16 @@ public class DanbooruDonmaiUs extends PluginForHost {
         } else {
             filename = url_filename;
         }
-        dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]+)\"").getMatch(0);
+        dllink = br.getRegex("href=\"((https?://danbooru\\.donmai\\.us)?/data/[^<>\"]+)\">\\s*view original").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://danbooru\\.donmai\\.us/data/[^<>\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]+)\"").getMatch(0);
+            }
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
