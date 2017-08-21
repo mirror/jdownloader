@@ -59,7 +59,7 @@ public class FxpanCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^(?i)https?://(www\\.)?fxpan\\.com/?$") || br.containsHTML("<title>文件已被锁定,暂时无法访问|>\\s*文件已经被删除\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">([^<>]+)</h1>").getMatch(0);
