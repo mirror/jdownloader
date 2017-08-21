@@ -17,6 +17,17 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -37,17 +48,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 /**
  *
  * @author raztoki
@@ -55,6 +55,7 @@ import org.mozilla.javascript.ScriptableObject;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
+
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -459,6 +460,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                     final Form cf = cloudflare;
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
+
                         {
                             boundToDomain = true;
                         }
@@ -561,44 +563,50 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             logger.warning(message);
             throw new PluginException(LinkStatus.ERROR_FATAL, message);
         } else if (responseCode == 503 && cloudflare != null) {
-            // 503 response code with javascript math section && with 5 second pause
-            final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-            String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
-            StringBuilder sb = new StringBuilder();
-            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
-            sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
-            sb.append(line2);
-            ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-            ScriptEngine engine = mgr.getEngineByName("JavaScript");
-            long answer = ((Number) engine.eval(sb.toString())).longValue();
-            cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
-            Thread.sleep(5500);
-            // if it works, there should be a redirect.
-            if (request != null) {
-                ibr.openFormConnection(cloudflare);
-            } else {
-                ibr.submitForm(cloudflare);
-            }
-            // ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets > need to
-            // resubmit original request.
-            if (originalRequest instanceof PostRequest) {
-                try {
-                    // resend originalRequest
-                    originalRequest.resetConnection();
-                    sendRequest(ibr, originalRequest);
-                } catch (final Exception t) {
-                    // we want to preserve proper exceptions!
-                    if (t instanceof PluginException) {
-                        throw t;
-                    }
-                    t.printStackTrace();
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+            // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
+            if (captchaLocked.compareAndSet(null, lockObject)) {
+                // 503 response code with javascript math section && with 5 second pause
+                final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+                StringBuilder sb = new StringBuilder();
+                sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
+                sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
+                sb.append(line2);
+                ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                long answer = ((Number) engine.eval(sb.toString())).longValue();
+                cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+                Thread.sleep(5500);
+                // if it works, there should be a redirect.
+                if (request != null) {
+                    ibr.openFormConnection(cloudflare);
+                } else {
+                    ibr.submitForm(cloudflare);
                 }
-                // new sendRequest saves cookie session
-                return;
-            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                // since we might not be following redirect, we need to get this one so we have correct html!
-                ibr.getPage(ibr.getRedirectLocation());
+                // ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets > need to
+                // resubmit original request.
+                if (originalRequest instanceof PostRequest) {
+                    try {
+                        // resend originalRequest
+                        originalRequest.resetConnection();
+                        sendRequest(ibr, originalRequest);
+                    } catch (final Exception t) {
+                        // we want to preserve proper exceptions!
+                        if (t instanceof PluginException) {
+                            throw t;
+                        }
+                        t.printStackTrace();
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                    }
+                    // new sendRequest saves cookie session
+                    return;
+                } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                    // since we might not be following redirect, we need to get this one so we have correct html!
+                    ibr.getPage(ibr.getRedirectLocation());
+                }
+            } else {
+                // we need togo back and re-request!
+                throw new CaptchaLockException();
             }
         } else if (responseCode == 521) {
             // this basically indicates that the site is down, no need to retry.
@@ -657,26 +665,32 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             // new sendRequest saves cookie session
             return;
-        } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
-            if (a_responseCode429 == 4) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-            }
-            a_responseCode429++;
-            // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
-            Thread.sleep(61000);
-            // try again! -NOTE: this isn't stable compliant-
-            try {
-                sendRequest(ibr, ibr.getRequest().cloneRequest());
-            } catch (final Exception t) {
-                // we want to preserve proper exceptions!
-                if (t instanceof PluginException) {
-                    throw t;
+        } else if (responseCode == 429 && ibr.containsHTML("<title>Access denied \\| \\S*" + Pattern.quote(ibr.getHost()) + " used Cloudflare to restrict access</title>")) {
+            // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
+            if (captchaLocked.compareAndSet(null, lockObject)) {
+                if (a_responseCode429 == 4) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                 }
-                t.printStackTrace();
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                a_responseCode429++;
+                // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
+                Thread.sleep(61000);
+                // try again! -NOTE: this isn't stable compliant-
+                try {
+                    sendRequest(ibr, ibr.getRequest().cloneRequest());
+                } catch (final Exception t) {
+                    // we want to preserve proper exceptions!
+                    if (t instanceof PluginException) {
+                        throw t;
+                    }
+                    t.printStackTrace();
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                }
+                // new sendRequest saves cookie session
+                return;
+            } else {
+                // we need togo back and re-request!
+                throw new CaptchaLockException();
             }
-            // new sendRequest saves cookie session
-            return;
             // new code here...
             // <script type="text/javascript">
             // //<![CDATA[
