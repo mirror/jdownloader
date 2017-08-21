@@ -13,16 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,9 +30,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.haberturk.com" }, urls = { "https?://video\\.haberturk\\.com/haber/video/[a-z0-9\\-_]+/\\d+|https?://(?:www\\.)?haberturk\\.com/video/haber/izle/[a-z0-9\\-_]+/\\d+" })
 public class VideoHaberturkCom extends PluginForHost {
-
     public VideoHaberturkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,13 +62,16 @@ public class VideoHaberturkCom extends PluginForHost {
                 filename = br.getRegex("<title>([^<>\"]*?) \\- Haber Videoları \\- Habertürk Video</title>").getMatch(0);
             }
         }
-        dllink = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("og:video:url\" content=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\\&path=(http://[^<>\"]*?)\\&").getMatch(0);
+            dllink = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("url: \"(http:[^<>\"]*?)\"").getMatch(0);
-                if (dllink != null) {
-                    dllink = dllink.replaceAll("\\\\/", "/");
+                dllink = br.getRegex("\\&path=(http://[^<>\"]*?)\\&").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("url: \"(http:[^<>\"]*?)\"").getMatch(0);
+                    if (dllink != null) {
+                        dllink = dllink.replaceAll("\\\\/", "/");
+                    }
                 }
             }
         }
