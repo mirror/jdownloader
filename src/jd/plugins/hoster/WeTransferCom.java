@@ -98,7 +98,7 @@ public class WeTransferCom extends PluginForHost {
             // now without id_single
             br.getHeaders().put("Accept", "application/json");
             br.getHeaders().put("Content-Type", "application/json");
-            br.postPageRaw("https://" + this.getHost() + "/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{}");
+            br.postPageRaw("https://" + this.getHost() + "/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{\"file_ids\":[\"" + this.id_single + "\"]}");
         }
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
