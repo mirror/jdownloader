@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "http://(www\\.)?hornoxe\\.com/(?!category)[a-z0-9\\-]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "http://(www\\.)?hornoxe\\.com/(?!category)[a-z0-9\\-]+/" })
 public class HrnOxCm extends PluginForDecrypt {
-
     public HrnOxCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,13 +61,11 @@ public class HrnOxCm extends PluginForDecrypt {
             return null;
         }
         pageName = Encoding.htmlDecode(pageName.trim());
-
         // Check if there are embedded links
         String externID = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http:" + externID));
         }
-
         // Check if we have a single video
         final String file = br.getRegex("file\":\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(0);
         if (file != null) {
@@ -79,7 +75,6 @@ public class HrnOxCm extends PluginForDecrypt {
             decryptedLinks.add(vid);
             return decryptedLinks;
         }
-
         // Check if we have a picdump
         String[] urls = null;
         if (parameter.contains("-gifdump")) {
@@ -98,13 +93,13 @@ public class HrnOxCm extends PluginForDecrypt {
                 fp.setName(Encoding.htmlDecode(title.trim()));
                 fp.addLinks(decryptedLinks);
             }
-
             add(decryptedLinks, urls, fp);
             String[] pageqs = br.getRegex("\"page-numbers\" href=\"(.*?nggpage\\=\\d+)").getColumn(0);
-
+            if (pageqs == null || pageqs.length == 0) {
+                pageqs = br.getRegex("<a href=\"(https?://[^\"]*?/\\d+/)\">\\d+").getColumn(0);
+            }
             for (String page : pageqs) {
                 br.getPage(page);
-
                 if (parameter.contains("-gifdump")) {
                     urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
                 } else {
@@ -117,7 +112,6 @@ public class HrnOxCm extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-
         // Check if it's an image
         final String image = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getMatch(0);
         if (image != null) {
@@ -126,12 +120,10 @@ public class HrnOxCm extends PluginForDecrypt {
             decryptedLinks.add(img);
             return decryptedLinks;
         }
-
         return decryptedLinks;
     }
 
     private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls, FilePackage fp) {
-
         for (final String url : urls) {
             if (url.contains("fliege.gif")) {
                 continue;
@@ -150,5 +142,4 @@ public class HrnOxCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
