@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
@@ -64,23 +65,26 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>404 Error page|class=\"message\\-404\"|class=\"record\\-error record\\-404") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
-        final String url_thumbnail = br.getRegex("class=\"album\\-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
-        String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
+        final String url_thumbnail = br.getRegex("class=\"album-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
+        String theName = br.getRegex("class=\"cloudcast-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) {
             theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
-        }
-        if (theName == null) {
-            theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        }
-        if (theName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (theName == null) {
+                theName = br.getRegex("property=\"og:title\"[^>]* content=\"([^<>\"]*?)\"").getMatch(0);
+                if (theName == null) {
+                    theName = br.getRegex("<title>(.*?) \\| Mixcloud</title>").getMatch(0);
+                    if (theName == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                }
+            }
         }
         theName = Encoding.htmlDecode(theName).trim();
 
@@ -99,11 +103,12 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             comment += textinfo_tagged;
         }
 
-        final String playInfo = br.getRegex("m\\-play\\-info=\"([^\"]+)\"").getMatch(0);
+        final String playInfo = br.getRegex("m-play-info=\"([^\"]+)\"").getMatch(0);
         if (playInfo == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+
         final String url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
         if (url_mp3_preview != null && attemptToDownloadOriginal) {
             /* 2016-10-24: Original-file download not possible anymore(?!) */
@@ -118,18 +123,22 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             tempLinks.add(url_mp3_preview);
         }
 
-        final String[] keys = new String[] { "cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=", "d2luZG93LmFkZEV2ZW50TGlzdGVuZXIgPSB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lciB8fCBmdW5jdGlvbigpIHt9Ow==", "cmV0dXJuIHsgcmVxdWVzdEFuaW1hdGlvbkZyYW1lOiBmdW5jdGlvbihjYWxsYmFjaykgeyBjYWxsYmFjaygpOyB9LCBpbm5lckhlaWdodDogNTAwIH07" };
-        for (final String key : keys) {
-            String result = null;
-            try {
-                result = decrypt(playInfo, key);
-            } catch (final Throwable e) {
-            }
-
-            final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
-            if (links != null && links.length != 0) {
-                for (final String temp : links) {
-                    tempLinks.add(temp);
+        tempLinks.addAll(siht(playInfo, null));
+        if (tempLinks.isEmpty()) {
+            final String[] temp = br.getRegex(" src=\"([^\"]+/js\\d*/[^\"]+\\.js)\"").getColumn(0);
+            if (temp != null) {
+                final ArrayList<String> jss = new ArrayList<String>(Arrays.asList(temp));
+                for (final String js : jss) {
+                    try {
+                        final Browser rb = br.cloneBrowser();
+                        rb.getHeaders().put("Accept", "*/*");
+                        getPage(rb, js);
+                        final String key = rb.getRegex(",player:\\{.*?key_value:\"(.*?)\"").getMatch(0);
+                        if (key != null) {
+                            tempLinks.addAll(siht(playInfo, Encoding.Base64Encode(key)));
+                        }
+                    } catch (final Exception e) {
+                    }
                 }
             }
         }
@@ -201,6 +210,26 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    private ArrayList<String> siht(String playInfo, String... object) {
+        final String[] keys = object != null ? object : new String[] { "cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=", "ZGVmZXJyZWQucmVzb2x2ZSA9IGRlZmVycmVkLnJlamVjdCA9IGZ1bmN0aW9uKCkge307", "cmV0dXJuIHsgcmVxdWVzdEFuaW1hdGlvbkZyYW1lOiBmdW5jdGlvbihjYWxsYmFjaykgeyBjYWxsYmFjaygpOyB9LCBpbm5lckhlaWdodDogNTAwIH07", "d2luZG93LmFkZEV2ZW50TGlzdGVuZXIgPSB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lciB8fCBmdW5jdGlvbigpIHt9Ow==" };
+        final ArrayList<String> tempLinks = new ArrayList<String>();
+        for (final String key : keys) {
+            String result = null;
+            try {
+                result = decrypt(playInfo, key);
+            } catch (final Throwable e) {
+            }
+
+            final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
+            if (links != null && links.length != 0) {
+                for (final String temp : links) {
+                    tempLinks.add(temp);
+                }
+            }
+        }
+        return tempLinks;
     }
 
     private String decrypt(final String e, final String k) {
