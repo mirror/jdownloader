@@ -56,6 +56,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
+
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
         /* need this twice, because decrypter plugin might not be loaded yet */
@@ -195,6 +196,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.CRYPTEDLINK_ORIGINAL = param.toString();
         this.CRYPTEDLINK = param;
         this.decryptedLinks = new ArrayList<DownloadLink>() {
+
             @Override
             public boolean add(DownloadLink e) {
                 distribute(e);
@@ -683,7 +685,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 handleVideoErrors(br);
                 String ajax_json = br.getRegex("ajax\\.preload\\(\\'al_video\\.php\\', \\{[^\\}]+\\}, (\\[.*?\\])\\);\\s+").getMatch(0);
                 if (ajax_json != null) {
-                    final String embeddedVideo = new Regex(ajax_json, "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
+                    final String embeddedVideo = new Regex(PluginJSonUtils.unescape(ajax_json), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
                     if (embeddedVideo != null) {
                         decryptedLinks.add(createDownloadlink(embeddedVideo));
                         return;
@@ -705,12 +707,12 @@ public class VKontakteRu extends PluginForDecrypt {
                     correctedBR = br.toString();
                 }
             }
-            embedHash = PluginJSonUtils.getJsonValue(br.toString(), "hash");
+            embedHash = PluginJSonUtils.getJsonValue(br, "hash");
             if (embedHash == null) {
                 logger.info("Video seems to be offline");
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-            filename = PluginJSonUtils.getJsonValue(br.toString(), "md_title");
+            filename = PluginJSonUtils.getJsonValue(br, "md_title");
             if (filename == null) {
                 /* Fallback */
                 filename = oid_and_id;
