@@ -12,21 +12,6 @@ import java.util.Set;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
@@ -54,6 +39,21 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -384,6 +384,18 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
                 if (finalExtPws != null && finalExtPws.size() > 0) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
+                }
+                final String comment = query.getComment();
+                if (StringUtils.isNotEmpty(comment)) {
+                    if (StringUtils.isEmpty(link.getComment())) {
+                        link.setComment(comment);
+                    }
+                    if (StringUtils.isEmpty(existing.getComment()) || overwritePackagizerRules) {
+                        existing.setComment(comment);
+                        existing.setIgnoreVarious(true);
+                        existing.setUniqueId(null);
+                        link.setDesiredPackageInfo(existing);
+                    }
                 }
                 if (StringUtils.isNotEmpty(query.getPackageName())) {
                     if (StringUtils.isEmpty(existing.getName()) || overwritePackagizerRules) {
