@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,9 +34,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jianguoyun.com" }, urls = { "http://jianguoyundecrypted\\.com/\\d+" })
 public class JianguoyunCom extends PluginForHost {
-
     public JianguoyunCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.jianguoyun.com/d/signup");
@@ -54,7 +52,6 @@ public class JianguoyunCom extends PluginForHost {
     private String       folderid               = null;
     private String       passCode               = null;
     private boolean      possiblePremiumonly    = false;
-
     private final String html_passwordprotected = "id=\"pwd\\-verify\\-view\"";
 
     @Override
@@ -70,9 +67,11 @@ public class JianguoyunCom extends PluginForHost {
         if (folderid == null || relPath == null || mainlink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         if (singlefile) {
             accessMainlink(mainlink);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"owner\"><")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             scanFileinfoFromWebsite(br, link);
             final boolean download_need_signin = link.getBooleanProperty("download_need_signin", false);
             if (download_need_signin) {
@@ -108,8 +107,8 @@ public class JianguoyunCom extends PluginForHost {
     }
 
     public static void scanFileinfoFromWebsite(final Browser br, final DownloadLink dl) {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            dl.setAvailable(false);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"owner\"><")) {
+            dl.setAvailable(false); // Suitable for decrypter plugin only, hoster plugin needs PluginException
             return;
         }
         final String pageJson = getWebsiteJson(br);
@@ -315,5 +314,4 @@ public class JianguoyunCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
