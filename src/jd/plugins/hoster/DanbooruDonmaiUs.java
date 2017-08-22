@@ -31,6 +31,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/\\d+" })
 public class DanbooruDonmaiUs extends PluginForHost {
     public DanbooruDonmaiUs(PluginWrapper wrapper) {
@@ -76,6 +78,8 @@ public class DanbooruDonmaiUs extends PluginForHost {
                 dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]+)\"").getMatch(0);
             }
         }
+        final String size = br.getRegex("Size:\\s*<a href=\"(?:(?:https?://danbooru\\.donmai\\.us)?/data/[^<>\"]+)\">(.*?)<").getMatch(0);
+        final long orgSize = size != null ? SizeFormatter.getSize(size) : -1l;
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -87,6 +91,10 @@ public class DanbooruDonmaiUs extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
+        if (orgSize > 0) {
+            link.setDownloadSize(orgSize);
+            return AvailableStatus.TRUE;
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

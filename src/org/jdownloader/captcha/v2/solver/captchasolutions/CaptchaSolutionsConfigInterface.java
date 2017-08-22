@@ -9,7 +9,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface CaptchaSolutionsConfigInterface extends ChallengeSolverConfig {
-
     @AboutConfig
     @DescriptionForConfigEntry("Your CaptchaSolutions.com API Secret")
     String getAPISecret();
@@ -43,6 +42,7 @@ public interface CaptchaSolutionsConfigInterface extends ChallengeSolverConfig {
 
     void setThreadpoolSize(int size);
 
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isEnabled();
 }

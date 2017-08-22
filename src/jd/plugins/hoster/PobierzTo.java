@@ -216,10 +216,10 @@ public class PobierzTo extends PluginForHost {
                     link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
                 }
             }
-            if (br.containsHTML("Osiągnąłeś maksymalna liczbę pobieranych plików") || new Regex(br.getURL(), Pattern.compile("Osi%C4%85gn%C4%85%C5%82e%C5%9B\\+maksymalna\\+liczb%C4%99\\+pobieranych\\+plik", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (new Regex(br.getURL(), Pattern.compile("Osi%C4%85gn%C4%85%C5%82e%C5%9B\\+maksymalna\\+liczb%C4%99\\+pobieranych\\+plik", Pattern.CASE_INSENSITIVE)).matches()) {
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
                 return AvailableStatus.TRUE;
-            } else if (br.containsHTML("Musisz poczekać 1 godzinę pomiędzy pobraniami") || new Regex(br.getURL(), Pattern.compile("Musisz\\+poczeka%C4%87\\+1\\+godzin%C4%99\\+pomi%C4%99dzy", Pattern.CASE_INSENSITIVE)).matches()) {
+            } else if (new Regex(br.getURL(), Pattern.compile("Musisz\\+poczeka%C4%87\\+1\\+godzin%C4%99\\+pomi%C4%99dzy", Pattern.CASE_INSENSITIVE)).matches()) {
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
                 return AvailableStatus.TRUE;
             } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_SERVER, Pattern.CASE_INSENSITIVE)).matches()) {
@@ -473,7 +473,7 @@ public class PobierzTo extends PluginForHost {
     }
 
     private void handleErrors(DownloadLink downloadLink, Account account) throws PluginException {
-        if (br.containsHTML("Osiągnąłeś maksymalna liczbę pobieranych plików")) {
+        if (br.containsHTML("</i>&nbsp;\\*Osiągnąłeś maksymalna liczbę pobieranych plików") || new Regex(br.getURL(), Pattern.compile("Osi%C4%85gn%C4%85%C5%82e%C5%9B\\+maksymalna\\+liczb%C4%99\\+pobieranych\\+plik", Pattern.CASE_INSENSITIVE)).matches()) {
             final String hours = br.getRegex("Zakup konto Premium, lub odczekaj\\s*(\\d+)\\s*godziny").getMatch(0);
             if (hours != null) {
                 if (account != null) {

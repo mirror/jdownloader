@@ -12,7 +12,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface DeathByCaptchaSettings extends ChallengeSolverConfig {
-
     @AboutConfig
     @DescriptionForConfigEntry("Your deathbycaptcha.eu Username")
     String getUserName();
@@ -48,7 +47,7 @@ public interface DeathByCaptchaSettings extends ChallengeSolverConfig {
 
     void setBubbleTimeoutByHostMap(HashMap<String, Integer> map);
 
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isEnabled();
-
 }
