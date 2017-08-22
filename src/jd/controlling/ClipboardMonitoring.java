@@ -34,6 +34,7 @@ import jd.parser.html.HTMLParser;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
+import org.appwork.utils.IO.BOM;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -777,6 +778,21 @@ public class ClipboardMonitoring {
         return null;
     }
 
+    private static final byte[] REPLACEMENT_CHARACTER_UTF8  = new byte[] { (byte) 0xef, (byte) 0xbf, (byte) 0xbd };
+    private static final byte[] REPLACEMENT_CHARACTER_UTF16 = new byte[] { (byte) 0xff, (byte) 0xfd };
+
+    private final static boolean startsWith(byte[] array, int startIndex, byte[] check) {
+        if (array != null && check != null && array.length >= startIndex + check.length) {
+            for (int index = 0; index < check.length; index++) {
+                if (array[startIndex + index] != check[index]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     private static String convertBytes(byte[] bytes, String charSet, boolean linuxWorkaround) throws UnsupportedEncodingException {
         if (bytes == null || bytes.length == 0) {
             return null;
@@ -793,8 +809,18 @@ public class ClipboardMonitoring {
              */
             int indexOriginal = 0;
             int i = 0;
-            if (linuxWorkaround) {
-                i = 6;
+            while (true) {
+                final BOM bom = IO.BOM.get(bytes);
+                if (bom != null) {
+                    i += bom.length();
+                    break;
+                } else if (startsWith(bytes, i, REPLACEMENT_CHARACTER_UTF8)) {
+                    i += REPLACEMENT_CHARACTER_UTF8.length;
+                } else if (startsWith(bytes, i, REPLACEMENT_CHARACTER_UTF16)) {
+                    i += REPLACEMENT_CHARACTER_UTF16.length;
+                } else {
+                    break;
+                }
             }
             for (; i < bytes.length - 1; i++) {
                 if (bytes[i] != 0) {
@@ -1048,7 +1074,17 @@ public class ClipboardMonitoring {
                 return ret;
             }
         }
-        final String ret = getBrowserMime(transferable, dataFlavors, "x-moz-url-priv");
+        String ret = getBrowserMime(transferable, dataFlavors, "x-moz-url");
+        if (!StringUtils.isEmpty(ret)) {
+            // https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Recommended_drag_types
+            // it holds the URL of the link followed by the title of the link, separated by a linebreak. For example:
+            final String[] lines = Regex.getLines(ret);
+            if (lines != null && lines.length > 0) {
+                ret = lines[0];
+            }
+        } else {
+            ret = getBrowserMime(transferable, dataFlavors, "x-moz-url-priv");
+        }
         if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
             return ret;
         }

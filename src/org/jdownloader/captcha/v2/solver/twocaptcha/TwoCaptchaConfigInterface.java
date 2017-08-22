@@ -9,7 +9,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface TwoCaptchaConfigInterface extends ChallengeSolverConfig {
-
     @AboutConfig
     @DescriptionForConfigEntry("Your 2captcha.com apiKey (https://2captcha.com/setting)")
     String getApiKey();
@@ -32,7 +31,7 @@ public interface TwoCaptchaConfigInterface extends ChallengeSolverConfig {
 
     void setFeedBackSendingEnabled(boolean b);
 
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isEnabled();
-
 }

@@ -488,13 +488,14 @@ public class AccountInfo extends Property {
                     for (final LazyHostPlugin lazyHostPlugin : hpc.list()) {
                         if (lazyHostPlugin.isFallbackPlugin() || lazyHostPlugin.isOfflinePlugin()) {
                             continue;
-                        }
-                        final String pattern = lazyHostPlugin.getPatternSource();
-                        if (pattern.matches(matcher) || (matcher2 != null && pattern.matches(matcher2))) {
-                            assignedMultiHostSupport.add(lazyHostPlugin.getHost());
-                            mapping.put(host, lazyHostPlugin.getHost());
-                            it.remove();
-                            break;
+                        } else {
+                            final String pattern = lazyHostPlugin.getPatternSource();
+                            if (StringUtils.containsIgnoreCase(pattern, hostParts[0]) && (pattern.matches(matcher) || (matcher2 != null && pattern.matches(matcher2)))) {
+                                assignedMultiHostSupport.add(lazyHostPlugin.getHost());
+                                mapping.put(host, lazyHostPlugin.getHost());
+                                it.remove();
+                                break;
+                            }
                         }
                     }
                 }

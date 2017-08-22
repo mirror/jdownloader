@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -24,12 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -51,9 +46,14 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.ZeveraApiTracker;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
-
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
@@ -61,7 +61,7 @@ public class ZeveraCom extends antiDDoSForHost {
     private static final String          mName             = "zevera.com";
     private static final String          NICE_HOSTproperty = mName.replaceAll("(\\.|\\-)", "");
     private static final String          mProt             = "http://";
-    private String                       mServ             = mProt + API.get() + mName;
+    private String                       mServ             = null;
     private static Object                LOCK              = new Object();
     private static MultiHosterManagement mhm               = new MultiHosterManagement("zevera.com");
     private static final String          NOCHUNKS          = "NOCHUNKS";
@@ -78,6 +78,17 @@ public class ZeveraCom extends antiDDoSForHost {
         return mProt + mName + "/terms";
     }
 
+    private synchronized String getMServ() {
+        if (mServ == null) {
+            mServ = mProt + API.get() + mName;
+        }
+        return mServ;
+    }
+
+    private synchronized void resetMServ() {
+        mServ = null;
+    }
+
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -91,16 +102,6 @@ public class ZeveraCom extends antiDDoSForHost {
             prepBr.addAllowedResponseCodes(500);
         }
         return prepBr;
-    }
-
-    @Override
-    protected void getPage(Browser ibr, String page) throws Exception {
-        super.getPage(ibr, page);
-        // try another server
-        if (ibr.getHttpConnection().getResponseCode() == 500) {
-            API.setFailure();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
     }
 
     /**
@@ -319,6 +320,27 @@ public class ZeveraCom extends antiDDoSForHost {
         }
     }
 
+    private final void getApi(final String relative) throws Exception {
+        final String rel;
+        if (relative == null) {
+            rel = "/";
+        } else if (relative.startsWith("/")) {
+            rel = "/" + relative;
+        } else {
+            rel = relative;
+        }
+        try {
+            getPage(getMServ() + rel);
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                resetMServ();
+                getPage(getMServ() + rel);
+            }
+        } catch (final BrowserException e) {
+            resetMServ();
+            getPage(getMServ() + rel);
+        }
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
@@ -327,7 +349,7 @@ public class ZeveraCom extends antiDDoSForHost {
         setConstants(account, link);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
-        getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
+        getApi("/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
         String dllink = br.getRedirectLocation();
         int redirect_count = 0;
         do {
@@ -443,12 +465,33 @@ public class ZeveraCom extends antiDDoSForHost {
             sb.append("<GetHosters xmlns=\"http://tempuri.org/\" />");
             sb.append("</soap12:Body></soap12:Envelope>");
             br.getHeaders().put("Content-Type", "application/soap+xml; charset=utf-8");
-            br.postPageRaw(mServ + "/downloadapi.asmx", sb.toString());
+            postApiRaw(br, "/downloadapi.asmx", sb.toString());
             ai.setMultiHostSupport(this, addThis());
         } catch (Throwable e) {
             logger.info("Could not fetch ServerList: " + e.toString());
         }
         return ai;
+    }
+
+    private void postApiRaw(Browser br, final String relative, final String postData) throws IOException {
+        final String rel;
+        if (relative == null) {
+            rel = "/";
+        } else if (relative.startsWith("/")) {
+            rel = "/" + relative;
+        } else {
+            rel = relative;
+        }
+        try {
+            br.postPageRaw(getMServ() + rel, postData);
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                resetMServ();
+                br.postPageRaw(getMServ() + rel, postData);
+            }
+        } catch (BrowserException e) {
+            resetMServ();
+            br.postPageRaw(getMServ() + rel, postData);
+        }
     }
 
     private ArrayList<String> addThis() {
@@ -475,7 +518,6 @@ public class ZeveraCom extends antiDDoSForHost {
             }
         }
         return r;
-
     }
 
     private final String getXMLa(final String input, final String keyname) {
@@ -516,8 +558,8 @@ public class ZeveraCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(mServ + "/");
-                getPage("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                getApi("/");
+                getApi("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
                     // they can make more steps here.
                     final Form more = getMoreForm(account);

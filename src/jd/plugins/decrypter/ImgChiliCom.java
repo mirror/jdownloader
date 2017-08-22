@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,13 +29,11 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgchili.com" }, urls = { "http://((www\\.)?imgchili\\.(com|net)/show/|(i|t)\\d+\\.imgchili\\.(com|net)/)\\d+/[a-z0-9_\\.\\(\\)%\\-]+|http://(www\\.)?imgchili\\.(com|net)/album/[a-z0-9]{32}" })
 public class ImgChiliCom extends PluginForDecrypt {
-
     public ImgChiliCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // http://((www\\.)?imgchili\\.(com|net)/show/|[it]\\d+\\.imgchili\\.(com|net)/)\\d+/[a-z0-9_\\.\\(\\)]+
-
     private static final String ALBUMLINK       = "http://(www\\.)?imgchili\\.(com|net)/album/[a-z0-9]{32}";
     private static final String SINGLEFINALLINK = "http://(www\\.)?[it]\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.\\(\\)%\\-]+";
 
@@ -47,10 +44,8 @@ public class ImgChiliCom extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             br.setFollowRedirects(false);
-
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-
             if (br.containsHTML("The album does not exist")) {
                 logger.info("Link offline: " + parameter);
                 decryptedLinks.add(offline);
@@ -60,7 +55,6 @@ public class ImgChiliCom extends PluginForDecrypt {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-
             final String fpName = br.getRegex("<title>imgChili \\&raquo; ([^<>\"]*?)</title>").getMatch(0);
             final String[] thumbs = br.getRegex("<img src=\"(http://t\\d+\\.imgchili\\.net/\\d+/[A-Za-z0-9\\-_\\.\\(\\)%\\-]+\\.jpg)\"").getColumn(0);
             if (thumbs == null || thumbs.length == 0) {
@@ -88,7 +82,7 @@ public class ImgChiliCom extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         } else {
-            parameter = "http://imgchili.com/show" + new Regex(parameter, "(com|net)(/show)?(/.+)").getMatch(2);
+            parameter = "http://imgchili.net/show" + new Regex(parameter, "(com|net)(/show)?(/.+)").getMatch(2);
             param.setCryptedUrl(parameter);
             br.setFollowRedirects(true);
             br.getPage(parameter);
@@ -112,7 +106,6 @@ public class ImgChiliCom extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
 }

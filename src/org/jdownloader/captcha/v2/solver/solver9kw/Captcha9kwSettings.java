@@ -13,7 +13,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface Captcha9kwSettings extends ChallengeSolverConfig {
-
     @AboutConfig
     @DefaultStringValue("")
     @DescriptionForConfigEntry("Your (User) ApiKey from 9kw.eu")
@@ -236,7 +235,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     void setBubbleTimeoutByHostMap(HashMap<String, Integer> map);
 
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isEnabled();
-
 }

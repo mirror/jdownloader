@@ -9,7 +9,6 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface EndCaptchaConfigInterface extends ChallengeSolverConfig {
-
     @AboutConfig
     @DescriptionForConfigEntry("Your EndCaptcha.com Username")
     String getUserName();
@@ -38,7 +37,7 @@ public interface EndCaptchaConfigInterface extends ChallengeSolverConfig {
 
     void setFeedBackSendingEnabled(boolean b);
 
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isEnabled();
-
 }

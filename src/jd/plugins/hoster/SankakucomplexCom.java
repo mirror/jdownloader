@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,14 +34,12 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?chan\\.sankakucomplex\\.com/post/show/\\d+" })
 public class SankakucomplexCom extends antiDDoSForHost {
-
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".jpg";
-
     private String              dllink            = null;
 
     @Override
@@ -105,6 +102,11 @@ public class SankakucomplexCom extends antiDDoSForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
+        final String size = br.getRegex("<li>Original:\\s*<a href.*?title=\"([0-9\\,]+) bytes").getMatch(0);
+        if (size != null) {
+            downloadLink.setDownloadSize(Long.parseLong(size.replace(",", "")));
+            return AvailableStatus.TRUE;
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

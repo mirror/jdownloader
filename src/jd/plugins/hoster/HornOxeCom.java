@@ -13,7 +13,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://\\w+\\.hornoxedecrypted\\.com/.+" })
 public class HornOxeCom extends PluginForHost {
-
     public HornOxeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -67,10 +66,8 @@ public class HornOxeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-
         URLConnectionAdapter con = null;
         br.getHeaders().put("Referer", link.getStringProperty("Referer"));
-
         // stupid site doesn't always accept connection
         boolean worked = false;
         int repeat = 3;
@@ -106,5 +103,4 @@ public class HornOxeCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
