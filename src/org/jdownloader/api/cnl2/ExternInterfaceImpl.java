@@ -16,20 +16,6 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-import net.sf.image4j.codec.ico.ICOEncoder;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -58,6 +44,20 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+import net.sf.image4j.codec.ico.ICOEncoder;
 
 public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     private final static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
@@ -183,10 +183,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final List<LinkCollectingJob> jobs = new ArrayList<LinkCollectingJob>();
             if (StringUtils.isNotEmpty(cnl.getCrypted()) && (StringUtils.isNotEmpty(cnl.getJk()) || StringUtils.isNotEmpty(cnl.getKey()))) {
                 String jk = cnl.getJk();
-                if (StringUtils.isNotEmpty(jk) && jk.matches(".*[0-9];}")) {
-                    // TODO: remove after firefox addon version 2.0.16 was published
-                    jk = jk.replace(";}", "';}");
-                }
                 final String dummyCNL = createDummyCNL(cnl.getCrypted(), jk, cnl.getKey());
                 jobs.add(new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), dummyCNL));
             }
@@ -212,6 +208,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         }
                         if (cnl.getPasswords() != null && cnl.getPasswords().size() > 0) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(cnl.getPasswords());
+                        }
+                        if (cnl.getAutostart() != null) {
+                            link.setAutoConfirmEnabled(cnl.getAutostart());
+                            link.setAutoStartEnabled(cnl.getAutostart());
                         }
                         if (StringUtils.isNotEmpty(cnl.getPackageName()) || !StringUtils.isEmpty(cnl.getDir())) {
                             PackageInfo existing = link.getDesiredPackageInfo();
@@ -427,6 +427,12 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final String finalDestination = request.getParameterbyKey("dir");
             job.setCustomSourceUrl(source);
             final String finalPackageName = request.getParameterbyKey("package");
+            final Boolean finalAutostart;
+            if (request.getParameterbyKey("autostart") != null) {
+                finalAutostart = "true".equals(request.getParameterbyKey("autostart"));
+            } else {
+                finalAutostart = null;
+            }
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
                 private HashSet<String> pws = null;
                 {
@@ -457,6 +463,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         packageInfo.setIgnoreVarious(true);
                         packageInfo.setUniqueId(null);
                         link.setDesiredPackageInfo(packageInfo);
+                    }
+                    if (finalAutostart != null) {
+                        link.setAutoConfirmEnabled(finalAutostart);
+                        link.setAutoStartEnabled(finalAutostart);
                     }
                     DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
