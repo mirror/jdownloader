@@ -55,6 +55,10 @@ public class LtrstrWzCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(dl));
             }
         }
+        if (decryptedLinks.size() == 0 && !br.containsHTML("target=\"_blank\">\\[")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if (decryptedLinks.size() == 0) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
