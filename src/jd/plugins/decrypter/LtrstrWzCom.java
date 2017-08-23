@@ -41,7 +41,6 @@ public class LtrstrWzCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<span class=\"title\">(.*?)</span>").getMatch(0);
         final String mirrors[] = br.getRegex("<b>Download\\(s\\) (\\d+)?:</b></td>[\t\r\n ]+<td colspan=\"4\" align=\"left\">(.*?)</td>").getColumn(1);
         if (mirrors == null || mirrors.length == 0) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -62,6 +61,7 @@ public class LtrstrWzCom extends PluginForDecrypt {
         if (decryptedLinks.size() == 0) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
+        String fpName = br.getRegex("<span class=\"title\">(?:<center><p class=\"heading_download\">)?(.*?)(</center></p>)?</span>").getMatch(0);
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
