@@ -17,17 +17,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -48,6 +37,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 /**
  *
  * @author raztoki
@@ -55,7 +55,6 @@ import jd.plugins.components.UserAgents.BrowserName;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
-
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -264,7 +263,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         while (true) {
             i++;
             // lazy lock
-            if (captchaLocked.get() != null) {
+            if (isLocked()) {
                 // we will wait, and we will randomise. This will help when lock is removed, not all threads will instantly submit request.
                 Thread.sleep(getRandomWait());
                 continue;
@@ -310,7 +309,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         while (true) {
             i++;
             // lazy lock
-            if (captchaLocked.get() != null) {
+            if (isLocked()) {
                 // we will wait, and we will randomise. This will help when lock is removed, not all threads will instantly submit request.
                 Thread.sleep(getRandomWait());
                 continue;
@@ -404,7 +403,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         }
         final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
-            final Object lockObject = new Object();
+            final Object lockObject = Thread.currentThread();
             try {
                 // Cloudflare
                 // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
@@ -428,12 +427,25 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     antiDDoSCookies.put(ibr.getHost(), cookies);
                 }
             } finally {
-                captchaLocked.compareAndSet(lockObject, null);
+                releaseLock(lockObject);
             }
         }
     }
 
     private static AtomicReference<Object> captchaLocked = new AtomicReference<Object>(null);
+
+    protected boolean isLocked() {
+        final Object lock = captchaLocked.get();
+        return lock != null && Thread.currentThread() != lock;
+    }
+
+    protected boolean acquireLock(Object lockObject) {
+        return captchaLocked.compareAndSet(null, lockObject) || Thread.currentThread() == captchaLocked.get();
+    }
+
+    protected void releaseLock(Object lockObject) {
+        captchaLocked.compareAndSet(lockObject, null);
+    }
 
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
@@ -453,14 +465,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         final Request originalRequest = ibr.getRequest();
         if (responseCode == 403 && cloudflare != null) {
             // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
-            if (captchaLocked.compareAndSet(null, lockObject)) {
+            if (acquireLock(lockObject)) {
                 // set boolean value
                 a_captchaRequirement = true;
                 // recapthcha v2
                 if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                     final Form cf = cloudflare;
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
-
                         {
                             boundToDomain = true;
                         }
@@ -564,7 +575,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FATAL, message);
         } else if (responseCode == 503 && cloudflare != null) {
             // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
-            if (captchaLocked.compareAndSet(null, lockObject)) {
+            if (acquireLock(lockObject)) {
                 // 503 response code with javascript math section && with 5 second pause
                 final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                 String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
@@ -667,7 +678,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             return;
         } else if (responseCode == 429 && ibr.containsHTML("<title>Access denied \\| \\S*" + Pattern.quote(ibr.getHost()) + " used Cloudflare to restrict access</title>")) {
             // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
-            if (captchaLocked.compareAndSet(null, lockObject)) {
+            if (acquireLock(lockObject)) {
                 if (a_responseCode429 == 4) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                 }
@@ -813,7 +824,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (captcha == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (captchaLocked.compareAndSet(null, lockObject)) {
+                if (acquireLock(lockObject)) {
                     a_captchaRequirement = true;
                     String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                     if (apiKey == null) {
