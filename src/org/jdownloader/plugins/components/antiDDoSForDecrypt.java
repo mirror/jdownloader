@@ -453,7 +453,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // all cloudflare events are behind text/html
         if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
             if (responseCode == 200) {
-                if (request != null && StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
+                if (request != null) {
                     if (request instanceof HeadRequest) {
                         openAntiDDoSRequestConnection(ibr, new GetRequest(request));
                         return;
