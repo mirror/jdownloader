@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
@@ -28,11 +29,13 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
@@ -87,29 +90,37 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             }
         }
         theName = Encoding.htmlDecode(theName).trim();
-
-        /* 2017-05-02: Set useful information as comment (user request) */
-        final String textinfo_playing_tracks_by = br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
-        final String textinfo_chart_positions = br.getRegex("<h3>Chart Positions</h3><p>([^<>]+)</p>").getMatch(0);
-        final String textinfo_tagged = br.getRegex("<h3>Tagged</h3>(<a.*?</a>)</div>").getMatch(0);
         String comment = "";
-        if (textinfo_playing_tracks_by != null) {
-            comment += textinfo_playing_tracks_by + ";";
-        }
-        if (textinfo_chart_positions != null) {
-            comment += textinfo_chart_positions + ";";
-        }
-        if (textinfo_tagged != null) {
-            comment += textinfo_tagged;
-        }
+        final String playInfo;
+        final String url_mp3_preview;
+        String json = br.getRegex("<div id=\"relay-data\"[^>]*>(.*?)</div>").getMatch(0);
+        if (json == null) {
+            /* 2017-05-02: Set useful information as comment (user request) */
+            final String textinfo_playing_tracks_by = br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
+            final String textinfo_chart_positions = br.getRegex("<h3>Chart Positions</h3><p>([^<>]+)</p>").getMatch(0);
+            final String textinfo_tagged = br.getRegex("<h3>Tagged</h3>(<a.*?</a>)</div>").getMatch(0);
+            if (textinfo_playing_tracks_by != null) {
+                comment += textinfo_playing_tracks_by + ";";
+            }
+            if (textinfo_chart_positions != null) {
+                comment += textinfo_chart_positions + ";";
+            }
+            if (textinfo_tagged != null) {
+                comment += textinfo_tagged;
+            }
+            playInfo = br.getRegex("m-play-info=\"([^\"]+)\"").getMatch(0);
+            url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
 
-        final String playInfo = br.getRegex("m-play-info=\"([^\"]+)\"").getMatch(0);
+        } else {
+            // total json ?
+            json = HTMLEntities.unhtmlentities(json);
+            playInfo = PluginJSonUtils.getJson(json, "dashUrl");
+            url_mp3_preview = PluginJSonUtils.getJson(json, "previewUrl");
+        }
         if (playInfo == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
-        final String url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
         if (url_mp3_preview != null && attemptToDownloadOriginal) {
             /* 2016-10-24: Original-file download not possible anymore(?!) */
             final Regex originalinfo = new Regex(url_mp3_preview, "(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]+\\.mp3)");
@@ -128,12 +139,13 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             final String[] temp = br.getRegex(" src=\"([^\"]+/js\\d*/[^\"]+\\.js)\"").getColumn(0);
             if (temp != null) {
                 final ArrayList<String> jss = new ArrayList<String>(Arrays.asList(temp));
+                Collections.shuffle(jss);
                 for (final String js : jss) {
                     try {
                         final Browser rb = br.cloneBrowser();
                         rb.getHeaders().put("Accept", "*/*");
                         getPage(rb, js);
-                        final String key = rb.getRegex(",player:\\{.*?key_value:\"(.*?)\"").getMatch(0);
+                        final String key = rb.getRegex(",\\s*player\\s*:\\s*\\{.*?key_value\\w*:(\"|')(.*?)\\1").getMatch(1);
                         if (key != null) {
                             tempLinks.addAll(siht(playInfo, Encoding.Base64Encode(key)));
                         }
