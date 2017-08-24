@@ -913,7 +913,7 @@ public class LinkCrawler {
 
     protected URLConnectionAdapter openCrawlDeeperConnection(CrawledLink source, Browser br, URLConnectionAdapter urlConnection, int round) throws IOException {
         if (round <= 2 && urlConnection != null) {
-            if (round < 2 && urlConnection.isOK() && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
+            if (round < 2 && (urlConnection.isOK() || urlConnection.getResponseCode() == 404) && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
                 final Cookies cookies = br.getCookies(br.getBaseURL());
                 for (final Cookie cookie : cookies.getCookies()) {
                     if (StringUtils.contains(cookie.getKey(), "incap_ses")) {
@@ -927,11 +927,13 @@ public class LinkCrawler {
                     }
                 }
                 br.setCurrentURL(source.getURL());
+                urlConnection.disconnect();
                 return openCrawlDeeperConnection(br, source, round + 1);
             }
             final LinkCollectingJob job = source.getSourceJob();
             if (job != null && job.getCustomSourceUrl() != null) {
                 br.setCurrentURL(job.getCustomSourceUrl());
+                urlConnection.disconnect();
                 return openCrawlDeeperConnection(br, source, round + 1);
             }
         }

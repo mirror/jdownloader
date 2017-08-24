@@ -15,9 +15,13 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.List;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,7 +34,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 //xvideos.com by pspzockerscene
@@ -87,6 +93,31 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
+    private boolean isValidVideoURL(final DownloadLink downloadLink, final String url) throws Exception {
+        URLConnectionAdapter con = null;
+        try {
+            Thread.sleep(2000);
+            final Browser br2 = br.cloneBrowser();
+            con = br2.openHeadConnection(Encoding.htmlOnlyDecode(url));
+            if (StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getResponseCode() == 200) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                return true;
+            } else {
+                return false;
+            }
+        } catch (final IOException e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (con != null) {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -112,13 +143,13 @@ public class XvideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // hls first ? seems to be working most reliable
-        dllink = getDllinkHls();
-        if (dllink == null) {
-            dllink = getDllinkHtml5();
+        dllink = getDllinkHtml5();
+        if (dllink == null || !isValidVideoURL(link, dllink)) {
+            dllink = getDllinkHls();
             if (dllink == null) {
                 dllink = getDllinkFlv();
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null || !isValidVideoURL(link, dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }
@@ -126,23 +157,31 @@ public class XvideosCom extends PluginForHost {
         if (!dllink.contains(".m3u8")) {
             filename = filename.trim() + getFileNameExtensionFromString(dllink, ".mp4");
             link.setFinalFileName(Encoding.htmlDecode(filename));
-            sleep(2000, link);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html") && con.getResponseCode() == 200) {
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
+            return AvailableStatus.TRUE;
+        } else {
+            if (Thread.currentThread() instanceof SingleDownloadController) {
+                return AvailableStatus.UNCHECKED;
+            }
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage(dllink);
+            if (br2.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), br2);
+            long estimatedSize = -1;
+            for (M3U8Playlist playList : playLists) {
+                if (hlsbest.getBandwidth() > 0) {
+                    playList.setAverageBandwidth(hlsbest.getBandwidth());
+                    estimatedSize += playList.getEstimatedSize();
                 }
             }
-        } else {
+            if (estimatedSize > 0) {
+                link.setDownloadSize(estimatedSize);
+            }
             filename = filename.trim() + ".mp4";
             link.setFinalFileName(Encoding.htmlDecode(filename));
             return AvailableStatus.TRUE;
@@ -156,21 +195,23 @@ public class XvideosCom extends PluginForHost {
     }
 
     private String getDllinkFlv() {
-        String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
+        final String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
         if (dllink == null) {
-            dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
+            return decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
+        } else {
+            return dllink;
         }
-        return dllink;
     }
 
     private String getDllinkHtml5() {
         // hd
-        String dllink = br.getRegex("html5player\\.setVideoUrlHigh\\('(.*?)'\\)").getMatch(0);
+        final String dllink = br.getRegex("html5player\\.setVideoUrlHigh\\('(.*?)'\\)").getMatch(0);
         if (dllink == null) {
             // sd
-            dllink = br.getRegex("html5player\\.setVideoUrlLow\\('(.*?)'\\)").getMatch(0);
+            return br.getRegex("html5player\\.setVideoUrlLow\\('(.*?)'\\)").getMatch(0);
+        } else {
+            return dllink;
         }
-        return dllink;
     }
 
     @Override
@@ -205,12 +246,13 @@ public class XvideosCom extends PluginForHost {
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                final String m3u8 = hlsbest.getDownloadurl();
+                checkFFmpeg(link, "Download a HLS Stream");
+                sleep(2000, link);
+                dl = new HLSDownloader(link, br, m3u8);
+                dl.startDownload();
             }
-            dllink = hlsbest.getDownloadurl();
-            checkFFmpeg(link, "Download a HLS Stream");
-            sleep(2000, link);
-            dl = new HLSDownloader(link, br, dllink);
-            dl.startDownload();
         }
     }
 

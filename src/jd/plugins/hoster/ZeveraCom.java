@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -473,7 +472,7 @@ public class ZeveraCom extends antiDDoSForHost {
         return ai;
     }
 
-    private void postApiRaw(Browser br, final String relative, final String postData) throws IOException {
+    private void postApiRaw(Browser br, final String relative, final String postData) throws Exception {
         final String rel;
         if (relative == null) {
             rel = "/";
@@ -483,14 +482,14 @@ public class ZeveraCom extends antiDDoSForHost {
             rel = relative;
         }
         try {
-            br.postPageRaw(getMServ() + rel, postData);
+            postPageRaw(br, getMServ() + rel, postData);
             if (br.getHttpConnection().getResponseCode() == 500) {
                 resetMServ();
-                br.postPageRaw(getMServ() + rel, postData);
+                postPageRaw(br, getMServ() + rel, postData);
             }
         } catch (BrowserException e) {
             resetMServ();
-            br.postPageRaw(getMServ() + rel, postData);
+            postPageRaw(br, getMServ() + rel, postData);
         }
     }
 
