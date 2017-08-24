@@ -31,7 +31,6 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public class PluginConfigAdapter {
     private static final String   OLD_CONFIG_PREFIX = "deprecated";
-
     private final LazyPlugin<?>   lazyPlugin;
     private PluginConfigInterface config;
     private ConfigContainer       oldConfig;
@@ -48,6 +47,18 @@ public class PluginConfigAdapter {
             this.lazyPlugin = HostPluginController.getInstance().get(displayName);
         } else if (interfaceName.contains("jd.plugins.decrypter")) {
             this.lazyPlugin = CrawlerPluginController.getInstance().get(displayName);
+        } else if (interfaceName.startsWith("org.jdownloader.plugins.components")) {
+            LazyPlugin<?> lazyPlugin = HostPluginController.getInstance().get(displayName);
+            if (lazyPlugin != null && StringUtils.equals(((LazyHostPlugin) lazyPlugin).getConfigInterface(), interfaceName)) {
+                this.lazyPlugin = lazyPlugin;
+            } else {
+                lazyPlugin = CrawlerPluginController.getInstance().get(displayName);
+                if (lazyPlugin != null && StringUtils.equals(((LazyCrawlerPlugin) lazyPlugin).getConfigInterface(), interfaceName)) {
+                    this.lazyPlugin = lazyPlugin;
+                } else {
+                    this.lazyPlugin = null;
+                }
+            }
         } else {
             this.lazyPlugin = null;
         }
@@ -276,7 +287,6 @@ public class PluginConfigAdapter {
             }
             return storable;
         }
-
         return null;
     }
 
@@ -291,7 +301,8 @@ public class PluginConfigAdapter {
             return AbstractType.OBJECT_LIST;
         } else if (configContainerType == ConfigContainer.TYPE_PASSWORDFIELD || configContainerType == ConfigContainer.TYPE_TEXTFIELD || configContainerType == ConfigContainer.TYPE_TEXTAREA) {
             return AbstractType.STRING;
+        } else {
+            return null;
         }
-        return null;
     }
 }

@@ -912,23 +912,26 @@ public class ClipboardMonitoring {
             final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, DataFlavor.stringFlavor);
             if (ret == null) {
                 return null;
+            } else {
+                return ret.toString();
             }
-            return (String) ret;
         }
         return null;
     }
 
     public static String getURLTransferData(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
         if (URLFLAVOR != null && isDataFlavorSupported(transferable, dataFlavors, URLFLAVOR)) {
-            Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, URLFLAVOR);
+            final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, URLFLAVOR);
             if (ret == null) {
                 return null;
+            } else {
+                final URL url = (URL) ret;
+                if (StringUtils.isEmpty(url.getFile())) {
+                    return null;
+                } else {
+                    return url.toExternalForm();
+                }
             }
-            final URL url = (URL) ret;
-            if (StringUtils.isEmpty(url.getFile())) {
-                return null;
-            }
-            return url.toExternalForm();
         }
         return null;
     }
