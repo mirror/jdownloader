@@ -36,7 +36,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.net" }, urls = { "https?://(?:www\\.)?jheberg\\.net/(captcha|download|mirrors)/[A-Z0-9a-z\\.\\-_]+" })
@@ -61,9 +61,7 @@ public class JhebergNet extends PluginForDecrypt {
     private Browser prepBrowser(Browser prepBr) {
         prepBr.setFollowRedirects(true);
         if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent = UserAgents.stringUserAgent();
         }
         prepBr.getHeaders().put("User-Agent", agent);
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -103,6 +101,9 @@ public class JhebergNet extends PluginForDecrypt {
         if (results == null || results.length == 0) {
             if (br.containsHTML("Débrider maintenant \\!<|>Hébergeur indisponible</")) {
                 logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            } else if (br.containsHTML(">Votre fichier est en attente d'upload\\.<|>Il devrait être disponible sous peu, veuillez patienter\\.<")) {
+                logger.info("Still been uploaded");
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
