@@ -35,8 +35,13 @@ import jd.plugins.DownloadLink;
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?dl-protecte\\.com/\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?dl-protecte\\.(?:com|org)/\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "dl-protecte.com", "dl-protecte.org" };
+    }
 
     public DlPrteCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,7 +69,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         {
             final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            postPage(ajax, "//www.dl-protecte.com/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + magic);
+            postPage(ajax, "/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + magic);
             // should say error false.
         }
         submitForm(f);
