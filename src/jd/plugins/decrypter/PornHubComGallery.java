@@ -37,7 +37,7 @@ public class PornHubComGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceAll("https://", "http://");
-        parameter = parameter.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "http://www.");
+        parameter = parameter.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "https://www.");
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -61,7 +61,7 @@ public class PornHubComGallery extends PluginForDecrypt {
             return null;
         }
         for (final String singleID : links) {
-            final DownloadLink dl = createDownloadlink("http://www.pornhub.com/photo/" + singleID);
+            final DownloadLink dl = createDownloadlink("https://www.pornhub.com/photo/" + singleID);
             dl.setName(singleID + ".jpg");
             dl.setAvailable(true);
             decryptedLinks.add(dl);
