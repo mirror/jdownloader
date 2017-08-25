@@ -30,7 +30,14 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -53,40 +60,34 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+(/.*)?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" })
 public class FileFactory extends PluginForHost {
+
     // DEV NOTES
     // other: currently they 302 redirect all non www. to www. which kills most of this plugin.
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    private static AtomicInteger       maxPrem                      = new AtomicInteger(1);
-    private static AtomicInteger       maxFree                      = new AtomicInteger(1);
-    private final String               NO_SLOT                      = ">All free download slots";
-    private final String               NO_SLOT_USERTEXT             = "No free slots available";
-    private final String               NOT_AVAILABLE                = "class=\"box error\"|have been deleted";
-    private final String               SERVERFAIL                   = "(<p>Your download slot has expired\\.|temporarily unavailable)";
-    private final String               LOGIN_ERROR                  = "The email or password you have entered is incorrect";
-    private final String               SERVER_DOWN                  = "server hosting the file you are requesting is currently down";
-    private final String               CAPTCHALIMIT                 = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
-    private static Object              LOCK                         = new Object();
-    private final String               COOKIE_HOST                  = "http://www.filefactory.com";
-    private String                     dlUrl                        = null;
-    private final String               TRAFFICSHARELINK             = "filefactory.com/trafficshare/";
-    private final String               TRAFFICSHARETEXT             = ">Download with FileFactory TrafficShare<";
-    private final String               PASSWORDPROTECTED            = ">You are trying to access a password protected file|This File has been password protected by the uploader\\.";
-    private final String               DBCONNECTIONFAILED           = "Couldn't get valid connection to DB";
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private final String         NO_SLOT                      = ">All free download slots";
+    private final String         NO_SLOT_USERTEXT             = "No free slots available";
+    private final String         NOT_AVAILABLE                = "class=\"box error\"|have been deleted";
+    private final String         SERVERFAIL                   = "(<p>Your download slot has expired\\.|temporarily unavailable)";
+    private final String         LOGIN_ERROR                  = "The email or password you have entered is incorrect";
+    private final String         SERVER_DOWN                  = "server hosting the file you are requesting is currently down";
+    private final String         CAPTCHALIMIT                 = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
+    private static Object        LOCK                         = new Object();
+    private final String         COOKIE_HOST                  = "http://www.filefactory.com";
+    private String               dlUrl                        = null;
+    private final String         TRAFFICSHARELINK             = "filefactory.com/trafficshare/";
+    private final String         TRAFFICSHARETEXT             = ">Download with FileFactory TrafficShare<";
+    private final String         PASSWORDPROTECTED            = ">You are trying to access a password protected file|This File has been password protected by the uploader\\.";
+    private final String         DBCONNECTIONFAILED           = "Couldn't get valid connection to DB";
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -97,11 +98,10 @@ public class FileFactory extends PluginForHost {
 
     /**
      * defines custom browser requirements.
-     * */
+     */
     private Browser prepBrowser(final Browser prepBr) {
         if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            agent.set(UserAgents.stringUserAgent());
         }
         prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -449,7 +449,7 @@ public class FileFactory extends PluginForHost {
         return 200;
     }
 
-    public String getUrl() throws IOException, PluginException, ScriptException {
+    public String getUrl() throws Exception {
         String url = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
         if (url == null) {
             url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -510,7 +510,7 @@ public class FileFactory extends PluginForHost {
             if (dlUrl != null) {
                 logger.finer("DIRECT free-download");
                 br.setFollowRedirects(true);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlUrl, true, 1);
             } else {
                 checkErrors(true, false);
                 if (br.containsHTML(PASSWORDPROTECTED)) {
@@ -532,7 +532,7 @@ public class FileFactory extends PluginForHost {
                     sleep(Integer.parseInt(timer) * 1001, downloadLink);
                 }
                 if (dllink != null) {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
                 } else {
                     // old
                     String urlWithFilename = null;
@@ -575,7 +575,7 @@ public class FileFactory extends PluginForHost {
                     waittime += 1000;
                     sleep(waittime, downloadLink);
                     br.setFollowRedirects(true);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadUrl);
                 }
             }
             // Prüft ob content disposition header da sind
@@ -648,7 +648,7 @@ public class FileFactory extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     br.setFollowRedirects(true);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finallink, true, 0);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
                         checkErrors(false, true);
@@ -664,7 +664,7 @@ public class FileFactory extends PluginForHost {
                         if (red == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, red, true, 0);
+                        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, red, true, 0);
                         if (!dl.getConnection().isContentDisposition()) {
                             br.followConnection();
                             if (br.containsHTML("Unfortunately we have encountered a problem locating your file")) {
@@ -701,7 +701,7 @@ public class FileFactory extends PluginForHost {
         if (Application.getJavaVersion() < Application.JAVA17) {
             finalLink = finalLink.replaceFirst("https", "http");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalLink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("Unfortunately we have encountefinalLink a problem locating your file")) {
@@ -1059,12 +1059,12 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    private final AtomicBoolean useAPI  = new AtomicBoolean(true);
-    private String              fuid    = null;
-    private String              dllink  = null;
-    private int                 chunks  = 0;
-    private boolean             resumes = true;
-    private boolean             isFree  = true;
+    private static AtomicBoolean useAPI  = new AtomicBoolean(true);
+    private String               fuid    = null;
+    private String               dllink  = null;
+    private int                  chunks  = 0;
+    private boolean              resumes = true;
+    private boolean              isFree  = true;
 
     private void setConstants(final Account account, final boolean trafficShare) {
         if (trafficShare) {
@@ -1123,7 +1123,7 @@ public class FileFactory extends PluginForHost {
             }
             getPage(br, getApi() + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
             if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":701")) {
-                // {"type":"error","message":"Error generating download link.  Please try again","code":701}
+                // {"type":"error","message":"Error generating download link. Please try again","code":701}
                 // TODO: remove this when retry count comes back!
                 int r = downloadLink.getIntegerProperty("retry_701", 0);
                 if (r == 4) {
@@ -1231,7 +1231,7 @@ public class FileFactory extends PluginForHost {
             checkErrors(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             // this shouldn't happen anymore!
             br.followConnection();
@@ -1254,7 +1254,7 @@ public class FileFactory extends PluginForHost {
         synchronized (apiAccLock) {
             final Browser nbr = new Browser();
             prepApiBrowser(nbr);
-            nbr.getPage(getApi() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            nbr.getPage(getApi() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
             final String apiKey = PluginJSonUtils.getJsonValue(nbr, "key");
             if (apiKey != null) {
                 account.setProperty("apiKey", apiKey);
@@ -1413,7 +1413,7 @@ public class FileFactory extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -1437,7 +1437,7 @@ public class FileFactory extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
