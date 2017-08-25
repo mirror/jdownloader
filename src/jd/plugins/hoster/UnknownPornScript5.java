@@ -196,7 +196,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             * 
+             *
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
@@ -216,7 +216,7 @@ public class UnknownPornScript5 extends PluginForHost {
              * E.g. kt_player + jwplayer (can also be KernelVideoSharingCom), example: xfig.net[dedicated plugin], cliplips.com)<br />
              * Important: Do not pickup the slash at the end!
              */
-            dllink = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*)/?\";").getMatch(0);
+            dllink = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*?)/?\";").getMatch(0);
         }
         if (inValidateDllink(dllink)) {
             /* Check for multiple videoqualities --> Find highest quality */
