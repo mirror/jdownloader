@@ -63,7 +63,7 @@ import jd.utils.RazStringBuilder;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.(?:com|ch)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
 public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
 
     public KisAmeCm(PluginWrapper wrapper) {
@@ -100,7 +100,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final HostType hostType = HostType.parse(param.toString());
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("asian.com/", "asain.ch/");
         final KissanimeToConfig pc = PluginJsonConfig.get(KissanimeToConfig.class);
         if (pc == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "User has no config!");
