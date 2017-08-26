@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.AbortException;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,9 +30,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
+import org.jdownloader.plugins.components.AbortException;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
 public class MirrorCreatorCom extends PluginForDecrypt {
-
     private String                  userAgent      = null;
     private ArrayList<DownloadLink> decryptedLinks = null;
     private FilePackage             fp             = null;
@@ -58,7 +56,6 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", userAgent);
             final String parameter = "https://www.mirrorcreator.com/download.php?uid=" + uid;
             param.setCryptedUrl(parameter);
-
             br.setFollowRedirects(true);
             br.getPage(parameter);
             br.setFollowRedirects(false);
@@ -101,6 +98,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             // lots of forms
             final Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);
             if (forms != null && forms.length > 0) {
+                logger.info("Found " + forms.length + " links");
                 for (final Form form : forms) {
                     final Browser br2 = br.cloneBrowser();
                     br2.submitForm(form);
@@ -150,11 +148,12 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         final String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
         if (redirectLinks == null || redirectLinks.length == 0) {
             // not redirects but final download link in html.
-            String finallink = br2.getRegex("<a href=([^ ]+) TARGET='_blank'").getMatch(0);
+            String finallink = br2.getRegex("<a href=(http[^ ]+) TARGET='_blank'>Your").getMatch(0);
             if (finallink == null) {
                 finallink = br2.getRegex("<div class=\"highlight redirecturl\">(.*?)</div>").getMatch(0);
             }
             if (finallink != null) {
+                logger.info("Creating download link for " + finallink);
                 final DownloadLink dl = createDownloadlink(finallink);
                 if (fp != null) {
                     fp.add(dl);
@@ -206,5 +205,4 @@ public class MirrorCreatorCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
