@@ -26,19 +26,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
-import org.jdownloader.plugins.components.RefreshSessionLink;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -58,6 +45,19 @@ import jd.plugins.PluginException;
 import jd.utils.JDHexUtils;
 import jd.utils.RazStringBuilder;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
+import org.jdownloader.plugins.components.RefreshSessionLink;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 /**
  *
  *
@@ -65,7 +65,6 @@ import jd.utils.RazStringBuilder;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.(?:com|ch)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
 public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
-
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,7 +80,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         KISS_CARTOON,
         KISS_MANGA,
         KISS_UNKNOWN;
-
         private static HostType parse(final String link) {
             if (StringUtils.containsIgnoreCase(link, "kissanime")) {
                 return KISS_ANIME;
@@ -100,7 +98,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final HostType hostType = HostType.parse(param.toString());
-        final String parameter = param.toString().replace("asian.com/", "asain.ch/");
+        final String parameter = param.toString().replace("asian.com/", "asian.ch/");
         final KissanimeToConfig pc = PluginJsonConfig.get(KissanimeToConfig.class);
         if (pc == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "User has no config!");
