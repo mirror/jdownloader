@@ -54,7 +54,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -249,9 +249,7 @@ public abstract class K2SApi extends PluginForHost {
         }
         if (useRUA()) {
             if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+                agent.set(UserAgents.stringUserAgent());
             }
             prepBr.getHeaders().put("User-Agent", agent.get());
         }
@@ -569,7 +567,7 @@ public abstract class K2SApi extends PluginForHost {
              * @author raztoki
              */
             @Override
-            public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
+            public URLConnectionAdapter openPostConnection(final String url, final String post) throws Exception {
                 return this.openRequestConnection(this.createPostRawRequest(url, post));
             }
 
@@ -766,7 +764,7 @@ public abstract class K2SApi extends PluginForHost {
     private boolean sessionTokenInvalid(final Account account, final Browser ibr) {
         final String status = PluginJSonUtils.getJsonValue(ibr, "status");
         final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
-        if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode)) || ("11".equalsIgnoreCase(errorCode)) || ("75".equalsIgnoreCase(errorCode))) {
+        if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode) || "11".equalsIgnoreCase(errorCode) || "75".equalsIgnoreCase(errorCode))) {
             // expired sessionToken
             dumpAuthToken(account);
             authTokenFail++;
