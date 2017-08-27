@@ -19,6 +19,10 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,10 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  *
@@ -69,9 +69,20 @@ public class FileBoomMe extends K2SApi {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        // keep2.cc no dns
+        return new String[] { "fileboom.me", "fboom.me" };
+    }
+
+    @Override
     public String rewriteHost(String host) {
-        if (host == null || "fileboom.me".equals(host) || "fboom.me".equals(host)) {
+        if (host == null) {
             return "fileboom.me";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "fileboom.me";
+            }
         }
         return super.rewriteHost(host);
     }
@@ -150,7 +161,7 @@ public class FileBoomMe extends K2SApi {
         }
         correctDownloadLink(link);
         this.setBrowserExclusive();
-        super.prepBrowserForWebsite(this.br);
+        super.prepBrowserForWebsite(br);
         getPage(link.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -189,7 +200,7 @@ public class FileBoomMe extends K2SApi {
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached final link!");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.info("Refresh final link");
                 dllink = null;
@@ -217,36 +228,7 @@ public class FileBoomMe extends K2SApi {
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 postPage(br.getURL(), "slow_id=" + id);
-                if (br.containsHTML("Free user can't download large files")) {
-                    premiumDownloadRestriction("This file can only be downloaded by premium users");
-                } else if (br.containsHTML(freeAccConLimit)) {
-                    // could be shared network or a download hasn't timed out yet or user downloading in another program?
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
-                }
-                if (br.containsHTML(">Downloading is not possible<")) {
-                    final Regex waittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this");
-                    String tmphrs = waittime.getMatch(0);
-                    String tmpmin = waittime.getMatch(1);
-                    String tmpsec = waittime.getMatch(2);
-                    if (tmphrs == null && tmpmin == null && tmpsec == null) {
-                        logger.info("Waittime regexes seem to be broken");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                    } else {
-                        int minutes = 0, seconds = 0, hours = 0;
-                        if (tmphrs != null) {
-                            hours = Integer.parseInt(tmphrs);
-                        }
-                        if (tmpmin != null) {
-                            minutes = Integer.parseInt(tmpmin);
-                        }
-                        if (tmpsec != null) {
-                            seconds = Integer.parseInt(tmpsec);
-                        }
-                        int totalwaittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, totalwaittime);
-                    }
-                }
+                handleFreeErrors();
                 dllink = getDllink();
                 if (inValidate(dllink)) {
                     final Browser cbr = br.cloneBrowser();
@@ -297,18 +279,15 @@ public class FileBoomMe extends K2SApi {
                     }
                     this.sleep(wait * 1001l, downloadLink);
                     postPage(br.getURL(), "free=1&uniqueId=" + id);
-                    if (br.containsHTML(freeAccConLimit)) {
-                        // could be shared network or a download hasn't timed out yet or user downloading in another program?
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
-                    }
                     dllink = getDllink();
                     if (inValidate(dllink)) {
+                        handleFreeErrors();
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
             }
             logger.info("dllink = " + dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
@@ -318,7 +297,7 @@ public class FileBoomMe extends K2SApi {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dllink = dllink.replace("\\", "");
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
                 if (!isValidDownloadConnection(dl.getConnection())) {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     logger.warning("The final dllink seems not to be a file!");
@@ -339,6 +318,40 @@ public class FileBoomMe extends K2SApi {
         }
     }
 
+    private void handleFreeErrors() throws PluginException {
+        if (br.containsHTML(freeAccConLimit)) {
+            // could be shared network or a download hasn't timed out yet or user downloading in another program?
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 1 * 60 * 60 * 1001);
+        }
+        if (br.containsHTML("\">Downloading is not possible<")) {
+            int hours = 0, minutes = 0, seconds = 0;
+            final Regex waitregex = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this file");
+            final String hrs = waitregex.getMatch(0);
+            if (hrs != null) {
+                hours = Integer.parseInt(hrs);
+            }
+            final String mins = waitregex.getMatch(1);
+            if (mins != null) {
+                minutes = Integer.parseInt(mins);
+            }
+            final String secs = waitregex.getMatch(2);
+            if (secs != null) {
+                seconds = Integer.parseInt(secs);
+            }
+            final long totalwait = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000l) + (seconds * 1000l);
+            if (totalwait > 0) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalwait + 10000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        if (br.containsHTML("Free user can't download large files")) {
+            premiumDownloadRestriction("This file can only be downloaded by premium users");
+        }
+        if (br.containsHTML("\\s*At the moment all free slots are busy, try later\\.<br>")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+        }
+    }
+
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (ACCLOCK) {
             try {
@@ -346,7 +359,7 @@ public class FileBoomMe extends K2SApi {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* 2017-04-25: Always check cookies here */
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()));
                     if (br.containsHTML("/auth/logout")) {
                         login = false;
@@ -372,7 +385,7 @@ public class FileBoomMe extends K2SApi {
                         }
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -454,9 +467,9 @@ public class FileBoomMe extends K2SApi {
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();
-                if (inValidate(dllink) && this.br.toString().startsWith("{")) {
+                if (inValidate(dllink) && br.toString().startsWith("{")) {
                     /* 2017-04-27: Strange - accessing just the downloadurl in premium mode, the website returns json (sometimes?). */
-                    dllink = PluginJSonUtils.getJson(this.br, "url");
+                    dllink = PluginJSonUtils.getJson(br, "url");
                 }
                 if (inValidate(dllink)) {
                     /* Maybe user has direct downloads disabled */
@@ -466,7 +479,7 @@ public class FileBoomMe extends K2SApi {
                     }
                 }
                 logger.info("dllink = " + dllink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
                 if (!isValidDownloadConnection(dl.getConnection())) {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
@@ -480,7 +493,7 @@ public class FileBoomMe extends K2SApi {
                         handleGeneralServerErrors(account, link);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
                     if (!isValidDownloadConnection(dl.getConnection())) {
                         dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                         logger.warning("The final dllink seems not to be a file!");
