@@ -99,7 +99,7 @@ public class SolidFilesCom extends PluginForHost {
         }
         if (filesize == null) {
             /* 2017-03-21 */
-            filesize = br.getRegex("</copy\\-button>([^<>\"]*?) \\-").getMatch(0);
+            filesize = br.getRegex("</copy-button>([^<>\"]*?) -").getMatch(0);
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -108,7 +108,7 @@ public class SolidFilesCom extends PluginForHost {
     }
 
     private void isOffline(boolean isDownload) throws PluginException {
-        if ((!isDownload && br.getURL().contains("/error/")) || br.containsHTML(">404<|>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled|The file you are trying to download has|>File not available|This file/folder has been disabled") || br.getHttpConnection().getResponseCode() == 404) {
+        if ((!isDownload && br.getURL().contains("/error/")) || br.containsHTML(">404<|>Not found<|>We couldn't find the file you requested|Access to this file was disabled|The file you are trying to download has|>File not available|This file/folder has been disabled") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
@@ -120,12 +120,12 @@ public class SolidFilesCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception {
-        if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet")) {
+        if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet|>\\s*We're preparing your download, please wait\\.{3}\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null && downloadLink.getBooleanProperty("directDownload", false)) {
-            // directdownload...
+            // direct download...
             dllink = downloadLink.getDownloadURL();
         }
         if (dllink == null) {
@@ -155,8 +155,8 @@ public class SolidFilesCom extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, br.getURL());
         try {
-            if (!this.dl.startDownload()) {
-                if (this.dl.externalDownloadStop()) {
+            if (!dl.startDownload()) {
+                if (dl.externalDownloadStop()) {
                     return;
                 }
             }
@@ -265,7 +265,6 @@ public class SolidFilesCom extends PluginForHost {
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
         } else {
             /* TODO: Add expire date */
             // final String expire = null;
@@ -275,7 +274,6 @@ public class SolidFilesCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
         }
         account.setValid(true);
         return ai;
