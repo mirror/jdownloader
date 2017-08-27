@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -61,7 +62,7 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         } else if ("protect-video.com".equals(getHost())) {
             getPage("/embed/embed.php?id=" + fid);
         }
-        final String finallink = getLink(getPacked());
+        final String finallink = getPacked();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
@@ -74,21 +75,29 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
         final ScriptEngine engine = manager.getEngineByName("javascript");
-        String result = null;
         try {
             engine.eval("var res = " + js + ";");
-            result = (String) engine.get("res");
+            final String result = (String) engine.get("res");
+            if (result == null) {
+                return null;
+            }
+            final String win = getLink(result);
+            if (win == null || !win.matches("\\w+")) {
+                return win;
+            }
+            String var = new Regex(result, "var " + Pattern.quote(win) + "\\s*=\\s*('|\"|)(.*?)\\1;?").getMatch(1);
+            return var;
         } catch (final Exception e) {
             e.printStackTrace();
         }
-        return result;
+        return null;
     }
 
     private String getLink(final String result) {
         if (result == null) {
             return null;
         }
-        final String finallink = new Regex(result, "window\\.location\\.replace\\(('|\")(.*?)\\1\\);").getMatch(1);
+        final String finallink = new Regex(result, "window\\.location\\.replace\\(('|\"|)(.*?)\\1\\);?").getMatch(1);
         return finallink;
     }
 }
