@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -48,7 +46,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -61,12 +58,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "https?://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|kilofile\\.com|twobit\\.ru|forum\\.flacmania\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" })
 public class TurboBitNet extends PluginForHost {
+
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "ifolder.com.ua", "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru" };
@@ -439,7 +438,7 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         boolean waited = false;
-        int tt = getPreDownloadWaittime(this.br, 220);
+        int tt = getPreDownloadWaittime(br, 220);
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
             tt = tt < realWait ? tt : realWait;
@@ -456,88 +455,21 @@ public class TurboBitNet extends PluginForHost {
             }
             waited = true;
         }
-        final boolean use_js = false;
-        if (use_js) {
-            final Browser tOut = br.cloneBrowser();
-            final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
-            tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
-            final String fun = escape(tOut.toString());
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            // realtime update
-            String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
-            final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
-            int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
-            if (isUpdateNeeded || rtUpdate == null) {
-                final Browser rt = new Browser();
-                try {
-                    rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
-                    rtUpdate = JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(rtUpdate.split("[\r\n]+")[1]));
-                    getPluginConfig().setProperty("rtupdate", rtUpdate);
-                } catch (Throwable e) {
-                }
-                getPluginConfig().setProperty("isUpdateNeeded", false);
-                getPluginConfig().setProperty("attemps", attemps++);
-                getPluginConfig().save();
-            }
-            String res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 666);
-            if (res == null || res != null && !res.matches(tb(10))) {
-                res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 100);
-                if (new Regex(res, "/~ID~/").matches()) {
-                    res = res.replaceAll("/~ID~/", id);
-                }
-            }
-            if (res != null && res.matches(tb(10))) {
-                sleep(tt * 1001, downloadLink);
-                // Wed Jun 13 12:29:47 UTC 0200 2012
-                SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
-                Date date = new Date();
-                br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
-                br.getPage(res);
-                downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
-                if (downloadUrl != null) {
-                    downloadUrl = downloadUrl.replaceAll(MAINPAGE, "");
-                    if (downloadUrl.equals("/download/free/" + id)) {
-                        downloadUrl = null;
-                    }
-                }
-                if (downloadUrl == null) {
-                    downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + id + ")").getMatch(0);
-                    if (downloadUrl == null) {
-                        downloadUrl = br.getRegex("<a href=\'([^\']+)").getMatch(0);
-                    }
-                }
-            }
-            if (downloadUrl == null) {
-                getPluginConfig().setProperty("isUpdateNeeded", true);
-                if (br.containsHTML("The file is not avaliable now because of technical problems")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
-                }
-                if (attemps > 1) {
-                    getPluginConfig().setProperty("isUpdateNeeded", false);
-                    getPluginConfig().setProperty("attemps", 1);
-                    getPluginConfig().save();
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } else {
-            String continueLink = br.getRegex("\\$\\('#timeoutBox'\\)\\.load\\(\"(/[^\"]+)\"\\);").getMatch(0);
-            if (continueLink == null) {
-                continueLink = "/download/getLinkTimeout/" + id;
-            }
-            if (!waited) {
-                this.sleep(tt * 1001l, downloadLink);
-            }
-            final Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.getPage(continueLink);
-            downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
-            if (downloadUrl == null) {
-                handleDownloadRedirectErrors(br2);
-            }
-            br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
+        String continueLink = br.getRegex("\\$\\('#timeoutBox'\\)\\.load\\(\"(/[^\"]+)\"\\);").getMatch(0);
+        if (continueLink == null) {
+            continueLink = "/download/getLinkTimeout/" + id;
         }
+        if (!waited) {
+            this.sleep(tt * 1001l, downloadLink);
+        }
+        final Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getPage(continueLink);
+        downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
+        if (downloadUrl == null) {
+            handleDownloadRedirectErrors(br2);
+        }
+        br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
         br.setFollowRedirects(false);
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
@@ -547,28 +479,7 @@ public class TurboBitNet extends PluginForHost {
         if (md5sum != null) {
             downloadLink.setMD5Hash(md5sum);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadUrl, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (dl.getConnection().getResponseCode() == 403 || br.getURL().contains("error/download/ip")) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            if (br.containsHTML("Try to download it once again after")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
-        }
+        initDownload(DownloadType.GUEST_FREE, downloadLink, downloadUrl, true);
         handleServerErrors();
         dl.startDownload();
     }
@@ -672,7 +583,6 @@ public class TurboBitNet extends PluginForHost {
             }
             logger.info(NICE_HOST + ": unknown_dl_error_premium");
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "unknown_dl_error_premium", 0);
-            link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
                 link.setProperty(NICE_HOSTproperty + "unknown_dl_error_premium", timesFailed);
@@ -685,79 +595,96 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         br.setFollowRedirects(false);
-        boolean isdllable = false;
-        for (final String currentlink : mirrors) {
-            logger.info("Checking mirror: " + currentlink);
-            br.getPage(currentlink);
-            if (this.br.getHttpConnection().getResponseCode() == 503) {
-                logger.info("Too many connections on current account via current IP");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (br.getRedirectLocation() != null) {
-                dllink = br.getRedirectLocation();
-                if (dllink != null) {
-                    isdllable = isDownloadable(dllink);
-                    if (isdllable) {
-                        logger.info("Mirror is okay: " + currentlink);
-                        break;
-                    } else {
-                        logger.info("Mirror is down: " + currentlink);
+        {
+            Browser br2 = br.cloneBrowser();
+            for (int i = 0; i < mirrors.length; i++) {
+                final String currentlink = mirrors[i];
+                logger.info("Checking mirror: " + currentlink);
+                br.getPage(currentlink);
+                if (br.getHttpConnection().getResponseCode() == 503) {
+                    logger.info("Too many connections on current account via current IP");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                if (br.getRedirectLocation() != null) {
+                    dllink = br.getRedirectLocation();
+                    if (dllink != null) {
+                        final boolean isdllable = initDownload(DownloadType.ACCOUNT_PREMIUM, link, dllink, mirrors.length - 1 == i);
+                        if (isdllable) {
+                            break;
+                        }
+                        br = br2.cloneBrowser();
                     }
                 }
             }
-        }
-        if (!isdllable) {
-            logger.info("Mirror: All mirrors failed -> Server error ");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
         final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
             link.setMD5Hash(md5sum);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                logger.info("No traffic available");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                logger.info("File is offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            br.followConnection();
-            logger.warning("dllink doesn't seem to be a file...");
-            handleGeneralServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         dl.startDownload();
     }
 
-    private boolean isDownloadable(final String directlink) {
-        URLConnectionAdapter con = null;
+    static enum DownloadType {
+        ACCOUNT_PREMIUM,
+        ACCOUNT_FREE,
+        GUEST_FREE,
+        GUEST_PREMIUMLINK;
+    }
+
+    private boolean initDownload(final DownloadType downloadType, final DownloadLink downloadLink, final String directlink, final boolean isLast) throws Exception {
+        boolean result = false;
         try {
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            con = br2.openGetConnection(directlink);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                return false;
+            switch (downloadType) {
+            case ACCOUNT_PREMIUM:
+            case GUEST_PREMIUMLINK:
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), directlink, true, 0);
+                break;
+            default:
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), directlink, true, 1);
+                break;
             }
+            // we require error handling here
+            if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getURL().getPath().startsWith("/error/download/ip")) {
+                // 403 by itself
+                // response code 403 && <p>You have reached the limit of downloads from this IP address, please contact our
+                if (downloadType == DownloadType.ACCOUNT_PREMIUM) {
+                    logger.info("No traffic available");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                // some reason we have different error handling for free.
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
+            }
+            if (dl.getConnection().getResponseCode() == 404) {
+                logger.info("File is offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
+                br.followConnection();
+                handleGeneralServerErrors();
+                if (isLast) {
+                    // existing error handling is broken! there is no more mirrors!
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                return result;
+            }
+            result = true;
+            return result;
         } catch (final Exception e) {
-            return false;
+            // on last mirror we should throw proper exception.
+            if (isLast) {
+                throw e;
+            }
+            e.printStackTrace();
+            return result;
         } finally {
             try {
-                con.disconnect();
+                if (!result) {
+                    dl.getConnection().disconnect();
+                }
             } catch (final Throwable t) {
             }
+            logger.info("Mirror is " + (result ? "okay: " : "down: ") + directlink);
         }
-        return true;
     }
 
     public void handlePremiumLink(final DownloadLink link) throws Exception {
@@ -793,46 +720,21 @@ public class TurboBitNet extends PluginForHost {
                 handleDownloadRedirectErrors(br);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                logger.info("No traffic available");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                logger.info("File is offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            br.followConnection();
-            logger.warning("dllink doesn't seem to be a file...");
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
-            }
-            handleGeneralServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        initDownload(DownloadType.GUEST_PREMIUMLINK, link, dllink, true);
         handleServerErrors();
         dl.startDownload();
     }
 
     private void handleGeneralServerErrors() throws PluginException {
-        if (br.containsHTML("<h1>404 Not Found</h1>") || br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-        }
         if (br.containsHTML("Try to download it once again after")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l);
         }
         /* Either user waited too long for the captcha or maybe slow servers */
         if (br.containsHTML(">Ссылка просрочена\\. Пожалуйста получите")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 5 * 60 * 1000l);
+        }
+        if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
         }
     }
 
@@ -852,9 +754,7 @@ public class TurboBitNet extends PluginForHost {
     private Browser prepBrowser(final Browser prepBr, String UA) {
         // br.setCookie(MAINPAGE, "JD", "1");
         if (UA == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            userAgent.set(UserAgents.stringUserAgent());
             UA = userAgent.get();
         }
         prepBr.getHeaders().put("Pragma", null);
@@ -935,7 +835,7 @@ public class TurboBitNet extends PluginForHost {
                         br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                     }
                 }
-                universalLoginErrorhandling(this.br);
+                universalLoginErrorhandling(br);
                 if (!"1".equals(br.getCookie(MAINPAGE, "user_isloggedin"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite und deaktiviere, den Login Captcha Schutz deines Accounts und versuche es erneut: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1168,6 +1068,7 @@ public class TurboBitNet extends PluginForHost {
             if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") && !correctedLink.contains("'")) {
                 if (dupe.add(correctedLink)) {
                     final Thread simulate = new Thread("SimulateBrowser") {
+
                         public void run() {
                             final Browser rb = br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
