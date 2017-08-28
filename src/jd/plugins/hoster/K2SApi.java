@@ -465,9 +465,9 @@ public abstract class K2SApi extends PluginForHost {
                     long passedTimeSinceLastDl = 0;
                     logger.info("New Download: currentIP = " + currentIP.get());
                     /*
-                     * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts
-                     * if he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
-                     * download using the same free accounts after performing a reconnect!
+                     * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he tries to start
+                     * more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download using the same free accounts
+                     * after performing a reconnect!
                      */
                     lastdownload = getPluginSavedLastDownloadTimestamp();
                     passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
@@ -567,7 +567,7 @@ public abstract class K2SApi extends PluginForHost {
              * @author raztoki
              */
             @Override
-            public URLConnectionAdapter openPostConnection(final String url, final String post) throws Exception {
+            public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
                 return this.openRequestConnection(this.createPostRawRequest(url, post));
             }
 
@@ -1327,8 +1327,8 @@ public abstract class K2SApi extends PluginForHost {
      **/
     protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
