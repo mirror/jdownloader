@@ -453,12 +453,21 @@ public class ScriptEnvironment {
         }
     }
 
-    @ScriptAPI(description = "Get ab Environment Object")
+    @ScriptAPI(description = "Gets the value of the specified environment variable", parameters = { "environment variable" })
+    public static String getEnv(final String variable) throws EnvironmentException {
+        try {
+            return System.getenv(variable);
+        } catch (SecurityException e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @ScriptAPI(description = "Get an Environment Object")
     public static EnvironmentSandbox getEnvironment() throws EnvironmentException {
         return new EnvironmentSandbox();
     }
 
-    @ScriptAPI(description = "Get ab Environment Object")
+    @ScriptAPI(description = "Get an Environment Object")
     public static BrowserSandBox getBrowser() throws EnvironmentException {
         askForPermission("load resources from the internet");
         return new BrowserSandBox();

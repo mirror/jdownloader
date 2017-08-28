@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhd.com" }, urls = { "https?://(?:www\\.)?pornhd\\.com/(videos/\\d+/[^/]+|video/embed/\\d+)" })
 public class PornhdCom extends PluginForHost {
-
     public PornhdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,12 +42,10 @@ public class PornhdCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other: 2016-04-15: Limited chunks to 1 as tester Guardao reported that anything over 5 chunks would cause issues
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private String               fid               = null;
 
@@ -79,9 +75,9 @@ public class PornhdCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(this.br.getURL(), "/\\d+/([^/]+)$").getMatch(0);
         }
-        final String[] qualities = { "1080p", "720p", "480p", "240p" };
+        final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         for (final String quality : qualities) {
-            dllink = br.getRegex("\\'" + quality + "\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("(?:\\'|\")" + quality + "(?:\\'|\")[\t\n\r ]*?:[\t\n\r ]*?(?:\\'|\")(https?[^<>\"]*?)(?:\\'|\")").getMatch(0);
             if (dllink != null) {
                 break;
             }
@@ -89,7 +85,7 @@ public class PornhdCom extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        dllink = Encoding.htmlDecode(dllink).replaceAll("\\\\", "");
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
