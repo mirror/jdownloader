@@ -155,7 +155,7 @@ public class UsersCloudCom extends PluginForHost {
             }
         }
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|>This could be due to the following reasons)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|>This could be due to the following reasons|<Title>Userscloud)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("File Server Problem")) {
             /* 2016-11-11 e.g.: "<Center>File Server Problem, Please Re-Upload the file.." */
