@@ -12,6 +12,7 @@ import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -29,7 +30,9 @@ import javax.xml.transform.stream.StreamResult;
 import jd.config.SubConfiguration;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Base64;
@@ -60,10 +63,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class D extends PluginsC {
-
     private byte[]                  b3;
     private byte[]                  d;
-
     private HashMap<String, String> header;
 
     public D() {
@@ -90,7 +91,6 @@ public class D extends PluginsC {
     public ContainerStatus callDecryption(File d) {
         ContainerStatus cs = new ContainerStatus(d);
         cs.setStatus(ContainerStatus.STATUS_FAILED);
-
         String a = null;
         try {
             a = b(d).trim();
@@ -108,32 +108,25 @@ public class D extends PluginsC {
         // }
         String ee = "";
         if (a.length() < 100) {
-
             UserIO.getInstance().requestMessageDialog(JDL.L("sys.warning.dlcerror_nocld_small", "Invalid DLC: less than 100 bytes. This cannot be a DLC"));
             cs.setStatusText(JDL.L("sys.warning.dlcerror_nocld_small", "Invalid DLC: less than 100 bytes. This cannot be a DLC"));
             return cs;
-
         }
-
         String a0 = a.substring(a.length() - 88).trim();
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(dlcString);
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(key + " - " + key.length());
         a = a.substring(0, a.length() - 88).trim();
-
         if (Encoding.filterString(a, "1234567890QAWSEDRFTGZHUJIKOLPMNBVCXY+/=qaywsxedcrfvtgbzhnujmikolp\r\n").length() != a.length()) {
-
             UserIO.getInstance().requestMessageDialog(JDL.L("sys.warning.dlcerror_invalid", "It seems that your dlc is not valid."));
             cs.setStatusText(JDL.L("sys.warning.dlcerror_invalid", "It seems that your dlc is not valid."));
             return cs;
         }
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(dlcString);
         java.util.List<URL> s1;
-
         try {
             s1 = new ArrayList<URL>();
             s1.add(0, new URL("http://service.jdownloader.org/dlcrypt/service.php"));
             Iterator<URL> it = s1.iterator();
-
             while (it.hasNext()) {
                 String x = null;
                 URL s2 = it.next();
@@ -148,25 +141,20 @@ public class D extends PluginsC {
                             logger.severe("You recently opened to many DLCs. Please wait a few minutes.");
                             ee += "DLC Limit reached." + " ";
                             continue;
-
                         }
                         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Dec key "+decodedKey);
                         if (x == null) {
                             logger.severe("DLC Error(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_key", "DLC: Key Fehler") + " ";
-
                             continue;
                         }
                         // JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_INTERACTION_CALL, this);
-
                         p = dsk(x);
-
                         // String test = dsk("8dEAMOh4EcaP8QgExlHZRNeCYL9EzB3cGJIdDG2prCE=");
                         p = filterString(p);
                         if (p.length() != 16) {
                             logger.severe("DLC Error2(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler(1) ") + " ";
-
                             continue;
                         }
                         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("PLAIN KEY: " + plain);
@@ -176,10 +164,8 @@ public class D extends PluginsC {
                     String dds1 = d5(a, p);
                     dds1 = fds(dds1);
                     if (dds1 == null) {
-
                         logger.severe("DLC Error(xml): " + s2);
                         ee += s2 + "" + JDL.L("sys.warning.dlcerror_xml", "DLC: XML Fehler ") + " ";
-
                         continue;
                     }
                     dds1 = filterString(dds1);
@@ -189,10 +175,8 @@ public class D extends PluginsC {
                     k = p.getBytes();
                     cs.setStatus(ContainerStatus.STATUS_FINISHED);
                     return cs;
-
                 } catch (NoSuchAlgorithmException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_java", "DLC: Outdated Javaversion ") + e.getMessage() + " ";
-
                 } catch (MalformedURLException e) {
                     // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
                     // occured",e);
@@ -201,30 +185,23 @@ public class D extends PluginsC {
                     // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
                     // occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_io", "DLC: Server Fehler(offline? ") + e.getMessage() + " ";
-
                 } catch (SAXException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (1) ") + " ";
-
                     // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
                     // occured",e);
                 } catch (ParserConfigurationException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (2)") + " ";
                     // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception
                     // occured",e);
-                }
-
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_unknown", "DLC Fehler: ") + e.getMessage() + " ";
-
                     logger.log(e);
                 }
             }
         } catch (Exception e) {
             ee += "URL Fehler " + e.getMessage() + "  ";
-
         }
-
         cs.setStatusText(JDL.L("sys.warning.dlcerror.server2", "Server claims: ") + " " + ee);
         return cs;
     }
@@ -318,7 +295,6 @@ public class D extends PluginsC {
     // return cs;
     // }
     // }
-
     // private String cs2(String s, String m) throws IOException {
     //
     // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Call " + s);
@@ -329,7 +305,6 @@ public class D extends PluginsC {
     // return new Regex(rk, "<rc>(.*)</rc>").getMatch(0);
     //
     // }
-
     // //@Override
     public String[] encrypt(String p0) {
         String b = Encoding.Base64Encode(p0);
@@ -346,22 +321,17 @@ public class D extends PluginsC {
             // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("ENcode " + base64);
             IvParameterSpec ivSpec = new IvParameterSpec(k);
             SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
-
             Cipher cipher;
-
             cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
             byte[] ogl = cipher.doFinal(b.getBytes());
             return new String[] { Base64.encodeToString(ogl, false), rk };
             // return new BASE64Encoder().encode(original);
         } catch (Exception e) {
-
             logger.log(e);
             logger.severe("DLC encryption failed (5)");
             return null;
-
         }
-
     }
 
     // //@Override
@@ -401,11 +371,9 @@ public class D extends PluginsC {
             logger.finer("Call " + s9);
             Browser br = new Browser();
             br.getHeaders().put("rev", JDUtilities.getRevision());
-
             //
             UrlQuery qi = new UrlQuery().addAndReplace("destType", "jdtc6").addAndReplace("b", Encoding.urlEncode(UpdateController.getInstance().getAppID())).addAndReplace("srcType", "dlc").addAndReplace("data", Encoding.urlEncode(bin)).addAndReplace("v", JDUtilities.getRevision());
             br.postPage(s9 + "", qi);
-
             // 3f69b642cc403506ff1ee7f22b23ce40
             // new byte[]{(byte) 0xef, (byte) 0xe9, (byte) 0x0a, (byte) 0x8e,
             // (byte)
@@ -413,7 +381,6 @@ public class D extends PluginsC {
             // 0x88, (byte) 0xd0, (byte) 0x3a, (byte) 0x67, (byte) 0xf6, (byte)
             // 0xb7, (byte) 0xd8};
             // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info( ri.getHtmlCode());
-
             // a7b3b706e3cf3770931f081926ed0d95
             if (!br.getHttpConnection().isOK() || !br.containsHTML("rc")) {
                 if (i > 3) {
@@ -422,11 +389,9 @@ public class D extends PluginsC {
             } else {
                 String dk = br + "";
                 String ret = new Regex(dk, "<rc>(.*)</rc>").getMatch(0);
-
                 return ret;
             }
         }
-
     }
 
     private String dsk(String dk9) throws Exception, NoSuchAlgorithmException {
@@ -435,7 +400,6 @@ public class D extends PluginsC {
         @SuppressWarnings("unused")
         String key = JDHexUtils.getHexString(k);
         String str = dk9;
-
         byte[] j = Base64.decode(str);
         SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
         Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
@@ -443,7 +407,6 @@ public class D extends PluginsC {
         byte[] o = c.doFinal(j);
         /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         return new String(Base64.decode(o)).substring(0, 16);
-
     }
 
     public String d5(String ct, String k7l) {
@@ -451,11 +414,9 @@ public class D extends PluginsC {
         try {
             byte[] input;
             input = Base64.decode(ct);
-
             byte[] k = k7l.getBytes("UTF-8");
             IvParameterSpec ivSpec = new IvParameterSpec(k);
             SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
-
             Cipher pl;
             byte[] opl;
             try {
@@ -476,7 +437,6 @@ public class D extends PluginsC {
         } catch (Exception e) {
             logger.log(e);
         }
-
         if (rte == null || rte.indexOf("<content") < 0) {
             logger.info("Old DLC Version");
             try {
@@ -494,23 +454,17 @@ public class D extends PluginsC {
                     cp = Cipher.getInstance("AES/ECB/PKCS5Padding");
                     cp.init(Cipher.DECRYPT_MODE, skeySpec);
                     gln = cp.doFinal(ii);
-
                 } catch (Exception e) {
                     cp = Cipher.getInstance("AES/ECB/NoPadding");
                     cp.init(Cipher.DECRYPT_MODE, skeySpec);
                     gln = cp.doFinal(ii);
                 }
-
                 String po = new String(Base64.decode(gln));
-
                 rte = po;
             } catch (Exception e) {
                 logger.log(e);
-
                 rte = null;
-
             }
-
         }
         if (rte == null) {
             logger.severe("DLC Decryption failed (3)");
@@ -533,19 +487,14 @@ public class D extends PluginsC {
         /*
          * Original Release Version. In der XMl werden plantexte verwendet
          */
-
         cls = new ArrayList<CrawledLink>();
         CrawledLink nl;
         int c = 0;
         NodeList ps = n.getChildNodes();
-
         for (int pcs = 0; pcs < ps.getLength(); pcs++) {
-
             ps.item(pcs).getAttributes().getNamedItem("name").getNodeValue();
-
             NodeList uls = ps.item(pcs).getChildNodes();
             for (int fc = 0; fc < uls.getLength(); fc++) {
-
                 Node f = uls.item(fc);
                 if (f != null) {
                     NodeList data = f.getChildNodes();
@@ -575,7 +524,6 @@ public class D extends PluginsC {
                     }
                     final String comment = "from Container: " + d + " : " + pc;
                     for (int lcs = 0; lcs < ls.size(); lcs++) {
-
                         // // PluginForHost pHost =
                         // findHostPlugin(links.get(linkCounter));
                         // if (pHost != null) {
@@ -593,15 +541,12 @@ public class D extends PluginsC {
                         nl.setDesiredPackageInfo(dpi);
                         cls.add(nl);
                         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(""+links.get(linkCounter));
-
                         c++;
                         // }
                     }
                 }
-
             }
         }
-
     }
 
     private void pdx2(Node node, File d) throws InstantiationException, IllegalAccessException {
@@ -612,19 +557,14 @@ public class D extends PluginsC {
         CrawledLink nl;
         ;
         int c = 0;
-
         NodeList ps = node.getChildNodes();
-
         for (int pc = 0; pc < ps.getLength(); pc++) {
             if (!ps.item(pc).getNodeName().equals("package")) {
                 continue;
             }
-
             ps.item(pc).getAttributes().getNamedItem("name").getNodeValue();
-
             NodeList uls = ps.item(pc).getChildNodes();
             for (int fc = 0; fc < uls.getLength(); fc++) {
-
                 Node file = uls.item(fc);
                 if (file != null) {
                     NodeList data = file.getChildNodes();
@@ -654,7 +594,6 @@ public class D extends PluginsC {
                     }
                     final String comment = "from Container: " + d + " : " + pc;
                     for (int lc = 0; lc < ls.size(); lc++) {
-
                         // PluginForHost pHost =
                         // findHostPlugin(links.get(linkCounter));
                         // if (pHost != null) {
@@ -674,10 +613,8 @@ public class D extends PluginsC {
                         c++;
                     }
                 }
-
             }
         }
-
     }
 
     private static java.util.List<String> parsePassword(String password) {
@@ -703,12 +640,9 @@ public class D extends PluginsC {
         /*
          * alle inhalte sind base64 verschlüsselt. XML Str5uktur wurde angepasst
          */
-
         logger.info("Parse v3");
         cls = new ArrayList<CrawledLink>();
-
         NodeList ps = node.getChildNodes();
-
         for (int pgs = 0; pgs < ps.getLength(); pgs++) {
             if (!ps.item(pgs).getNodeName().equals("package")) {
                 continue;
@@ -718,12 +652,10 @@ public class D extends PluginsC {
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
             String ca3 = ps.item(pgs).getAttributes().getNamedItem("category") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("category").getNodeValue());
-
             if (pn != null && !"n.A.".equals(pn)) {
                 // n.A. is no good default packageName
                 dpi.setName(LinknameCleaner.cleanFileName(pn, false, true, LinknameCleaner.EXTENSION_SETTINGS.KEEP, false));
             }
-
             if (ca3 != null && ca3.trim().length() > 0) {
                 dpi.setComment("[" + ca3 + "] " + cs2);
             } else {
@@ -731,13 +663,11 @@ public class D extends PluginsC {
             }
             NodeList urls = ps.item(pgs).getChildNodes();
             for (int fileCounter = 0; fileCounter < urls.getLength(); fileCounter++) {
-
                 Node file = urls.item(fileCounter);
                 if (file != null) {
                     NodeList data = file.getChildNodes();
                     java.util.List<String> ls2 = new ArrayList<String>();
                     java.util.List<String> n5 = new ArrayList<String>();
-
                     for (int entry = 0; entry < data.getLength(); entry++) {
                         final String nodeName = data.item(entry).getNodeName();
                         if ("url".equalsIgnoreCase(nodeName)) {
@@ -772,7 +702,6 @@ public class D extends PluginsC {
                                 if (!sls.trim().equals(link.trim())) {
                                     ls2.add(link);
                                 }
-
                             }
                             if (lsr.length > 1) {
                                 logger.severe("DLC Error. Generator Link split Error");
@@ -782,7 +711,6 @@ public class D extends PluginsC {
                             n5.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
                         }
                     }
-
                     while (ls2.size() > n5.size()) {
                         n5.add(null);
                     }
@@ -806,19 +734,15 @@ public class D extends PluginsC {
                         cls.add(nl);
                     }
                 }
-
             }
         }
-
     }
 
     private void pxs(String cs, File dlc) throws SAXException, IOException, ParserConfigurationException, InstantiationException, IllegalAccessException {
-
         DocumentBuilderFactory f;
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(jdtc);
         InputSource is;
         Document doc;
-
         f = DocumentBuilderFactory.newInstance();
         f.setValidating(false);
         // www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet
@@ -835,23 +759,17 @@ public class D extends PluginsC {
             // alt
             is = new InputSource(new StringReader("<dlc>" + cs + "</dlc>"));
         }
-
         doc = f.newDocumentBuilder().parse(is);
         NodeList nodes = doc.getFirstChild().getChildNodes();
         header = new HashMap<String, String>();
         for (int i = 0; i < nodes.getLength(); i++) {
             Node node = nodes.item(i);
-
             if (node.getNodeName().equalsIgnoreCase("header")) {
                 NodeList entries = node.getChildNodes();
-
                 for (int entryCounter = 0; entryCounter < entries.getLength(); entryCounter++) {
-
                     if (entries.item(entryCounter).getNodeName().equalsIgnoreCase("generator")) {
                         NodeList generatorEntries = entries.item(entryCounter).getChildNodes();
-
                         for (int genCounter = 0; genCounter < generatorEntries.getLength(); genCounter++) {
-
                             if (generatorEntries.item(genCounter).getNodeName().equalsIgnoreCase("app")) {
                                 header.put("generator.app", Encoding.Base64Decode(generatorEntries.item(genCounter).getTextContent()));
                             }
@@ -861,12 +779,9 @@ public class D extends PluginsC {
                             if (generatorEntries.item(genCounter).getNodeName().equalsIgnoreCase("url")) {
                                 header.put("generator.url", Encoding.Base64Decode(generatorEntries.item(genCounter).getTextContent()));
                             }
-
                         }
-
                     }
                     if (entries.item(entryCounter).getNodeName().equalsIgnoreCase("tribute")) {
-
                         NodeList names = entries.item(entryCounter).getChildNodes();
                         String tribute = "";
                         for (int tributeCounter = 0; tributeCounter < names.getLength(); tributeCounter++) {
@@ -876,14 +791,11 @@ public class D extends PluginsC {
                             }
                         }
                         header.put("tribute", tribute);
-
                     }
                     if (entries.item(entryCounter).getNodeName().equalsIgnoreCase("dlcxmlversion")) {
-
                         String dlcXMLVersion = Encoding.Base64Decode(entries.item(entryCounter).getTextContent());
                         header.put("dlcxmlversion", dlcXMLVersion);
                     }
-
                 }
             }
             if (node.getNodeName().equalsIgnoreCase("content")) {
@@ -892,27 +804,20 @@ public class D extends PluginsC {
                     pcx3(node, dlc);
                 } else if (header.containsKey("generator.app") && header.get("generator.app").equals("jDownloader") && header.containsKey("generator.version") && Double.parseDouble(header.get("generator.version")) < 654.0) {
                     pdx1(node, dlc);
-
                 } else {
-
                     pdx2(node, dlc);
-
                 }
-
             }
             // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Header " + header);
         }
-
     }
 
     private byte[] gjdk() {
-
         byte[] k = gk();
         @SuppressWarnings("unused")
         /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         String h = new String(k);
         // doit
-
         return k;
     }
 
@@ -931,16 +836,11 @@ public class D extends PluginsC {
         Transformer transformer;
         try {
             transformer = TransformerFactory.newInstance().newTransformer();
-
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
             // initialize StreamResult with File object to save to file
             StreamResult result = new StreamResult(new StringWriter());
-
             DOMSource source = new DOMSource(header);
-
             transformer.transform(source, result);
-
             String xmlString = result.getWriter().toString();
             return xmlString;
         } catch (Exception e) {
@@ -952,12 +852,10 @@ public class D extends PluginsC {
     public java.util.List<DownloadLink> getPackageFiles(FilePackage filePackage, List<DownloadLink> links) {
         java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
         // ret.add(DownloadLink);
-
         Iterator<DownloadLink> iterator = links.iterator();
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-
             if (filePackage == nextDownloadLink.getFilePackage()) {
                 ret.add(nextDownloadLink);
             }
@@ -965,33 +863,38 @@ public class D extends PluginsC {
         return ret;
     }
 
-    public String createContainerString(List<DownloadLink> links) {
-        HashMap<String, DownloadLink> map = new HashMap<String, DownloadLink>();
-        java.util.List<DownloadLink> filter = new ArrayList<DownloadLink>();
+    protected String createContainerStringByLinks(List<? extends AbstractPackageChildrenNode<?>> links) {
+        final List<AbstractPackageChildrenNode<?>> nodes = new ArrayList<AbstractPackageChildrenNode<?>>(links);
+        final HashSet<String> urls = new HashSet<String>();
         // filter
-        for (DownloadLink l : links) {
-            final String contentURL = l.getContentUrl();
+        final Iterator<? extends AbstractPackageChildrenNode<?>> it = nodes.iterator();
+        while (it.hasNext()) {
+            final AbstractPackageChildrenNode<?> node = it.next();
+            final DownloadLink downloadLink;
+            if (node instanceof DownloadLink) {
+                downloadLink = (DownloadLink) node;
+            } else if (node instanceof CrawledLink) {
+                downloadLink = ((CrawledLink) node).getDownloadLink();
+            } else {
+                it.remove();
+                continue;
+            }
+            final String contentURL = downloadLink.getContentUrl();
             final String url;
             if (contentURL != null) {
                 url = contentURL;
             } else {
-                url = l.getPluginPatternMatcher();
+                url = downloadLink.getPluginPatternMatcher();
             }
-
-            if (url == null) {
+            if (url == null || !urls.add(url)) {
+                it.remove();
                 continue;
             }
-            if (!map.containsKey(url)) {
-                filter.add(l);
-            }
-            map.put(url, l);
         }
-        links = filter;
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         SubConfiguration cfg = SubConfiguration.getConfig("DLCCONFIG");
         InputSource inSourceHeader = new InputSource(new StringReader("<header><generator><app></app><version/><url></url></generator><tribute/><dlcxmlversion/></header>"));
         InputSource inSourceContent = new InputSource(new StringReader("<content/>"));
-
         try {
             Document content = factory.newDocumentBuilder().parse(inSourceContent);
             Document header = factory.newDocumentBuilder().parse(inSourceHeader);
@@ -1001,90 +904,91 @@ public class D extends PluginsC {
             header_generator_app.appendChild(header.createTextNode(Encoding.Base64Encode("JDownloader")));
             header_generator_version.appendChild(header.createTextNode(Encoding.Base64Encode(JDUtilities.getRevision())));
             header_generator_url.appendChild(header.createTextNode(Encoding.Base64Encode("http://jdownloader.org")));
-
             Node header_tribute = header.getFirstChild().getChildNodes().item(1);
-
             if (cfg.getBooleanProperty("ASK_ADD_INFOS", false)) {
                 Element element = header.createElement("name");
                 header_tribute.appendChild(element);
-
                 element.appendChild(header.createTextNode(Encoding.Base64Encode(UserIO.getInstance().requestInputDialog("Uploader Name"))));
-
             }
             if (cfg.getStringProperty("UPLOADERNAME", null) != null && cfg.getStringProperty("UPLOADERNAME", null).trim().length() > 0) {
                 Element element = header.createElement("name");
                 header_tribute.appendChild(element);
                 element.appendChild(header.createTextNode(Encoding.Base64Encode(cfg.getStringProperty("UPLOADERNAME", null))));
-
             }
             Node header_dlxxmlversion = header.getFirstChild().getChildNodes().item(2);
-
             header_dlxxmlversion.appendChild(header.createTextNode(Encoding.Base64Encode("20_02_2008")));
-
-            java.util.List<FilePackage> packages = new ArrayList<FilePackage>();
-
-            for (int i = 0; i < links.size(); i++) {
-                if (!packages.contains(links.get(i).getFilePackage())) {
-                    packages.add(links.get(i).getFilePackage());
+            final List<Object> packages = new ArrayList<Object>();
+            final HashMap<Object, List<AbstractPackageChildrenNode>> packageNodesMap = new HashMap<Object, List<AbstractPackageChildrenNode>>();
+            for (int i = 0; i < nodes.size(); i++) {
+                if (!packages.contains(nodes.get(i).getParentNode())) {
+                    packages.add(nodes.get(i).getParentNode());
                 }
+                List<AbstractPackageChildrenNode> list = packageNodesMap.get(nodes.get(i).getParentNode());
+                if (list == null) {
+                    list = new ArrayList<AbstractPackageChildrenNode>();
+                    packageNodesMap.put(nodes.get(i).getParentNode(), list);
+                }
+                list.add(nodes.get(i));
             }
-
-            for (int i = 0; i < packages.size(); i++) {
-                Element FilePackage = content.createElement("package");
-                if (packages.get(i) == null) {
-                    FilePackage.setAttribute("name", Encoding.Base64Encode("various"));
+            for (final Object pkg : packages) {
+                final Element pkgElement = content.createElement("package");
+                if (pkg == null) {
+                    pkgElement.setAttribute("name", Encoding.Base64Encode("various"));
                 } else {
-                    FilePackage.setAttribute("name", Encoding.Base64Encode(packages.get(i).getName()));
-                    FilePackage.setAttribute("comment", Encoding.Base64Encode(packages.get(i).getComment()));
+                    final String name;
+                    final String comment;
+                    if (pkg instanceof CrawledPackage) {
+                        name = ((CrawledPackage) pkg).getName();
+                        comment = ((CrawledPackage) pkg).getComment();
+                    } else if (pkg instanceof FilePackage) {
+                        name = ((FilePackage) pkg).getName();
+                        comment = ((FilePackage) pkg).getComment();
+                    } else {
+                        continue;
+                    }
+                    pkgElement.setAttribute("name", Encoding.Base64Encode(name));
+                    pkgElement.setAttribute("comment", Encoding.Base64Encode(comment));
                     String category = Encoding.Base64Encode("various");
                     if (cfg.getBooleanProperty("ASK_ADD_INFOS", false)) {
-                        category = Encoding.Base64Encode(UserIO.getInstance().requestInputDialog("Category for package " + packages.get(i).getName()));
+                        category = Encoding.Base64Encode(UserIO.getInstance().requestInputDialog("Category for package " + name));
                     }
-                    FilePackage.setAttribute("category", category);
-
+                    pkgElement.setAttribute("category", category);
                 }
-                // <package name="cGFrZXQx" passwords="eyJwYXNzIiwgInBhc3MyIn0="
-                // comment="RGFzIGlzdCBlaW4gVGVzdGNvbnRhaW5lcg=="
-                // category="bW92aWU=">
-
-                content.getFirstChild().appendChild(FilePackage);
-
-                java.util.List<DownloadLink> tmpLinks = getPackageFiles(packages.get(i), links);
-
-                for (int x = 0; x < tmpLinks.size(); x++) {
-                    Element file = content.createElement("file");
-                    FilePackage.appendChild(file);
-                    Element url = content.createElement("url");
-                    Element filename = content.createElement("filename");
-                    Element size = content.createElement("size");
-                    DownloadLink link = tmpLinks.get(x);
-
-                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getPluginPatternMatcher())));
-
-                    // url.appendChild(content.createTextNode(JDUtilities.
-                    // Base64Encode(tmpLinks.get(x).getPluginUrl())));
-
-                    filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getView().getDisplayName())));
-
-                    size.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getView().getBytesTotalEstimated() + "")));
-
-                    FilePackage.getLastChild().appendChild(url);
-                    FilePackage.getLastChild().appendChild(filename);
-                    FilePackage.getLastChild().appendChild(size);
-
+                content.getFirstChild().appendChild(pkgElement);
+                final List<AbstractPackageChildrenNode> packageNodes = packageNodesMap.get(pkg);
+                for (AbstractPackageChildrenNode node : packageNodes) {
+                    final DownloadLink downloadLink;
+                    if (node instanceof DownloadLink) {
+                        downloadLink = (DownloadLink) node;
+                    } else if (node instanceof CrawledLink) {
+                        downloadLink = ((CrawledLink) node).getDownloadLink();
+                    } else {
+                        continue;
+                    }
+                    pkgElement.appendChild(content.createElement("file"));
+                    final Element urlElement = content.createElement("url");
+                    // the contenturl always should direct to exactly the downloadlink that is exported.
+                    if (downloadLink.getContentUrl() != null) {
+                        urlElement.appendChild(content.createTextNode(Encoding.Base64Encode(downloadLink.getContentUrl())));
+                    } else {
+                        urlElement.appendChild(content.createTextNode(Encoding.Base64Encode(downloadLink.getPluginPatternMatcher())));
+                    }
+                    final Element fileNameElement = content.createElement("filename");
+                    fileNameElement.appendChild(content.createTextNode(Encoding.Base64Encode(downloadLink.getName())));
+                    final Element fileSizeElement = content.createElement("size");
+                    fileSizeElement.appendChild(content.createTextNode(Encoding.Base64Encode(String.valueOf(Math.max(0, downloadLink.getKnownDownloadSize())))));
+                    pkgElement.getLastChild().appendChild(urlElement);
+                    pkgElement.getLastChild().appendChild(fileNameElement);
+                    pkgElement.getLastChild().appendChild(fileSizeElement);
                 }
-
             }
-
             int ind1 = xmltoStr(header).indexOf("<header");
             int ind2 = xmltoStr(content).indexOf("<content");
             String ret = xmltoStr(header).substring(ind1) + xmltoStr(content).substring(ind2);
-
             return "<dlc>" + ret + "</dlc>";
         } catch (Exception e) {
             logger.log(e);
         }
         return null;
     }
-
 }

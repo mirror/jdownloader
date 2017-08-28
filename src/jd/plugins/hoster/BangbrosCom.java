@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,9 +38,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "bangbrosdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
-
     public BangbrosCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.bangbrosnetwork.com/bangbrothers/join");
@@ -322,7 +321,7 @@ public class BangbrosCom extends PluginForHost {
 
     @Override
     public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
-        if (!StringUtils.equals(this.getHost(), buildForThisPlugin.getHost())) {
+        if (buildForThisPlugin != null && !StringUtils.equals(this.getHost(), buildForThisPlugin.getHost())) {
             return getMainlink(downloadLink);
         } else {
             return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);

@@ -551,7 +551,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     throw new IOException(con.getResponseCode() + " " + con.getResponseMessage());
                 }
                 if (br.getCookie(COOKIE_HOST, "storage") == null) {
-                    if (br.containsHTML(">Share-Online - Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
+                    if (br.containsHTML("MAINTENANCE") || br.containsHTML(">Share-Online - Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
