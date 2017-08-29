@@ -52,7 +52,7 @@ public class ArchiveOrg extends PluginForDecrypt {
         final String parameter = param.toString().replace("://www.", "://");
         /*
          * 2017-01-25: We do not (yet) have to be logged in here. We can always see all items and their information but some may be limited
-         * to premium users only.
+         * to premium users only
          */
         // final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         // if (aa != null) {
