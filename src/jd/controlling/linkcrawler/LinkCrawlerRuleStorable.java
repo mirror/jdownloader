@@ -3,7 +3,6 @@ package jd.controlling.linkcrawler;
 import org.appwork.storage.Storable;
 
 public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable {
-
     public LinkCrawlerRuleStorable(/* Storable */) {
         super();
     }
@@ -19,6 +18,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setFormPattern(rule.getFormPattern());
         this.setDeepPattern(rule.getDeepPattern());
         this.setRewriteReplaceWith(rule.getRewriteReplaceWith());
+        this.setCookies(rule.getCookies());
     }
 
     public void setId(long id) {
@@ -36,7 +36,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         ret.setFormPattern(getFormPattern());
         ret.setDeepPattern(getDeepPattern());
         ret.setRewriteReplaceWith(getRewriteReplaceWith());
+        ret.setCookies(getCookies());
         return ret;
     }
-
 }

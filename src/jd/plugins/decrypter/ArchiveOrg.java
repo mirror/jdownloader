@@ -35,7 +35,7 @@ import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(details|download)/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(details|download)/(?!copyrightrecords)@?[A-Za-z0-9_\\-\\.]+$" })
 public class ArchiveOrg extends PluginForDecrypt {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,8 +47,9 @@ public class ArchiveOrg extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("://www.", "://").replace("/details/", "/download/");
+        br.setFollowRedirects(true);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("://www.", "://");
         /*
          * 2017-01-25: We do not (yet) have to be logged in here. We can always see all items and their information but some may be limited
          * to premium users only.
@@ -57,56 +58,79 @@ public class ArchiveOrg extends PluginForDecrypt {
         // if (aa != null) {
         // jd.plugins.hoster.ArchiveOrg.login(this.br, aa, false);
         // }
-        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">The item is not available")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        if (!br.containsHTML("\"/download/")) {
-            logger.info("Maybe invalid link or nothing there to download: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
-        final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
-        // New way
-        final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^<>\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
-        String filesXML = null;
-        for (final String[] finfosingle : finfo) {
-            final String filename = finfosingle[0];
-            if (StringUtils.endsWithCaseInsensitive(filename, "_files.xml")) {
-                final Browser brc = br.cloneBrowser();
-                filesXML = brc.getPage(brc.getURL() + "/" + filename);
-                continue;
+        if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
+            int page = 2;
+            while (!isAbort()) {
+                final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
+                if (details == null || details.length == 0) {
+                    final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
+                    if (showAll != null) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(showAll).toString()));
+                    }
+                    break;
+                }
+                for (final String detail : details) {
+                    final DownloadLink link = createDownloadlink(br.getURL(detail).toString());
+                    decryptedLinks.add(link);
+                    if (isAbort()) {
+                        break;
+                    } else {
+                        distribute(link);
+                    }
+                }
+                br.getPage("?page=" + (page++));
             }
-        }
-        for (final String[] finfosingle : finfo) {
-            final String filename = finfosingle[0];
-            if (StringUtils.endsWithCaseInsensitive(filename, "_files.xml")) {
-                continue;
-            } else if (filesXML != null && preferOriginal) {
-                if (!new Regex(filesXML, "<file name=\"" + Pattern.quote(filename) + "\" source=\"original\"").matches()) {
+        } else {
+            if (br.containsHTML(">The item is not available")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            if (!br.containsHTML("\"/download/")) {
+                logger.info("Maybe invalid link or nothing there to download: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
+            final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
+            // New way
+            final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^<>\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
+            String filesXML = null;
+            for (final String[] finfosingle : finfo) {
+                final String filename = finfosingle[0];
+                if (StringUtils.endsWithCaseInsensitive(filename, "_files.xml")) {
+                    final Browser brc = br.cloneBrowser();
+                    filesXML = brc.getPage(brc.getURL() + "/" + filename);
                     continue;
                 }
             }
-            final String fsize = finfosingle[1] + "b";
-            final DownloadLink fina = createDownloadlink(br.getURL() + "/" + filename);
-            fina.setDownloadSize(SizeFormatter.getSize(fsize));
-            fina.setAvailable(true);
-            fina.setFinalFileName(Encoding.urlDecode(filename, false));
-            if (filesXML != null) {
-                final String sha1 = new Regex(filesXML, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
-                if (sha1 != null) {
-                    fina.setSha1Hash(sha1);
+            for (final String[] finfosingle : finfo) {
+                final String filename = Encoding.urlDecode(finfosingle[0], false);
+                if (StringUtils.endsWithCaseInsensitive(filename, "_files.xml") || StringUtils.endsWithCaseInsensitive(filename, "_meta.sqlite") || StringUtils.endsWithCaseInsensitive(filename, "_meta.xml")) {
+                    continue;
+                } else if (filesXML != null && preferOriginal) {
+                    if (!new Regex(filesXML, "<file name=\"" + Pattern.quote(filename) + "\" source=\"original\"").matches()) {
+                        continue;
+                    }
                 }
+                final String fsize = finfosingle[1] + "b";
+                final DownloadLink fina = createDownloadlink(br.getURL() + "/" + filename);
+                fina.setDownloadSize(SizeFormatter.getSize(fsize));
+                fina.setAvailable(true);
+                fina.setFinalFileName(filename);
+                if (filesXML != null) {
+                    final String sha1 = new Regex(filesXML, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
+                    if (sha1 != null) {
+                        fina.setSha1Hash(sha1);
+                    }
+                }
+                decryptedLinks.add(fina);
             }
-            decryptedLinks.add(fina);
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        if (fpName != null) {
-            fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+            final FilePackage fp = FilePackage.getInstance();
+            if (fpName != null) {
+                fp.setName(fpName);
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }

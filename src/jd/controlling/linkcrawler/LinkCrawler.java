@@ -268,6 +268,10 @@ public class LinkCrawler {
     }
 
     public static LinkCrawler newInstance() {
+        return newInstance(null, null);
+    }
+
+    public static LinkCrawler newInstance(final Boolean connectParent, final Boolean avoidDuplicates) {
         final LinkCrawler lc;
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             final LinkCrawlerThread thread = (LinkCrawlerThread) (Thread.currentThread());
@@ -281,7 +285,7 @@ public class LinkCrawler {
                 source = null;
             }
             final LinkCrawler parent = thread.getCurrentLinkCrawler();
-            lc = new LinkCrawler(false, false) {
+            lc = new LinkCrawler(connectParent == null ? false : connectParent.booleanValue(), avoidDuplicates == null ? false : avoidDuplicates.booleanValue()) {
                 @Override
                 protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
                     if (linkCrawler != null && linkCrawler != this) {
@@ -323,7 +327,7 @@ public class LinkCrawler {
             };
             parent.attachLinkCrawler(lc);
         } else {
-            lc = new LinkCrawler(true, true);
+            lc = new LinkCrawler(connectParent == null ? true : connectParent.booleanValue(), avoidDuplicates == null ? true : avoidDuplicates.booleanValue());
         }
         return lc;
     }
@@ -1024,6 +1028,14 @@ public class LinkCrawler {
                     } else {
                         br = new Browser();
                         br.setFollowRedirects(false);
+                        final LinkCrawlerRule matchingRule = source.getMatchingRule();
+                        if (matchingRule != null && matchingRule.getCookies() != null) {
+                            for (String cookie[] : matchingRule.getCookies()) {
+                                if (cookie != null && cookie.length > 1) {
+                                    br.setCookie(source.getURL(), cookie[0], cookie[1]);
+                                }
+                            }
+                        }
                         final URLConnectionAdapter connection = openCrawlDeeperConnection(br, source);
                         final CrawledLink deeperSource;
                         final String[] sourceURLs;
@@ -1035,7 +1047,6 @@ public class LinkCrawler {
                             forwardCrawledLinkInfos(source, deeperSource, lm, getAndClearSourceURLs(source), true);
                             sourceURLs = getAndClearSourceURLs(deeperSource);
                         }
-                        final LinkCrawlerRule matchingRule = source.getMatchingRule();
                         if (matchingRule != null && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(matchingRule.getRule())) {
                             try {
                                 br.getHttpConnection().disconnect();

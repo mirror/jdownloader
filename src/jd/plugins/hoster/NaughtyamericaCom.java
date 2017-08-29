@@ -230,6 +230,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                loginform.put("dest", "");
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("g\\-recaptcha")) {

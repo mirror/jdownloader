@@ -20,6 +20,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDistributer;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
 import org.appwork.utils.Application;
@@ -49,20 +65,6 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.ProgressController;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDistributer;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -70,7 +72,6 @@ import jd.nutils.encoding.Encoding;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
-
     private volatile LinkCrawlerDistributer distributer             = null;
     private volatile LazyCrawlerPlugin      lazyC                   = null;
     private volatile LinkCrawlerGeneration  generation;
@@ -627,14 +628,13 @@ public abstract class PluginForDecrypt extends Plugin {
         lc.waitForCrawling();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lc.getCrawledLinks().size());
         for (final CrawledLink link : lc.getCrawledLinks()) {
-            DownloadLink dl = link.getDownloadLink();
+            final DownloadLink dl = link.getDownloadLink();
             if (dl == null) {
                 final String url = link.getURL();
                 if (url != null) {
-                    dl = new DownloadLink(null, null, null, url, true);
+                    ret.add(new DownloadLink(null, null, null, url, true));
                 }
-            }
-            if (dl != null) {
+            } else {
                 ret.add(dl);
             }
         }
@@ -645,7 +645,6 @@ public abstract class PluginForDecrypt extends Plugin {
     public void runCaptchaDDosProtection(String id) throws InterruptedException {
         final TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
         final TrackerJob trackerJob = new TrackerJob(1) {
-
             @Override
             public void waitForNextSlot(long waitFor) throws InterruptedException {
                 while (waitFor > 0 && !isAbort()) {

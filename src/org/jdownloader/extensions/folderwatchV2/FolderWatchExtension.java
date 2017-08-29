@@ -34,6 +34,7 @@ import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.parser.html.HTMLParser;
 import jd.plugins.AddonPanel;
@@ -573,7 +574,14 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             if (j.isOverwritePackagizerEnabled()) {
                 job.setCrawledLinkModifierPostPackagizer(modifier);
             }
-            final LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
+            final LinkCrawler lc;
+            if (Thread.currentThread() instanceof LinkCrawlerThread) {
+                lc = LinkCrawler.newInstance(Boolean.TRUE, Boolean.TRUE);
+                job.setText(null);
+                lc.crawl(j.getText(), job.getCustomSourceUrl(), job.isDeepAnalyse());
+            } else {
+                lc = LinkCollector.getInstance().addCrawlerJob(job);
+            }
             lc.waitForCrawling();
             if (lc.getCrawledLinksFoundCounter() == 0) {
                 try {

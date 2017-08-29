@@ -1,11 +1,11 @@
 package jd.controlling.linkcrawler;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class LinkCrawlerRule {
-
     public static enum RULE {
         REWRITE,
         SUBMITFORM,
@@ -14,9 +14,18 @@ public class LinkCrawlerRule {
         FOLLOWREDIRECT
     }
 
-    protected boolean enabled         = true;
+    protected boolean        enabled = true;
+    protected List<String[]> cookies = null;
 
-    protected int     maxDecryptDepth = 0;
+    public List<String[]> getCookies() {
+        return cookies;
+    }
+
+    public void setCookies(List<String[]> cookies) {
+        this.cookies = cookies;
+    }
+
+    protected int maxDecryptDepth = 0;
 
     public int getMaxDecryptDepth() {
         return maxDecryptDepth;
@@ -100,7 +109,6 @@ public class LinkCrawlerRule {
     protected String                name               = null;
     protected Pattern               pattern            = null;
     protected RULE                  rule               = null;
-
     protected Pattern               packageNamePattern = null;
     protected Pattern               formPattern        = null;
     protected Pattern               deepPattern        = null;
