@@ -15,7 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -37,11 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
+
     public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://natour.naughtyamerica.com/signup/signup.php");
@@ -70,6 +69,7 @@ public class NaughtyamericaCom extends PluginForHost {
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
+        br.addAllowedResponseCodes(456);
         return br;
     }
 
@@ -89,7 +89,7 @@ public class NaughtyamericaCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        login(this.br, aa, false);
+        login(br, aa, false);
         dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         try {
@@ -117,7 +117,7 @@ public class NaughtyamericaCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
+    private void refreshDirecturl(final DownloadLink link) throws Exception {
         final String filename_url = getFilenameUrl(link);
         if (filename_url == null) {
             /* This should never happen! */
@@ -129,11 +129,11 @@ public class NaughtyamericaCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getPage(jd.plugins.decrypter.NaughtyamericaCom.getPicUrl(filename_url));
-            if (jd.plugins.decrypter.NaughtyamericaCom.isOffline(this.br)) {
+            br.getPage(jd.plugins.decrypter.NaughtyamericaCom.getPicUrl(filename_url));
+            if (jd.plugins.decrypter.NaughtyamericaCom.isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String pictures[] = jd.plugins.decrypter.NaughtyamericaCom.getPictureArray(this.br);
+            final String pictures[] = jd.plugins.decrypter.NaughtyamericaCom.getPictureArray(br);
             for (final String finallink : pictures) {
                 if (finallink.contains(number_formatted + ".jpg")) {
                     dllink = finallink;
@@ -147,9 +147,9 @@ public class NaughtyamericaCom extends PluginForHost {
             if (quality_stored == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getPage(jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlPremium(filename_url));
+            br.getPage(jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlPremium(filename_url));
             /* The complicated process of finding a new directurl ... */
-            final String[] videoInfo = jd.plugins.decrypter.NaughtyamericaCom.getVideoInfoArray(this.br);
+            final String[] videoInfo = jd.plugins.decrypter.NaughtyamericaCom.getVideoInfoArray(br);
             for (final String singleVideoInfo : videoInfo) {
                 final String directlink = jd.plugins.decrypter.NaughtyamericaCom.getDirecturlFromVideoInfo(singleVideoInfo);
                 final String[] videroInfoArray = jd.plugins.decrypter.NaughtyamericaCom.getVideoInfoDetailed(singleVideoInfo);
@@ -276,7 +276,7 @@ public class NaughtyamericaCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -305,7 +305,7 @@ public class NaughtyamericaCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

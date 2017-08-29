@@ -60,11 +60,11 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         } else {
             br.getPage(getVideoUrlFree(filename_url));
         }
-        String redirect = this.br.getRedirectLocation();
+        String redirect = br.getRedirectLocation();
         if (redirect == null) {
-            redirect = this.br.getRegex("Redirecting to <a href=\"(https?://[^<>\"]+)\">").getMatch(0);
+            redirect = br.getRegex("Redirecting to <a href=\"(https?://[^<>\"]+)\">").getMatch(0);
         }
-        if (isOffline(this.br)) {
+        if (isOffline(br)) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -74,7 +74,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
             title = filename_url;
         } else {
             if (redirect != null) {
-                this.br.getPage(redirect);
+                br.getPage(redirect);
             }
             if (title == null) {
                 title = filename_url;
@@ -82,7 +82,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         }
 
         if (is_logged_in) {
-            final String[] videoInfo = getVideoInfoArray(this.br);
+            final String[] videoInfo = getVideoInfoArray(br);
             for (final String singleVideoInfo : videoInfo) {
                 final String directlink = getDirecturlFromVideoInfo(singleVideoInfo);
                 final String[] videroInfoArray = getVideoInfoDetailed(singleVideoInfo);
@@ -128,7 +128,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
             }
             if (cfg.getBooleanProperty("GRAB_PICTURES", true)) {
                 /* Crawl picture gallery if user wants that. */
-                final String pictures[] = getPictureArray(this.br);
+                final String pictures[] = getPictureArray(br);
                 for (String finallink : pictures) {
                     final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
                     finallink = finallink.replaceAll("https?://", "http://naughtyamericadecrypted");
@@ -224,7 +224,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
             return false;
         }
         try {
-            ((jd.plugins.hoster.NaughtyamericaCom) hostPlugin).login(this.br, aa, force);
+            ((jd.plugins.hoster.NaughtyamericaCom) hostPlugin).login(br, aa, force);
         } catch (final PluginException e) {
 
             aa.setValid(false);
