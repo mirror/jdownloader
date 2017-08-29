@@ -22,6 +22,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,15 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
+
     private static MultiHosterManagement mhm               = new MultiHosterManagement("premiumax.net");
     private static final String          NOCHUNKS          = "NOCHUNKS";
     private static final String          MAINPAGE          = "http://premiumax.net";
@@ -82,7 +83,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         // check if account is valid
         boolean is_freeaccount = false;
         if (true) {
-            login(account, true);
+            login(account, true, "http://www.premiumax.net/");
             getPage("/profile/");
             final String expire = br.getRegex("<span>Premium until: </span><strong>([^<>\"]*?)</strong>").getMatch(0);
             if (expire != null) {
@@ -153,7 +154,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         mhm.runCheck(account, link);
         String dllink = null;
         synchronized (LOCK) {
-            login(account, true);
+            login(account, true, "http://www.premiumax.net/download.html");
             dllink = checkDirectLink(link, "premiumaxnetdirectlink");
             if (StringUtils.isEmpty(dllink)) {
                 final Browser brc = br.cloneBrowser();
@@ -214,7 +215,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         if (link.getBooleanProperty(PremiumaxNet.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
                 handleErrorRetries(link, account, "404servererror", 10, 5 * 60 * 1000l);
@@ -345,7 +346,7 @@ public class PremiumaxNet extends antiDDoSForHost {
     private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
-    private boolean login(final Account account, final boolean force) throws Exception {
+    private boolean login(final Account account, final boolean testCookieSession, final String testUrl) throws Exception {
         synchronized (LOCK) {
             final boolean ifrd = br.isFollowingRedirects();
             try {
@@ -372,8 +373,8 @@ public class PremiumaxNet extends antiDDoSForHost {
                             userAgent.set(ua);
                         }
                         /* Avoids unnerving login captchas */
-                        if (force) {
-                            getPage("http://www.premiumax.net/");
+                        if (testCookieSession) {
+                            getPage(testUrl);
                             if (br.containsHTML(">Sign out</a>")) {
                                 return true;
                             } else {
@@ -388,7 +389,8 @@ public class PremiumaxNet extends antiDDoSForHost {
                         }
                     }
                 }
-                getPage("http://www.premiumax.net/");
+                // you can login from test urls also.
+                getPage(testUrl);
                 // lets use form, if they change shit we can at least have it fairly well detected. static posts will break easier/quicker.
                 final Form login = br.getFormByInputFieldKeyValue("password", null);
                 if (login == null) {
@@ -398,8 +400,8 @@ public class PremiumaxNet extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // seem to only accept username when it was to lower case within webbrowser.
-                login.put("username", Encoding.urlEncode(account.getUser().toLowerCase()));
+                // seem to only accept username when it was to lower case within web browser.
+                login.put("username", Encoding.urlEncode(account.getUser().toLowerCase(Locale.ENGLISH)));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 // old captcha type
                 if (login.containsHTML("div class=\"g-recaptcha\"")) {
@@ -419,7 +421,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                 }
                 login.put("serviceButtonValue", "login");
                 login.put("service", "login");
-                br.submitForm(login);
+                submitForm(login);
                 final String cookie = br.getCookie(MAINPAGE, "WebLoginPE");
                 if (cookie == null || StringUtils.equalsIgnoreCase(cookie, "deleted")) {
                     if (br.containsHTML(">You are blocked and cannot log in!<")) {
