@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -28,7 +26,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "comicspace.com.br" }, urls = { "https?://(?:www\\.)?comicspace\\.com\\.br/manga/[a-z0-9\\-]+/\\d+" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "comicspace.com.br" }, urls = { "https?://(?:www\\.)?comicspace\\.com\\.br/manga/[a-z0-9\\-]+/[0-9\\.]+" })
 public class ComicspaceComBr extends antiDDoSForDecrypt {
     public ComicspaceComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,7 @@ public class ComicspaceComBr extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "/manga/([a-z0-9\\-]+)/(\\d+)");
+        final Regex urlinfo = new Regex(parameter, "/manga/([a-z0-9\\-]+)/([0-9\\.]+)");
         final String url_chapter = urlinfo.getMatch(1);
         final String url_name = urlinfo.getMatch(0);
         String ext = null;
