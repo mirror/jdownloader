@@ -30,6 +30,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "justporno.tv", "xxx.justporno.tv" }, urls = { "https?://(?:www\\.)?justporno\\.tv/(?:1|hd)/\\d+/[a-z0-9\\-_]+", "https?://xxx\\.justporno\\.tv/videos/\\d+/[^/]+/" })
 public class JustpornoTv extends PluginForHost {
+
     public JustpornoTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,6 +60,7 @@ public class JustpornoTv extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(410);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
