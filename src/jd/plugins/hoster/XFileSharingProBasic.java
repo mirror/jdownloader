@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -57,6 +59,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class XFileSharingProBasic extends antiDDoSForHost {
+
     // DELETE THIS, after making plugin!
     @Override
     public Boolean siteTesterDisabled() {
@@ -67,12 +70,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
+
+    private final boolean        SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://ForDevsToPlayWith.com";
-    private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private final String         COOKIE_HOST                        = "http://ForDevsToPlayWith.com".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(ForDevsToPlayWith\\.com)";
+    private final static String  DOMAINS                            = "(?:ForDevsToPlayWith\\.com)";
+    private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?" + DOMAINS + ")(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
+    private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?" + DOMAINS + ")(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -91,8 +97,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * will check for videohoster "next" Download/Ad- Form.
      */
     private final boolean        IMAGEHOSTER                        = false;
-    private final boolean        SUPPORTS_HTTPS                     = false;
-    private final boolean        SUPPORTS_HTTPS_FORCED              = false;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     /*
      * true = check via postPage, false = we access the check_files site first and parse the Form to cover eventually required tokens inside
@@ -133,7 +137,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.4.8<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.5.0<br />
+     ****************************
+     * NOTES from raztoki <br/>
+     * - no need to set setfollowredirect true. <br />
+     * - maintain the primary domain base url (protocol://subdomain.domain.tld.cctld), everything else will be based off that! do not fubar
+     * with standard browser behaviours.
+     ****************************
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -141,33 +151,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
      * other:<br />
      */
-    @SuppressWarnings({ "deprecation" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = getFUIDFromURL(link);
-        /* link cleanup, prefer https if possible */
-        final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = buildDownloadURL(fuid, link.getDownloadURL());
-        if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
-            /* Make sure user gets the kind of content urls that he added to JD. */
-            link.setContentUrl(url_embed);
+        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        if (fuid != null) {
+            /* link cleanup, prefer https if possible */
+            if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+                link.setContentUrl(COOKIE_HOST + "/embed-" + fuid + ".html");
+            }
+            link.setPluginPatternMatcher(COOKIE_HOST + "/" + fuid);
+            link.setLinkID(getHost() + "://" + fuid);
         }
-        link.setUrlDownload(corrected_downloadurl);
-    }
-
-    /**
-     * Returns current downloadurl with current domain - for special constellations you should use the original URL as a failover (in case
-     * fuid is null).
-     */
-    private String buildDownloadURL(final String fuid, final String failover) {
-        final String output;
-        if (fuid == null) {
-            output = failover;
-        } else {
-            output = String.format("%s%s/%s", correctProtocol("https://"), this.getHost(), fuid);
-        }
-        return output;
     }
 
     @Override
@@ -190,18 +184,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "unused" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
+        fuid = null;
         correctDownloadLink(link);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         setFUID(link);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        altbr = this.br.cloneBrowser();
+        altbr = br.cloneBrowser();
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -213,7 +208,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
-        } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+        } else if (br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             /*
              * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
              * There are 2 alternative ways to get this information anyways!
@@ -230,7 +225,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
             }
             /* 2nd offline check */
-            if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && inValidate(fileInfo[0])) {
+            if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + Pattern.quote(link.getPluginPatternMatcher()) + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && inValidate(fileInfo[0])) {
                 /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!inValidate(fileInfo[0]) || !inValidate(fileInfo[1])) {
@@ -316,7 +311,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // next two are details from sharing box
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
@@ -343,7 +338,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                     // next two are details from sharing box
                     if (inValidate(fileInfo[1])) {
                         fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
@@ -378,7 +373,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
+        getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -388,12 +383,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ALT</u></b> is <b>true</b>!<br />
      */
-    @SuppressWarnings("deprecation")
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
             if (SUPPORTS_AVAILABLECHECK_ALT_FAST) {
-                postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+                postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
             } else {
                 /* Try to get the Form IF NEEDED as it can contain tokens which are missing otherwise. */
                 br.getPage("/?op=check_files");
@@ -402,7 +396,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     logger.info("Failed to find check_files Form --> AltAvailablecheck failed");
                     return null;
                 }
-                checkfiles_form.put("list", Encoding.urlEncode(dl.getDownloadURL()));
+                checkfiles_form.put("list", Encoding.urlEncode(dl.getPluginPatternMatcher()));
                 submitForm(br, checkfiles_form);
             }
             filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
@@ -448,9 +442,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
     }
 
-    @SuppressWarnings({ "unused", "deprecation" })
+    @SuppressWarnings({ "unused" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -497,7 +490,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
+                final String embed_access = COOKIE_HOST + "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
@@ -510,7 +503,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             if (dllink == null) {
                 /* If failed, go back to the beginning */
-                getPage(downloadLink.getDownloadURL());
+                getPage(downloadLink.getPluginPatternMatcher());
             }
         }
         /* 6, do we have an imagehost? */
@@ -518,7 +511,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             checkErrors(downloadLink, false);
             Form imghost_next_form = null;
             do {
-                imghost_next_form = this.br.getFormbyKey("next");
+                imghost_next_form = br.getFormbyKey("next");
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
@@ -535,21 +528,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
-            final Form download1 = this.br.getFormByInputFieldKeyValue("op", "download1");
+            final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /*
-                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
-                 */
-                if (downloadLink.getName().contains("'")) {
-                    String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
-                    if (fname != null) {
-                        download1.put("fname", Encoding.urlEncode(fname));
-                    } else {
-                        logger.warning("Could not find 'fname'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
                 /* Fix/Add "method_free" value if necessary. */
                 if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
                     String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
@@ -577,11 +558,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
                 boolean skipWaittime = false;
                 if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
-                    password = true;
                     logger.info("The downloadlink seems to be password protected.");
+                    handlePassword(dlForm, downloadLink);
                 }
                 /* md5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (downloadLink.getMD5Hash() == null) {
@@ -591,98 +571,98 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
-                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                    /* Captcha method by ManiacMansion */
-                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
-                    if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                    for (String[] letter : letters) {
-                        capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
-                    }
-                    final StringBuilder code = new StringBuilder();
-                    for (String value : capMap.values()) {
-                        code.append(value);
-                    }
-                    dlForm.put("code", code.toString());
-                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
-                    logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                    String captchaurl = null;
-                    if (sitelinks == null || sitelinks.length == 0) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (String link : sitelinks) {
-                        if (link.contains("/captchas/")) {
-                            captchaurl = link;
-                            break;
-                        }
-                    }
-                    if (captchaurl == null) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    dlForm.put("code", code);
-                    logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                    logger.info("Detected captcha method \"reCaptchaV1\" for this host");
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /*
-                     * 2017-07-25: Waittime for reCaptchaV1 was skipple in older XFS versions over a long period of time but is usually NOT
-                     * skippable anymore.
-                     */
-                    skipWaittime = false;
-                } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                    waitTime(downloadLink, timeBefore);
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    logger.info("Detected captcha method \"solvemedia\" for this host");
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                } else {
+                    if (correctedBR.contains(";background:#ccc;text-align")) {
+                        logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                        /* Captcha method by ManiacMansion */
+                        final String[][] letters = new Regex(br, "<span style='position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                        if (letters == null || letters.length == 0) {
+                            logger.warning("plaintext captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        throw e;
+                        final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                        for (String[] letter : letters) {
+                            capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+                        }
+                        final StringBuilder code = new StringBuilder();
+                        for (String value : capMap.values()) {
+                            code.append(value);
+                        }
+                        dlForm.put("code", code.toString());
+                        logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                    } else if (correctedBR.contains("/captchas/")) {
+                        logger.info("Detected captcha method \"Standard captcha\" for this host");
+                        final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                        String captchaurl = null;
+                        if (sitelinks == null || sitelinks.length == 0) {
+                            logger.warning("Standard captcha captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        for (String link : sitelinks) {
+                            if (link.contains("/captchas/")) {
+                                captchaurl = link;
+                                break;
+                            }
+                        }
+                        if (captchaurl == null) {
+                            logger.warning("Standard captcha captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                        dlForm.put("code", code);
+                        logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                    } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                        logger.info("Detected captcha method \"reCaptchaV1\" for this host");
+                        final Recaptcha rc = new Recaptcha(br, this);
+                        rc.findID();
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                        dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                        dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                        logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                        /*
+                         * 2017-07-25: Waittime for reCaptchaV1 was skipple in older XFS versions over a long period of time but is usually
+                         * NOT skippable anymore.
+                         */
+                        skipWaittime = false;
+                    } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        logger.info("Detected captcha method \"solvemedia\" for this host");
+                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            }
+                            throw e;
+                        }
+                        final String code = getCaptchaCode("solvemedia", cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        dlForm.put("adcopy_challenge", chid);
+                        dlForm.put("adcopy_response", "manual_challenge");
+                    } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+                        logger.info("Detected captcha method \"keycaptca\"");
+                        String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                        if (result == null) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        if ("CANCEL".equals(result)) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL);
+                        }
+                        dlForm.put("capcode", result);
+                        skipWaittime = false;
                     }
-                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    dlForm.put("adcopy_challenge", chid);
-                    dlForm.put("adcopy_response", "manual_challenge");
-                } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                    logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
-                    if (result == null) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    /* Captcha END */
+                    if (!skipWaittime) {
+                        waitTime(downloadLink, timeBefore);
                     }
-                    if ("CANCEL".equals(result)) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    dlForm.put("capcode", result);
-                    skipWaittime = false;
-                }
-                /* Captcha END */
-                if (password) {
-                    passCode = handlePassword(dlForm, downloadLink);
-                }
-                if (!skipWaittime) {
-                    waitTime(downloadLink, timeBefore);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
@@ -711,7 +691,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final String playpath = new Regex(dllink, "(mp4:.+)").getMatch(0);
             /* Setup rtmp connection */
             jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setPageUrl(downloadLink.getPluginPatternMatcher());
             rtmp.setUrl(dllink);
             if (playpath != null) {
                 rtmp.setPlayPath(playpath);
@@ -848,7 +828,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(" + dllinkRegexFile + ")\\1").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -906,16 +886,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            final String[] regexes = { "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\'\\[\\]]+)", "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/i/\\d+/[^<>\"\\'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))" };
-            for (final String regex : regexes) {
-                final String[] possibleDllinks = new Regex(this.correctedBR, regex).getColumn(0);
-                for (final String possibleDllink : possibleDllinks) {
-                    /* Do NOT download thumbnails! */
-                    if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                        dllink = possibleDllink;
-                    }
-                }
-                if (dllink != null) {
+            final String[] possibleDllinks = new Regex(this.correctedBR, dllinkRegexImage).getColumn(0);
+            for (final String possibleDllink : possibleDllinks) {
+                /* Do NOT download thumbnails! */
+                if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                    dllink = possibleDllink;
                     break;
                 }
             }
@@ -926,7 +901,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String decodeDownloadLink(final String s) {
         String decoded = null;
         try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
@@ -943,10 +918,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
-            finallink = new Regex(decoded, "(?:\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(?:\"|\\')").getMatch(0);
+            finallink = new Regex(decoded, "(?:\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4))(?:\"|')").getMatch(0);
             if (finallink == null) {
                 /* Maybe rtmp */
-                finallink = new Regex(decoded, "(?:\"|\\')(rtmp://[^<>\"\\']*?mp4:[^<>\"\\']+)(?:\"|\\')").getMatch(0);
+                finallink = new Regex(decoded, "(?:\"|')(rtmp://[^<>\"']*?mp4:[^<>\"']+)(?:\"|')").getMatch(0);
             }
         }
         return finallink;
@@ -954,12 +929,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     protected void getPage(String page) throws Exception {
-        page = correctProtocol(page);
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
-        page = correctProtocol(page);
         getPage(br, page);
         if (correctBr) {
             correctBR();
@@ -968,36 +941,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     protected void postPage(String page, final String postdata) throws Exception {
-        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
-        page = correctProtocol(page);
         postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
-    }
-
-    // /* Handles redirects to prevent getDllink method from picking invalid final download_url in case of a redirect. */
-    // private void handleRedirects(final Browser br, final boolean correctBr) throws Exception {
-    // String redirect = br.getRedirectLocation();
-    // final int redirect_limit = 5;
-    // int counter = 0;
-    // while (redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}.*?") && counter <= redirect_limit) {
-    // br.getPage(redirect);
-    // redirect = br.getRedirectLocation();
-    // counter++;
-    // }
-    // }
-    private String correctProtocol(String url) {
-        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
-            url = url.replaceFirst("http://", "https://");
-        } else if (!SUPPORTS_HTTPS) {
-            url = url.replaceFirst("https://", "http://");
-        }
-        return url;
     }
 
     @Override
@@ -1110,48 +1061,49 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Best to execute AFTER having accessed the downloadurl!
      */
     private void setFUID(final DownloadLink dl) throws PluginException {
-        this.fuid = getFUIDFromURL(dl);
+        fuid = getFUIDFromURL(dl);
         /*
          * Rare case: Hoster has special URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
          * available via html
          */
-        if (this.fuid == null) {
+        if (fuid == null) {
             logger.info("fuid not given inside URL, trying to find it inside html");
-            this.fuid = new Regex(correctedBR, "type=\"hidden\" name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
-            if (this.fuid == null) {
+            fuid = new Regex(correctedBR, "type=\"hidden\" name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
+            if (fuid == null) {
                 logger.warning("Failed to find fuid inside html");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                logger.info("Found fuid inside html: " + this.fuid);
-                dl.setUrlDownload(this.buildDownloadURL(this.fuid, dl.getDownloadURL()));
             }
+            logger.info("Found fuid inside html: " + fuid);
+            correctDownloadLink(dl);
         }
     }
 
-    @SuppressWarnings("deprecation")
     private String getFUIDFromURL(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        try {
+            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed\\-)?([a-z0-9]{12})$").getMatch(0);
+            return result;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
+
     }
 
-    private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
+    private void handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
+        passCode = thelink.getDownloadPassword();
         if (passCode == null) {
             passCode = Plugin.getUserInput("Password?", thelink);
+            if (passCode == null || passCode.equals("")) {
+                logger.info("User has entered blank password, exiting handlePassword");
+                passCode = null;
+                thelink.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Pre-Download Password not provided");
+            }
         }
-        if (passCode == null || passCode.equals("")) {
-            logger.info("User has entered blank password, exiting handlePassword");
-            passCode = null;
-            thelink.setProperty(PROPERTY_PASS, Property.NULL);
-            return null;
-        }
-        if (pwform == null) {
-            /* so we know handlePassword triggered without any form */
-            logger.info("Password Form == null");
-        } else {
-            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-            pwform.put("password", Encoding.urlEncode(passCode));
-        }
-        thelink.setProperty(PROPERTY_PASS, passCode);
-        return passCode;
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        pwform.put("password", Encoding.urlEncode(passCode));
+        thelink.setDownloadPassword(passCode);
+        return;
     }
 
     /**
@@ -1164,7 +1116,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* handle password has failed in the past, additional try catching / resetting values */
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
-                theLink.setProperty(PROPERTY_PASS, Property.NULL);
+                theLink.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {
@@ -1241,7 +1193,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
-        checkResponseCodeErrors(this.br.getHttpConnection());
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -1288,15 +1240,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     private void handlePluginBroken(final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
         int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            logger.info(error + " -> Retrying");
             timesFailed++;
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
         } else {
+            logger.info(error + " -> Plugin is broken");
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
@@ -1320,7 +1271,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -1343,14 +1294,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -1359,14 +1308,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                this.br.setCookiesExclusive(true);
+                br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = this.br.getFormbyProperty("name", "FL");
+                final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
@@ -1379,7 +1328,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1388,7 +1337,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!this.br.getURL().contains("/?op=my_account")) {
+                if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
@@ -1396,7 +1345,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -1418,13 +1367,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
-                this.br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
+                getPage(downloadLink.getPluginPatternMatcher());
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Form dlform = this.br.getFormbyProperty("name", "F1");
+                    final Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
-                        passCode = handlePassword(dlform, downloadLink);
+                        handlePassword(dlform, downloadLink);
                     }
                     checkErrors(downloadLink, true);
                     if (dlform == null) {
@@ -1440,11 +1388,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
-                this.br.followConnection();
+                br.followConnection();
                 correctBR();
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
@@ -1452,6 +1400,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fixFilename(downloadLink);
             downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
+        }
+    }
+
+    /**
+     * pseudo redirect control!
+     */
+    @Override
+    protected void runPostRequestTask(Browser ibr) throws Exception {
+        final String redirect;
+        if (!ibr.isFollowingRedirects() && (redirect = ibr.getRedirectLocation()) != null) {
+            if (!IMAGEHOSTER) {
+                if (!new Regex(redirect, dllinkRegexFile).matches()) {
+                    super.getPage(ibr, redirect);
+                    return;
+                }
+            } else {
+                if (!new Regex(redirect, dllinkRegexImage).matches()) {
+                    super.getPage(ibr, redirect);
+                    return;
+                }
+            }
         }
     }
 
