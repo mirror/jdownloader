@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.AbortException;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,10 +32,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-import org.jdownloader.plugins.components.AbortException;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
 public class MirrorCreatorCom extends PluginForDecrypt {
+
     private String                  userAgent      = null;
     private ArrayList<DownloadLink> decryptedLinks = null;
     private FilePackage             fp             = null;
@@ -148,9 +149,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         final String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
         if (redirectLinks == null || redirectLinks.length == 0) {
             // not redirects but final download link in html.
-            String finallink = br2.getRegex("<a href=(http[^ ]+) TARGET='_blank'>Your").getMatch(0);
+            String finallink = br2.getRegex("<a href=(http[^ ]+)\\s+TARGET='_blank'>Your").getMatch(0);
             if (finallink == null) {
-                finallink = br2.getRegex("<div class=\"highlight redirecturl\">(.*?)</div>").getMatch(0);
+                finallink = br2.getRegex("<div class=\"highlight redirecturl\">\\s*(.*?)\\s*</div>").getMatch(0);
             }
             if (finallink != null) {
                 logger.info("Creating download link for " + finallink);
