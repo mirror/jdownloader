@@ -16,10 +16,13 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,10 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" })
 public class FlyFilesNet extends PluginForHost {
@@ -87,7 +86,7 @@ public class FlyFilesNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">[\r\n\t ]+File not found\\![\r\n\t ]+<")) {
@@ -106,12 +105,12 @@ public class FlyFilesNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         final String fid = new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0);
-        String dllink = (checkDirectLink(downloadLink, "directlink"));
+        String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             requestFileInformation(downloadLink);
-            String captchaurl = this.br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
-            final String waittime = this.br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
-            final String reCaptchaV2ID = this.br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
+            String captchaurl = br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
+            final String waittime = br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
+            final String reCaptchaV2ID = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
             final String postURL = HOST + "/";
             String postata = "getDownLink=" + fid;
             if (waittime != null) {
@@ -125,10 +124,10 @@ public class FlyFilesNet extends PluginForHost {
                 final String code = this.getCaptchaCode(captchaurl, downloadLink);
                 postata += "&captcha_value=" + Encoding.urlEncode(code);
                 br.postPage(postURL, postata);
-                if (this.br.containsHTML("#downlinkCaptcha\\|0")) {
+                if (br.containsHTML("#downlinkCaptcha\\|0")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-            } else if (this.br.containsHTML("ReCaptchaDownload") && reCaptchaV2ID != null) {
+            } else if (br.containsHTML("ReCaptchaDownload") && reCaptchaV2ID != null) {
                 /* 2016-12-29 */
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2ID).getToken();
                 postata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
@@ -146,7 +145,7 @@ public class FlyFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -231,7 +230,7 @@ public class FlyFilesNet extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(HOST, key, value);
+                            br.setCookie(HOST, key, value);
                         }
                         return;
                     }
@@ -257,7 +256,7 @@ public class FlyFilesNet extends PluginForHost {
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(HOST);
+                final Cookies add = br.getCookies(HOST);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -294,7 +293,7 @@ public class FlyFilesNet extends PluginForHost {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
