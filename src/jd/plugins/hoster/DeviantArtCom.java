@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,6 +37,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
     private boolean             DOWNLOADS_STARTED                = false;
@@ -58,7 +58,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String TYPE_DOWNLOADALLOWED_SWF         = ">SWF download";
     private static final String TYPE_DOWNLOADALLOWED_TXT         = ">TXT download<";
     private static final String TYPE_DOWNLOADALLOWED_ZIP         = ">ZIP download<";
-    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = ">Download File<";
+    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = ">Download( File)?<";
     private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
     private static final String TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
@@ -209,11 +209,12 @@ public class DeviantArtCom extends PluginForHost {
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_GENERAL)) {
             /* Download for other extensions */
-            final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
+            final Regex fInfo = br.getRegex(">Download</span>[\t\n\r ]+<span class=\"text\">([A-Za-z0-9]{1,5}),? ([^<>\"]*?)</span>");
             ext = fInfo.getMatch(0);
-            filesize = fInfo.getMatch(1);
+            // filesize = fInfo.getMatch(1);
             DLLINK = getDOWNLOADdownloadlink();
             if (ext == null || DLLINK == null) {
+                logger.info("ext: " + ext + ", DLLINK: " + DLLINK);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
@@ -321,7 +322,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private String getDOWNLOADdownloadlink() {
-        return br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+        return br.getRegex("\"(https?://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
     }
 
     private String getfileSize() {
