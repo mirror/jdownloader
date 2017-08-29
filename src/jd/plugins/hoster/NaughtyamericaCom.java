@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,18 +37,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
-
     public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://natour.naughtyamerica.com/signup/signup.php");
+        this.enablePremium("https://natour.naughtyamerica.com/signup/signup.php");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.naughtyamerica.com/terms-of-service.html";
+        return "https://www.naughtyamerica.com/terms-of-service.html";
     }
 
     /* Connection stuff */
@@ -75,7 +74,7 @@ public class NaughtyamericaCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://naughtyamericadecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://naughtyamericadecrypted", "https://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -214,7 +213,7 @@ public class NaughtyamericaCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
+                    br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -223,7 +222,7 @@ public class NaughtyamericaCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
+                br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
                 Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
                     loginform = br.getForm(0);
@@ -236,7 +235,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 if (br.containsHTML("g\\-recaptcha")) {
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     if (dlinkbefore != null) {
@@ -256,7 +255,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 }
                 if (br.getURL().contains("beta.") || br.getURL().contains("/login")) {
                     /* 2016-12-12: Redirects to their beta-page might happen --> Go back to the old/stable version of their webpage. */
-                    br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
+                    br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                 }
                 if (!br.containsHTML(html_loggedin) && loginCookie == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
