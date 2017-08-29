@@ -13,13 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * variant of OuoIo
@@ -41,7 +40,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fas.li" }, urls = { "https?://(?:www\\.)?fas\\.li/(?:go/)?[A-Za-z0-9]{4,}" })
 public class FasLi extends antiDDoSForDecrypt {
-
     public FasLi(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,12 +77,15 @@ public class FasLi extends antiDDoSForDecrypt {
             form.put("s_height", "890");
             br.submitForm(form);
         }
-        final String finallink = getFinalLink();
+        String finallink = getFinalLink();
         if (finallink == null) {
-            return null;
+            final Form finalForm = br.getForm(0);
+            sleep(3000, param);
+            br.setFollowRedirects(false);
+            br.submitForm(finalForm);
+            finallink = br.getRedirectLocation();
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
@@ -118,5 +119,4 @@ public class FasLi extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.OuoIoCryptor;
     }
-
 }
