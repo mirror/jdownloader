@@ -57,7 +57,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.followConnection();
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Not found<|>We couldn't find the file you requested|>This folder is empty\\.<|This file/folder has been disabled")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Not found<|>We couldn't find the file you requested|>This folder is empty\\.<|This file/folder has been disabled")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -70,8 +70,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         final boolean decryptFolders = solidfiles_host.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
         String filelist = br.getRegex("<ul>(.+?)</ul>").getMatch(0);
         String[] finfos = new Regex(filelist, "(<a href=(?:'|\"|).*?</a>)").getColumn(0);
-        final String[] folders = br.getRegex("<a href=\"(/folder/[a-z0-9]+/?)\"").getColumn(0);
-        if ((folders == null || folders.length == 0) && (finfos == null || finfos.length == 0)) {
+        if (finfos == null || finfos.length == 0) {
             if (br.containsHTML("id=\"file-list\"")) {
                 logger.info("Empty folder: " + parameter);
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -84,7 +83,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         }
         if (finfos != null && finfos.length != 0) {
             for (final String finfo : finfos) {
-                final Regex urlfilename = new Regex(finfo, "<a href=(\"|')(/(?:d|v)/.*?)\\1.*?>([^<>]+)</a>");
+                final Regex urlfilename = new Regex(finfo, "<a href=(\"|')(/(?:d|v|folder)/.*?)\\1.*?>([^<>]+)</a>");
                 String url = urlfilename.getMatch(1);
                 String filename = urlfilename.getMatch(2);
                 // final String filesize = new Regex(finfo, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
@@ -92,22 +91,21 @@ public class SolidFilesComFolder extends PluginForDecrypt {
                     logger.info("finfo: " + finfo);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                url = Request.getLocation(url, br.getRequest());
-                final DownloadLink dl = createDownloadlink(url);
-                filename = Encoding.htmlDecode(filename);
-                dl.setName(filename);
-                // dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                if (url.startsWith("/folder/")) {
+                    if (decryptFolders) {
+                        url = Request.getLocation(url, br.getRequest());
+                        decryptedLinks.add(createDownloadlink(url));
+                    }
+                } else {
+                    url = Request.getLocation(url, br.getRequest());
+                    final DownloadLink dl = createDownloadlink(url);
+                    filename = Encoding.htmlDecode(filename);
+                    dl.setName(filename);
+                    // dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
             }
-        }
-        if (decryptFolders && (folders != null && folders.length != 0)) {
-            for (final String singleLink : folders) {
-                decryptedLinks.add(createDownloadlink(Request.getLocation(singleLink, br.getRequest())));
-            }
-        }
-        if (!decryptFolders && (folders != null && folders.length != 0) && decryptedLinks.size() == 0) {
-            logger.info(folders.length + " folders are available but folder decrypt is deactivated.");
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
