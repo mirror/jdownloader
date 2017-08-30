@@ -2,6 +2,7 @@ package org.jdownloader.downloader.hls;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jd.http.Browser;
@@ -135,7 +136,11 @@ public class M3U8Playlist {
         }
 
         public long getSize() {
-            return size;
+            if (isByteRange()) {
+                return getByteRange()[0];
+            } else {
+                return size;
+            }
         }
 
         public void setSize(long size) {
@@ -150,8 +155,26 @@ public class M3U8Playlist {
             return duration;
         }
 
-        private final long    duration;
-        private volatile long size = -1;
+        private long duration;
+
+        private void setDuration(long duration) {
+            this.duration = duration;
+        }
+
+        private volatile long size      = -1;
+        private long[]        byteRange = null;
+
+        public long[] getByteRange() {
+            return byteRange;
+        }
+
+        public boolean isByteRange() {
+            return getByteRange() != null;
+        }
+
+        private void setByteRange(long[] byteRange) {
+            this.byteRange = byteRange;
+        }
 
         public M3U8Segment(final String url, long duration) {
             this.url = url;
@@ -161,12 +184,23 @@ public class M3U8Playlist {
                 this.duration = duration;
             }
         }
+
+        @Override
+        public String toString() {
+            if (isByteRange()) {
+                return "M3U8Segment:Encrypted:" + isEncrypted() + "|Duration:" + getDuration() + "ms|ByteRange:" + Arrays.toString(getByteRange()) + "|URL:" + getUrl();
+            } else {
+                return "M3U8Segment:Encrypted:" + isEncrypted() + "|Duration:" + getDuration() + "ms|URL:" + getUrl();
+            }
+        }
     }
 
     @Override
     public String toString() {
         return "M3U8:Encrypted:" + isEncrypted() + "|Segments:" + size() + "|Duration:" + getEstimatedDuration() + "ms|Estimated Size:" + getEstimatedSize();
     }
+
+    private final static boolean X_BYTERANGE_SUPPORT = false;
 
     /*
      * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20
@@ -175,6 +209,7 @@ public class M3U8Playlist {
         final List<M3U8Playlist> ret = new ArrayList<M3U8Playlist>();
         M3U8Playlist current = new M3U8Playlist();
         long lastSegmentDuration = -1;
+        long byteRange[] = null;
         int sequenceOffset = 0;
         M3U8Segment.X_KEY_METHOD xKeyMethod = M3U8Segment.X_KEY_METHOD.NONE;
         String xKeyIV = null;
@@ -202,7 +237,9 @@ public class M3U8Playlist {
                 // http://habrahabr.ru/company/mailru/blog/274855/
             } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
                 final String segmentURL = br.getURL(line).toString();
-                if (!current.containsSegmentURL(segmentURL)) {
+                final M3U8Segment existing = current.getSegment(segmentURL);
+                if (existing == null || existing.isByteRange()) {
+                    final M3U8Segment lastSegment = current.getLastSegment();
                     final int index = current.addSegment(segmentURL, lastSegmentDuration);
                     if (!M3U8Segment.X_KEY_METHOD.NONE.equals(xKeyMethod)) {
                         final M3U8Segment segment = current.getSegment(index);
@@ -210,10 +247,40 @@ public class M3U8Playlist {
                         segment.setxKeyIV(xKeyIV);
                         segment.setxKeyURI(xKeyURI);
                     }
+                    if (byteRange != null) {
+                        final M3U8Segment segment = current.getSegment(index);
+                        if (X_BYTERANGE_SUPPORT) {
+                            if (lastSegment == null || !lastSegment.getUrl().endsWith(segmentURL)) {
+                                byteRange[0] = byteRange[0] + byteRange[1];
+                                byteRange[1] = 0;
+                            }
+                            segment.setByteRange(byteRange);
+                        }
+                        segment.setSize(byteRange[0]);
+                    }
+                } else if (existing != null && byteRange != null) {
+                    existing.setDuration(existing.getDuration() + lastSegmentDuration);
+                    if (existing.getSize() > 0) {
+                        existing.setSize(existing.getSize() + byteRange[0]);
+                    }
                 }
                 lastSegmentDuration = -1;
+                byteRange = null;
             } else {
-                if (line.startsWith("#EXT-X-MEDIA-SEQUENCE")) {
+                if (line.startsWith("#EXT-X-BYTERANGE")) {
+                    final long byteRangeLength = Long.parseLong(new Regex(line, "#EXT-X-BYTERANGE:(\\d+)").getMatch(0));
+                    final String byteRangeStart = new Regex(line, "#EXT-X-BYTERANGE:\\d+@(\\d+)").getMatch(0);
+                    if (byteRangeStart != null) {
+                        byteRange = new long[] { byteRangeLength, Long.parseLong(byteRangeStart) };
+                    } else {
+                        final M3U8Segment lastSegment = current.getLastSegment();
+                        if (lastSegment != null && lastSegment.isByteRange()) {
+                            byteRange = new long[] { byteRangeLength, lastSegment.getByteRange()[0] + lastSegment.getByteRange()[1] };
+                        } else {
+                            byteRange = new long[] { byteRangeLength, -1l };
+                        }
+                    }
+                } else if (line.startsWith("#EXT-X-MEDIA-SEQUENCE")) {
                     sequenceOffset = Integer.parseInt(new Regex(line, "#EXT-X-MEDIA-SEQUENCE:(\\d+)").getMatch(0));
                     current.setMediaSequenceOffset(sequenceOffset);
                 } else if (line.startsWith("#EXTINF:")) {
@@ -329,12 +396,7 @@ public class M3U8Playlist {
     }
 
     public boolean containsSegmentURL(final String segmentURL) {
-        for (final M3U8Segment segment : segments) {
-            if (segmentURL.equals(segment.getUrl())) {
-                return true;
-            }
-        }
-        return false;
+        return getSegment(segmentURL) != null;
     }
 
     public int size() {
@@ -431,6 +493,25 @@ public class M3U8Playlist {
         } else {
             return -1;
         }
+    }
+
+    protected M3U8Segment getLastSegment() {
+        if (segments.size() > 0) {
+            return segments.get(segments.size() - 1);
+        } else {
+            return null;
+        }
+    }
+
+    protected M3U8Segment getSegment(final String url) {
+        if (url != null) {
+            for (M3U8Segment segment : segments) {
+                if (url.equals(segment.getUrl())) {
+                    return segment;
+                }
+            }
+        }
+        return null;
     }
 
     public M3U8Segment removeSegment(int index) {

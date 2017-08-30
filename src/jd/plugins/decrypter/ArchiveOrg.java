@@ -62,12 +62,17 @@ public class ArchiveOrg extends PluginForDecrypt {
         if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
             int page = 2;
             while (!isAbort()) {
+                if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
+                    decryptedLinks.add(createDownloadlink(parameter.replace("/details/", "/download/")));
+                    break;
+                }
+                final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
+                if (showAll != null) {
+                    decryptedLinks.add(createDownloadlink(br.getURL(showAll).toString()));
+                    break;
+                }
                 final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
                 if (details == null || details.length == 0) {
-                    final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
-                    if (showAll != null) {
-                        decryptedLinks.add(createDownloadlink(br.getURL(showAll).toString()));
-                    }
                     break;
                 }
                 for (final String detail : details) {
@@ -122,6 +127,10 @@ public class ArchiveOrg extends PluginForDecrypt {
                     final String sha1 = new Regex(filesXML, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
                     if (sha1 != null) {
                         fina.setSha1Hash(sha1);
+                    }
+                    final String size = new Regex(filesXML, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
+                    if (size != null) {
+                        fina.setVerifiedFileSize(Long.parseLong(size));
                     }
                 }
                 decryptedLinks.add(fina);

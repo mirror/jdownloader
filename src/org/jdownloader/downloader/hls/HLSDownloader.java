@@ -891,12 +891,16 @@ public class HLSDownloader extends DownloadInterface {
                             } catch (final Throwable e) {
                             }
                             final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(buildDownloadUrl(downloadURL));
+                            final long byteRange[] = segment.getByteRange();
                             if (fileBytesMap.getFinalSize() > 0) {
                                 if (logger != null) {
                                     logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
                                 }
                                 final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
-                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
+                                final long startByteRange = byteRange != null ? byteRange[1] : 0;
+                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + startByteRange + unMarkedAreas.get(0)[0] + "-" + startByteRange + unMarkedAreas.get(0)[1]);
+                            } else if (byteRange != null) {
+                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
                             }
                             URLConnectionAdapter connection = null;
                             try {
@@ -926,10 +930,17 @@ public class HLSDownloader extends DownloadInterface {
                                 instanceBuffer = false;
                                 readWriteBuffer = new byte[32 * 1024];
                             }
-                            final long length = connection.getCompleteContentLength();
+                            final long length;
+                            if (fileBytesMap.getFinalSize() > 0) {
+                                length = fileBytesMap.getFinalSize();
+                            } else if (byteRange != null) {
+                                length = connection.getContentLength();
+                            } else {
+                                length = connection.getCompleteContentLength();
+                            }
                             try {
                                 if (outputStream == null) {
-                                    response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
+                                    response.setResponseCode(ResponseCode.SUCCESS_OK);
                                     if (length > 0) {
                                         fileBytesMap.setFinalSize(length);
                                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
@@ -1017,7 +1028,7 @@ public class HLSDownloader extends DownloadInterface {
                                             try {
                                                 outputStream.write(readWriteBuffer, 0, len);
                                             } catch (IOException e) {
-                                                if (connection.getCompleteContentLength() != -1) {
+                                                if (length != -1) {
                                                     throw e;
                                                 } else {
                                                     writeToOutputStream = false;
@@ -1045,7 +1056,7 @@ public class HLSDownloader extends DownloadInterface {
                                 return true;
                             } finally {
                                 if (segment != null && (connection.getResponseCode() == 200 || connection.getResponseCode() == 206)) {
-                                    segment.setSize(Math.max(connection.getCompleteContentLength(), fileBytesMap.getSize()));
+                                    segment.setSize(Math.max(length, fileBytesMap.getSize()));
                                 }
                                 if (instanceBuffer) {
                                     HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
