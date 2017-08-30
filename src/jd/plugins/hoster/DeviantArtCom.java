@@ -148,9 +148,14 @@ public class DeviantArtCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("title>([^<>\"]*?)on DeviantArt</title>").getMatch(0);
             }
-        } else {
-            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-        }
+        } else if (this.getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
+            filename = findServerFilename(null);
+            if (filename == null) {
+                filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+            }
+       } else {
+                filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+       }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -574,6 +579,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final boolean default_FORCEHTMLDOWNLOAD                = false;
     public static final boolean  default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = false;
     private static final String  FASTLINKCHECK_ALL                        = "FASTLINKCHECK_ALL";
+    private static final String  FilenameFromServer                       = "FilenameFromServer";
 
     public void setConfigElements() {
         final StringBuilder sbinfo = new StringBuilder();
@@ -599,6 +605,7 @@ public class DeviantArtCom extends PluginForHost {
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, fastlinkchecktext).setDefaultValue(default_FASTLINKCHECK_2));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_ALL, fastlinkcheck_all_text).setDefaultValue(default_FASTLINKCHECK_ALL));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FilenameFromServer", "Choose file name from download link with unique identifier?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, forcehtmldownloadtext).setDefaultValue(default_FORCEHTMLDOWNLOAD));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, decryptOffsetsIndividually).setDefaultValue(default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
