@@ -13,12 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,19 +32,22 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https://viddecrypted\\.me/[A-Za-z0-9]+" })
 public class VidMe extends PluginForHost {
-
     public VidMe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Extension which will be used if no correct extension is found */
     public static final String   default_Extension = ".mp4";
-
     public static final String   API_ENDPOINT      = "https://api.vid.me/";
     private String               dllink            = null;
-
     private static final boolean api_use_api       = true;
 
     @Override
@@ -65,6 +66,14 @@ public class VidMe extends PluginForHost {
 
     public static void website_prepBR(final Browser br) {
         br.setAllowedResponseCodes(410);
+    }
+
+    @Override
+    public boolean allowHandle(DownloadLink downloadLink, PluginForHost plugin) {
+        if (downloadLink != null && plugin != null && downloadLink.hasProperty("HLS")) {
+            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        }
+        return super.allowHandle(downloadLink, plugin);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })
@@ -113,27 +122,51 @@ public class VidMe extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (StringUtils.containsIgnoreCase(dllink, "format=hls")) {
+            downloadLink.setProperty("HLS", Boolean.TRUE);
+            br.setFollowRedirects(true);
+            br.getPage(dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dllink = hlsbest.getDownloadurl();
+            final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), br);
+            long estimatedSize = -1;
+            for (M3U8Playlist playList : playLists) {
+                if (hlsbest.getBandwidth() > 0) {
+                    playList.setAverageBandwidth(hlsbest.getBandwidth());
+                    estimatedSize += playList.getEstimatedSize();
+                }
             }
-            downloadLink.setProperty("directlink", dllink);
+            if (estimatedSize > 0) {
+                downloadLink.setDownloadSize(estimatedSize);
+            }
             return AvailableStatus.TRUE;
-        } finally {
+        } else {
+            downloadLink.removeProperty("HLS");
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            // In case the link redirects to the finallink
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                try {
+                    con = br2.openHeadConnection(dllink);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", dllink);
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
     }
@@ -141,12 +174,17 @@ public class VidMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadLink.hasProperty("HLS")) {
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

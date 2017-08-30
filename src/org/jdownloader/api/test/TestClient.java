@@ -192,7 +192,6 @@ public class TestClient {
         register(new TerminateSessionTest());
         register(new RequestAccessTokenTest());
         register(new CancelRegistrationTest());
-        register(new CallAccessTokenURL());
         register(new GetDirectConnectionInfo());
         register(new VerifyDirectConnection());
         register(new DirectConnectionCall());
