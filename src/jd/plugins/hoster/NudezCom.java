@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudez.com" }, urls = { "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudez.com" }, urls = { "https?://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class NudezCom extends PluginForHost {
-
     public NudezCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,14 +38,12 @@ public class NudezCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -68,7 +64,7 @@ public class NudezCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]+)").getMatch(0);
-        String filename = br.getRegex("name=twitter:title content=\"([^<>\"]+)\"").getMatch(0);
+        String filename = br.getRegex("name=\"?twitter:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
