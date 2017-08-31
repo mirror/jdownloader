@@ -877,6 +877,35 @@ public class YoutubeHelper {
     private LinkedHashMap<String, Object>            ytInitialData;
     private LinkedHashMap<String, Object>            ytInitialPlayerResponse;
     private LinkedHashMap<String, Object>            ytplayerConfig;
+    private LinkedHashMap<String, Object>            ytcfgSet;
+
+    /**
+     * @return the ytInitialData
+     */
+    public final LinkedHashMap<String, Object> getYtInitialData() {
+        return ytInitialData;
+    }
+
+    /**
+     * @return the ytInitialPlayerResponse
+     */
+    public final LinkedHashMap<String, Object> getYtInitialPlayerResponse() {
+        return ytInitialPlayerResponse;
+    }
+
+    /**
+     * @return the ytplayerConfig
+     */
+    public final LinkedHashMap<String, Object> getYtplayerConfig() {
+        return ytplayerConfig;
+    }
+
+    /**
+     * @return the ytcfgSet
+     */
+    public final LinkedHashMap<String, Object> getYtcfgSet() {
+        return ytcfgSet;
+    }
 
     String descrambleSignature(final String sig) throws IOException, PluginException {
         if (sig == null) {
@@ -1086,19 +1115,7 @@ public class YoutubeHelper {
     protected void extractData() {
         // json is faster than regex.
         if (StringUtils.isEmpty(vid.title)) {
-            if (ytInitialPlayerResponse != null) {
-                vid.title = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/title");
-            }
-            if (StringUtils.isEmpty(vid.title)) {
-                if (ytInitialData != null) {
-                    vid.title = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/simpleText");
-                }
-            }
-            if (StringUtils.isEmpty(vid.title)) {
-                if (ytplayerConfig != null) {
-                    vid.title = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/title");
-                }
-            }
+            vid.title = getVidTitleFromMaps();
             if (StringUtils.isEmpty(vid.title)) {
                 final String match = br.getRegex("document\\.title\\s*=\\s*\"(.*?) - YouTube\"").getMatch(0);
                 if (StringUtils.isNotEmpty(match)) {
@@ -1160,12 +1177,7 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.channelID)) {
-            if (ytInitialPlayerResponse != null) {
-                vid.channelID = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/channelId");
-            }
-            if (ytInitialPlayerResponse != null) {
-                vid.channelID = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/ucid");
-            }
+            vid.channelID = getChannelIdFromMaps();
         }
         if (vid.duration <= 0) {
             // json is faster than regex.
@@ -1183,14 +1195,7 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.channelTitle)) {
-            if (ytInitialPlayerResponse != null) {
-                vid.channelTitle = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/author");
-            }
-            if (StringUtils.isEmpty(vid.channelTitle)) {
-                if (ytplayerConfig != null) {
-                    vid.channelTitle = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/author");
-                }
-            }
+            vid.channelTitle = getChannelTitleFromMaps();
             if (StringUtils.isEmpty(vid.channelTitle)) {
                 String match = br.getRegex("<div class=\"yt-user-info\"><a [^>]*data-name[^>]*>(.*?)</a>").getMatch(0);
                 if (StringUtils.isEmpty(match) && StringUtils.isNotEmpty(vid.channelID)) {
@@ -1203,15 +1208,7 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.user)) {
-            if (ytInitialData != null) {
-                String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/navigationEndpoint/webNavigationEndpointData/url");
-                if (StringUtils.isEmpty(string)) {
-                    string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/navigationEndpoint/browseEndpoint/canonicalBaseUrl");
-                }
-                if (string != null) {
-                    vid.user = new Regex(string, "/user/(.+)").getMatch(0);
-                }
-            }
+            vid.user = getUserFromMaps();
             if (StringUtils.isEmpty(vid.user)) {
                 final String match = br.getRegex("temprop=\"url\" href=\"https?://(www\\.)?youtube\\.com/user/([^<>\"]+)\"").getMatch(1);
                 // getVideoInfoWorkaroundUsed
@@ -1225,6 +1222,56 @@ public class YoutubeHelper {
                 }
             }
         }
+    }
+
+    public String getChannelTitleFromMaps() {
+        String result = null;
+        if (ytInitialPlayerResponse != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/author");
+        }
+        if (StringUtils.isEmpty(result) && ytplayerConfig != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/author");
+        }
+        return result;
+    }
+
+    public String getVidTitleFromMaps() {
+        String result = null;
+        if (ytInitialPlayerResponse != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/title");
+        }
+        if (StringUtils.isEmpty(result) && ytInitialData != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/simpleText");
+        }
+        if (StringUtils.isEmpty(result) && ytplayerConfig != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/title");
+        }
+        return result;
+    }
+
+    public String getUserFromMaps() {
+        String result = null;
+        if (ytInitialData != null) {
+            String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/navigationEndpoint/webNavigationEndpointData/url");
+            if (StringUtils.isEmpty(string)) {
+                string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/navigationEndpoint/browseEndpoint/canonicalBaseUrl");
+            }
+            if (string != null) {
+                result = new Regex(string, "/user/(.+)").getMatch(0);
+            }
+        }
+        return result;
+    }
+
+    public String getChannelIdFromMaps() {
+        String result = null;
+        if (ytInitialPlayerResponse != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/channelId");
+        }
+        if (StringUtils.isEmpty(result) && ytInitialPlayerResponse != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/ucid");
+        }
+        return result;
     }
 
     protected void handleContentWarning(final Browser ibr) throws Exception {
@@ -1305,24 +1352,7 @@ public class YoutubeHelper {
         // br.setCookie("youtube.com", "VISITOR_INFO1_LIVE", "Qa1hUZu3gtk");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/44.0 (Chrome)");
         br.getPage(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999");
-        {
-            final String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\});[\r\n]").getMatch(0);
-            if (ytInitialData != null) {
-                this.ytInitialData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialData);
-            }
-        }
-        {
-            final String ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\);[\r\n]").getMatch(0);
-            if (ytInitialPlayerResponse != null) {
-                this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialPlayerResponse);
-            }
-        }
-        {
-            final String ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});ytplayer\\.load").getMatch(0);
-            if (ytplayerConfig != null) {
-                this.ytplayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
-            }
-        }
+        parserJson();
         vid.approxThreedLayout = br.getRegex("\"approx_threed_layout\"\\s*\\:\\s*\"([^\"]*)").getMatch(0);
         String[][] keyWordsGrid = br.getRegex("<meta\\s+property=\"([^\"]*)\"\\s+content=\"yt3d\\:([^\"]+)=([^\"]+)\">").getMatches();
         vid.keywords3D = new HashMap<String, String>();
@@ -1330,19 +1360,19 @@ public class YoutubeHelper {
             for (String[] keyValue : keyWordsGrid) {
                 vid.keywords3D.put(keyValue[1], keyValue[2]);
             }
-        } else {
-            final ArrayList<String> kws = (ArrayList<String>) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/keywords");
-            if (kws != null) {
-                for (String s : kws) {
-                    vid.keywords.add(s);
-                }
-            }
         }
         String keywords = br.getRegex("<meta name=\"keywords\" content=\"([^\"]*)").getMatch(0);
         vid.keywords = new HashSet<String>();
         if (keywords != null) {
             for (String s : keywords.split("[,]+")) {
                 vid.keywords.add(s);
+            }
+        } else {
+            final ArrayList<String> kws = (ArrayList<String>) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/keywords");
+            if (kws != null) {
+                for (String s : kws) {
+                    vid.keywords.add(s);
+                }
             }
         }
         handleRentalVideos();
@@ -2313,7 +2343,6 @@ public class YoutubeHelper {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        // channelname
         for (YoutubeReplacer r : REPLACER) {
             formattedFilename = r.replace(formattedFilename, this, link);
         }
@@ -2731,6 +2760,34 @@ public class YoutubeHelper {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    public void parserJson() throws Exception {
+        {
+            final String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\});[\r\n]").getMatch(0);
+            if (ytInitialData != null) {
+                this.ytInitialData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialData);
+            }
+        }
+        {
+            final String ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\);[\r\n]").getMatch(0);
+            if (ytInitialPlayerResponse != null) {
+                this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialPlayerResponse);
+            }
+        }
+        {
+            final String ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});ytplayer\\.load").getMatch(0);
+            if (ytplayerConfig != null) {
+                this.ytplayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
+            }
+        }
+        {
+            // there are many of these on the page
+            final String ytcfgSet = br.getRegex("ytcfg\\.set\\((\\{.*?\\})\\);ytcfg\\.set").getMatch(0);
+            if (ytcfgSet != null) {
+                this.ytcfgSet = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytcfgSet);
             }
         }
     }

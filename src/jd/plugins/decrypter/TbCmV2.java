@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -61,6 +62,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 import jd.PluginWrapper;
@@ -133,6 +135,7 @@ public class TbCmV2 extends PluginForDecrypt {
     private String                  userID;
     private AbstractVariant         requestedVariant;
     private HashMap<String, Object> globalPropertiesForDownloadLink;
+    private YoutubeHelper           helper;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         // nullify, for debugging purposes!
@@ -185,7 +188,7 @@ public class TbCmV2 extends PluginForDecrypt {
             // first uid in array is the video the user copy url on.
             videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
         }
-        YoutubeHelper helper = new YoutubeHelper(br, getLogger());
+        helper = new YoutubeHelper(br, getLogger());
         /*
          * you can not use this with /c or /channel based urls, it will pick up false positives. see
          * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only contains 27
@@ -298,6 +301,7 @@ public class TbCmV2 extends PluginForDecrypt {
                  * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist instead
                  */
                 br.getPage("https://www.youtube.com/user/" + userID + "/featured");
+                helper.parserJson();
                 // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle());
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
@@ -677,9 +681,12 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     private void getChannelID() {
-        channelID = br.getRegex("<meta itemprop=\"channelId\" content=\"(UC[A-Za-z0-9\\-_]+)\"").getMatch(0);
+        channelID = helper != null ? helper.getChannelIdFromMaps() : null;
         if (channelID == null) {
-            channelID = br.getRegex("yt\\.setConfig\\(\\s*'CHANNEL_ID'\\s*,\\s*\"(UC[A-Za-z0-9\\-_]+)\"\\);").getMatch(0);
+            channelID = br.getRegex("<meta itemprop=\"channelId\" content=\"(UC[A-Za-z0-9\\-_]+)\"").getMatch(0);
+            if (channelID == null) {
+                channelID = br.getRegex("yt\\.setConfig\\(\\s*'CHANNEL_ID'\\s*,\\s*\"(UC[A-Za-z0-9\\-_]+)\"\\);").getMatch(0);
+            }
         }
     }
 
@@ -834,37 +841,115 @@ public class TbCmV2 extends PluginForDecrypt {
      * @throws IOException
      * @throws InterruptedException
      */
-    public ArrayList<YoutubeClipData> parsePlaylist(final String playlistID) throws IOException, InterruptedException {
+    public ArrayList<YoutubeClipData> parsePlaylist(final String playlistID) throws Exception {
         // this returns the html5 player
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(playlistID)) {
-            Browser pbr = new Browser();
             // firefox gets different result than chrome! lets hope switching wont cause issue.
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
             br.getHeaders().put("Accept-Charset", null);
             br.getPage(getBase() + "/playlist?list=" + playlistID);
             // user list it's not a playlist.... just a channel decryption. this can return incorrect information.
             globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, extractWebsiteTitle());
-            final String PAGE_CL = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
-            final String PAGE_BUILD_LABEL = br.getRegex("'PAGE_BUILD_LABEL': \"(.*?)\"").getMatch(0);
-            final String VARIANTS_CHECKSUM = br.getRegex("'VARIANTS_CHECKSUM': \"(.*?)\"").getMatch(0);
-            final String INNERTUBE_CONTEXT_CLIENT_VERSION = br.getRegex("INNERTUBE_CONTEXT_CLIENT_VERSION: \"(.*?)\"").getMatch(0);
-            pbr = br.cloneBrowser();
+            helper.parserJson();
+            boolean isJson = false;
+            Browser pbr = br.cloneBrowser();
             int counter = 1;
             int round = 0;
+            String PAGE_CL = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
+            String PAGE_BUILD_LABEL = br.getRegex("'PAGE_BUILD_LABEL': \"(.*?)\"").getMatch(0);
+            String VARIANTS_CHECKSUM = br.getRegex("'VARIANTS_CHECKSUM': \"(.*?)\"").getMatch(0);
+            String INNERTUBE_CONTEXT_CLIENT_VERSION = br.getRegex("INNERTUBE_CONTEXT_CLIENT_VERSION: \"(.*?)\"").getMatch(0);
+            String INNERTUBE_CONTEXT_CLIENT_NAME = br.getRegex("INNERTUBE_CONTEXT_CLIENT_NAME: \"(.*?)\"").getMatch(0);
             while (true) {
                 if (this.isAbort()) {
                     throw new InterruptedException();
                 }
+                String jsonPage = null, nextPage = null;
                 checkErrors(pbr);
-                String[] videos = pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
+                // this will speed up searches. we know this wont be present..
+                String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
                 int before = dupeCheckSet.size();
-                if (videos != null) {
+                if (videos != null && videos.length > 0) {
                     for (String relativeUrl : videos) {
                         if (relativeUrl.contains("list=" + playlistID)) {
                             String id = getVideoIDByUrl(relativeUrl);
                             if (dupeCheckSet.add(id)) {
                                 ret.add(new YoutubeClipData(id, counter++));
+                            }
+                        }
+                    }
+                    jsonPage = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
+                    nextPage = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
+                } else {
+                    isJson = true;
+                    if (round == 0) {
+                        if (helper.getYtInitialData() != null) {
+                            final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(helper.getYtInitialData(), "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                            if (pl != null) {
+                                for (final Object p : pl) {
+                                    final LinkedHashMap<String, Object> vid = (LinkedHashMap<String, Object>) p;
+                                    final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                                    if (id != null) {
+                                        if (dupeCheckSet.add(id)) {
+                                            ret.add(new YoutubeClipData(id, counter++));
+                                        }
+                                    }
+                                }
+                                // continuation
+                                final LinkedHashMap<String, Object> c = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(helper.getYtInitialData(), "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/continuations/{0}/nextContinuationData");
+                                if (c != null) {
+                                    final String ctoken = (String) c.get("continuation");
+                                    final String itct = (String) c.get("clickTrackingParams");
+                                    if (ctoken != null && itct != null) {
+                                        jsonPage = "/browse_ajax?ctoken=" + Encoding.urlEncode(ctoken) + "&itct=" + Encoding.urlEncode(itct);
+                                    }
+                                }
+                                if (helper.getYtcfgSet() != null) {
+                                    if (PAGE_CL == null) {
+                                        final Integer pageCl = (Integer) helper.getYtcfgSet().get("PAGE_CL");
+                                        PAGE_CL = pageCl != null ? pageCl + "" : null;
+                                    }
+                                    if (PAGE_BUILD_LABEL == null) {
+                                        PAGE_BUILD_LABEL = (String) helper.getYtcfgSet().get("PAGE_BUILD_LABEL");
+                                    }
+                                    if (VARIANTS_CHECKSUM == null) {
+                                        VARIANTS_CHECKSUM = (String) helper.getYtcfgSet().get("VARIANTS_CHECKSUM");
+                                    }
+                                    if (INNERTUBE_CONTEXT_CLIENT_VERSION == null) {
+                                        INNERTUBE_CONTEXT_CLIENT_VERSION = (String) helper.getYtcfgSet().get("INNERTUBE_CONTEXT_CLIENT_VERSION");
+                                    }
+                                    if (INNERTUBE_CONTEXT_CLIENT_NAME == null) {
+                                        final Integer cn = (Integer) helper.getYtcfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME");
+                                        INNERTUBE_CONTEXT_CLIENT_NAME = cn != null ? cn + "" : null;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // secondary pages are pure json
+                        final ArrayList<Object> asdf = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
+                        if (asdf != null) {
+                            final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(asdf, "{}/response/continuationContents/playlistVideoListContinuation/contents");
+                            if (pl != null) {
+                                for (final Object p : pl) {
+                                    final LinkedHashMap<String, Object> vid = (LinkedHashMap<String, Object>) p;
+                                    final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                                    if (id != null) {
+                                        if (dupeCheckSet.add(id)) {
+                                            ret.add(new YoutubeClipData(id, counter++));
+                                        }
+                                    }
+                                }
+                                // continuation
+                                final LinkedHashMap<String, Object> c = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(asdf, "{}/response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData");
+                                if (c != null) {
+                                    final String ctoken = (String) c.get("continuation");
+                                    final String itct = (String) c.get("clickTrackingParams");
+                                    if (ctoken != null && itct != null) {
+                                        jsonPage = "/browse_ajax?ctoken=" + Encoding.urlEncode(ctoken) + "&itct=" + Encoding.urlEncode(itct);
+                                    }
+                                }
                             }
                         }
                     }
@@ -874,8 +959,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     break;
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
-                String jsonPage = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
-                String nextPage = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
                 if (jsonPage != null) {
                     jsonPage = HTMLEntities.unhtmlentities(jsonPage);
                     pbr = br.cloneBrowser();
@@ -891,13 +974,18 @@ public class TbCmV2 extends PluginForDecrypt {
                     if (INNERTUBE_CONTEXT_CLIENT_VERSION != null) {
                         pbr.getHeaders().put("X-YouTube-Client-Version", INNERTUBE_CONTEXT_CLIENT_VERSION);
                     }
+                    if (INNERTUBE_CONTEXT_CLIENT_NAME != null) {
+                        pbr.getHeaders().put("X-YouTube-Client-Name", INNERTUBE_CONTEXT_CLIENT_NAME);
+                    }
                     // anti ddos
                     round = antiDdosSleep(round);
                     pbr.getPage(jsonPage);
-                    String output = pbr.toString();
-                    output = PluginJSonUtils.unescape(output);
-                    output = output.replaceAll("\\s+", " ");
-                    pbr.getRequest().setHtmlCode(output);
+                    if (!isJson) {
+                        String output = pbr.toString();
+                        output = PluginJSonUtils.unescape(output);
+                        output = output.replaceAll("\\s+", " ");
+                        pbr.getRequest().setHtmlCode(output);
+                    }
                 } else if (nextPage != null) {
                     // OLD! doesn't always present. Depends on server playlist backend code.!
                     nextPage = HTMLEntities.unhtmlentities(nextPage);
