@@ -24,6 +24,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -35,6 +36,7 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -370,7 +372,9 @@ public class Keep2ShareCc extends K2SApi {
                 if (uniqueID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                postPage(br.getURL(), "yt0=&slow_id=" + uniqueID);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                postPage(br.getURL(), "slow_id=" + uniqueID);
+                br.getHeaders().put("X-Requested-With", null);
                 if (br.containsHTML("Free user can't download large files")) {
                     premiumDownloadRestriction("This file is only available to premium members");
                 }
@@ -384,7 +388,17 @@ public class Keep2ShareCc extends K2SApi {
                     if (br.containsHTML("Free account does not allow to download more than one file at the same time")) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                     }
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                        final Form recap = br.getFormbyProperty("id", "captcha-form");
+                        if (recap == null) {
+                            // huston we have a problem
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                        }.getToken();
+                        recap.put(Encoding.urlEncode("ReCaptchaForm[verifyCode]"), Encoding.urlEncode(recaptchaV2Response));
+                        sendForm(recap);
+                    } else if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
                         final Recaptcha rc = new Recaptcha(br, this);
                         final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
