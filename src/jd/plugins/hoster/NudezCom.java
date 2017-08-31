@@ -60,16 +60,17 @@ public class NudezCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("notification error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]+)").getMatch(0);
-        String filename = br.getRegex("name=\"?twitter:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        String filename = br.getRegex("name=\"?twitter:title\"? content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        if (filename == null) {
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
