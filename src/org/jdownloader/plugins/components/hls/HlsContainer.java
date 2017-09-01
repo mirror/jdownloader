@@ -1,15 +1,16 @@
 package org.jdownloader.plugins.components.hls;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.http.Browser;
 
-public class HlsContainer {
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 
+public class HlsContainer {
     public static HlsContainer findBestVideoByBandwidth(final List<HlsContainer> media) {
         if (media == null) {
             return null;
@@ -81,15 +82,36 @@ public class HlsContainer {
         return hlsqualities;
     }
 
-    private String codecs;
-    private String downloadurl;
-    private String referer;
+    private String             codecs;
+    private String             downloadurl;
+    private List<M3U8Playlist> m3u8List  = null;
+    private int                width     = -1;
+    private int                height    = -1;
+    private int                bandwidth = -1;
+    private int                programID = -1;
+    private int                framerate = -1;
 
-    private int    width     = -1;
-    private int    height    = -1;
-    private int    bandwidth = -1;
-    private int    programID = -1;
-    private int    framerate = -1;
+    protected List<M3U8Playlist> loadM3U8(Browser br) throws IOException {
+        final Browser br2 = br.cloneBrowser();
+        return M3U8Playlist.loadM3U8(getDownloadurl(), br2);
+    }
+
+    public void setM3U8(List<M3U8Playlist> m3u8List) {
+        this.m3u8List = m3u8List;
+    }
+
+    public List<M3U8Playlist> getM3U8(Browser br) throws IOException {
+        if (m3u8List == null) {
+            setM3U8(loadM3U8(br));
+            final int bandwidth = getBandwidth();
+            if (m3u8List != null && bandwidth > 0) {
+                for (final M3U8Playlist m3u8 : m3u8List) {
+                    m3u8.setAverageBandwidth(bandwidth);
+                }
+            }
+        }
+        return m3u8List;
+    }
 
     public int getProgramID() {
         return programID;
@@ -203,5 +225,4 @@ public class HlsContainer {
             return ".mp4";
         }
     }
-
 }
