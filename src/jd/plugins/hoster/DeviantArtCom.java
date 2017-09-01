@@ -153,9 +153,9 @@ public class DeviantArtCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
             }
-       } else {
-                filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-       }
+        } else {
+            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -505,7 +505,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private String getHQpic() {
-        final String hqurl = br.getRegex("class=\"dev\\-content\\-normal[^\"]*?\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        final String hqurl = br.getRegex("class=\"dev\\-content\\-normal[^\"]*?\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
         return hqurl;
     }
 
