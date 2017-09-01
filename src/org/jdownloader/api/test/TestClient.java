@@ -45,7 +45,6 @@ import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 import org.jdownloader.myjdownloader.client.bindings.EnumOptionStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
-import org.jdownloader.myjdownloader.client.exceptions.APIException;
 import org.jdownloader.myjdownloader.client.exceptions.EmailNotValidatedException;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
@@ -160,7 +159,7 @@ public class TestClient {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static void main(final String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException, IOException, InterruptedException {
+    public static void main(final String[] args) throws MyJDownloaderException, DialogClosedException, DialogCanceledException, IOException, InterruptedException {
         register(LOGIN = new TestLogin());
         register(new ConfigTest());
         register(new AccountTest());

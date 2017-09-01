@@ -202,10 +202,14 @@ public class M3U8Playlist {
 
     private final static boolean X_BYTERANGE_SUPPORT = false;
 
+    public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws IOException {
+        return loadM3U8(m3u8, br, X_BYTERANGE_SUPPORT);
+    }
+
     /*
      * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20
      */
-    public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws Exception {
+    public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br, final boolean X_BYTERANGE_SUPPORT) throws IOException {
         final List<M3U8Playlist> ret = new ArrayList<M3U8Playlist>();
         M3U8Playlist current = new M3U8Playlist();
         long lastSegmentDuration = -1;

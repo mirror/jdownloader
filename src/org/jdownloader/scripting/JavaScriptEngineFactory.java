@@ -31,6 +31,9 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
+import jd.parser.Regex;
+import jd.plugins.components.ThrowingRunnable;
+
 import org.appwork.utils.reflection.Clazz;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
@@ -49,11 +52,7 @@ import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
 
-import jd.parser.Regex;
-import jd.plugins.components.ThrowingRunnable;
-
 public class JavaScriptEngineFactory {
-
     /**
      * ExternalScriptable is an implementation of Scriptable backed by a JSR 223 ScriptContext instance.
      *
@@ -62,16 +61,16 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class ExternalScriptable implements Scriptable {
-
         /*
          * Underlying ScriptContext that we use to store named variables of this scope.
          */
         private ScriptContext       context;
         /*
-         * JavaScript allows variables to be named as numbers (indexed properties). This way arrays, objects (scopes) are treated uniformly. Note
-         * that JSR 223 API supports only String named variables and so we can't store these in Bindings. Also, JavaScript allows name of the
-         * property name to be even empty String! Again, JSR 223 API does not support empty name. So, we use the following fallback map to store
-         * such variables of this scope. This map is not exposed to JSR 223 API. We can just script objects "as is" and need not convert.
+         * JavaScript allows variables to be named as numbers (indexed properties). This way arrays, objects (scopes) are treated uniformly.
+         * Note that JSR 223 API supports only String named variables and so we can't store these in Bindings. Also, JavaScript allows name
+         * of the property name to be even empty String! Again, JSR 223 API does not support empty name. So, we use the following fallback
+         * map to store such variables of this scope. This map is not exposed to JSR 223 API. We can just script objects "as is" and need
+         * not convert.
          */
         private Map<Object, Object> indexedProps;
         // my prototype
@@ -452,8 +451,9 @@ public class JavaScriptEngineFactory {
         }
 
         /**
-         * We convert script values to the nearest Java value. We unwrap wrapped Java objects so that access from Bindings.get() would return
-         * "workable" value for Java. But, at the same time, we need to make few special cases and hence the following function is used.
+         * We convert script values to the nearest Java value. We unwrap wrapped Java objects so that access from Bindings.get() would
+         * return "workable" value for Java. But, at the same time, we need to make few special cases and hence the following function is
+         * used.
          */
         private Object jsToJava(Object jsObj) {
             if (jsObj instanceof Wrapper) {
@@ -465,8 +465,8 @@ public class JavaScriptEngineFactory {
                     return njb;
                 }
                 /*
-                 * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we unwrap, then
-                 * these script objects will become script primitive types. For example,
+                 * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
+                 * unwrap, then these script objects will become script primitive types. For example,
                  *
                  * var x = new java.lang.Double(3.0); print(typeof x);
                  *
@@ -494,7 +494,6 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class RhinoTopLevel extends ImporterTopLevel {
-
         // variables defined always to help Java access from JavaScript
         // private static final String builtinVariables = "var com = Packages.com; \n" +
         // "var edu = Packages.edu; \n" + "var javax = Packages.javax; \n" +
@@ -505,8 +504,8 @@ public class JavaScriptEngineFactory {
             // initialize JSAdapter lazily. Reduces footprint & startup time.
             new LazilyLoadedCtor(this, "JSAdapter", "com.sun.script.javascript.JSAdapter", false);
             /*
-             * initialize JavaAdapter. We can't lazy initialize this because lazy initializer attempts to define a new property. But, JavaAdapter is an
-             * exisiting property that we overwrite.
+             * initialize JavaAdapter. We can't lazy initialize this because lazy initializer attempts to define a new property. But,
+             * JavaAdapter is an exisiting property that we overwrite.
              */
             JavaAdapter.init(cx, this, false);
             // add top level functions
@@ -537,9 +536,9 @@ public class JavaScriptEngineFactory {
         }
 
         /**
-         * The scope function creates a new JavaScript scope object with given Bindings object as backing store. This can be used to create a script
-         * scope based on arbitrary Bindings instance. For example, in webapp scenario, a 'page' level Bindings instance may be wrapped as a scope
-         * and code can be run in JavaScripe 'with' statement:
+         * The scope function creates a new JavaScript scope object with given Bindings object as backing store. This can be used to create
+         * a script scope based on arbitrary Bindings instance. For example, in webapp scenario, a 'page' level Bindings instance may be
+         * wrapped as a scope and code can be run in JavaScripe 'with' statement:
          *
          * var page = scope(pageBindings); with (page) { // code that uses page scope }
          */
@@ -564,8 +563,8 @@ public class JavaScriptEngineFactory {
         /**
          * The sync function creates a synchronized function (in the sense of a Java synchronized method) from an existing function. The new
          * function synchronizes on the <code>this</code> object of its invocation. js> var o = { f : sync(function(x) { print("entry");
-         * Packages.java.lang.Thread.sleep(x*1000); print("exit"); })}; js> thread(function() {o.f(5);}); entry js> thread(function() {o.f(5);});
-         * js> exit entry exit
+         * Packages.java.lang.Thread.sleep(x*1000); print("exit"); })}; js> thread(function() {o.f(5);}); entry js> thread(function()
+         * {o.f(5);}); js> exit entry exit
          */
         public static Object sync(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
             if (args.length == 1 && args[0] instanceof Function) {
@@ -589,7 +588,6 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class RhinoCompiledScript extends CompiledScript {
-
         private RhinoScriptEngine engine;
         private Script            script;
 
@@ -628,7 +626,6 @@ public class JavaScriptEngineFactory {
     }
 
     public static class InterfaceImplementor {
-
         private Invocable engine;
 
         /** Creates a new instance of Invocable */
@@ -637,7 +634,6 @@ public class JavaScriptEngineFactory {
         }
 
         public class InterfaceImplementorInvocationHandler implements InvocationHandler {
-
             private Invocable engine;
             private Object    thiz;
 
@@ -684,11 +680,11 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class RhinoScriptEngine extends AbstractScriptEngine implements Invocable, Compilable {
-
         private static final boolean DEBUG = false;
         /*
-         * Scope where standard JavaScript objects and our extensions to it are stored. Note that these are not user defined engine level global
-         * variables. These are variables have to be there on all compliant ECMAScript scopes. We put these standard objects in this top level.
+         * Scope where standard JavaScript objects and our extensions to it are stored. Note that these are not user defined engine level
+         * global variables. These are variables have to be there on all compliant ECMAScript scopes. We put these standard objects in this
+         * top level.
          */
         private RhinoTopLevel        topLevel;
         /*
@@ -711,7 +707,6 @@ public class JavaScriptEngineFactory {
             indexedProps = new HashMap<Object, Object>();
             // construct object used to implement getInterface
             implementor = new InterfaceImplementor(this) {
-
                 protected Object convertResult(Method method, Object res) throws ScriptException {
                     Class desiredType = method.getReturnType();
                     if (desiredType == Void.TYPE) {
@@ -930,7 +925,6 @@ public class JavaScriptEngineFactory {
     }
 
     public static class CustomRhinoScriptEngineFactory implements ScriptEngineFactory {
-
         public CustomRhinoScriptEngineFactory() {
         }
 
@@ -1068,7 +1062,6 @@ public class JavaScriptEngineFactory {
     }
 
     public static class CustomizedScriptEngineManager extends ScriptEngineManager {
-
         @Override
         public ScriptEngine getEngineByName(String shortName) {
             final ScriptEngine ret = super.getEngineByName(shortName);
@@ -1108,9 +1101,9 @@ public class JavaScriptEngineFactory {
     }
 
     /**
-     * Converts single json parser Objects to long. Works around 2 issues: 1. Often people use Strings instead of number data types in json. 2.
-     * Our parser decides whether to use Long or Integer but most times we need Long also we always need more code to ensure to get the connect
-     * data type. This makes it easier.
+     * Converts single json parser Objects to long. Works around 2 issues: 1. Often people use Strings instead of number data types in json.
+     * 2. Our parser decides whether to use Long or Integer but most times we need Long also we always need more code to ensure to get the
+     * connect data type. This makes it easier.
      */
     public static long toLong(final Object o, final long defaultvalue) {
         long lo = defaultvalue;
@@ -1132,8 +1125,8 @@ public class JavaScriptEngineFactory {
      *            Object that was previously parsed via any jsonToJavaObject function.
      *
      * @param crawlstring
-     *            String that contains info on what to get in this format: /String/String/{number representing the number of the object inside
-     *            the ArrayList}/String/and_so_on
+     *            String that contains info on what to get in this format: /String/String/{number representing the number of the object
+     *            inside the ArrayList}/String/and_so_on
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static Object walkJson(final Object json, final String crawlstring) {
@@ -1169,7 +1162,8 @@ public class JavaScriptEngineFactory {
                 }
                 if (currentObject instanceof LinkedHashMap && crawlentry_number >= -1) {
                     /*
-                     * Get Object from LinkedHashMap from desired position - this is a rare case but good to have it covered here in this way!
+                     * Get Object from LinkedHashMap from desired position - this is a rare case but good to have it covered here in this
+                     * way!
                      */
                     final LinkedHashMap<String, Object> tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
                     currentObject = tmp_linkedmap.get(crawlpart);
@@ -1183,18 +1177,15 @@ public class JavaScriptEngineFactory {
                         }
                         position++;
                     }
-                } else if (currentObject instanceof LinkedHashMap) {
-                    final LinkedHashMap<String, Object> tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
-                    currentObject = tmp_linkedmap.get(crawlpart);
-                } else if (currentObject instanceof HashMap) {
-                    final HashMap<String, Object> tmp_map = (HashMap<String, Object>) currentObject;
+                } else if (currentObject instanceof Map) {
+                    final Map<String, Object> tmp_map = (Map<String, Object>) currentObject;
                     currentObject = tmp_map.get(crawlpart);
-                } else if (currentObject instanceof ArrayList) {
+                } else if (currentObject instanceof List) {
                     if (crawlentry_number == -2) {
                         /* crawlpart does not match the DataType we have --> Return null */
                         return null;
                     }
-                    final ArrayList<Object> tmp_list = (ArrayList) currentObject;
+                    final List<Object> tmp_list = (List) currentObject;
                     if (crawlentry_number == -1) {
                         // look forward to match next key
                         for (final Object list : tmp_list) {
