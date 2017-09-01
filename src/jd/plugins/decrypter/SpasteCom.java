@@ -60,7 +60,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Page Not Found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br._getURL().getPath().equals("/site/index") || br.containsHTML("Page Not Found")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
