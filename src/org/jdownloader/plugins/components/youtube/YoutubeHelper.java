@@ -10,6 +10,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -1160,10 +1161,25 @@ public class YoutubeHelper {
             if (ytInitialData != null) {
                 final String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
                 if (string != null) {
-                    date = new Regex(string, "Published on (.+)").getMatch(0);
-                    // seen in MMM dd, yyyy
-                    formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
-                    formatter.setTimeZone(TimeZone.getDefault());
+                    date = new Regex(string, "(?:Published|Streamed live) on ([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
+                    if (date != null) {
+                        // seen in MMM dd, yyyy
+                        formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
+                        formatter.setTimeZone(TimeZone.getDefault());
+                    } else {
+                        // streamed today.. x hours minutes etc. to keep it universal just show a day reference like above.
+                        // Streamed live 3 hours ago
+                        final String stream = new Regex(string, "Streamed live (.*?) ago").getMatch(0);
+                        if (stream != null && new Regex(stream, "hours|minutes|seconds").matches()) {
+                            final Calendar c = Calendar.getInstance();
+                            c.set(Calendar.HOUR_OF_DAY, 0);
+                            c.set(Calendar.MINUTE, 0);
+                            c.set(Calendar.SECOND, 0);
+                            vid.date = c.getTimeInMillis();
+                        } else {
+                            System.out.println("error");
+                        }
+                    }
                 }
             }
             if (date != null) {
