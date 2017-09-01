@@ -205,6 +205,7 @@ public class TbCmV2 extends PluginForDecrypt {
             channelID = br.getRegex("/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
             if (StringUtils.isEmpty(channelID)) {
                 // its within meta tags multiple times (ios/ipad/iphone) also
+                helper.parserJson();
                 getChannelID();
             }
         }

@@ -1392,7 +1392,7 @@ public class YoutubeHelper {
             }
         }
         handleRentalVideos();
-        html5PlayerJs = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "assets/js");
+        html5PlayerJs = ytplayerConfig != null ? (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "assets/js") : null;
         if (html5PlayerJs != null) {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
             html5PlayerJs = br.getURL(html5PlayerJs).toString();
