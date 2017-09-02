@@ -323,7 +323,7 @@ public class FileBoomMe extends K2SApi {
             // could be shared network or a download hasn't timed out yet or user downloading in another program?
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 1 * 60 * 60 * 1001);
         }
-        if (br.containsHTML("\">Downloading is not possible<")) {
+        if (br.containsHTML("\">\\s*Downloading is not possible\\s*<|>\\s*FREE download option is limited\\.\\s*<")) {
             int hours = 0, minutes = 0, seconds = 0;
             final Regex waitregex = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this file");
             final String hrs = waitregex.getMatch(0);
