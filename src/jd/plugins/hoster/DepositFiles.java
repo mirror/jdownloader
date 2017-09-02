@@ -28,8 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -37,6 +39,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -238,7 +241,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // correctlink fixes https|not https, and sets mainpage! no need to duplicate in other download areas!.
         correctDownloadLink(downloadLink);
         setBrowserExclusive();
@@ -444,7 +447,7 @@ public class DepositFiles extends antiDDoSForHost {
             if (dllink != null && !dllink.equals("")) {
                 dllink = fixLinkSSL(dllink);
                 // handling for txt file downloadlinks, dunno why they made a completely different page for txt files
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
                 final URLConnectionAdapter con = dl.getConnection();
                 if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
                     con.disconnect();
@@ -542,7 +545,7 @@ public class DepositFiles extends antiDDoSForHost {
         }
         logger.info("finallink = " + finallink);
         finallink = fixLinkSSL(finallink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finallink, true, 1);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             if (!con.isContentDisposition()) {
@@ -613,7 +616,7 @@ public class DepositFiles extends antiDDoSForHost {
         logger.info("maxFree now = " + maxFree.get());
     }
 
-    private final String submitCapthcaStep(final String page) throws IOException, PluginException {
+    private final String submitCapthcaStep(final String page) throws Exception {
         // Important! Setup Header
         ajaxGetPage("/get_file.php?" + page);
         if (ajax.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
@@ -628,7 +631,7 @@ public class DepositFiles extends antiDDoSForHost {
 
     private Browser ajax = null;
 
-    private void ajaxGetPage(final String page) throws IOException {
+    private void ajaxGetPage(final String page) throws Exception {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Accept", "*/*");
@@ -640,21 +643,28 @@ public class DepositFiles extends antiDDoSForHost {
         protocol = fixLinkSSL("https://");
     }
 
-    public boolean isFreeAccount(Account acc, boolean force) throws IOException {
+    // check that can be done pre login based on cached data.
+    public boolean isFreeAccountPre(Account acc) {
+        if (acc.getType() == AccountType.PREMIUM) {
+            return false;
+        }
+        if (accountData != null && accountData.containsKey("mode")) {
+            if ("gold".equalsIgnoreCase(accountData.get("mode").toString())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // post login check
+    public boolean isFreeAccountPost() throws Exception {
         synchronized (LOCK) {
-            if (acc.getType() == AccountType.FREE) {
-                return true;
-            }
-            if (accountData != null && accountData.containsKey("mode")) {
-                if ("gold".equalsIgnoreCase(accountData.get("mode").toString())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
             setLangtoGer();
             if (!br.getURL().contains("/gold/")) {
+                final boolean ifr = br.isFollowingRedirects();
+                br.setFollowRedirects(true);
                 br.getPage(MAINPAGE.get() + "/de/gold/");
+                br.setFollowRedirects(ifr);
             }
             boolean ret = false;
             if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) {
@@ -671,11 +681,6 @@ public class DepositFiles extends antiDDoSForHost {
                 ret = true;
             } else {
                 ret = false;
-            }
-            if (ret) {
-                acc.setType(AccountType.FREE);
-            } else {
-                acc.setType(AccountType.PREMIUM);
             }
             return ret;
         }
@@ -706,21 +711,15 @@ public class DepositFiles extends antiDDoSForHost {
             account.setValid(false);
             return ai;
         }
-        if (isFreeAccount(account, true)) {
-            try {
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Free Account is ok"));
+        if (isFreeAccountPost()) {
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
+            account.setType(AccountType.FREE);
             account.setValid(true);
             return ai;
         } else {
-            try {
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
             String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
             if (expire == null) {
                 expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
@@ -740,9 +739,9 @@ public class DepositFiles extends antiDDoSForHost {
                 account.setValid(false);
                 return ai;
             }
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Premium Account is ok"));
-            Date date;
             account.setValid(true);
+            account.setType(AccountType.PREMIUM);
+            final Date date;
             try {
                 date = dateFormat.parse(expire);
                 ai.setValidUntil(date.getTime());
@@ -837,7 +836,7 @@ public class DepositFiles extends antiDDoSForHost {
         setConstants();
         requestFileInformation(downloadLink);
         synchronized (PREMLOCK) {
-            if (isFreeAccount(account, false)) {
+            if (isFreeAccountPre(account)) {
                 simultanpremium.set(1);
             } else {
                 if (simultanpremium.get() + 1 > 20) {
@@ -857,7 +856,7 @@ public class DepositFiles extends antiDDoSForHost {
 
     private void webHandlePremium(final DownloadLink downloadLink, Account account) throws Exception {
         webLogin(account, false);
-        if (isFreeAccount(account, true)) {
+        if (account.getType() == AccountType.FREE) {
             logger.info(account.getUser() + " @ Free Account :: Web download method in use");
             br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink);
@@ -894,7 +893,7 @@ public class DepositFiles extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             link = fixLinkSSL(link);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, link, true, 0);
             final URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
                 if (!con.isContentDisposition()) {
@@ -1074,7 +1073,6 @@ public class DepositFiles extends antiDDoSForHost {
             final String expire = PluginJSonUtils.getJsonValue(br, "gold_expired");
             if ("gold".equalsIgnoreCase(mode)) {
                 account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium Account");
                 account.setMaxSimultanDownloads(-1);
                 account.setConcurrentUsePossible(true);
                 final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
@@ -1092,7 +1090,6 @@ public class DepositFiles extends antiDDoSForHost {
                     logger.log(e);
                 }
             } else {
-                ai.setStatus("Free Account");
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
@@ -1201,7 +1198,7 @@ public class DepositFiles extends antiDDoSForHost {
         // if (!account.getBooleanProperty("free", false)) {
         dllink = fixLinkSSL(dllink);
         // }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             if (!con.isContentDisposition()) {
