@@ -775,7 +775,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (br.containsHTML("class=\"btn-download\".*?>\\s*Download blocked")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    if (br.containsHTML("Traffic limit exceed!<")) {
+                    if (br.containsHTML("Traffic limit exceed!<|You exceeded your Premium \\d+\\s*GB daily limit")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
