@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jumpshare.com" }, urls = { "https?://(?:www\\.)?jumpshare\\.com/v/[A-Za-z0-9]+" })
 public class JumpshareCom extends PluginForHost {
-
     public JumpshareCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -54,12 +52,11 @@ public class JumpshareCom extends PluginForHost {
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">File Not Found</h1>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("data\\-gridname=\"([^<>\"]+)\"").getMatch(0);
@@ -244,7 +241,6 @@ public class JumpshareCom extends PluginForHost {
     // public int getMaxSimultanPremiumDownloadNum() {
     // return ACCOUNT_FREE_MAXDOWNLOADS;
     // }
-
     @Override
     public void reset() {
     }
@@ -252,5 +248,4 @@ public class JumpshareCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
