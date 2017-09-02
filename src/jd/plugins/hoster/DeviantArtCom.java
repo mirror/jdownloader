@@ -58,7 +58,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String TYPE_DOWNLOADALLOWED_SWF         = ">SWF download";
     private static final String TYPE_DOWNLOADALLOWED_TXT         = ">TXT download<";
     private static final String TYPE_DOWNLOADALLOWED_ZIP         = ">ZIP download<";
-    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = ">Download( File)?<";
+    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">Download<";
     private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
     private static final String TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
