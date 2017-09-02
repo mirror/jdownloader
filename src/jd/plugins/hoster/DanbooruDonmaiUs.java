@@ -71,7 +71,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
         } else {
             filename = url_filename;
         }
-        dllink = br.getRegex("href=\"((https?://danbooru\\.donmai\\.us)?/data/[^<>\"]+)\">\\s*view original").getMatch(0);
+        dllink = br.getRegex("href=\"([^<>\"]+)\">\\s*view original").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://danbooru\\.donmai\\.us/data/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
