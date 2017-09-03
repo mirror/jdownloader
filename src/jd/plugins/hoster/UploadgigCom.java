@@ -213,13 +213,14 @@ public class UploadgigCom extends antiDDoSForHost {
         try {
             String href = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"(.*?\\+pres\\['\\w+'\\].*?)\">Download now</a>'\\);").getMatch(0);
             if (href != null) {
-                final String[][] pres = new Regex(href, "('\\+pres\\['(\\w+)'\\]\\+')").getMatches();
+                final String[][] pres = new Regex(href, "(pres\\['(\\w+)'\\])").getMatches();
                 for (final String[] p : pres) {
                     final String d = PluginJSonUtils.getJson(br, p[1]);
                     if (d != null) {
                         href = href.replace(p[0], d);
                     }
                 }
+                href = href.replace("'", "").replace("+", "");
                 if (dupe.add(href) && testLink(href)) {
                     return true;
                 }
