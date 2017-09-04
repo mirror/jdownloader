@@ -149,6 +149,7 @@ public class DeviantArtCom extends PluginForHost {
                 filename = br.getRegex("title>([^<>\"]*?)on DeviantArt</title>").getMatch(0);
             }
         } else if (this.getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
+            DLLINK = getDOWNLOADdownloadlink(); // if DLLINK == null, findServerFilename -> getDllink will do getHQpic
             filename = findServerFilename(null);
             if (filename == null) {
                 filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
