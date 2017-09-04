@@ -782,7 +782,7 @@ public class WickedcloudIo extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')()(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(" + dllinkRegexFile + ")\\1").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -1242,11 +1242,16 @@ public class WickedcloudIo extends antiDDoSForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(this.getHost(), cookies);
-                    return;
+                    // test.. because they can expire easily/quickly but they don't delete/nullify the cookie session.
+                    final Browser test = br.cloneBrowser();
+                    test.getPage(COOKIE_HOST + "/?op=my_account");
+                    if (test.containsHTML(">\\s*Logout\\s*</a>")) {
+                        return;
+                    }
+                    br = new Browser();
                 }
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
@@ -1294,6 +1299,7 @@ public class WickedcloudIo extends antiDDoSForHost {
         passCode = downloadLink.getDownloadPassword();
         /* Perform linkcheck without logging in */
         requestFileInformation(downloadLink);
+        br = new Browser();
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
@@ -1306,7 +1312,7 @@ public class WickedcloudIo extends antiDDoSForHost {
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Form dlform = br.getFormbyProperty("name", "F1");
+                    final Form dlform = br.getFormByInputFieldKeyValue("op", "download1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
