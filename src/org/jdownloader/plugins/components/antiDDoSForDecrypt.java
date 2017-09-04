@@ -3,8 +3,10 @@ package org.jdownloader.plugins.components;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -423,6 +425,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 else if (containsBlazingFast(ibr)) {
                     processBlazingFast(ibr, cookies);
                 }
+                // ddosprotectionru
+                else if (containsDDoSProtectionRu(ibr)) {
+                    processDDoSProtectionRu(lockObject, ibr, request);
+                }
                 // save the session!
                 synchronized (antiDDoSCookies) {
                     antiDDoSCookies.put(ibr.getHost(), cookies);
@@ -453,22 +459,12 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // all cloudflare events are behind text/html
         if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
             if (responseCode == 200) {
+                // this has to be run here.. as if you put it down with the 200 mode below task can get confused.
                 if (request != null) {
+                    // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest) {
                         openAntiDDoSRequestConnection(ibr, new GetRequest(request));
                         return;
-                    }
-                    ibr.followConnection();
-                }
-                if (ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
-                    final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
-                    if (phishing == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (request != null) {
-                        ibr.openFormConnection(phishing);
-                    } else {
-                        ibr.submitForm(phishing);
                     }
                 }
             } else {
@@ -707,8 +703,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             } else {
                                 ibr.submitForm(cloudflare);
                             }
-                            // ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets > need to
-                            // resubmit original request.
+                            /*
+                             * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets
+                             * > need to resubmit original request.
+                             */
                             if (originalRequest instanceof PostRequest) {
                                 try {
                                     // resend originalRequest
@@ -736,6 +734,32 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         // unsupported mode? or just provider throwing weird codes
                     }
                 }
+            }
+            /*
+             * since we can call standard browser requests above, we need to match full conditions!
+             */
+            if (ibr.getHttpConnection().getResponseCode() == 200 && StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
+                // active browser wont be a head request at this time. but request might not be followed yet due to open connections above.
+                if (request != null) {
+                    ibr.followConnection();
+        }
+                if (ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
+                    final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
+                    if (phishing == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (request != null) {
+                        ibr.openFormConnection(phishing);
+                    } else {
+                        ibr.submitForm(phishing);
+                    }
+                }
+                /*
+                 * cleanup stupid cloudflare email protections, done centrally as it messes with every site! And run this is because,
+                 * filenames can contain @ char and this will mask them and break plugins.
+                 */
+                // note: must be LAST!
+                cleanupCloudFlareEmailProtection(ibr, null);
             }
         }
         // get cookies we want/need.
@@ -977,6 +1001,65 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     /**
+     * one known method, Javascript. this is within text/html and request code 200? don't believe they set cookie, think they just track by
+     * IP.
+     *
+     *
+     * @author coalado
+     * @author raztoki
+     */
+    private void processDDoSProtectionRu(final Object lockObject, final Browser ibr, final Request request) throws Exception {
+        if (request != null) {
+            // used soley by openAntiDDoSRequestConnection, when open connection is used.
+            if (request instanceof HeadRequest) {
+                openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                return;
+            }
+            ibr.followConnection();
+        }
+        final String[] jsRedirectScripts = ibr.getRegex("<script language=\"JavaScript\">(.*?)</script>").getColumn(0);
+        if (jsRedirectScripts != null && jsRedirectScripts.length == 1) {
+            final int c = ibr.getRegex("\n").count();
+            final boolean isJsRedirect = ibr.getRegex("<html><head><meta http-equiv=\"Content-Type\" content=\"[\\w\\-/;=]{20,50}\"></head>").matches();
+            if (c <= 1 && isJsRedirect) {
+                /* final jsredirectcheck */
+                final int scriptLen = jsRedirectScripts[0].length();
+                final int jsFactor = Math.round((float) scriptLen / (float) ibr.toString().length() * 100);
+                /* min 75% of html contains js */
+                if (jsFactor > 75) {
+                    if (acquireLock(lockObject)) {
+                        final String windowLocation = DDoSProtectionRu.getWindowLocation(jsRedirectScripts[0]);
+                        // we really only are interested in the parameter as its window location. then add it to the original request?
+                        if (windowLocation == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (request != null) {
+                            // open connection
+                            final Request originalRequest = ibr.getRequest();
+                            ibr.openGetConnection(windowLocation);
+                            Thread.sleep(1250);
+                            // resubmit original request.
+                            originalRequest.resetConnection();
+                            ibr.openRequestConnection(originalRequest);
+                        } else {
+                            // standard request
+                            final Request originalRequest = ibr.getRequest();
+                            ibr.getPage(windowLocation);
+                            Thread.sleep(1250);
+                            // resubmit original request.
+                            originalRequest.resetConnection();
+                            ibr.getPage(originalRequest);
+                        }
+                    } else {
+                        // we need togo back and re-request!
+                        throw new ConcurrentLockException();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * returns true if browser contains cookies that match expected
      *
      * @author raztoki
@@ -1013,6 +1096,28 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     protected boolean containsBlazingFast(final Browser ibr) {
         final boolean result = ibr.containsHTML("<title>Just a moment please\\.\\.\\.</title>") && ibr.containsHTML(">Verifying your browser, please wait\\.\\.\\.<br>DDoS Protection by</font> Blazingfast\\.io<");
         return result;
+    }
+
+    /**
+     * they do not seem to have any identifiers that I could find outside of DNS. No unique header, or cookie
+     *
+     * @author raztoki
+     */
+    private boolean containsDDoSProtectionRu(final Browser ibr) {
+        try {
+            // only seen within 200 response code (but we won't use that) and html. for now just use text/html.
+            if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
+                // best way confirmation at this time is via dns response of the end server.
+                final String ip = ((InetSocketAddress) ibr.getRequest().getHttpConnection().getEndPointSocketAddress()).getAddress().getHostAddress();
+                if (new Regex(ip, "^195\\.211\\.22[0-3]\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$").matches()) {
+                    return true;
+                }
+            }
+        } catch (final Exception e) {
+            // make non fatal. it will fail somewhere else. no biggy
+            e.printStackTrace();
+        }
+        return false;
     }
 
     /**
@@ -1081,7 +1186,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      */
     protected boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
+        if (s == null || s.equals("") || s.matches("\\s+")) {
             return true;
         } else {
             return false;
@@ -1115,6 +1220,38 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         return result != null ? result.toString() : null;
     }
 
+    /**
+     * method used to return String and if Browser is provided it will sethtml to current browser request.
+     *
+     * @author raztoki
+     */
+    public static final String cleanupCloudFlareEmailProtection(final Browser export, String input) throws PluginException {
+        if (export == null && input == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Incorrect use of method");
+        }
+        if (input == null) {
+            input = export.toString();
+        }
+        final String[] results = new Regex(input, "<a(?:\\s+[^>]+)?\\s+href=\"/cdn-cgi/l/email-protection\"[^>]*>[^<]+</a>").getColumn(-1);
+        if (results != null) {
+            // simple hashset to reduce potential cpu cycles
+            final HashSet<String> dupe = new HashSet<String>();
+            String messswithme = input;
+            for (final String result : results) {
+                if (dupe.add(result)) {
+                    messswithme = messswithme.replace(result, getStringFromCloudFlareEmailProtection(result));
+                }
+            }
+            if (export != null) {
+                export.getRequest().setHtmlCode(messswithme);
+            }
+            // has changed
+            return messswithme;
+        }
+        // hasn't changed
+        return input;
+    }
+
     private long getRandomWait() {
         long wait = 0;
         do {
@@ -1122,4 +1259,5 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         } while (wait > 15000 && wait < 500);
         return wait;
     }
+
 }
