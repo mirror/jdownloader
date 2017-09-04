@@ -15,6 +15,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -47,7 +48,6 @@ public class ClipDataCache {
             // if (proxyListNew.size() != proxyList.size()) {
             // return false;
             // }
-
             // TODO: confirm this logic is correct, to me it's not!
             // ideally we need to use the same proxy from last cachedata to download with.
             // must check USED vs available, if miss match switch browser proxy selector?
@@ -109,17 +109,20 @@ public class ClipDataCache {
                 CACHE.put(cachedID, ref);
             }
             if (cachedData.clipData.streams == null || StringUtils.isNotEmpty(cachedData.clipData.error)) {
-                if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is unavailable.")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY).localizedMessage(_JDT.T.CountryIPBlockException_createCandidateResult());
+                if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is not available.")) {
+                    // this is not region issue, its just not available.
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, cachedData.clipData.error);
                 }
                 if (StringUtils.containsIgnoreCase(cachedData.clipData.error, "This video has been removed")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, cachedData.clipData.error);
                 }
-                if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is not available.")) {
-                    /*
-                     * 15.12 .2014
-                     */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY).localizedMessage(_JDT.T.CountryIPBlockException_createCandidateResult());
+                // private video.. login is required! assumption that account hasn't been used.. or wrong account has been used...
+                if (StringUtils.containsIgnoreCase(cachedData.clipData.error, "This Video is Private")) {
+                    if (helper.getLoggedIn()) {
+                        // wrong account used?? try next??
+                        // TODO: confirm with jiaz that this this type of exception will try the next account
+                    }
+                    throw new AccountRequiredException(cachedData.clipData.error); // .localizedMessage(_JDT.T.AccountRequiredException_createCandidateResult());
                 }
                 if (cachedData.clipData.error != null) {
                     String lc = cachedData.clipData.error.toLowerCase(Locale.ENGLISH);

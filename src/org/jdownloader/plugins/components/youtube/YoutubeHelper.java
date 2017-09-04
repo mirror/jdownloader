@@ -868,6 +868,7 @@ public class YoutubeHelper {
     private HashSet<StreamMap>                       fmtMaps;
     private LinkedHashSet<StreamMap>                 mpdUrls;
     private HashMap<String, String>                  videoInfo;
+    private boolean                                  loggedIn;
     private boolean                                  hlsEnabled          = true;
     private boolean                                  dashMpdEnabled      = true;
     private boolean                                  adaptiveFmtsEnabled = true;
@@ -877,8 +878,8 @@ public class YoutubeHelper {
     private String                                   html5PlayerSource;
     private LinkedHashMap<String, Object>            ytInitialData;
     private LinkedHashMap<String, Object>            ytInitialPlayerResponse;
-    private LinkedHashMap<String, Object>            ytplayerConfig;
-    private LinkedHashMap<String, Object>            ytcfgSet;
+    private LinkedHashMap<String, Object>            ytPlayerConfig;
+    private LinkedHashMap<String, Object>            ytCfgSet;
 
     /**
      * @return the ytInitialData
@@ -897,15 +898,19 @@ public class YoutubeHelper {
     /**
      * @return the ytplayerConfig
      */
-    public final LinkedHashMap<String, Object> getYtplayerConfig() {
-        return ytplayerConfig;
+    public final LinkedHashMap<String, Object> getYtPlayerConfig() {
+        return ytPlayerConfig;
     }
 
     /**
      * @return the ytcfgSet
      */
-    public final LinkedHashMap<String, Object> getYtcfgSet() {
-        return ytcfgSet;
+    public final LinkedHashMap<String, Object> getYtCfgSet() {
+        return ytCfgSet;
+    }
+
+    public final boolean getLoggedIn() {
+        return loggedIn;
     }
 
     String descrambleSignature(final String sig) throws IOException, PluginException {
@@ -1114,7 +1119,6 @@ public class YoutubeHelper {
     }
 
     protected void extractData() {
-        // json is faster than regex.
         if (StringUtils.isEmpty(vid.title)) {
             vid.title = getVidTitleFromMaps();
             if (StringUtils.isEmpty(vid.title)) {
@@ -1158,37 +1162,56 @@ public class YoutubeHelper {
             final Locale locale = Locale.ENGLISH;
             SimpleDateFormat formatter = null;
             String date = null;
-            if (ytInitialData != null) {
+            if (vid.date <= 0 && ytInitialData != null) {
                 final String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
                 if (string != null) {
-                    date = new Regex(string, "(?:Published|Streamed live) on ([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
+                    // they have many naming's like (?:Published|Streamed live|Started streaming) on . to avoid having to add support all the
+                    // time. just parse for the date pattern(s).
+                    date = new Regex(string, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
                     if (date != null) {
                         // seen in MMM dd, yyyy
                         formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
                         formatter.setTimeZone(TimeZone.getDefault());
-                    } else {
-                        // streamed today.. x hours minutes etc. to keep it universal just show a day reference like above.
-                        // Streamed live 3 hours ago
-                        final String stream = new Regex(string, "Streamed live (.*?) ago").getMatch(0);
-                        if (stream != null && new Regex(stream, "hours|minutes|seconds").matches()) {
-                            final Calendar c = Calendar.getInstance();
-                            c.set(Calendar.HOUR_OF_DAY, 0);
-                            c.set(Calendar.MINUTE, 0);
-                            c.set(Calendar.SECOND, 0);
-                            vid.date = c.getTimeInMillis();
-                        } else {
-                            System.out.println("error");
+                        try {
+                            vid.date = formatter.parse(date).getTime();
+                            logger.info("Date result " + vid.date + " " + new Date(vid.date));
+                        } catch (final Exception e) {
+                            final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
+                            log.log(e);
                         }
+                    } else if (new Regex(string, "\\d+\\s*(?:days?|hours?|minutes?|seconds?)").matches()) {
+                        // Streamed live 3 hours ago
+                        /*
+                         * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then construct relative to users
+                         * time. It should be equal to above as
+                         */
+                        final String tmpdays = new Regex(string, "(\\d+)\\s+days?").getMatch(0);
+                        final String tmphrs = new Regex(string, "(\\d+)\\s+hours?").getMatch(0);
+                        final String tmpmin = new Regex(string, "(\\d+)\\s+minutes?").getMatch(0);
+                        final String tmpsec = new Regex(string, "(\\d+)\\s+seconds?").getMatch(0);
+                        long days = 0, hours = 0, minutes = 0, seconds = 0;
+                        if (StringUtils.isNotEmpty(tmpdays)) {
+                            days = Integer.parseInt(tmpdays);
+                        }
+                        if (StringUtils.isNotEmpty(tmphrs)) {
+                            hours = Integer.parseInt(tmphrs);
+                        }
+                        if (StringUtils.isNotEmpty(tmpmin)) {
+                            minutes = Integer.parseInt(tmpmin);
+                        }
+                        if (StringUtils.isNotEmpty(tmpsec)) {
+                            seconds = Integer.parseInt(tmpsec);
+                        }
+                        final long time = System.currentTimeMillis() - ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+                        final Calendar c = Calendar.getInstance();
+                        c.setTimeInMillis(time);
+                        c.set(Calendar.HOUR_OF_DAY, 0);
+                        c.set(Calendar.MINUTE, 0);
+                        c.set(Calendar.SECOND, 0);
+                        vid.date = c.getTimeInMillis();
+                    } else {
+                        System.out.println("error");
                     }
-                }
-            }
-            if (date != null) {
-                try {
-                    vid.date = formatter.parse(date).getTime();
-                    logger.info("Date result " + vid.date + " " + new Date(vid.date));
-                } catch (final Exception e) {
-                    final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
-                    log.log(e);
                 }
             }
         }
@@ -1196,7 +1219,6 @@ public class YoutubeHelper {
             vid.channelID = getChannelIdFromMaps();
         }
         if (vid.duration <= 0) {
-            // json is faster than regex.
             if (ytInitialPlayerResponse != null) {
                 final String tmp = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/lengthSeconds");
                 if (tmp != null) {
@@ -1245,8 +1267,8 @@ public class YoutubeHelper {
         if (ytInitialPlayerResponse != null) {
             result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/author");
         }
-        if (StringUtils.isEmpty(result) && ytplayerConfig != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/author");
+        if (StringUtils.isEmpty(result) && ytPlayerConfig != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/author");
         }
         return result;
     }
@@ -1259,8 +1281,8 @@ public class YoutubeHelper {
         if (StringUtils.isEmpty(result) && ytInitialData != null) {
             result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/title/simpleText");
         }
-        if (StringUtils.isEmpty(result) && ytplayerConfig != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/title");
+        if (StringUtils.isEmpty(result) && ytPlayerConfig != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/title");
         }
         return result;
     }
@@ -1285,7 +1307,7 @@ public class YoutubeHelper {
             result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/channelId");
         }
         if (StringUtils.isEmpty(result) && ytInitialPlayerResponse != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "args/ucid");
+            result = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/ucid");
         }
         return result;
     }
@@ -1356,7 +1378,7 @@ public class YoutubeHelper {
     }
 
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
-        login(false, false);
+        loggedIn = login(false, false);
         this.vid = vid;
         final Map<YoutubeITAG, StreamCollection> ret = new HashMap<YoutubeITAG, StreamCollection>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -1392,7 +1414,7 @@ public class YoutubeHelper {
             }
         }
         handleRentalVideos();
-        html5PlayerJs = ytplayerConfig != null ? (String) JavaScriptEngineFactory.walkJson(ytplayerConfig, "assets/js") : null;
+        html5PlayerJs = ytPlayerConfig != null ? (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "assets/js") : null;
         if (html5PlayerJs != null) {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
             html5PlayerJs = br.getURL(html5PlayerJs).toString();
@@ -1409,7 +1431,10 @@ public class YoutubeHelper {
                 html5PlayerJs = br.getURL(html5PlayerJs).toString();
             }
         }
-        String unavailableReason = br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
+        String unavailableReason = ytInitialPlayerResponse != null && "ERROR".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/status")) ? (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/reason") : null;
+        if (unavailableReason == null) {
+            unavailableReason = "LOGIN_REQUIRED".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/status")) ? (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/errorScreen/playerErrorMessageRenderer/reason/simpleText") : null;
+        }
         fmtMaps = new HashSet<StreamMap>();
         subtitleUrls = new HashSet<String>();
         mpdUrls = new LinkedHashSet<StreamMap>();
@@ -1462,72 +1487,72 @@ public class YoutubeHelper {
             }
         }
         if (unavailableReason != null) {
-            final String copyrightClaim = "This video is no longer available due to a copyright claim";
-            unavailableReason = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
             /*
              * If you consider using !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
              */
-            if (br.containsHTML("This video is private")) {
-                // check if video is private
-                String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
-                if (subError != null && !subError.matches("\\s*")) {
-                    subError = subError.trim();
-                    logger.warning("Private Video");
-                    logger.warning(unavailableReason + " :: " + subError);
-                    vid.error = "This Video is Private";
-                    return;
-                }
-            } else if (unavailableReason.startsWith("This video does not exist")) {
+            if (unavailableReason.contains("This video is private")) {
+                // id=TY1LpddyWvs, date=20170903, author=raztoki
+                // id=Vs4IJuhZ_1E, date=20170903, author=raztoki
+                logger.warning("Private Video");
+                vid.error = unavailableReason;
+                return;
+            }
+            if (unavailableReason.startsWith("This video does not exist")) {
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            } else if (unavailableReason.startsWith("This video has been removed")) {
+            }
+            if (unavailableReason.startsWith("This video has been removed")) {
                 // currently covering
                 // This video has been removed by the user. .:. ab4U0RwrOTI
                 // This video has been removed because its content violated YouTube&#39;s Terms of Service. .:. 7RA4A-4QqHU
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            } else if (unavailableReason.contains("account associated with this video has been")) {
+            }
+            if (unavailableReason.contains("account associated with this video has been")) {
                 // currently covering
                 // This video is no longer available because the YouTube account associated with this video has been closed.
                 // id=wBVhciYW9Og, date=20141222, author=raztoki
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            } else if ("This live event has ended.".equalsIgnoreCase(unavailableReason)) {
+            }
+            if ("This live event has ended.".equalsIgnoreCase(unavailableReason)) {
                 // currently covering
                 // This live event has ended.
                 // id=qEJwOuvDf7I, date=20150412, author=raztoki
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            } else if (unavailableReason.contains(copyrightClaim)) {
-                // currently covering
-                // "One Monkey saves another Mo..."
-                // This video is no longer available due to a copyright claim by ANI Media Pvt Ltd.
-                // id=l8nBcj8ul7s, date=20141224, author=raztoki
-                // filename is shown in error.
-                vid.title = new Regex(unavailableReason, "\"(.*?(?:\\.\\.\\.)?)\"\n").getMatch(0);
-                logger.warning(copyrightClaim);
-                vid.error = copyrightClaim;
-                return;
-            } else if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
-                // be aware that this is always present, only when there is a non whitespace suberror is it valid.
-                // currently covering
-                // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.
-                String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
-                if (subError != null && !subError.matches("\\s*")) {
-                    if (vid.error != null) {
-                        subError = vid.error;
-                        logger.warning(unavailableReason + " :: " + subError);
-                        return;
-                    }
-                    subError = subError.trim();
-                    logger.warning(unavailableReason + " :: " + subError);
-                    vid.error = unavailableReason;
+            }
+            {
+                final String copyrightClaim = "This video is no longer available due to a copyright claim";
+                if (unavailableReason.contains(copyrightClaim)) {
+                    // currently covering
+                    // "One Monkey saves another Mo..."
+                    // This video is no longer available due to a copyright claim by ANI Media Pvt Ltd.
+                    // id=l8nBcj8ul7s, date=20141224, author=raztoki
+                    // id=6cER1kK3Qwg, date=20170903, author=raztoki
+                    // filename is shown in error.
+                    vid.title = new Regex(unavailableReason, "\"(.*?(?:\\.\\.\\.)?)\"\\n").getMatch(0);
+                    logger.warning(copyrightClaim);
+                    vid.error = copyrightClaim;
                     return;
                 }
+            }
+            if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
+                // currently covering
+                // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.
+                logger.warning(unavailableReason);
+                vid.error = unavailableReason;
+                return;
+            }
+            if (true) {
+                // this should not happen, we have unsupported error handling
+                // statserv post this fileuid ???
+                logger.warning("Unsupported error!");
+                // contiue anyway?
             }
         }
         this.extractData();
@@ -2253,7 +2278,7 @@ public class YoutubeHelper {
         }
     }
 
-    public void login(final boolean refresh, final boolean showDialog) {
+    public boolean login(final boolean refresh, final boolean showDialog) {
         ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
@@ -2263,11 +2288,12 @@ public class YoutubeHelper {
                     try {
                         this.login(n, refresh, showDialog);
                         if (n.isValid()) {
-                            return;
+                            return true;
                         }
                     } catch (final Exception e) {
                         n.setValid(false);
-                        return;
+                        // should we not try other accounts??
+                        return false;
                     }
                 }
             }
@@ -2282,11 +2308,11 @@ public class YoutubeHelper {
                     try {
                         this.login(n, refresh, showDialog);
                         if (n.isValid()) {
-                            return;
+                            return true;
                         }
                     } catch (final Exception e) {
                         n.setValid(false);
-                        return;
+                        return false;
                     }
                 }
             }
@@ -2300,16 +2326,16 @@ public class YoutubeHelper {
                     try {
                         this.login(n, refresh, showDialog);
                         if (n.isValid()) {
-                            return;
+                            return true;
                         }
                     } catch (final Exception e) {
                         n.setValid(false);
-                        return;
+                        return false;
                     }
                 }
             }
         }
-        return;
+        return false;
     }
 
     public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
@@ -2796,14 +2822,14 @@ public class YoutubeHelper {
         {
             final String ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});ytplayer\\.load").getMatch(0);
             if (ytplayerConfig != null) {
-                this.ytplayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
+                this.ytPlayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
             }
         }
         {
             // there are many of these on the page
             final String ytcfgSet = br.getRegex("ytcfg\\.set\\((\\{.*?\\})\\);ytcfg\\.set").getMatch(0);
             if (ytcfgSet != null) {
-                this.ytcfgSet = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytcfgSet);
+                this.ytCfgSet = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytcfgSet);
             }
         }
     }

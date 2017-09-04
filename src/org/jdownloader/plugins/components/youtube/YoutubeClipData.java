@@ -27,7 +27,6 @@ public class YoutubeClipData {
     /**
      *
      */
-
     public String                             user;
     public String                             channelTitle;
     public long                               date;
@@ -36,7 +35,6 @@ public class YoutubeClipData {
     public String                             title;
     public String                             videoID;
     public int                                playlistEntryNumber = -1;
-    public int                                length;
     public String                             category;
     public int                                duration;
     public String                             channelID;
@@ -61,11 +59,9 @@ public class YoutubeClipData {
      */
     public boolean guessSBSorHOU3D() {
         if (keywords != null) {
-
             StringBuilder sb = new StringBuilder();
             for (String s : keywords) {
                 sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
-
             }
             if (title != null) {
                 sb.append(" ").append(title.toLowerCase(Locale.ENGLISH));
@@ -73,7 +69,6 @@ public class YoutubeClipData {
             if (description != null) {
                 sb.append(" ").append(description.toLowerCase(Locale.ENGLISH));
             }
-
             String str = sb.toString();
             // should we be using sb instead of title here?
             if (title != null && title.contains("3d")) {
@@ -83,7 +78,6 @@ public class YoutubeClipData {
                 if (str.contains("side") && str.contains("by")) {
                     return true;
                 }
-
                 if (str.contains("hou")) {
                     return true;
                 }
@@ -91,7 +85,6 @@ public class YoutubeClipData {
                     return true;
                 }
             }
-
         }
         return false;
     }
@@ -110,7 +103,6 @@ public class YoutubeClipData {
         try {
             threeDLayout = approxThreedLayout == null ? -1 : Integer.parseInt(approxThreedLayout);
         } catch (Throwable e) {
-
         }
         if (highestProjection == 2 && threeDLayout != 3) {
             return Projection.SPHERICAL;
@@ -136,7 +128,6 @@ public class YoutubeClipData {
             if (keywords.contains("3D")) {
                 return true;
             }
-
         }
         if (keywords3D != null) {
             if (StringUtils.equals(keywords3D.get("enable"), "true")) {
@@ -158,7 +149,6 @@ public class YoutubeClipData {
     }
 
     public YoutubeClipData(final String videoID, final int playlistEntryNumber) {
-
         this.videoID = videoID;
         this.playlistEntryNumber = playlistEntryNumber;
     }
@@ -179,7 +169,6 @@ public class YoutubeClipData {
         }
         thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.getBaseVariant().getiTagVideo().name());
         thislink.setProperty(YoutubeHelper.YT_DATE, date);
-        thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, length);
         thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
         if (StringUtils.isNotEmpty(channelID)) {
             thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
@@ -187,7 +176,6 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
-
     }
 
     public StreamCollection getStreams(YoutubeITAG itag) {
@@ -212,50 +200,37 @@ public class YoutubeClipData {
 
     public List<VariantInfo> findSubtitleVariants() {
         List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
-
         for (final YoutubeSubtitleStorable si : subtitles) {
-
             SubtitleVariantInfo vi = new SubtitleVariantInfo(new SubtitleVariant(si), this);
             allSubtitles.add(vi);
-
         }
-
         return allSubtitles;
     }
 
     public ArrayList<VariantInfo> findDescriptionVariant() {
         ArrayList<VariantInfo> descriptions = new ArrayList<VariantInfo>();
-
         final String descText = description;
         if (StringUtils.isNotEmpty(descText)) {
-
             VariantInfo vi;
-
             descriptions.add(vi = new DescriptionVariantInfo(descText, this));
-
         }
         return descriptions;
     }
 
     public List<VariantInfo> findVariants() {
         ArrayList<VariantInfo> ret = new ArrayList<VariantInfo>();
-
         for (VariantBase v : VariantBase.values()) {
-
             if (!CFG_YOUTUBE.CFG.isExternMultimediaToolUsageEnabled() && v.isVideoToolRequired()) {
-
                 continue;
             }
             if (!v.isValidFor(this)) {
                 continue;
             }
             // System.out.println("test for " + v);
-
             StreamCollection audio = null;
             StreamCollection video = null;
             StreamCollection data = null;
             boolean valid = v.getiTagVideo() != null || v.getiTagAudio() != null || v.getiTagData() != null;
-
             if (v.getiTagVideo() != null) {
                 video = streams.get(v.getiTagVideo());
                 if (video == null) {
@@ -274,15 +249,11 @@ public class YoutubeClipData {
                     valid = false;
                 }
             }
-
             if (valid) {
-
                 VariantInfo vi = new VariantInfo(AbstractVariant.get(v, this, audio, video, data), audio, video, data);
                 ret.add(vi);
-
             }
         }
         return ret;
     }
-
 }
