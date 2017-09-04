@@ -298,6 +298,7 @@ public abstract class K2SApi extends PluginForHost {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
+                links.clear();
                 final StringBuilder sb = new StringBuilder();
                 while (true) {
                     if (links.size() > 100 || index == urls.length) {
