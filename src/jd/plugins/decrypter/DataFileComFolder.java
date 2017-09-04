@@ -16,9 +16,10 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
+
 import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,6 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" })
 public class DataFileComFolder extends PluginForDecrypt {
@@ -36,15 +39,17 @@ public class DataFileComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private int page = 1;
+    private int           page   = 1;
+    private PluginForHost plugin = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setAllowedResponseCodes(502);
         page = 1;
-        br.getPage(buildPageNumber(parameter));
-        jd.plugins.hoster.DataFileCom.redirectAntiDDos(br, this);
+        plugin = JDUtilities.getPluginForHost("datafile.com");
+        ((jd.plugins.hoster.DataFileCom) plugin).setBrowser(br);
+        ((jd.plugins.hoster.DataFileCom) plugin).getPage(buildPageNumber(parameter));
         if (br.getHttpConnection().getResponseCode() == 502) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -99,9 +104,9 @@ public class DataFileComFolder extends PluginForDecrypt {
         return parameter + "?page=" + page + "&ipp=1000";
     }
 
-    private boolean hasNextPage(final String parameter) throws IOException {
+    private boolean hasNextPage(final String parameter) throws Exception {
         if (br.containsHTML("href=\"\\?page=" + (++page))) {
-            br.getPage(buildPageNumber(parameter));
+            ((jd.plugins.hoster.DataFileCom) plugin).getPage(buildPageNumber(parameter));
             return true;
         }
         return false;
