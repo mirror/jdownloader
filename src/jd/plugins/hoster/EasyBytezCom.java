@@ -31,6 +31,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
@@ -80,25 +81,25 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class EasyBytezCom extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    public final String                COOKIE_HOST                  = "http://easybytez.com";
+    public final String          COOKIE_HOST                  = "http://easybytez.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(easybytez\\.com|easybytez\\.co|easybytez\\.to|zingload\\.com|easyload\\.to|ezbytez\\.com|ebytez\\.com)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final String               dllinkRegex_2                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?[a-z0-9\\-\\.]+)(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private final String         DOMAINS                      = "(easybytez\\.com|easybytez\\.co|easybytez\\.to|zingload\\.com|easyload\\.to|ezbytez\\.com|ebytez\\.com)";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String         dllinkRegex_2                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?[a-z0-9\\-\\.]+)(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean        supportsHTTPS                = false;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useRUA                       = true;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        useVidEmbed                  = false;
+    private final boolean        useAltEmbed                  = false;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000l;
+    private final boolean        waitTimeSkipableReCaptcha    = true;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(5);
@@ -206,78 +207,91 @@ public class EasyBytezCom extends PluginForHost {
         return prepBr;
     }
 
+    private static AtomicLong LASTREQUESTFILEINFORMATION        = new AtomicLong(0);
+    private final int         waitBetweenRequestFileInformation = 250;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
-        correctDownloadLink(downloadLink);
-        fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        br.setFollowRedirects(true);
-        prepBrowser(br);
-        String[] fileInfo = new String[2];
-        if (useAltLinkCheck) {
-            altAvailStat(downloadLink, fileInfo);
-        }
-        getPage(downloadLink.getDownloadURL());
-        if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
-            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
-            Account account = null;
-            if (accounts != null && accounts.size() != 0) {
-                Iterator<Account> it = accounts.iterator();
-                while (it.hasNext()) {
-                    Account n = it.next();
-                    if (n.isEnabled() && n.isValid()) {
-                        account = n;
-                        break;
+        synchronized (LASTREQUESTFILEINFORMATION) {
+            try {
+                final long last = System.currentTimeMillis() - LASTREQUESTFILEINFORMATION.get();
+                if (last < waitBetweenRequestFileInformation && last >= 0) {
+                    Thread.sleep(waitBetweenRequestFileInformation - last);
+                }
+                correctDownloadLink(downloadLink);
+                fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+                br.setFollowRedirects(true);
+                prepBrowser(br);
+                String[] fileInfo = new String[2];
+                if (useAltLinkCheck) {
+                    altAvailStat(downloadLink, fileInfo);
+                }
+                getPage(downloadLink.getDownloadURL());
+                if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
+                    ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+                    Account account = null;
+                    if (accounts != null && accounts.size() != 0) {
+                        Iterator<Account> it = accounts.iterator();
+                        while (it.hasNext()) {
+                            Account n = it.next();
+                            if (n.isEnabled() && n.isValid()) {
+                                account = n;
+                                break;
+                            }
+                        }
+                    }
+                    if (account != null) {
+                        login(account, false);
+                        getPage(downloadLink.getDownloadURL());
+                    } else {
+                        altAvailStat(downloadLink, fileInfo);
                     }
                 }
-            }
-            if (account != null) {
-                login(account, false);
-                getPage(downloadLink.getDownloadURL());
-            } else {
-                altAvailStat(downloadLink, fileInfo);
-            }
-        }
-        if (cbr.containsHTML("No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file ((?:has )?expired|deleted by (its owner|administration)|of the above link no longer exists\\.|contained illegal contents? and was deleted)|>The file of the above link no longer exists\\.")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (cbr.containsHTML(MAINTENANCE)) {
-            downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
-            return AvailableStatus.TRUE;
-        }
-        // scan the first page
-        scanInfo(downloadLink, fileInfo);
-        // scan the second page. filesize[1] isn't mission critical
-        if (inValidate(fileInfo[0])) {
-            Form download1 = getFormByKey(cbr, "op", "download1");
-            if (download1 != null) {
-                download1 = cleanForm(download1);
-                download1.remove("method_premium");
-                sendForm(download1);
+                if (cbr.containsHTML("No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file ((?:has )?expired|deleted by (its owner|administration)|of the above link no longer exists\\.|contained illegal contents? and was deleted)|>The file of the above link no longer exists\\.")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (cbr.containsHTML(MAINTENANCE)) {
+                    downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+                    return AvailableStatus.TRUE;
+                }
+                // scan the first page
                 scanInfo(downloadLink, fileInfo);
+                // scan the second page. filesize[1] isn't mission critical
+                if (inValidate(fileInfo[0])) {
+                    Form download1 = getFormByKey(cbr, "op", "download1");
+                    if (download1 != null) {
+                        download1 = cleanForm(download1);
+                        download1.remove("method_premium");
+                        sendForm(download1);
+                        scanInfo(downloadLink, fileInfo);
+                    }
+                    if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
+                        logger.warning("Possible plugin error, trying fail over!");
+                        altAvailStat(downloadLink, fileInfo);
+                    }
+                }
+                if (inValidate(fileInfo[0])) {
+                    if (cbr.containsHTML("You have reached the download(-| )limit")) {
+                        logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    logger.warning("filename equals null, throwing \"plugin defect\"");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
+                downloadLink.setName(fileInfo[0].trim());
+                if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
+                    downloadLink.setAvailable(true);
+                }
+                if (!inValidate(fileInfo[1])) {
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+                }
+                return getAvailableStatus(downloadLink);
+            } finally {
+                LASTREQUESTFILEINFORMATION.set(System.currentTimeMillis());
             }
-            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
-                logger.warning("Possible plugin error, trying fail over!");
-                altAvailStat(downloadLink, fileInfo);
-            }
         }
-        if (inValidate(fileInfo[0])) {
-            if (cbr.containsHTML("You have reached the download(-| )limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
-        downloadLink.setName(fileInfo[0].trim());
-        if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
-            downloadLink.setAvailable(true);
-        }
-        if (!inValidate(fileInfo[1])) {
-            downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        }
-        return getAvailableStatus(downloadLink);
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
