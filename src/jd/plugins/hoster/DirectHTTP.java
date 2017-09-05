@@ -26,20 +26,6 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,8 +41,6 @@ import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.URLUserInfoAuthentication;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
 import jd.nutils.SimpleFTP;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -70,12 +54,26 @@ import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|\"|\r|\n))" })
 public class DirectHTTP extends antiDDoSForHost {
-
     public static final String ENDINGS               = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2}|\\d{1,4}(?=\\?|$|\"|\r|\n))";
     public static final String NORESUME              = "nochunkload";
     public static final String NOCHUNKS              = "nochunk";
@@ -486,6 +484,17 @@ public class DirectHTTP extends antiDDoSForHost {
         return requestFileInformation(downloadLink, 0);
     }
 
+    private void followURLConnectinon(Browser br, URLConnectionAdapter urlConnection) {
+        urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
+        try {
+            br.followConnection();
+        } catch (final Throwable e) {
+            logger.log(e);
+        } finally {
+            urlConnection.disconnect();
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
@@ -507,7 +516,6 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(url, null));
         authenticationFactories.add(new CallbackAuthenticationFactory() {
-
             protected Authentication remember = null;
 
             protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
@@ -562,28 +570,28 @@ public class DirectHTTP extends antiDDoSForHost {
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                String urlParams = null;
-                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403 || (StringUtils.contains(urlConnection.getContentType(), "image") && urlConnection.getLongContentLength() < 1024)) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
-                    /* check if we need the URLPARAMS to download the file */
-                    urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
-                    try {
-                        br.followConnection();
-                    } catch (final Throwable e) {
-                    } finally {
-                        urlConnection.disconnect();
+                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403 || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromHeader(urlConnection), "expired")))) {
+                    if (downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null || RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
+                        /* check if we need the URLPARAMS to download the file */
+                        followURLConnectinon(br, urlConnection);
+                        if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
+                            preferHeadRequest = false;
+                        }
+                        if (downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null) {
+                            final String newURL = getDownloadURL(downloadLink) + downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null);
+                            downloadLink.removeProperty(DirectHTTP.POSSIBLE_URLPARAM);
+                            setDownloadURL(newURL, downloadLink);
+                        }
+                        br.setRequest(null);
+                        urlConnection = this.prepareConnection(this.br, downloadLink);
                     }
-                    final String newURL = getDownloadURL(downloadLink) + urlParams;
-                    downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
-                    setDownloadURL(newURL, downloadLink);
-                    urlConnection = this.prepareConnection(this.br, downloadLink);
                 }
                 if (urlConnection.getResponseCode() == 401) {
                     if (urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
                         /* no basic auth */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
-                    br.followConnection();
+                    followURLConnectinon(br, urlConnection);
                 } else {
                     break;
                 }
@@ -610,14 +618,14 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
             final long length = urlConnection.getLongContentLength();
-            if (length == 0 && urlConnection.getRequest() instanceof HeadRequest) {
+            if (length == 0 && RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                 preferHeadRequest = false;
                 br.followConnection();
                 return this.requestFileInformation(downloadLink, retry + 1);
             }
             if (urlConnection.getHeaderField("cf-bgj") != null && !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
-                if (urlConnection.getRequest() instanceof HeadRequest) {
-                    br.followConnection();
+                if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
+                    followURLConnectinon(br, urlConnection);
                 } else {
                     urlConnection.disconnect();
                 }
@@ -627,8 +635,8 @@ public class DirectHTTP extends antiDDoSForHost {
             final String streamMod = urlConnection.getHeaderField("X-Mod-H264-Streaming");
             if (streamMod != null && downloadLink.getProperty("streamMod") == null) {
                 downloadLink.setProperty("streamMod", streamMod);
-                if (urlConnection.getRequest() instanceof HeadRequest) {
-                    br.followConnection();
+                if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
+                    followURLConnectinon(br, urlConnection);
                 } else {
                     urlConnection.disconnect();
                 }
@@ -637,9 +645,9 @@ public class DirectHTTP extends antiDDoSForHost {
             if (this.contentType != null && (this.contentType.startsWith("text/html") || this.contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
-                if (urlConnection.getRequest() instanceof HeadRequest) {
+                if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                     preferHeadRequest = false;
-                    br.followConnection();
+                    followURLConnectinon(br, urlConnection);
                     return this.requestFileInformation(downloadLink, retry + 1);
                 } else {
                     final String pageContent = this.br.followConnection();
@@ -691,8 +699,8 @@ public class DirectHTTP extends antiDDoSForHost {
                     return this.requestFileInformation(downloadLink, retry + 1);
                 }
             } else {
-                if (urlConnection.getRequest() instanceof HeadRequest) {
-                    br.followConnection();
+                if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
+                    followURLConnectinon(br, urlConnection);
                 } else {
                     urlConnection.disconnect();
                 }
@@ -758,11 +766,14 @@ public class DirectHTTP extends antiDDoSForHost {
             }
             final String referer = urlConnection.getRequestProperty(HTTPConstants.HEADER_REQUEST_REFERER);
             downloadLink.setProperty("lastRefURL", referer);
-            if (urlConnection.getRequest() instanceof HeadRequest) {
+            switch (urlConnection.getRequestMethod()) {
+            case HEAD:
                 downloadLink.setProperty("requestType", "HEAD");
-            } else if (urlConnection.getRequest() instanceof GetRequest) {
+                break;
+            case GET:
                 downloadLink.setProperty("requestType", "GET");
-            } else {
+                break;
+            default:
                 downloadLink.setProperty("requestType", Property.NULL);
             }
             return AvailableStatus.TRUE;

@@ -13,9 +13,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
 public interface PhantomJSConfig extends ConfigInterface {
-
     class BinayPathValidator extends AbstractValidator<String> {
-
         @Override
         public void validate(String binaryPath) throws ValidationException {
             if (StringUtils.isNotEmpty(binaryPath)) {
@@ -41,8 +39,7 @@ public interface PhantomJSConfig extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("A way to enable/disable the use of the PhantomJS module")
-    public Boolean getEnabled();
+    public boolean isEnabled();
 
     void setEnabled(boolean b);
-
 }

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})" })
 public class MultiupOrg extends antiDDoSForDecrypt {
-
     // DEV NOTES:
     // DO NOT REMOVE COMPONENTS YOU DONT UNDERSTAND! When in doubt ask raztoki to fix.
     //
@@ -43,7 +41,6 @@ public class MultiupOrg extends antiDDoSForDecrypt {
     // (/fr)?/download/d249b81f92d7789a1233e500a0319906/FIQHwASOOL_75_rar, = new link structure!
     //
     // uid and filename are required to be a valid links for all link structures!
-
     public MultiupOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -69,7 +66,6 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
             param.setCryptedUrl(parameter);
         }
-
         getPage(parameter.replace("/en/download/", "/en/mirror/"));
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -90,10 +86,11 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             return null;
         }
         for (String singleLink : links) {
-            singleLink = singleLink.trim().replaceFirst(":/+", "://");
-            decryptedLinks.add(createDownloadlink(singleLink));
+            if (singleLink.startsWith("http")) {
+                singleLink = singleLink.trim().replaceFirst(":/+", "://");
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
         }
-
         return decryptedLinks;
     }
 
@@ -116,5 +113,4 @@ public class MultiupOrg extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

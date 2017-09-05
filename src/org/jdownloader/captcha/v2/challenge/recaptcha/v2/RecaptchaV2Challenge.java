@@ -547,14 +547,14 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     private void forwardHeader(String header, jd.http.Request r, org.appwork.utils.net.httpserver.requests.HttpRequest request) {
-        String h = request.getRequestHeaders().getValue(header);
+        final String h = request.getRequestHeaders().getValue(header);
         if (StringUtils.isNotEmpty(h)) {
             r.getHeaders().put(new HTTPHeader(header, h));
         }
     }
 
     private void forwardHeader(String header, jd.http.Request r, HttpResponse response) {
-        String h = r.getResponseHeader(header);
+        final String h = r.getResponseHeader(header);
         if (StringUtils.isNotEmpty(h)) {
             response.getResponseHeaders().add(new HTTPHeader(header, h));
         }
@@ -613,11 +613,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
      * @author raztoki
      */
     protected final boolean isCaptchaResponseValid() {
-        String v = getResult().getValue();
+        final String v = getResult().getValue();
         if (isSolved() && RecaptchaV2Challenge.isValidToken(v)) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public static boolean isValidToken(String v) {
@@ -648,20 +649,26 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge(final boolean showInstallDialog) {
         if (basicChallenge != null) {
             return basicChallenge;
-        }
-        final PhantomJS binding = new PhantomJS();
-        if (!binding.isAvailable() && showInstallDialog) {
-            try {
-                InstallThread.install(null, _GUI.T.phantomjs_usage());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        } else {
+            final PhantomJS binding = new PhantomJS();
+            if (binding.isEnabled()) {
+                if (!binding.isAvailable() && showInstallDialog) {
+                    try {
+                        InstallThread.install(null, _GUI.T.phantomjs_usage());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (!binding.isAvailable()) {
+                    return null;
+                } else {
+                    basicChallenge = createPhantomJSChallenge(); //
+                    return basicChallenge;
+                }
+            } else {
+                return null;
             }
         }
-        if (!binding.isAvailable()) {
-            return null;
-        }
-        basicChallenge = createPhantomJSChallenge(); //
-        return basicChallenge;
     }
 
     protected Recaptcha2FallbackChallengeViaPhantomJS createPhantomJSChallenge() {
