@@ -1483,7 +1483,10 @@ public class YoutubeHelper {
                 if (reason != null && reason.contains("Watch this video on YouTube") && !loggedIn) {
                     reason = "Account required. Add your Youtube Account to JDownloader";
                 }
-                vid.error = reason;
+                // do not save this message IF we have unavailableReason
+                if (unavailableReason == null) {
+                    vid.error = reason;
+                }
             }
         }
         if (unavailableReason != null) {
