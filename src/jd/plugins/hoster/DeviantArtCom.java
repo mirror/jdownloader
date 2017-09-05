@@ -287,7 +287,13 @@ public class DeviantArtCom extends PluginForHost {
             if (cookie != null) {
                 br.setCookie(this.getHost(), "userinfo", cookie);
             }
-            filename = findServerFilename(filename);
+            if (this.getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
+                DLLINK = getDOWNLOADdownloadlink(); // if DLLINK == null, findServerFilename -> getDllink will do getHQpic
+                filename = findServerFilename(null);
+                if (filename == null) {
+                    filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+                }
+            }
             if (ext == null || ext.length() > 5) {
                 final String dllink = getCrippledDllink();
                 if (dllink != null) {
