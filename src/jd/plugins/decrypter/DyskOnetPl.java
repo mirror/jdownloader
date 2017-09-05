@@ -13,14 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,13 +29,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  *
  * @author raztoki
  */
 @DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "dysk.onet.pl" }, urls = { "https?://(?:www\\.)?dysk\\.onet\\.pl/(?:multilink/[a-f0-9]{40}|link/[a-zA-Z0-9]{5})" })
 public class DyskOnetPl extends PluginForDecrypt {
-
     public DyskOnetPl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -87,7 +85,6 @@ public class DyskOnetPl extends PluginForDecrypt {
                     dl.setVerifiedFileSize(Long.parseLong(size));
                     dl.setName(name);
                     dl.setComment(description);
-                    dl.setProperty("requestType", "GET");
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
@@ -111,5 +108,4 @@ public class DyskOnetPl extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

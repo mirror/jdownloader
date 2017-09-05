@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,13 +32,10 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?\\-download\\-\\d+\\.(s)?html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.|drivers\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?\\-download\\-\\d+\\.(s)?html)" })
 public class SoftPediaCom extends PluginForHost {
-
     private static final String SOFTPEDIASERVERS = "allservers";
-
     private static final String SERVER0          = "SP Mirror (US)";
-
     private static final String SERVER1          = "SP Mirror (RO)";
     private static final String SERVER2          = "Softpedia Mirror (US)";
     private static final String SERVER3          = "Softpedia Mirror (RO)";
@@ -210,5 +206,4 @@ public class SoftPediaCom extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SOFTPEDIASERVERS, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
     }
-
 }

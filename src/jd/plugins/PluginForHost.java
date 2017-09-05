@@ -154,9 +154,6 @@ import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.phantomjs.PhantomJS;
-import org.jdownloader.phantomjs.installation.InstallProgress;
-import org.jdownloader.phantomjs.installation.InstallThread;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.PluginTaskID;
@@ -186,14 +183,14 @@ import org.jdownloader.updatev2.UpdateController;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                  /**
+                                                   * these patterns should split filename and fileextension (extension must include the
+                                                   * point)
+                                                   */
+                                                  // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
@@ -994,23 +991,6 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
-    public void checkPhantomJS(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
-        final PhantomJS binding = new PhantomJS();
-        if (!binding.isAvailable()) {
-            final InstallProgress progress = new InstallProgress();
-            progress.setProgressSource(this);
-            try {
-                downloadLink.addPluginProgress(progress);
-                InstallThread.install(progress, reason);
-            } finally {
-                downloadLink.removePluginProgress(progress);
-            }
-            if (!binding.isAvailable()) {
-                throw new SkipReasonException(SkipReason.PHANTOM_JS_MISSING);
-            }
-        }
-    }
-
     public FFmpeg getFFmpeg(DownloadLink downloadLink) {
         return new FFmpeg();
     }
@@ -1140,16 +1120,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);

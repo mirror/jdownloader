@@ -1029,10 +1029,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     } else {
                                         final ExtensionsFilterInterface extension = link.getLinkInfo().getExtension();
                                         if (!"".equalsIgnoreCase(extension.name())) {
-                                            if (!DocumentExtensions.HTML.equals(extension)) {
+                                            if (!DocumentExtensions.HTML.equals(extension.getSource()) && !DocumentExtensions.PHP.equals(extension.getSource())) {
                                                 crawledPackageName = fileName;
                                             } else {
-                                                final String tmpFileName = fileName.replaceFirst("\\.html?$", "");
+                                                final String tmpFileName = fileName.replaceFirst("\\.(html?|php)$", "");
                                                 final ExtensionsFilterInterface tmpExtension = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(tmpFileName));
                                                 if (tmpExtension != null) {
                                                     crawledPackageName = tmpFileName;
@@ -1320,9 +1320,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
