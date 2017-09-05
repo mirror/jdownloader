@@ -83,8 +83,10 @@ public class BitvideoIo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        /* Better filenames for offline case */
-        link.setName(fid + ".mp4");
+        if (!link.isNameSet()) {
+            /* Better filenames for offline case */
+            link.setName(fid + ".mp4");
+        }
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         String filename = null;
         String json_source = null;
@@ -99,7 +101,7 @@ public class BitvideoIo extends PluginForHost {
                 /* Fallback */
                 filename = fid;
             }
-            json_source = this.br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+            json_source = br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         } else {
             /* Only use one of their domains */
             br.getPage("https://www.bitporno.com/?v=" + fid);
@@ -122,7 +124,7 @@ public class BitvideoIo extends PluginForHost {
                     filename = filename.substring(0, 212);
                 }
             }
-            if (this.br.containsHTML(html_video_encoding)) {
+            if (br.containsHTML(html_video_encoding)) {
                 return AvailableStatus.TRUE;
             }
             // from iframe
@@ -190,11 +192,27 @@ public class BitvideoIo extends PluginForHost {
             }
             if (dllink_user_prefered != null) {
                 logger.info("Downloading user-selected quality");
-                this.dllink = dllink_user_prefered;
+                dllink = dllink_user_prefered;
             } else {
                 logger.info("Downloading highest quality possible");
-                this.dllink = dllink_best;
+                dllink = dllink_best;
                 logger.info("file: " + dllink_best);
+            }
+        } else {
+            // could be <source>, seems that it also shows highest quality to change you do another page grab to '&q=480p | &q=360p'
+            final String[] source = br.getRegex("<source .*?/\\s*>").getColumn(-1);
+            if (source != null) {
+                int best = 0;
+                for (String s : source) {
+                    final String d = new Regex(s, "src=(\"|')(.*?)\\1").getMatch(1);
+                    final String q = new Regex(s, "data-res=(\"|')(\\d+)\\1").getMatch(1);
+                    if (q != null && d != null) {
+                        if (best < Integer.parseInt(q)) {
+                            dllink = d;
+                            best = Integer.parseInt(q);
+                        }
+                    }
+                }
             }
         }
         filename = Encoding.htmlDecode(filename);
@@ -242,7 +260,7 @@ public class BitvideoIo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (this.br.containsHTML(html_video_encoding)) {
+        if (br.containsHTML(html_video_encoding)) {
             /*
              * 2016-06-16, psp: I guess if this message appears longer than some hours, such videos can never be downloaded/streamed or only
              * the original file via premium account.
