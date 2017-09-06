@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?sta\\.sh/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(www\\.)?sta\\.sh/[a-z0-9]+" })
 public class StaShDecrypter extends PluginForDecrypt {
-
     public StaShDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,18 +49,15 @@ public class StaShDecrypter extends PluginForDecrypt {
         final boolean linkid_as_filename = cfg.getBooleanProperty(USE_LINKID_AS_FILENAME, false);
         final String main_linkid = new Regex(parameter, "sta\\.sh/(.+)").getMatch(0);
         final DownloadLink main = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
-
         if (parameter.matches(INVALIDLINKS)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         final String linkid_general = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) {
@@ -70,7 +65,6 @@ public class StaShDecrypter extends PluginForDecrypt {
             fpName = linkid_general;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-
         if (this.br.containsHTML("dev\\-metainfo\\-details\\-client\\-link")) {
             /* We should have one or multiple pictures. */
             final String[][] picdata = br.getRegex("class=\"thumb\" href=\"(https?://(www\\.)?sta\\.sh/[a-z0-9]+)\" title=\"([^<>\"]*?)\"").getMatches();
@@ -78,7 +72,6 @@ public class StaShDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-
             for (final String singleLinkData[] : picdata) {
                 final String url = singleLinkData[0];
                 final String linkid = new Regex(url, "sta\\.sh/(.+)").getMatch(0);
@@ -114,7 +107,6 @@ public class StaShDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(url));
             }
         }
-
         /* Download zip if it exists and user wants it. */
         final String zipLink = br.getRegex("\"(/zip/[a-z0-9]+)\"").getMatch(0);
         if (cfg.getBooleanProperty(DOWNLOAD_ZIP, false) && zipLink != null) {

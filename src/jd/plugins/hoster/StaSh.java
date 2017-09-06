@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,9 +34,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?stadecrypted\\.sh/(zip/)?[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(www\\.)?stadecrypted\\.sh/(zip/)?[a-z0-9]+" })
 public class StaSh extends PluginForHost {
-
     public StaSh(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
@@ -55,10 +53,8 @@ public class StaSh extends PluginForHost {
     private final String        COOKIE_HOST            = "http://www.deviantart.com";
     private String              DLLINK                 = null;
     private final String        MATURECONTENTFILTER    = ">Mature Content Filter<";
-
     private final String        INVALIDLINKS           = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
     private final String        TYPE_ZIP               = "http://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
-
     private static String       FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
     private static String       USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
     private static String       DOWNLOAD_ZIP           = "DOWNLOAD_ZIP";
@@ -104,12 +100,16 @@ public class StaSh extends PluginForHost {
             /* Special case, dllink is already set via decrypter via property */
             DLLINK = link.getStringProperty("directlink", null);
             ext = "zip";
-        } else if (br.containsHTML(">Download File<")) {
-            final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
-            ext = fInfo.getMatch(0);
-            filesize = fInfo.getMatch(1);
-            DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
-            if (ext == null || DLLINK == null) {
+        } else if (br.containsHTML("\"label\">Download<")) {
+            // final Regex fInfo =
+            // br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
+            // ext = fInfo.getMatch(0);
+            // filesize = fInfo.getMatch(1);
+            DLLINK = br.getRegex("\"(https?://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK != null) {
+                ext = new Regex(DLLINK, "(\\.(jpg|png|pdf|zip))").getMatch(0);
+            }
+            if (DLLINK == null || ext == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
@@ -126,7 +126,6 @@ public class StaSh extends PluginForHost {
             if (filesize == null) {
                 filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
             }
-
             if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
                 link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
                 link.setName(filename);
@@ -135,7 +134,6 @@ public class StaSh extends PluginForHost {
                 }
                 return AvailableStatus.TRUE;
             }
-
             filename = findServerFilename(this.br, filename);
             if (ext == null || ext.length() > 5) {
                 ext = getFileExt(this.br);
@@ -320,5 +318,4 @@ public class StaSh extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
