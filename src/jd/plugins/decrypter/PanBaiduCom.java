@@ -188,7 +188,13 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
             if (uk == null) {
                 uk = br.getRegex("yunData.SHARE_UK = \"(\\d+)\";").getMatch(0);
+                if (uk == null) {
+                    uk = br.getRegex("uk\":(\\d+)").getMatch(0);
+                }
                 shareid = br.getRegex("yunData.SHARE_ID = \"(\\d+)\";").getMatch(0);
+                if (shareid == null) {
+                    shareid = br.getRegex("shareid\":(\\d+)").getMatch(0);
+                }
             }
         }
         if (uk == null || shareid == null) {
