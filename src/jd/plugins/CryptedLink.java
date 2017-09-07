@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -24,19 +23,14 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  * @author jiaz
  */
 public class CryptedLink {
-
     /**
      * enthält die Url, welche an das Decrypter-Plugin übergeben wird
      */
     private String cryptedUrl;
-
     // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
     private String decrypterPassword;
 
     public CryptedLink(String cryptedUrl) {
-        // this.cryptedUrl = cryptedUrl;
-        // this.decrypterPassword = null;
-        // this.progress = null;
         this(cryptedUrl, null);
     }
 
@@ -51,11 +45,7 @@ public class CryptedLink {
     }
 
     public CryptedLink(String cryptedUrl, String pw) {
-        if (cryptedUrl != null) {
-            this.cryptedUrl = new String(cryptedUrl);
-        } else {
-            this.cryptedUrl = null;
-        }
+        this.cryptedUrl = cryptedUrl;
         this.decrypterPassword = pw;
     }
 
@@ -94,5 +84,4 @@ public class CryptedLink {
     public String toString() {
         return this.cryptedUrl;
     }
-
 }

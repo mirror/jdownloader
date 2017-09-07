@@ -2,10 +2,12 @@ package jd.controlling.reconnect.ipcheck;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.RouterUtils;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnectSettings;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -113,15 +115,20 @@ public class IP {
         if (StringUtils.isEmpty(gatewayIP)) {
             return false;
         } else {
-            boolean localip = isLocalIP(gatewayIP);
-            if (!localip) {
-                try {
-                    localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
-                } catch (UnknownHostException e) {
-                    LogController.CL().log(e);
+            final String[] whiteListArray = JsonConfig.create(LiveHeaderReconnectSettings.class).getHostWhiteList();
+            if (whiteListArray != null && Arrays.asList(whiteListArray).contains(gatewayIP)) {
+                return RouterUtils.checkPort(gatewayIP);
+            } else {
+                boolean localip = isLocalIP(gatewayIP);
+                if (!localip) {
+                    try {
+                        localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
+                    } catch (UnknownHostException e) {
+                        LogController.CL().log(e);
+                    }
                 }
+                return localip && RouterUtils.checkPort(gatewayIP);
             }
-            return localip && RouterUtils.checkPort(gatewayIP);
         }
     }
 

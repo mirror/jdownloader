@@ -43,7 +43,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class LiveHeaderInvoker extends ReconnectInvoker {
-
     private String script;
 
     public String getScript() {
@@ -64,38 +63,27 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
     @Override
     public ReconnectResult validate(ReconnectResult r) throws InterruptedException, ReconnectException {
-
         try {
-
             r = super.validate(r);
-
             if (r instanceof LiveHeaderReconnectResult) {
                 RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
-
                 if (rd != null && rd.getScriptID() != null) {
-
                     if (r.isSuccess()) {
-
                         RecollController.getInstance().trackWorking(rd.getScriptID(), r.getSuccessDuration(), r.getOfflineDuration());
                     } else {
                         RecollController.getInstance().trackNotWorking(rd.getScriptID());
                     }
-
                 }
             }
             return r;
         } catch (ReconnectException e) {
             RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
             if (rd != null && rd.getScriptID() != null) {
-
                 RecollController.getInstance().trackNotWorking(rd.getScriptID());
-
             }
             throw e;
         } finally {
-
         }
-
     }
 
     private final String      user;
@@ -226,7 +214,6 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             if (params.length > 0) {
                                 final StringBuilder newValue;
                                 newValue = new StringBuilder(tmp[0]);
-
                                 final int tmpLength = tmp.length;
                                 for (int i = 1; i <= tmpLength; i++) {
                                     if (i > params.length) {
@@ -613,7 +600,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     return;
                 }
                 final String verifyIP = InetAddress.getByName(verify).getHostAddress();
-                if (whiteList.contains(verify)) {
+                if (whiteList.contains(verifyIP)) {
                     if (verifiedIPs != null) {
                         verifiedIPs.add(verify);
                         verifiedIPs.add(verifyIP);
@@ -630,6 +617,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 if (verifiedIPs != null) {
                     verifiedIPs.add(verify);
                 }
+            } catch (ReconnectException e) {
+                throw e;
             } catch (Throwable e) {
                 throw new ReconnectException("Invalid Router Host:" + verify, e);
             }
@@ -740,7 +729,6 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             public void onRequestOK(Request request) throws ReconnectFailedException {
                 successRequests++;
             }
-
         };
         try {
             run();
@@ -757,5 +745,4 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     public void setRouterData(RouterData rd) {
         this.routerData = rd;
     }
-
 }
