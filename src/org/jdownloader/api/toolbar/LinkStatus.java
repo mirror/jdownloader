@@ -6,7 +6,6 @@ import org.appwork.storage.Storable;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class LinkStatus implements Storable {
-
     private CrawledLink link;
 
     @SuppressWarnings("unused")
@@ -39,9 +38,6 @@ public class LinkStatus implements Storable {
     }
 
     public String getLinkCheckID() {
-        CrawledLink parent = link.getSourceLink();
-        if (parent != null && parent instanceof LinkCheckLink) { return ((LinkCheckLink) parent).getLinkCheckID(); }
         return null;
     }
-
 }
