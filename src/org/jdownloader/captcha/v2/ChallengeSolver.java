@@ -180,12 +180,12 @@ public abstract class ChallengeSolver<T> {
 
     public boolean validateBlackWhite(Challenge<?> c) {
         if (getService().getConfig().isBlackWhiteListingEnabled()) {
-            String host = c.getHost();
-            ArrayList<String> whitelist = getService().getConfig().getWhitelistEntries();
+            final String host = c.getHost();
+            final ArrayList<String> whitelist = getService().getConfig().getWhitelistEntries();
             if (whitelist != null) {
-                for (String s : whitelist) {
+                for (final String s : whitelist) {
                     try {
-                        Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
+                        final Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
                         if (!StringUtils.equalsIgnoreCase(host, c.getTypeID())) {
                             if (pattern.matcher(host + "-" + c.getTypeID()).matches()) {
                                 return true;
@@ -202,11 +202,11 @@ public abstract class ChallengeSolver<T> {
                     }
                 }
             }
-            ArrayList<String> blacklist = getService().getConfig().getBlacklistEntries();
+            final ArrayList<String> blacklist = getService().getConfig().getBlacklistEntries();
             if (blacklist != null) {
-                for (String s : blacklist) {
+                for (final String s : blacklist) {
                     try {
-                        Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
+                        final Pattern pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
                         if (!StringUtils.equalsIgnoreCase(host, c.getTypeID())) {
                             if (pattern.matcher(host + "-" + c.getTypeID()).matches()) {
                                 return false;

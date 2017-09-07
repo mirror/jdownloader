@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedReader;
@@ -30,14 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -62,9 +53,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
-
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://rapidgator.net/article/premium");
@@ -77,9 +75,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
     private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM";
-
     private final String                   apiURL                          = "https://rapidgator.net/api/";
-
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                      = new AtomicLong(0);
@@ -87,11 +83,9 @@ public class RapidGatorNet extends antiDDoSForHost {
     private final String                   LASTIP                          = "LASTIP";
     private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
     private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-
     private static final long              FREE_RECONNECTWAIT_GENERAL      = 2 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_DAILYLIMIT   = 3 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_OTHERS       = 30 * 60 * 1000L;
-
     private static final long              FREE_CAPTCHA_EXPIRE_TIME        = 105 * 1000L;
 
     @Override
@@ -361,18 +355,15 @@ public class RapidGatorNet extends antiDDoSForHost {
                     captcha.put("DownloadCaptchaForm[captcha]", "");
                     String code = null, challenge = null;
                     final Browser capt = br.cloneBrowser();
-
                     if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api-secure\\.solvemedia\\.com/papi")) {
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
                         final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         code = getCaptchaCode(cf, downloadLink);
                         checkForExpiredCaptcha(timeBeforeCaptchaInput);
                         final String chid = sm.getChallenge(code);
-
                         // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         captcha.put("adcopy_challenge", chid);
                         captcha.put("adcopy_response", Encoding.urlEncode(code));
-
                     } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
                         final String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
                         final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
@@ -386,7 +377,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                         getPage(capt, captchaAdress);
                         challenge = capt.getRegex("<img src=\"(https?://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
                         code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
-
                         if (challenge == null || code == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -406,7 +396,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else {
                 validateLastChallengeResponse();
             }
-
             String dllink = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
@@ -452,7 +441,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
-
     }
 
     /**
@@ -528,7 +516,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                                 // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
                                 // ai.setStatus("Traffic exceeded " + reset_in);
                                 // account.setAccountInfo(ai);
-
                                 // is reset_in == seconds, * 1000 back into ms.
                                 final Long resetInTimestamp = Long.parseLong(reset_in) * 1000;
                                 account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", resetInTimestamp);
@@ -565,7 +552,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        if (account.getType() == AccountType.FREE) {
+        if (Account.AccountType.FREE.equals(account.getType())) {
             // free accounts still have captcha.
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
@@ -675,7 +662,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                     break;
                 }
-
                 if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
                     logger.info("disabled because of" + br.toString());
                     final String lang = System.getProperty("user.language");
@@ -787,7 +773,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                 f.close();
             } catch (final Throwable e) {
             }
-
         }
     }
 
@@ -957,7 +942,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
             }
         }
-
         String url = null;
         try {
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL())));
@@ -1035,12 +1019,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                 break;
             }
         }
-        if (account.getType() == AccountType.PREMIUM) {
+        if (Account.AccountType.FREE.equals(account.getType())) {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                dllink = br.getRegex("var premium_download_link = '(http://[^<>\"']+)';").getMatch(0);
+                dllink = br.getRegex("var premium_download_link = '(https?://[^<>\"']+)';").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("'(https?://pr_srv\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
                     if (dllink == null) {
@@ -1094,7 +1078,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
             }
         }
-
     }
 
     private void handleErrorsBasic() throws PluginException {
@@ -1203,5 +1186,4 @@ public class RapidGatorNet extends antiDDoSForHost {
     public void getPage(final String page) throws Exception {
         super.getPage(br, page);
     }
-
 }

@@ -4,7 +4,6 @@ public enum BooleanStatus {
     UNSET,
     TRUE,
     FALSE;
-
     public final Boolean getBoolean() {
         switch (this) {
         case FALSE:
@@ -22,6 +21,10 @@ public enum BooleanStatus {
 
     public static final BooleanStatus get(final BooleanStatus status) {
         return status == null ? UNSET : status;
+    }
+
+    public static final boolean isSet(final BooleanStatus status) {
+        return status != null && status.getBoolean() != null;
     }
 
     public static final Boolean convert(final BooleanStatus status) {

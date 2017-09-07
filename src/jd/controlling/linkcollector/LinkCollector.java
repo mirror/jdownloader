@@ -2700,11 +2700,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         return false;
                                     }
 
-                                    private final boolean hasDirectHTTPRule(final URLConnectionAdapter urlConnection) {
-                                        final String url = urlConnection.getURL().toString();
-                                        for (final LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
-                                            if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                                                return true;
+                                    private final boolean hasDirectHTTPRule(LinkCrawler lc, final URLConnectionAdapter urlConnection) {
+                                        final List<LinkCrawlerRule> rules = lc.getLinkCrawlerRules();
+                                        if (rules != null) {
+                                            final String url = urlConnection.getURL().toString();
+                                            for (final LinkCrawlerRule rule : rules) {
+                                                if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
+                                                    return true;
+                                                }
                                             }
                                         }
                                         return false;
@@ -2718,7 +2721,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                 final URL url = urlConnection.getURL();
                                                 if (StringUtils.endsWithCaseInsensitive(url.getPath(), ".php") && url.getQuery() != null) {
                                                     // hoster.domain/script.php?somevalue=somekey.....->Download
-                                                    if (!hasDirectHTTPRule(urlConnection)) {
+                                                    if (!hasDirectHTTPRule(lc, urlConnection)) {
                                                         final String domain = Browser.getHost(url, false);
                                                         final LinkCrawlerRule rule = new LinkCrawlerRule();
                                                         rule.setName("Learned php script download: " + domain + url.getPath());
@@ -2740,7 +2743,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                     final String fileName = Plugin.getFileNameFromURL(url);
                                                     final String fileExtension = Files.getExtension(fileName);
                                                     if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
-                                                        if (!hasDirectHTTPRule(urlConnection)) {
+                                                        if (!hasDirectHTTPRule(lc, urlConnection)) {
                                                             final LinkCrawlerRule rule = new LinkCrawlerRule();
                                                             rule.setName("Learned file extension: " + fileExtension);
                                                             rule.setPattern("(?i)https?://.*\\." + fileExtension + "($|\\?.*$)");

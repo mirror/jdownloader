@@ -1,9 +1,9 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
@@ -11,6 +11,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.controlling.packagecontroller.PackageControllerComparator;
+import jd.nutils.NaturalOrderComparator;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
@@ -25,59 +26,56 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
-
     public static final PackageControllerComparator<CrawledLink> SORTER_ASC  = new PackageControllerComparator<CrawledLink>() {
+        private final Comparator<String> comp = new NaturalOrderComparator();
 
-                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     if (o1s == null) {
-                                                                                         o1s = "";
-                                                                                     }
-                                                                                     if (o2s == null) {
-                                                                                         o2s = "";
-                                                                                     }
-                                                                                     return o1s.compareTo(o2s);
+        public int compare(CrawledLink o1, CrawledLink o2) {
+            String o1s = o1.getName();
+            String o2s = o2.getName();
+            if (o1s == null) {
+                o1s = "";
+            }
+            if (o2s == null) {
+                o2s = "";
+            }
+            return comp.compare(o1s, o2s);
+        }
 
-                                                                                 }
+        @Override
+        public String getID() {
+            return "jd.controlling.linkcrawler.CrawledPackage";
+        }
 
-                                                                                 @Override
-                                                                                 public String getID() {
-                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
-                                                                                 }
-
-                                                                                 @Override
-                                                                                 public boolean isAsc() {
-                                                                                     return true;
-                                                                                 }
-                                                                             };
+        @Override
+        public boolean isAsc() {
+            return true;
+        }
+    };
     public static final PackageControllerComparator<CrawledLink> SORTER_DESC = new PackageControllerComparator<CrawledLink>() {
+        private final Comparator<String> comp = new NaturalOrderComparator();
 
-                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     ;
-                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     ;
-                                                                                     if (o1s == null) {
-                                                                                         o1s = "";
-                                                                                     }
-                                                                                     if (o2s == null) {
-                                                                                         o2s = "";
-                                                                                     }
-                                                                                     return o2s.compareTo(o1s);
+        public int compare(CrawledLink o1, CrawledLink o2) {
+            String o1s = o1.getName();
+            String o2s = o2.getName();
+            if (o1s == null) {
+                o1s = "";
+            }
+            if (o2s == null) {
+                o2s = "";
+            }
+            return comp.compare(o2s, o1s);
+        }
 
-                                                                                 }
+        @Override
+        public String getID() {
+            return "jd.controlling.linkcrawler.CrawledPackage";
+        }
 
-                                                                                 @Override
-                                                                                 public String getID() {
-                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
-                                                                                 }
-
-                                                                                 @Override
-                                                                                 public boolean isAsc() {
-                                                                                     return false;
-                                                                                 }
-                                                                             };
+        @Override
+        public boolean isAsc() {
+            return false;
+        }
+    };
 
     public static enum TYPE {
         NORMAL,
@@ -99,26 +97,19 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private static final int                               SUBFOLDER_THRESHOLD        = JsonConfig.create(LinkgrabberSettings.class).getSubfolderThreshold();
     private static final SubFolderByPackageRule.COUNT      SUBFOLDER_COUNT            = JsonConfig.create(LinkgrabberSettings.class).getSubfolderCount();
     private static final GeneralSettings                   GENERALSETTINGS            = JsonConfig.create(GeneralSettings.class);
-
     private List<CrawledLink>                              children;
     private String                                         comment                    = null;
     private PackageController<CrawledPackage, CrawledLink> controller                 = null;
-
     private long                                           created                    = System.currentTimeMillis();
-
     private String                                         name                       = null;
-
     private String                                         downloadFolder             = null;
     private boolean                                        downloadFolderContainsTags = false;
-
     private boolean                                        expanded                   = CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded();
     private transient volatile UniqueAlltimeID             uniqueID                   = null;
     protected CrawledPackageView                           view;
     private String                                         compiledDownloadFolder     = null;
     private transient volatile ModifyLock                  lock                       = null;
-
     private PackageControllerComparator<CrawledLink>       sorter;
-
     private Priority                                       priority                   = Priority.DEFAULT;
 
     public UniqueAlltimeID getUniqueID() {
@@ -416,5 +407,4 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         }
         return false;
     }
-
 }

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -112,9 +111,6 @@ public class LinkCrawler {
 
     private final static String                            DIRECT_HTTP                 = "directhttp";
     private final static String                            HTTP_LINKS                  = "http links";
-    private final LazyHostPlugin                           httpPlugin;
-    private final LazyHostPlugin                           directPlugin;
-    private final LazyHostPlugin                           ftpPlugin;
     private java.util.List<CrawledLink>                    crawledLinks                = new ArrayList<CrawledLink>();
     private AtomicInteger                                  crawledLinksCounter         = new AtomicInteger(0);
     private java.util.List<CrawledLink>                    filteredLinks               = new ArrayList<CrawledLink>();
@@ -129,7 +125,7 @@ public class LinkCrawler {
     private final static AtomicInteger                     CRAWLER                     = new AtomicInteger(0);
     private final Map<String, Object>                      duplicateFinderContainer;
     private final Map<String, Set<Object>>                 duplicateFinderCrawler;
-    private final ConcurrentHashMap<String, CrawledLink>   duplicateFinderFinal;
+    private final Map<String, CrawledLink>                 duplicateFinderFinal;
     private final Map<String, Object>                      duplicateFinderDeep;
     private final Map<CrawledLink, Object>                 loopPreventionEmbedded;
     private LinkCrawlerHandler                             handler                     = null;
@@ -143,13 +139,12 @@ public class LinkCrawler {
     public final static String                             PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
     public static final UniqueAlltimeID                    PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
     private boolean                                        doDuplicateFinderFinalCheck = true;
-    private final List<LazyHostPlugin>                     unsortedLazyHostPlugins;
     private List<LazyCrawlerPlugin>                        unsortedLazyCrawlerPlugins;
     protected final PluginClassLoaderChild                 classLoader;
     private final String                                   defaultDownloadFolder;
     private final AtomicReference<List<LazyCrawlerPlugin>> sortedLazyCrawlerPlugins    = new AtomicReference<List<LazyCrawlerPlugin>>();
     private final AtomicReference<List<LazyHostPlugin>>    sortedLazyHostPlugins       = new AtomicReference<List<LazyHostPlugin>>();
-    private final List<LinkCrawlerRule>                    linkCrawlerRules;
+    private final AtomicReference<List<LinkCrawlerRule>>   linkCrawlerRules            = new AtomicReference<List<LinkCrawlerRule>>();
     private LinkCrawlerDeepInspector                       deepInspector               = null;
     private DirectHTTPPermission                           directHTTPPermission        = DirectHTTPPermission.ALWAYS;
     protected final UniqueAlltimeID                        uniqueAlltimeID             = new UniqueAlltimeID();
@@ -192,10 +187,6 @@ public class LinkCrawler {
             SEQUENTIALLOCKS.put(lock, lockID);
             return lock;
         }
-    }
-
-    protected List<LinkCrawlerRule> getLinkCrawlerRules() {
-        return listLinkCrawlerRules();
     }
 
     public UniqueAlltimeID getUniqueAlltimeID() {
@@ -354,19 +345,23 @@ public class LinkCrawler {
         return false;
     }
 
-    public static synchronized List<LinkCrawlerRule> listLinkCrawlerRules() {
-        final ArrayList<LinkCrawlerRule> linkCrawlerRules = new ArrayList<LinkCrawlerRule>();
-        final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
-        if (rules != null) {
-            for (LinkCrawlerRuleStorable rule : rules) {
-                try {
-                    linkCrawlerRules.add(rule._getLinkCrawlerRule());
-                } catch (final Throwable e) {
-                    LogController.CL().log(e);
+    protected List<LinkCrawlerRule> listLinkCrawlerRules() {
+        final ArrayList<LinkCrawlerRule> ret = new ArrayList<LinkCrawlerRule>();
+        if (CONFIG.isLinkCrawlerRulesEnabled()) {
+            final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+            if (rules != null) {
+                for (final LinkCrawlerRuleStorable rule : rules) {
+                    try {
+                        if (rule.isEnabled()) {
+                            ret.add(rule._getLinkCrawlerRule());
+                        }
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
                 }
             }
         }
-        return linkCrawlerRules;
+        return ret;
     }
 
     protected void attachLinkCrawler(final LinkCrawler linkCrawler) {
@@ -381,6 +376,51 @@ public class LinkCrawler {
         }
     }
 
+    protected final AtomicReference<LazyHostPlugin> lazyDirect = new AtomicReference<LazyHostPlugin>();
+
+    protected LazyHostPlugin getDirectHTTPPlugin() {
+        if (parentCrawler != null) {
+            return parentCrawler.getDirectHTTPPlugin();
+        } else {
+            LazyHostPlugin ret = lazyDirect.get();
+            if (ret == null) {
+                ret = HostPluginController.getInstance().get(DIRECT_HTTP);
+                lazyDirect.set(ret);
+            }
+            return ret;
+        }
+    }
+
+    protected final AtomicReference<LazyHostPlugin> lazyHttp = new AtomicReference<LazyHostPlugin>();
+
+    protected LazyHostPlugin getGenericHttpPlugin() {
+        if (parentCrawler != null) {
+            return parentCrawler.getGenericHttpPlugin();
+        } else {
+            LazyHostPlugin ret = lazyHttp.get();
+            if (ret == null) {
+                ret = HostPluginController.getInstance().get(HTTP_LINKS);
+                lazyHttp.set(ret);
+            }
+            return ret;
+        }
+    }
+
+    protected final AtomicReference<LazyHostPlugin> lazyFtp = new AtomicReference<LazyHostPlugin>();
+
+    protected LazyHostPlugin getGenericFtpPlugin() {
+        if (parentCrawler != null) {
+            return parentCrawler.getGenericFtpPlugin();
+        } else {
+            LazyHostPlugin ret = lazyFtp.get();
+            if (ret == null) {
+                ret = HostPluginController.getInstance().get("ftp");
+                lazyFtp.set(ret);
+            }
+            return ret;
+        }
+    }
+
     public LinkCrawler(final boolean connectParentCrawler, final boolean avoidDuplicates) {
         setFilter(defaultFilterFactory());
         final LinkCrawlerThread thread = getCurrentLinkCrawlerThread();
@@ -389,64 +429,26 @@ public class LinkCrawler {
             this.parentCrawler = thread.getCurrentLinkCrawler();
             this.parentCrawler.attachLinkCrawler(this);
             this.classLoader = parentCrawler.getPluginClassLoaderChild();
-            this.unsortedLazyHostPlugins = parentCrawler.unsortedLazyHostPlugins;
-            this.directPlugin = parentCrawler.directPlugin;
-            this.httpPlugin = parentCrawler.httpPlugin;
-            this.ftpPlugin = parentCrawler.ftpPlugin;
             this.directHTTPPermission = parentCrawler.directHTTPPermission;
             this.defaultDownloadFolder = parentCrawler.defaultDownloadFolder;
             this.duplicateFinderContainer = parentCrawler.duplicateFinderContainer;
             this.duplicateFinderCrawler = parentCrawler.duplicateFinderCrawler;
             this.duplicateFinderFinal = parentCrawler.duplicateFinderFinal;
             this.duplicateFinderDeep = parentCrawler.duplicateFinderDeep;
-            this.linkCrawlerRules = parentCrawler.linkCrawlerRules;
             this.loopPreventionEmbedded = parentCrawler.loopPreventionEmbedded;
             setHandler(parentCrawler.getHandler());
             setDeepInspector(parentCrawler.getDeepInspector());
         } else {
             duplicateFinderContainer = new HashMap<String, Object>();
             duplicateFinderCrawler = new HashMap<String, Set<Object>>();
-            duplicateFinderFinal = new ConcurrentHashMap<String, CrawledLink>(8, 0.9f, 1);
+            duplicateFinderFinal = new HashMap<String, CrawledLink>();
             duplicateFinderDeep = new HashMap<String, Object>();
             loopPreventionEmbedded = new HashMap<CrawledLink, Object>();
-            if (CONFIG.isLinkCrawlerRulesEnabled()) {
-                this.linkCrawlerRules = Collections.unmodifiableList(getLinkCrawlerRules());
-            } else {
-                linkCrawlerRules = null;
-            }
             setHandler(defaulHandlerFactory());
             setDeepInspector(defaultDeepInspector());
             defaultDownloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             parentCrawler = null;
             classLoader = PluginClassLoader.getInstance().getChild();
-            final Collection<LazyHostPlugin> lazyHostPlugins = HostPluginController.getInstance().list();
-            this.unsortedLazyHostPlugins = new ArrayList<LazyHostPlugin>(lazyHostPlugins.size());
-            LazyHostPlugin ftpPlugin = null;
-            LazyHostPlugin httpPlugin = null;
-            LazyHostPlugin directPlugin = null;
-            for (final LazyHostPlugin lazyHostPlugin : lazyHostPlugins) {
-                if (ftpPlugin != null && httpPlugin != null && directPlugin != null) {
-                    this.unsortedLazyHostPlugins.add(lazyHostPlugin);
-                } else {
-                    if (httpPlugin == null && HTTP_LINKS.equals(lazyHostPlugin.getDisplayName())) {
-                        /* for direct access to the directhttp plugin */
-                        // we have at least 2 directHTTP entries in pHost. each one listens to a different regex
-                        // the one we found here listens to "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr...
-                        // the other listens to directhttp://.+
-                        httpPlugin = lazyHostPlugin;
-                    } else if (ftpPlugin == null && "ftp".equals(lazyHostPlugin.getDisplayName())) {
-                        /* for generic ftp sites */
-                        ftpPlugin = lazyHostPlugin;
-                    } else if (directPlugin == null && DIRECT_HTTP.equals(lazyHostPlugin.getDisplayName())) {
-                        directPlugin = lazyHostPlugin;
-                    } else {
-                        this.unsortedLazyHostPlugins.add(lazyHostPlugin);
-                    }
-                }
-            }
-            this.ftpPlugin = ftpPlugin;
-            this.directPlugin = directPlugin;
-            this.httpPlugin = httpPlugin;
         }
         this.created = System.currentTimeMillis();
         this.doDuplicateFinderFinalCheck = avoidDuplicates;
@@ -585,7 +587,7 @@ public class LinkCrawler {
 
     public List<CrawledLink> find(final LinkCrawlerGeneration generation, String text, String url, final boolean allowDeep, final boolean allowInstantCrawl) {
         final HtmlParserResultSet resultSet;
-        if (allowInstantCrawl && getCurrentLinkCrawlerThread() != null) {
+        if (allowInstantCrawl && getCurrentLinkCrawlerThread() != null && generation != null) {
             resultSet = new HtmlParserResultSet() {
                 private final HashSet<HtmlParserCharSequence> fastResults = new HashSet<HtmlParserCharSequence>();
 
@@ -785,7 +787,9 @@ public class LinkCrawler {
         synchronized (duplicateFinderCrawler) {
             duplicateFinderCrawler.clear();
         }
-        duplicateFinderFinal.clear();
+        synchronized (duplicateFinderFinal) {
+            duplicateFinderFinal.clear();
+        }
         synchronized (duplicateFinderDeep) {
             duplicateFinderDeep.clear();
         }
@@ -980,22 +984,38 @@ public class LinkCrawler {
         return null;
     }
 
+    protected static interface DeeperOrMatchingRuleModifier extends CrawledLinkModifier {
+        public CrawledLinkModifier getSourceCrawledLinkModifier();
+    }
+
     protected void crawlDeeperOrMatchingRule(final LinkCrawlerGeneration generation, final CrawledLink source) {
-        final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
+        final CrawledLinkModifier sourceLinkModifier;
+        if (source.getCustomCrawledLinkModifier() instanceof DeeperOrMatchingRuleModifier) {
+            CrawledLinkModifier modifier = source.getCustomCrawledLinkModifier();
+            while (modifier instanceof DeeperOrMatchingRuleModifier) {
+                modifier = ((DeeperOrMatchingRuleModifier) modifier).getSourceCrawledLinkModifier();
+            }
+            sourceLinkModifier = modifier;
+        } else {
+            sourceLinkModifier = source.getCustomCrawledLinkModifier();
+        }
         source.setCustomCrawledLinkModifier(null);
         source.setBrokenCrawlerHandler(null);
         if (source == null || source.getURL() == null || isCrawledLinkDuplicated(duplicateFinderDeep, source) || this.isCrawledLinkFiltered(source)) {
             return;
         }
-        final CrawledLinkModifier lm = new CrawledLinkModifier() {
-            /*
-             * this modifier sets the BrowserURL if not set yet
-             */
+        final LinkCrawlerRule matchingRule = source.getMatchingRule();
+        final CrawledLinkModifier lm = new DeeperOrMatchingRuleModifier() {
+            public CrawledLinkModifier getSourceCrawledLinkModifier() {
+                return sourceLinkModifier;
+            }
+
             public void modifyCrawledLink(CrawledLink link) {
+                final boolean setContainerURL = link.getDownloadLink() != null && link.getDownloadLink().getContainerUrl() == null;
                 if (sourceLinkModifier != null) {
                     sourceLinkModifier.modifyCrawledLink(link);
                 }
-                if (link.getDownloadLink() != null && link.getDownloadLink().getContainerUrl() == null) {
+                if (setContainerURL) {
                     link.getDownloadLink().setContainerUrl(source.getURL());
                 }
             }
@@ -1028,7 +1048,6 @@ public class LinkCrawler {
                     } else {
                         br = new Browser();
                         br.setFollowRedirects(false);
-                        final LinkCrawlerRule matchingRule = source.getMatchingRule();
                         if (matchingRule != null && matchingRule.getCookies() != null) {
                             for (String cookie[] : matchingRule.getCookies()) {
                                 if (cookie != null && cookie.length > 1) {
@@ -1674,6 +1693,7 @@ public class LinkCrawler {
                             }
                         }
                         if (isFtp) {
+                            final LazyHostPlugin ftpPlugin = getGenericFtpPlugin();
                             if (ftpPlugin != null) {
                                 /* now we will check for generic ftp links */
                                 final DISTRIBUTE ret = distributePluginForHost(ftpPlugin, generation, url, possibleCryptedLink);
@@ -1689,6 +1709,7 @@ public class LinkCrawler {
                             }
                         } else if (!isFile) {
                             final DirectHTTPPermission directHTTPPermission = getDirectHTTPPermission();
+                            final LazyHostPlugin directPlugin = getDirectHTTPPlugin();
                             if (directPlugin != null) {
                                 LinkCrawlerRule rule = null;
                                 if (isDirect) {
@@ -1738,6 +1759,7 @@ public class LinkCrawler {
                                     }
                                 }
                             }
+                            final LazyHostPlugin httpPlugin = getGenericHttpPlugin();
                             if (httpPlugin != null && url.startsWith("http")) {
                                 /* now we will check for normal http links */
                                 final String newURL;
@@ -1951,11 +1973,30 @@ public class LinkCrawler {
         return DISTRIBUTE.CONTINUE;
     }
 
+    public List<LinkCrawlerRule> getLinkCrawlerRules() {
+        List<LinkCrawlerRule> ret = linkCrawlerRules.get();
+        if (ret == null) {
+            synchronized (linkCrawlerRules) {
+                ret = linkCrawlerRules.get();
+                if (ret == null) {
+                    linkCrawlerRules.set(listLinkCrawlerRules());
+                    return getLinkCrawlerRules();
+                }
+            }
+        }
+        if (ret.size() == 0) {
+            return null;
+        } else {
+            return ret;
+        }
+    }
+
     protected LinkCrawlerRule getFirstMatchingRule(CrawledLink link, String url, LinkCrawlerRule.RULE... ruleTypes) {
-        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "file:/") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
+        final List<LinkCrawlerRule> rules = getLinkCrawlerRules();
+        if (rules != null && (StringUtils.startsWithCaseInsensitive(url, "file:/") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
             for (final LinkCrawlerRule.RULE ruleType : ruleTypes) {
-                for (final LinkCrawlerRule rule : linkCrawlerRules) {
-                    if (rule.isEnabled() && ruleType.equals(rule.getRule()) && rule.matches(url)) {
+                for (final LinkCrawlerRule rule : rules) {
+                    if (ruleType.equals(rule.getRule()) && rule.matches(url)) {
                         if (rule.getMaxDecryptDepth() == -1) {
                             return rule;
                         } else {
@@ -2043,7 +2084,12 @@ public class LinkCrawler {
             /* sort pHosts according to their usage */
             List<LazyHostPlugin> ret = sortedLazyHostPlugins.get();
             if (ret == null) {
-                ret = new ArrayList<LazyHostPlugin>(unsortedLazyHostPlugins);
+                ret = new ArrayList<LazyHostPlugin>();
+                for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
+                    if (!HTTP_LINKS.equals(lazyHostPlugin.getDisplayName()) && !"ftp".equals(lazyHostPlugin.getDisplayName()) && !DIRECT_HTTP.equals(lazyHostPlugin.getDisplayName())) {
+                        ret.add(lazyHostPlugin);
+                    }
+                }
                 try {
                     Collections.sort(ret, new Comparator<LazyHostPlugin>() {
                         public final int compare(long x, long y) {
@@ -2320,16 +2366,18 @@ public class LinkCrawler {
         final DownloadLink ret = link.getDownloadLink();
         if (ret == null && link.getSourceLink() != null) {
             return link.getSourceLink().getDownloadLink();
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     private CryptedLink getLatestCryptedLink(CrawledLink link) {
         final CryptedLink ret = link.getCryptedLink();
         if (ret == null && link.getSourceLink() != null) {
             return link.getSourceLink().getCryptedLink();
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     private void forwardCryptedLinkInfos(final CrawledLink sourceCrawledLink, final CryptedLink destCryptedLink) {
@@ -3239,11 +3287,20 @@ public class LinkCrawler {
                 /* specialHandling: Crypted A - > B - > Final C , and A equals C */
                 // if link comes from flashgot, origin might be null
                 final boolean specialHandling = origin != null && (origin != link) && (StringUtils.equals(origin.getLinkID(), link.getLinkID()));
-                final CrawledLink existing;
-                if ((existing = duplicateFinderFinal.putIfAbsent(Encoding.urlDecode(link.getLinkID(), false), link)) != null && !specialHandling) {
-                    final PluginForHost hPlugin = link.gethPlugin();
-                    if (hPlugin == null || hPlugin.onLinkCrawlerDupeFilterEnabled(existing, link)) {
-                        return;
+                if (!specialHandling) {
+                    CrawledLink existing = null;
+                    synchronized (duplicateFinderFinal) {
+                        final String key = Encoding.urlDecode(link.getLinkID(), false);
+                        existing = duplicateFinderFinal.get(key);
+                        if (existing == null) {
+                            duplicateFinderFinal.put(key, link);
+                        }
+                    }
+                    if (existing != null) {
+                        final PluginForHost hPlugin = link.gethPlugin();
+                        if (hPlugin == null || hPlugin.onLinkCrawlerDupeFilterEnabled(existing, link)) {
+                            return;
+                        }
                     }
                 }
             }
