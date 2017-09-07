@@ -23,6 +23,8 @@ import java.util.Random;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -38,6 +40,7 @@ import jd.utils.JDUtilities;
 public class PanBaiduCom extends PluginForDecrypt {
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     private static final String                TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#(dir|list)/path=%.+)";
@@ -75,10 +78,10 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
         }
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         /* If we access urls without cookies we might get 404 responses for no reason so let's access the main page first. */
-        this.br.getPage("http://pan.baidu.com");
-        this.br.getPage(parameter);
+        br.getPage("http://pan.baidu.com");
+        br.getPage(parameter);
         if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
@@ -109,7 +112,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             /* Reset that */
             currentlinksnum = 0;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getPage(String.format("http://pan.baidu.com/pcloud/feed/getsharelist?t=%d&category=0&auth_type=1&request_location=share_home&start=%d&limit=60&query_uk=%s&channel=chunlei&clienttype=0&web=1&logid=&bdstoken=null", System.currentTimeMillis(), offset, this.uk));
+            br.getPage(String.format("http://pan.baidu.com/pcloud/feed/getsharelist?t=%d&category=0&auth_type=1&request_location=share_home&start=%d&limit=60&query_uk=%s&channel=chunlei&clienttype=0&web=1&logid=&bdstoken=null", System.currentTimeMillis(), offset, this.uk));
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
             final ArrayList<Object> records = (ArrayList<Object>) entries.get("records");
@@ -143,7 +146,6 @@ public class PanBaiduCom extends PluginForDecrypt {
         String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
         if (br.getURL().contains("/share/init")) {
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             if (parameter.matches(TYPE_FOLDER_GENERAL)) {
                 uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
                 shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
@@ -152,11 +154,17 @@ public class PanBaiduCom extends PluginForDecrypt {
                 shareid = new Regex(br.getURL(), "shareid=(\\d+)").getMatch(0);
             }
             final String linkpart = new Regex(parameter, "(pan\\.baidu\\.com/.+)").getMatch(0);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             for (int i = 1; i <= 3; i++) {
                 if (link_password == null) {
                     link_password = getUserInput("Password for " + linkpart + "?", param);
                 }
-                br.postPage("//pan.baidu.com/share/verify?" + "channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + Encoding.urlEncode(link_password));
+                if (uk != null) {
+                    br.postPage("//pan.baidu.com/share/verify?" + "channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + Encoding.urlEncode(link_password));
+                } else {
+                    String location = new Regex(br.getURL(), "\\?(.+)").getMatch(0);
+                    br.postPage("//pan.baidu.com/share/verify?" + location + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + Encoding.urlEncode(link_password));
+                }
                 if (!br.containsHTML("\"errno\":0")) {
                     link_password = null;
                     continue;
@@ -166,8 +174,10 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (!br.containsHTML("\"errno\":0")) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            parameter = br.getURL("//pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk).toString();
             link_password_cookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
+            if (uk != null) {
+                parameter = br.getURL("//pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk).toString();
+            }
             br.getHeaders().remove("X-Requested-With");
             br.getPage(parameter);
             if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -175,6 +185,10 @@ public class PanBaiduCom extends PluginForDecrypt {
                 dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
                 decryptedLinks.add(dl);
                 return;
+            }
+            if (uk == null) {
+                uk = br.getRegex("yunData.SHARE_UK = \"(\\d+)\";").getMatch(0);
+                shareid = br.getRegex("yunData.SHARE_ID = \"(\\d+)\";").getMatch(0);
             }
         }
         if (uk == null || shareid == null) {
@@ -320,7 +334,12 @@ public class PanBaiduCom extends PluginForDecrypt {
                 path = new Regex(path, "(/.+/)").getMatch(0);
                 FilePackage fp = filePackages.get(path);
                 if (fp == null) {
-                    final String name = new Regex(path, ".+/(.+)/").getMatch(0);
+                    final String name;
+                    if (getPluginConfig().getBooleanProperty("COMBINE_IN_ONE_FOLDER", true)) {
+                        name = new Regex(path, ".+/(.+)/").getMatch(0);
+                    } else {
+                        name = new Regex(path, "/(.+)/").getMatch(0);
+                    }
                     if (name != null) {
                         fp = FilePackage.getInstance();
                         fp.setName(name);
@@ -367,6 +386,10 @@ public class PanBaiduCom extends PluginForDecrypt {
 
     private String getPlainLink(final String input) {
         return input.replace("/share/init?", "/share/link?");
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "COMBINE_IN_ONE_FOLDER", "add only 1 folder to the linkgrabber.").setDefaultValue(true));
     }
 
     /* NO OVERRIDE!! */
