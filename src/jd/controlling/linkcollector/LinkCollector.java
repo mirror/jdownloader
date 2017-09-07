@@ -1320,9 +1320,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1419,6 +1419,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             link.setCustomCrawledLinkModifier(null);
             link.setUnknownHandler(null);
             link.setDesiredPackageInfo(null);
+            link.setSourceLink(null);
             link.setCollectingInfo(null);
             link.setSourceJob(null);
             link.setMatchingFilter(null);

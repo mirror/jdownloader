@@ -599,8 +599,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final CrawledLink lsourceLink = getSourceLink();
         if (lcollectingInfo != null || lsourceLink == null) {
             return lcollectingInfo;
+        } else {
+            return lsourceLink.getCollectingInfo();
         }
-        return lsourceLink.getCollectingInfo();
     }
 
     public ArchiveInfo getArchiveInfo() {

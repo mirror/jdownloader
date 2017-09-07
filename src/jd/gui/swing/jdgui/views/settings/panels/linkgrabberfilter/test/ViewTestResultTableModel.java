@@ -1,6 +1,11 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test;
 
+import java.util.Arrays;
+
 import javax.swing.Icon;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
 
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -13,11 +18,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
-
 public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
-
     public ViewTestResultTableModel() {
         super("ViewTestResultTableModel");
     }
@@ -25,29 +26,23 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
     @Override
     protected void initColumns() {
         addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ViewTestResultTableModel_initColumns_matches_()) {
-
             public int getDefaultWidth() {
-
                 return 100;
             }
 
             protected boolean isDefaultResizable() {
-
                 return false;
             }
 
             @Override
             protected Icon getIcon(CrawledLink value) {
-
                 try {
                     if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
                         return new AbstractIcon(IconKey.ICON_FALSE, 16);
                     }
                 } catch (Exception e) {
-
                 }
                 return new AbstractIcon(IconKey.ICON_TRUE, 16);
-
             }
 
             @Override
@@ -57,12 +52,10 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                         return _GUI.T.ResultTableModel_getStringValue_filtered_();
                     }
                 } catch (Exception e) {
-
                 }
                 return _GUI.T.ResultTableModel_getStringValue_accepted_();
             }
         });
-
         addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_link_()) {
             {
                 editorField.setEditable(false);
@@ -79,7 +72,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-
                 return value.getURL();
             }
         });
@@ -89,20 +81,17 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected boolean isDefaultResizable() {
-
                 return true;
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-
                 return value.getName();
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_online_()) {
             @Override
             protected String getTooltipText(final CrawledLink value) {
-
                 switch (value.getLinkState()) {
                 case OFFLINE:
                     return _GUI.T.ConditionDialog_layoutDialogContent_offline_();
@@ -110,24 +99,20 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                     return _GUI.T.ConditionDialog_layoutDialogContent_online_();
                 case TEMP_UNKNOWN:
                     return _GUI.T.ConditionDialog_layoutDialogContent_uncheckable_();
-
                 }
                 return null;
             }
 
             public int getDefaultWidth() {
-
                 return 120;
             }
 
             protected boolean isDefaultResizable() {
-
                 return false;
             }
 
             @Override
             protected Icon getIcon(CrawledLink value) {
-
                 switch (value.getLinkState()) {
                 case OFFLINE:
                     return CheckBoxIcon.FALSE;
@@ -135,10 +120,8 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                     return CheckBoxIcon.TRUE;
                 case TEMP_UNKNOWN:
                     return CheckBoxIcon.UNDEFINED;
-
                 }
                 return null;
-
             }
 
             @Override
@@ -150,19 +133,16 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                     return _GUI.T.ConditionDialog_layoutDialogContent_online_();
                 case TEMP_UNKNOWN:
                     return _GUI.T.ConditionDialog_layoutDialogContent_uncheckable_();
-
                 }
                 return "";
             }
         });
-
         addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_size_()) {
             public int getDefaultWidth() {
                 return 80;
             }
 
             protected boolean isDefaultResizable() {
-
                 return false;
             }
 
@@ -181,13 +161,11 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected boolean isDefaultResizable() {
-
                 return false;
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-
                 return Files.getExtension(value.getName());
             }
         });
@@ -197,7 +175,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected boolean isDefaultResizable() {
-
                 return false;
             }
 
@@ -224,7 +201,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                 return domain.getTld();
             }
         });
-
         addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_source()) {
             {
                 editorField.setEditable(false);
@@ -245,21 +221,13 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                StringBuilder sb = new StringBuilder();
-
-                CrawledLink p = value;
-                String last = p.getURL();
-                while ((p = p.getSourceLink()) != null) {
-                    if (last != null && last.equals(p.getURL())) {
-                        continue;
-                    }
-                    sb.append("∟");
-                    sb.append(p.getURL());
-                    sb.append("\r\n");
+                final String[] source = value.getSourceUrls();
+                if (source != null) {
+                    return Arrays.toString(source);
+                } else {
+                    return "";
                 }
-                return sb.toString().trim();
             }
         });
-
     }
 }
