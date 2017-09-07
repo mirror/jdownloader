@@ -311,10 +311,6 @@ public class LinkCrawler {
                 @Override
                 protected void postprocessFinalCrawledLink(CrawledLink link) {
                 }
-
-                @Override
-                protected void preprocessFinalCrawledLink(CrawledLink link) {
-                }
             };
             parent.attachLinkCrawler(lc);
         } else {
@@ -2183,7 +2179,7 @@ public class LinkCrawler {
         }
         if (checkStartNotify(generation)) {
             try {
-                final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
+                final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink, possibleCryptedLink.getURL());
                 PluginForHost wplg = null;
                 /*
                  * use a new PluginClassLoader here
@@ -2242,6 +2238,11 @@ public class LinkCrawler {
                                     }
                                 }
                                 for (final DownloadLink hosterLink : hosterLinks) {
+                                    try {
+                                        wplg.correctDownloadLink(hosterLink);
+                                    } catch (final Throwable e) {
+                                        LogController.CL().log(e);
+                                    }
                                     crawledLinks.add(wplg.convert(hosterLink));
                                 }
                             }
@@ -2291,26 +2292,41 @@ public class LinkCrawler {
     }
 
     public String[] getAndClearSourceURLs(final CrawledLink link) {
+        return getAndClearSourceURLs(link, null);
+    }
+
+    public String[] getAndClearSourceURLs(final CrawledLink link, final String ignore) {
         final ArrayList<String> sources = new ArrayList<String>();
         CrawledLink next = link;
+        CrawledLink previous = link;
         while (next != null) {
             final CrawledLink current = next;
             next = current.getSourceLink();
             final String currentURL = cleanURL(current.getURL());
-            if (currentURL != null) {
+            if (currentURL != null && !StringUtils.equals(ignore, currentURL)) {
                 if (sources.size() == 0) {
                     sources.add(currentURL);
-                } else if (!StringUtils.equals(currentURL, sources.get(sources.size() - 1))) {
-                    sources.add(currentURL);
+                } else {
+                    if (current.getMatchingRule() == null || current.getMatchingRule() != previous.getMatchingRule()) {
+                        final String previousURL = sources.get(sources.size() - 1);
+                        if (!StringUtils.equals(currentURL, previousURL)) {
+                            sources.add(currentURL);
+                        }
+                    }
                 }
             }
+            previous = current;
         }
         link.setSourceUrls(null);
         final String customSourceUrl = getReferrerUrl(link);
         if (customSourceUrl != null) {
             sources.add(customSourceUrl);
         }
-        return sources.toArray(new String[] {});
+        if (sources.size() == 0) {
+            return null;
+        } else {
+            return sources.toArray(new String[] {});
+        }
     }
 
     public String getReferrerUrl(final CrawledLink link) {
@@ -3220,20 +3236,6 @@ public class LinkCrawler {
         }
     }
 
-    protected void preprocessFinalCrawledLink(final CrawledLink crawledLink) {
-        final DownloadLink downloadLink = crawledLink.getDownloadLink();
-        if (downloadLink != null) {
-            final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin();
-            if (defaultPlugin != null) {
-                try {
-                    defaultPlugin.correctDownloadLink(downloadLink);
-                } catch (final Throwable e) {
-                    LogController.CL().log(e);
-                }
-            }
-        }
-    }
-
     public static boolean isTempDecryptedURL(final String url) {
         if (url != null) {
             final String host = Browser.getHost(url, true);
@@ -3268,7 +3270,6 @@ public class LinkCrawler {
             final CrawledLink origin = link.getOriginLink();
             if (link.getCreated() == -1) {
                 link.setCreated(getCreated());
-                preprocessFinalCrawledLink(link);
                 final CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();
                 link.setCustomCrawledLinkModifier(null);
                 if (customModifier != null) {
