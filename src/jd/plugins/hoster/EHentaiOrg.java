@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -199,7 +200,7 @@ public class EHentaiOrg extends PluginForHost {
         }
         final String ext = getFileNameExtensionFromString(dllink, ".png");
         // package customiser altered, or user altered value, we need to update this value.
-        if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
+        if (downloadLink.getForcedFileName() != null) {
             downloadLink.setForcedFileName(namepart + ext);
         } else {
             // decrypter doesn't set file extension.
@@ -504,7 +505,9 @@ public class EHentaiOrg extends PluginForHost {
         // package customiser sets filename to this value
         final String userFilename = downloadLink.getForcedFileName();
         if (userFilename != null) {
-            return userFilename;
+            // make sure you remove the existing extension!
+            final String ext = getFileNameExtensionFromString(userFilename, null);
+            return userFilename != null ? userFilename.replaceFirst(Pattern.quote(ext) + "$", "") : userFilename;
         }
         final String namelink = downloadLink.getStringProperty("namepart", null);
         if (namelink != null) {
