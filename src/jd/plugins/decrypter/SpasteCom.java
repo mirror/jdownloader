@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -64,74 +65,94 @@ public class SpasteCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Form form = br.getFormbyProperty("id", "spasteCaptcha");
-        if (form == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-        }
-        // they can have captcha, ive seen solvemedia and there own
-        String captchaScript = null;
-        {
-            final String[] mm = form.getRegex("<script[^>]*>.*?</script>").getColumn(-1);
-            if (mm != null) {
-                for (final String m : mm) {
-                    if (m.contains("var myCaptcha")) {
-                        captchaScript = m;
-                        break;
+        int zz = -1;
+        while (true) {
+            zz++;
+            final Form form = br.getFormbyProperty("id", "spasteCaptcha");
+            if (form == null) {
+                // need a way to break.
+                if (zz == 0) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                } else {
+                    break;
+                }
+            }
+            if (zz > 4) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            // they can have captcha, ive seen solvemedia and there own
+            String captchaScript = null;
+            {
+                final String[] mm = form.getRegex("<script[^>]*>.*?</script>").getColumn(-1);
+                if (mm != null) {
+                    for (final String m : mm) {
+                        if (m.contains("var myCaptcha")) {
+                            captchaScript = m;
+                            break;
+                        }
                     }
                 }
             }
-        }
-        if (form.containsHTML("api\\.solvemedia\\.com/papi")) {
-            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-            File cf = null;
-            try {
-                cf = sm.downloadCaptcha(getLocalCaptchaFile());
-            } catch (final Exception e) {
-                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                }
-                throw e;
-            }
-            final String code = getCaptchaCode("solvemedia", cf, param);
-            final String chid = sm.getChallenge(code);
-            form.put("adcopy_response", "manual_challenge");
-            form.put("adcopy_challenge", Encoding.urlEncode(chid));
-            form.put("pasteUrlForm%5Bsubmit%5D", "submit");
-            submitForm(form);
-        } else if (captchaScript != null) {
-            // hello!
-            final String hash = getJS(captchaScript, "myCaptchaHash");
-            final String[] getQuestion = getJSArray(captchaScript, "myCaptchaAns");
-            final String[] getImgArray = getJSArray(captchaScript, "myCaptchaImages");
-            if (hash == null || getQuestion == null || getImgArray == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-            }
-            // stupid
-            String result = "";
-            c: for (final String q : getQuestion) {
-                int count = -1;
-                for (final String i : getImgArray) {
-                    ++count;
-                    if (i.contains(q)) {
-                        result += count;
-                        continue c;
+            if (form.containsHTML("api\\.solvemedia\\.com/papi")) {
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                     }
-                    // some times they do partial word within filename and more in hint, reverse lookup should solve this
-                    final String f = new Regex(extractFileNameFromURL(i), "\\d*(.*?)\\.jpg").getMatch(0);
-                    if (f != null && q.contains(f)) {
-                        result += count;
-                        continue c;
+                    throw e;
+                }
+                final String code = getCaptchaCode("solvemedia", cf, param);
+                final String chid = sm.getChallenge(code);
+                form.put("adcopy_response", "manual_challenge");
+                form.put("adcopy_challenge", Encoding.urlEncode(chid));
+                form.put("pasteUrlForm%5Bsubmit%5D", "submit");
+                submitForm(form);
+            } else if (captchaScript != null) {
+                // hello!
+                final String hash = getJS(captchaScript, "myCaptchaHash");
+                final String[] getQuestion = getJSArray(captchaScript, "myCaptchaAns");
+                final String[] getImgArray = getJSArray(captchaScript, "myCaptchaImages");
+                if (hash == null || getQuestion == null || getImgArray == null) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                // stupid
+                String result = "";
+                c: for (final String q : getQuestion) {
+                    int count = -1;
+                    for (final String i : getImgArray) {
+                        ++count;
+                        if (StringUtils.containsIgnoreCase(i, q)) {
+                            result += count;
+                            continue c;
+                        }
+                        // some times they do partial word within filename and more in hint, reverse lookup should solve this
+                        final String filename = extractFileNameFromURL(i);
+                        final String f = new Regex(filename, "\\d*([a-zA-Z]+)\\d*\\.jpg").getMatch(0);
+                        if (StringUtils.containsIgnoreCase(q, f)) {
+                            result += count;
+                            continue c;
+                        }
+                        if ("building".equalsIgnoreCase(q) && "14291865221429186522index.jpg".equals(filename)) {
+                            result += count;
+                            continue c;
+                        }
                     }
                 }
+                if (result.length() != getQuestion.length) {
+                    // refresh
+                    getPage(parameter);
+                    continue;
+                }
+                form.put("sPasteCaptcha", Encoding.urlEncode(hash));
+                form.put("userEnterHashHere", result);
+                form.put("pasteUrlForm%5Bsubmit%5D", "submit");
+                submitForm(form);
+            } else {
+                break;
             }
-            if (result.length() != 3) {
-                // problem
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-            }
-            form.put("sPasteCaptcha", Encoding.urlEncode(hash));
-            form.put("userEnterHashHere", result);
-            form.put("pasteUrlForm%5Bsubmit%5D", "submit");
-            submitForm(form);
         }
         final String plaintxt;
         // /s links have a different format
@@ -146,7 +167,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("Accept", "*/*");
             sleep(5000, param);
-            br.postPage("/site/getRedirectLink", "id=" + Encoding.urlEncode(id));
+            postPage("/site/getRedirectLink", "id=" + Encoding.urlEncode(id));
             plaintxt = br.toString();
         } else {
             // look for content! within '/p/c=? + uid', by the way you cant just jump to it.
