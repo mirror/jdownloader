@@ -107,7 +107,7 @@ public class StaSh extends PluginForHost {
             // filesize = fInfo.getMatch(1);
             DLLINK = br.getRegex("\"(https?://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) {
-                ext = new Regex(DLLINK, "\\.(jpg|png|pdf|swf|zip)").getMatch(0);
+                ext = new Regex(DLLINK, "\\.(jpg|png|gif|pdf|swf|zip)").getMatch(0);
             }
             if (DLLINK == null || ext == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
