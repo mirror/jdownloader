@@ -126,7 +126,7 @@ public class ClipDataCache {
                 }
                 if (cachedData.clipData.error != null) {
                     String lc = cachedData.clipData.error.toLowerCase(Locale.ENGLISH);
-                    if (lc.contains("is not available in your country")) {
+                    if (lc.contains("is not available in your country") || lc.contains("geo blocked due to copyright grounds")) {
                         // 18.04.2016
                         // „Unfortunately, this video is not available in Germany because it may contain music for which GEMA has not
                         // granted the respective music rights.”

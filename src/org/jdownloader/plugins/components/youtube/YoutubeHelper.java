@@ -1158,60 +1158,54 @@ public class YoutubeHelper {
                 }
             }
         }
-        if (vid.date <= 0) {
-            final Locale locale = Locale.ENGLISH;
-            SimpleDateFormat formatter = null;
-            String date = null;
-            if (vid.date <= 0 && ytInitialData != null) {
-                final String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
-                if (string != null) {
-                    // they have many naming's like (?:Published|Streamed live|Started streaming) on . to avoid having to add support all the
-                    // time. just parse for the date pattern(s).
-                    date = new Regex(string, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
-                    if (date != null) {
-                        // seen in MMM dd, yyyy
-                        formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
-                        formatter.setTimeZone(TimeZone.getDefault());
-                        try {
-                            vid.date = formatter.parse(date).getTime();
-                            logger.info("Date result " + vid.date + " " + new Date(vid.date));
-                        } catch (final Exception e) {
-                            final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
-                            log.log(e);
-                        }
-                    } else if (new Regex(string, "\\d+\\s*(?:days?|hours?|minutes?|seconds?)").matches()) {
-                        // Streamed live 3 hours ago
-                        /*
-                         * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then construct relative to users
-                         * time. It should be equal to above as
-                         */
-                        final String tmpdays = new Regex(string, "(\\d+)\\s+days?").getMatch(0);
-                        final String tmphrs = new Regex(string, "(\\d+)\\s+hours?").getMatch(0);
-                        final String tmpmin = new Regex(string, "(\\d+)\\s+minutes?").getMatch(0);
-                        final String tmpsec = new Regex(string, "(\\d+)\\s+seconds?").getMatch(0);
-                        long days = 0, hours = 0, minutes = 0, seconds = 0;
-                        if (StringUtils.isNotEmpty(tmpdays)) {
-                            days = Integer.parseInt(tmpdays);
-                        }
-                        if (StringUtils.isNotEmpty(tmphrs)) {
-                            hours = Integer.parseInt(tmphrs);
-                        }
-                        if (StringUtils.isNotEmpty(tmpmin)) {
-                            minutes = Integer.parseInt(tmpmin);
-                        }
-                        if (StringUtils.isNotEmpty(tmpsec)) {
-                            seconds = Integer.parseInt(tmpsec);
-                        }
-                        final long time = System.currentTimeMillis() - ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
-                        final Calendar c = Calendar.getInstance();
-                        c.setTimeInMillis(time);
-                        c.set(Calendar.HOUR_OF_DAY, 0);
-                        c.set(Calendar.MINUTE, 0);
-                        c.set(Calendar.SECOND, 0);
-                        vid.date = c.getTimeInMillis();
-                    } else {
-                        System.out.println("error");
+        if (vid.date <= 0 && ytInitialData != null) {
+            final String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
+            if (string != null) {
+                // time. just parse for the date pattern(s).
+                String date = new Regex(string, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
+                if (date != null) {
+                    // seen in MMM dd, yyyy
+                    final SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy", Locale.ENGLISH);
+                    formatter.setTimeZone(TimeZone.getDefault());
+                    try {
+                        vid.date = formatter.parse(date).getTime();
+                        logger.info("Date result " + vid.date + " " + new Date(vid.date));
+                    } catch (final Exception e) {
+                        final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
+                        log.log(e);
                     }
+                } else if (new Regex(string, "\\d+\\s*(?:days?|hours?|minutes?|seconds?)").matches()) {
+                    // Streamed live 3 hours ago
+                    /*
+                     * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then construct relative to users
+                     * time. It should be equal to above as
+                     */
+                    final String tmpdays = new Regex(string, "(\\d+)\\s+days?").getMatch(0);
+                    final String tmphrs = new Regex(string, "(\\d+)\\s+hours?").getMatch(0);
+                    final String tmpmin = new Regex(string, "(\\d+)\\s+minutes?").getMatch(0);
+                    final String tmpsec = new Regex(string, "(\\d+)\\s+seconds?").getMatch(0);
+                    long days = 0, hours = 0, minutes = 0, seconds = 0;
+                    if (StringUtils.isNotEmpty(tmpdays)) {
+                        days = Integer.parseInt(tmpdays);
+                    }
+                    if (StringUtils.isNotEmpty(tmphrs)) {
+                        hours = Integer.parseInt(tmphrs);
+                    }
+                    if (StringUtils.isNotEmpty(tmpmin)) {
+                        minutes = Integer.parseInt(tmpmin);
+                    }
+                    if (StringUtils.isNotEmpty(tmpsec)) {
+                        seconds = Integer.parseInt(tmpsec);
+                    }
+                    final long time = System.currentTimeMillis() - ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+                    final Calendar c = Calendar.getInstance();
+                    c.setTimeInMillis(time);
+                    c.set(Calendar.HOUR_OF_DAY, 0);
+                    c.set(Calendar.MINUTE, 0);
+                    c.set(Calendar.SECOND, 0);
+                    vid.date = c.getTimeInMillis();
+                } else {
+                    System.out.println("error");
                 }
             }
         }
@@ -1431,10 +1425,8 @@ public class YoutubeHelper {
                 html5PlayerJs = br.getURL(html5PlayerJs).toString();
             }
         }
-        String unavailableReason = ytInitialPlayerResponse != null && "ERROR".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/status")) ? (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/reason") : null;
-        if (unavailableReason == null) {
-            unavailableReason = "LOGIN_REQUIRED".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/status")) ? (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/errorScreen/playerErrorMessageRenderer/reason/simpleText") : null;
-        }
+        final String unavailableStatus = ytInitialPlayerResponse != null ? (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/status") : null;
+        final String unavailableReason = getUnavailableReason(unavailableStatus);
         fmtMaps = new HashSet<StreamMap>();
         subtitleUrls = new HashSet<String>();
         mpdUrls = new LinkedHashSet<StreamMap>();
@@ -1489,6 +1481,8 @@ public class YoutubeHelper {
                 }
             }
         }
+        // videos have data available even though they are blocked.
+        extractData();
         if (unavailableReason != null) {
             /*
              * If you consider using !unavailableReason.contains("this video is unavailable), you need to also ignore content warning
@@ -1544,6 +1538,15 @@ public class YoutubeHelper {
                     return;
                 }
             }
+            if (unavailableReason.startsWith("This video contains content from ") && unavailableReason.contains("who has blocked it in your country on copyright grounds")) {
+                // not quite as the same as above.
+                // This video contains content from Beta Film GmbH, who has blocked it in your country on copyright grounds.
+                // id=cr8tgceA2qk, date=20170708, author=raztoki
+                final String error = "Geo Blocked due to copyright grounds";
+                logger.warning(error);
+                vid.error = error;
+                return;
+            }
             if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
                 // currently covering
                 // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.
@@ -1555,10 +1558,10 @@ public class YoutubeHelper {
                 // this should not happen, we have unsupported error handling
                 // statserv post this fileuid ???
                 logger.warning("Unsupported error!");
-                // contiue anyway?
+                vid.error = unavailableReason;
+                return;
             }
         }
-        this.extractData();
         doFeedScan();
         doUserAPIScan();
         // String html5_fmt_map;
@@ -1727,6 +1730,28 @@ public class YoutubeHelper {
         }
         vid.streams = ret;
         vid.subtitles = loadSubtitles();
+    }
+
+    /**
+     * ERROR <br />
+     * LOGIN_REQUIRED <br />
+     * UNPLAYABLE <br />
+     *
+     * @param unavailableStatus
+     * @return
+     * @author raztoki
+     */
+    private String getUnavailableReason(String unavailableStatus) {
+        String result = null;
+        if (unavailableStatus != null) {
+            if ("LOGIN_REQUIRED".equals(unavailableStatus)) {
+                result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/errorScreen/playerErrorMessageRenderer/reason/simpleText");
+            } else {
+                // this covers "ERROR" and "UNPLAYABLE", probably covers others too. so make it future proof.
+                result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/reason");
+            }
+        }
+        return result;
     }
 
     private boolean isStreamDataAllowed(YoutubeStreamData match) {
