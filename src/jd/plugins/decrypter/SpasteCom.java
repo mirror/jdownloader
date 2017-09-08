@@ -117,7 +117,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
                         continue c;
                     }
                     // some times they do partial word within filename and more in hint, reverse lookup should solve this
-                    final String f = new Regex(extractFileNameFromURL(i), "/\\d*(.*?)\\.jpg").getMatch(0);
+                    final String f = new Regex(extractFileNameFromURL(i), "\\d*(.*?)\\.jpg").getMatch(0);
                     if (f != null && q.contains(f)) {
                         result += count;
                         continue c;
