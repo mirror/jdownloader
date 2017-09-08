@@ -14,7 +14,6 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public class GenericEventScriptTriggerContextMenuAction extends CustomizableTableContextAppAction {
-
     public GenericEventScriptTriggerContextMenuAction() {
         setName("EventScripter Trigger");
         setIconKey(IconKey.ICON_EVENT);
@@ -25,8 +24,8 @@ public class GenericEventScriptTriggerContextMenuAction extends CustomizableTabl
         final LazyExtension extension = ExtensionController.getInstance().getExtension(EventScripterExtension.class);
         if (extension != null && extension._isEnabled()) {
             final SelectionInfo selection = getSelection();
-            EventScripterExtension ext = ((EventScripterExtension) extension._getExtension());
-            View view = MainTabbedPane.getInstance().getSelectedView();
+            final EventScripterExtension ext = ((EventScripterExtension) extension._getExtension());
+            final View view = MainTabbedPane.getInstance().getSelectedView();
             if (view instanceof DownloadsView) {
                 ext.triggerAction(getName(), getIconKey(), getShortCutString(), EventTrigger.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON, selection);
             } else if (view instanceof LinkGrabberView) {
@@ -34,5 +33,4 @@ public class GenericEventScriptTriggerContextMenuAction extends CustomizableTabl
             }
         }
     }
-
 }
