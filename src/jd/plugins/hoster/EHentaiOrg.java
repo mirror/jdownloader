@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -22,10 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -53,9 +48,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
 public class EHentaiOrg extends PluginForHost {
-
     @Override
     public String rewriteHost(String host) {
         if (host == null || "exhentai.org".equals(host) || "e-hentai.org".equals(host)) {
@@ -74,23 +72,19 @@ public class EHentaiOrg extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean        free_resume             = true;
     /* Limit chunks to 1 as we only download small files */
     private static final int            free_maxchunks          = 1;
     private static final int            free_maxdownloads       = -1;
-
     private static final long           minimal_filesize        = 1000;
-
     private String                      dllink                  = null;
     private boolean                     server_issues           = false;
     private final boolean               ENABLE_RANDOM_UA        = true;
-    private static final String         PREFER_ORIGINAL_QUALITY = "PREFER_ORIGINAL_QUALITY";
-
+    private final String                PREFER_ORIGINAL_QUALITY = "PREFER_ORIGINAL_QUALITY";
+    private final String                ENABLE_FILENAME_FIX     = "ENABLE_FILENAME_FIX";
     private static final String         TYPE_EXHENTAI           = "exhentai\\.org";
     private final LinkedHashSet<String> dupe                    = new LinkedHashSet<String>();
-
     private String                      uid_chapter             = null;
     private String                      uid_page                = null;
 
@@ -133,7 +127,6 @@ public class EHentaiOrg extends PluginForHost {
         // uids
         uid_chapter = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         uid_page = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(1);
-
         final String mainlink = getMainlink(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -203,10 +196,14 @@ public class EHentaiOrg extends PluginForHost {
         if (downloadLink.getForcedFileName() != null) {
             downloadLink.setForcedFileName(namepart + ext);
         } else {
-            // decrypter doesn't set file extension.
-            downloadLink.setFinalFileName(namepart + ext);
+            // package customiser altered, or user altered value, we need to update this value.
+            if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
+                downloadLink.setForcedFileName(namepart + ext);
+            } else {
+                // decrypter doesn't set file extension.
+                downloadLink.setFinalFileName(namepart + ext);
+            }
         }
-
         if (dllink_fullsize != null) {
             dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
             /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
@@ -297,7 +294,6 @@ public class EHentaiOrg extends PluginForHost {
         // <a href="http://g.e-hentai.org/s/4bf901e9e6/957224-513"><img src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a>
         // working
         // ...
-
         // exhentai.org = account
         // error
         // <div id="i3"><a onclick="return load_image(26, '2fb043446a')" href="http://exhentai.org/s/2fb043446a/706165-26"><img id="img"
@@ -306,14 +302,12 @@ public class EHentaiOrg extends PluginForHost {
         // <div id="i3"><a onclick="return load_image(54, 'cd7295ee9c')" href="http://exhentai.org/s/cd7295ee9c/940613-54"><img id="img"
         // src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg"
         // style="height:1800px;width:1273px" /></a></div>
-
         // best solution is to apply cleanup?
         final String b = br.toString();
         String cleanup = new Regex(b, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
         if (cleanup == null) {
             cleanup = new Regex(b, "<div id=\"i3\">(.*?)</div").getMatch(0);
         }
-
         dllink = new Regex(cleanup, "<img [^>]*src=(\"|')([^\"\\'<>]*?)\\1").getMatch(1);
         if (dllink == null) {
             /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
@@ -518,7 +512,6 @@ public class EHentaiOrg extends PluginForHost {
         final DecimalFormat df = new DecimalFormat("0000");
         // we can do that based on image part
         final String[] uidPart = new Regex(downloadLink.getDownloadURL(), "/(\\d+)-(\\d+)$").getRow(0);
-
         final String fpName = getTitle(br);
         if (fpName == null || uidPart == null || uidPart.length != 2) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -543,8 +536,10 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     private final boolean default_PREFER_ORIGINAL_QUALITY = true;
+    private final boolean default_ENABLE_FILENAME_FIX     = true;
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_FILENAME_FIX, JDL.L("plugins.hoster.EHentaiOrg.EnableFileNameFix", "Plugin tries to fix file extension")).setDefaultValue(default_ENABLE_FILENAME_FIX));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_QUALITY, JDL.L("plugins.hoster.EHentaiOrg.DownloadZip", "Account only: Prefer original quality (bigger filesize, higher resolution)?")).setDefaultValue(default_PREFER_ORIGINAL_QUALITY));
     }
 

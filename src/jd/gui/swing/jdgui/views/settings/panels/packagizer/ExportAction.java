@@ -33,7 +33,6 @@ public class ExportAction extends AppAction {
         setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT.T.ExportAction_ExportAction_tt());
-
     }
 
     public boolean isEnabled() {
@@ -42,37 +41,29 @@ public class ExportAction extends AppAction {
 
     public ExportAction(java.util.List<PackagizerRule> selection) {
         this();
-
         rules = selection;
     }
 
     public void actionPerformed(ActionEvent e) {
         try {
             final String ext;
-
             ext = ImportAction.EXT;
-
             ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.LinkgrabberFilter_export_dialog_title(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
             d.setFileFilter(new FileFilter() {
-
                 @Override
                 public String getDescription() {
-
                     return "*" + ext;
-
                 }
 
                 @Override
                 public boolean accept(File f) {
                     return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), ext);
-
                 }
             });
             d.setType(FileChooserType.SAVE_DIALOG);
             d.setMultiSelection(false);
             Dialog.I().showDialog(d);
-
             if (rules == null) {
                 rules = PackagizerController.getInstance().list();
             }
@@ -89,7 +80,6 @@ public class ExportAction extends AppAction {
             } catch (IOException e1) {
                 Dialog.getInstance().showExceptionDialog(e1.getMessage(), e1.getMessage(), e1);
             }
-
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         } catch (DialogClosedException e1) {

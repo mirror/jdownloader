@@ -26,6 +26,7 @@ import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier, Iterable<CrawledLink> {
     private volatile boolean crawlDeep = false;
@@ -361,9 +362,21 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final Object llink = link;
         if (llink != null) {
             if (llink instanceof DownloadLink) {
-                sb.append("DLLink:" + ((DownloadLink) llink).getPluginPatternMatcher());
+                final DownloadLink downloadLink = (DownloadLink) llink;
+                final PluginForHost plugin = downloadLink.getDefaultPlugin();
+                if (plugin != null) {
+                    sb.append("DLink(" + plugin.getLazyP().getDisplayName() + "):" + downloadLink.getPluginPatternMatcher());
+                } else {
+                    sb.append("DLink:" + downloadLink.getPluginPatternMatcher());
+                }
             } else if (llink instanceof CryptedLink) {
-                sb.append("CLink:" + ((CryptedLink) llink).getCryptedUrl());
+                final CryptedLink cryptedLink = (CryptedLink) llink;
+                final LazyCrawlerPlugin plugin = cryptedLink.getLazyC();
+                if (plugin != null) {
+                    sb.append("CLink(" + plugin.getDisplayName() + "):" + cryptedLink.getCryptedUrl());
+                } else {
+                    sb.append("CLink:" + cryptedLink.getCryptedUrl());
+                }
             } else {
                 sb.append("URL:" + llink.toString());
             }
@@ -428,7 +441,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public CrawledLink getOriginLink() {
-        CrawledLink lsourceLink = getSourceLink();
+        final CrawledLink lsourceLink = getSourceLink();
         if (lsourceLink == null) {
             return this;
         }

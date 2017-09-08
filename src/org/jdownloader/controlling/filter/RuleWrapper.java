@@ -14,7 +14,6 @@ import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
-
     private final CompiledRegexFilter        fileNameRule;
     private final CompiledPluginStatusFilter pluginStatusFilter;
     private final BooleanFilter              alwaysFilter;
@@ -35,62 +34,52 @@ public class RuleWrapper<T extends FilterRule> {
         } else {
             pluginStatusFilter = null;
         }
-
         if (rule.getOnlineStatusFilter().isEnabled()) {
             onlineStatusFilter = new CompiledOnlineStatusFiler(rule.getOnlineStatusFilter());
         } else {
             onlineStatusFilter = null;
         }
-
         if (rule.getFilenameFilter().isEnabled()) {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
         } else {
             fileNameRule = null;
         }
-
         if (rule.getPackagenameFilter().isEnabled()) {
             packageNameRule = new CompiledRegexFilter(rule.getPackagenameFilter());
         } else {
             packageNameRule = null;
         }
-
         if (rule.getFilesizeFilter().isEnabled()) {
             filesizeRule = new CompiledFilesizeFilter(rule.getFilesizeFilter());
         } else {
             filesizeRule = null;
         }
-
         if (rule.getFiletypeFilter().isEnabled()) {
             filetypeFilter = new CompiledFiletypeFilter(rule.getFiletypeFilter());
         } else {
             filetypeFilter = null;
         }
-
         if (rule.getHosterURLFilter().isEnabled()) {
             hosterRule = new CompiledRegexFilter(rule.getHosterURLFilter());
             requiresHoster = true;
         } else {
             hosterRule = null;
         }
-
         if (rule.getSourceURLFilter().isEnabled()) {
             sourceRule = new CompiledRegexFilter(rule.getSourceURLFilter());
         } else {
             sourceRule = null;
         }
-
         if (rule.getOriginFilter().isEnabled()) {
             originFilter = new CompiledOriginFilter(rule.getOriginFilter());
         } else {
             originFilter = null;
         }
-
         if (rule.getConditionFilter().isEnabled()) {
             conditionFilter = new CompiledConditionFilter(rule.getConditionFilter());
         } else {
             conditionFilter = null;
         }
-
         if (rule.getMatchAlwaysFilter().isEnabled()) {
             alwaysFilter = rule.getMatchAlwaysFilter();
             // overwrites all others
@@ -343,8 +332,12 @@ public class RuleWrapper<T extends FilterRule> {
                     } else {
                         final boolean match = sourceRule.matches(toMatch);
                         switch (matchType) {
-                        case EQUALS:
                         case CONTAINS:
+                            if (match) {
+                                return true;
+                            }
+                            break;
+                        case EQUALS:
                             return match;
                         case CONTAINS_NOT:
                         case EQUALS_NOT:
@@ -424,5 +417,4 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean isEnabled() {
         return rule.isEnabled();
     }
-
 }

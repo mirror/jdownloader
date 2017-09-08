@@ -461,7 +461,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         return ret;
                     }
                 };
-                final List<CrawledLink> result = lc.find(null, crawlJob.getText(), null, job.isDeepAnalyse(), false);
+                final List<CrawledLink> result = lc.find(null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled(), false);
                 if (result != null) {
                     results.addAll(result);
                 }

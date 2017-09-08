@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,7 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "76fengyun.com" }, urls = { "https?://(?:www\\.)?76fengyun\\.com/(?:file|down)/[a-z0-9]+\\.html" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "76fengyun.com" }, urls = { "https?://(?:www\\.)?76fengyun\\.com/(?:file|down)/[a-z0-9/]+\\.html" })
 public class SeventeeSixFengyunCom extends PluginForHost {
     public SeventeeSixFengyunCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -124,7 +124,7 @@ public class SeventeeSixFengyunCom extends PluginForHost {
             // }
             br.postPage("/ajaxx.php", "action=load_down_addr2&file_id=" + fileID2);
             // br.getPage("/dd.php?file_id=" + fid + "&p=1");
-            dllink = br.getRegex("true\\|<a href=\"(http[^<>\"]+)").getMatch(0);
+            dllink = br.getRegex("true\\|<a href=\"(https?[^<>\"]+)").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://down\\.[^<>\"]+)\"").getMatch(0);
                 if (dllink == null) {
@@ -166,7 +166,7 @@ public class SeventeeSixFengyunCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)\\.html$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "(?:file|down)/([a-z0-9/]+)\\.html$").getMatch(0);
     }
 
     @Override
