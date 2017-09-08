@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import jd.plugins.PluginForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avxhm\\.se)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,21 +88,11 @@ public class AvxHmeW extends PluginForDecrypt {
                     if (!dupe.add(link)) {
                         continue;
                     }
-                    if (link.startsWith("/go/")) {
-                        final Browser br2 = br.cloneBrowser();
-                        br2.setFollowRedirects(false);
-                        br2.getPage(link);
-                        link = br2.getRedirectLocation();
-                        if (!dupe.add(link)) {
-                            continue;
-                        }
-                    }
-                    if (!link.matches(this.getSupportedLinks().pattern())) {
-                        decryptedLinks.add(createDownloadlink(link));
+                    if (!link.matches(this.getSupportedLinks().pattern()) || link.startsWith("/go/")) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
                     }
                 }
             }
-
             // try also LINK</br>, but ignore self site refs + imdb refs
             links = null;
             links = br.getRegex("(" + notThis + ")<br\\s*/\\s*>").getColumn(0);
@@ -163,5 +151,4 @@ public class AvxHmeW extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

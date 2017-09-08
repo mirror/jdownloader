@@ -29,13 +29,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(www\\.)?sta\\.sh/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(www\\.)?sta\\.sh/(zip/)?[a-z0-9]+" })
 public class StaShDecrypter extends PluginForDecrypt {
     public StaShDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String  INVALIDLINKS           = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private final String  INVALIDLINKS           = "https?://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private final String  TYPE_ZIP               = "https?://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
     private static String FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
     private static String USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
     private static String DOWNLOAD_ZIP           = "DOWNLOAD_ZIP";
@@ -43,6 +44,13 @@ public class StaShDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(TYPE_ZIP)) {
+            final DownloadLink link = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
+            link.setProperty("iszip", true);
+            link.setProperty("directlink", parameter);
+            decryptedLinks.add(link);
+            return decryptedLinks;
+        }
         JDUtilities.getPluginForHost("sta.sh");
         final SubConfiguration cfg = SubConfiguration.getConfig("sta.sh");
         final boolean force_html_dl = cfg.getBooleanProperty(FORCEHTMLDOWNLOAD, false);
