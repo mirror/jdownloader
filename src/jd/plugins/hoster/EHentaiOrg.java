@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -50,6 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
@@ -117,10 +117,9 @@ public class EHentaiOrg extends PluginForHost {
      * @param downloadLink
      * @param account
      * @return
-     * @throws PluginException
-     * @throws IOException
+     * @throws Exception
      */
-    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws PluginException, IOException {
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws Exception {
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
         if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
             return AvailableStatus.UNCHECKABLE;
@@ -150,7 +149,7 @@ public class EHentaiOrg extends PluginForHost {
              * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses as it
              * tricks it into thinking that we re a lot of users and not only one.
              */
-            br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         }
         br.getPage(mainlink);
         if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
@@ -198,22 +197,13 @@ public class EHentaiOrg extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, ".png");
+        final String ext = getFileNameExtensionFromString(dllink, ".png");
+        // package customiser altered, or user altered value, we need to update this value.
+        if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
+            downloadLink.setForcedFileName(namepart + ext);
         } else {
-            ext = ".png";
-        }
-        if (dllink != null) {
-            downloadLink.setName(namepart + ext);
-        } else {
-            // package customiser altered, or user altered value, we need to update this value.
-            if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
-                downloadLink.setForcedFileName(namepart + ext);
-            } else {
-                // decrypter doesn't set file extension.
-                downloadLink.setFinalFileName(namepart + ext);
-            }
+            // decrypter doesn't set file extension.
+            downloadLink.setFinalFileName(namepart + ext);
         }
 
         if (dllink_fullsize != null) {
@@ -293,7 +283,7 @@ public class EHentaiOrg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getDllink(final Account account) throws PluginException, IOException {
+    private void getDllink(final Account account) throws Exception {
         // g.e-hentai.org = free non account
         // error
         // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img"
@@ -360,7 +350,7 @@ public class EHentaiOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         } catch (final BrowserException ebr) {
             /* Whatever happens - its most likely a server problem for this host! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
