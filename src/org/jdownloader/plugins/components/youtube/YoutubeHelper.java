@@ -1743,13 +1743,14 @@ public class YoutubeHelper {
      */
     private String getUnavailableReason(String unavailableStatus) {
         String result = null;
-        if (unavailableStatus != null) {
-            if ("LOGIN_REQUIRED".equals(unavailableStatus)) {
-                result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/errorScreen/playerErrorMessageRenderer/reason/simpleText");
-            } else {
-                // this covers "ERROR" and "UNPLAYABLE", probably covers others too. so make it future proof.
-                result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/reason");
-            }
+        if (StringUtils.isEmpty(unavailableStatus) || "OK".equals(unavailableStatus)) {
+            return null;
+        }
+        if ("LOGIN_REQUIRED".equals(unavailableStatus)) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/errorScreen/playerErrorMessageRenderer/reason/simpleText");
+        } else {
+            // this covers "ERROR" and "UNPLAYABLE", probably covers others too. so make it future proof.
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "playabilityStatus/reason");
         }
         return result;
     }
