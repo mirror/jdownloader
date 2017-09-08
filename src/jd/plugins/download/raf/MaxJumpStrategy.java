@@ -12,36 +12,31 @@ import jd.plugins.download.raf.HTTPDownloader.STATEFLAG;
 import org.appwork.exceptions.WTFException;
 
 public class MaxJumpStrategy implements ChunkStrategy {
-
     private final HTTPDownloader           downloadInterface;
     private final long                     maxJumpLength;
     private final long                     minChunkSplitSize;
     private final ArrayList<HTTPChunk>     chunkHistory            = new ArrayList<HTTPChunk>();
     private boolean                        initialConnectionUsed   = false;
-
     protected final Comparator<ChunkRange> unMarkedAreaOrderSorter = new Comparator<ChunkRange>() {
+                                                                       private int compare(long x, long y) {
+                                                                           return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                       }
 
-        private int compare(long x, long y) {
-            return (x < y) ? -1 : ((x == y) ? 0 : 1);
-        }
-
-        @Override
-        public int compare(ChunkRange o1, ChunkRange o2) {
-            return compare(o1.getFrom(), o2.getFrom());
-        }
-    };
-
+                                                                       @Override
+                                                                       public int compare(ChunkRange o1, ChunkRange o2) {
+                                                                           return compare(o1.getFrom(), o2.getFrom());
+                                                                       }
+                                                                   };
     protected final Comparator<ChunkRange> unMarkedAreaSizeSorter  = new Comparator<ChunkRange>() {
+                                                                       private int compare(long x, long y) {
+                                                                           return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                       }
 
-        private int compare(long x, long y) {
-            return (x < y) ? -1 : ((x == y) ? 0 : 1);
-        }
-
-        @Override
-        public int compare(ChunkRange o1, ChunkRange o2) {
-            return -compare(o1.getLength(), o2.getLength());
-        }
-    };
+                                                                       @Override
+                                                                       public int compare(ChunkRange o1, ChunkRange o2) {
+                                                                           return -compare(o1.getLength(), o2.getLength());
+                                                                       }
+                                                                   };
 
     public MaxJumpStrategy(HTTPDownloader downloadInterface, long maxJumpLength, long minChunkSplitSize) {
         this.downloadInterface = downloadInterface;
@@ -75,23 +70,27 @@ public class MaxJumpStrategy implements ChunkStrategy {
     protected int processFinishedChunks(List<HTTPChunk> finishedChunks) {
         int maxChunks = -1;
         for (HTTPChunk chunk : finishedChunks) {
-            ERROR error = chunk.getError();
-            downloadInterface.addError(error);
+            final ERROR error = chunk.getError();
             /* TODO: better handling */
             switch (error) {
             case RANGE:
             case INVALID_CONTENT:
             case INVALID_RESPONSE:
             case REDIRECT:
+                downloadInterface.addError(error);
                 maxChunks = downloadInterface.setMaxChunksNum(downloadInterface.getActiveChunks());
                 break;
             case CONNECTING:
             case DOWNLOADING:
+                downloadInterface.addError(error);
                 /* TODO: auto reset/increase */
                 maxChunks = downloadInterface.setMaxChunksNum(downloadInterface.getActiveChunks());
-            break;
+                break;
             case ABORT:
             case FLUSHING:
+            case NOT_ENOUGH_SPACE_ON_DISK:
+                downloadInterface.addError(error);
+                break;
             case NONE:
                 break;
             }
