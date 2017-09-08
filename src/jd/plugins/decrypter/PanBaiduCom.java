@@ -45,7 +45,7 @@ public class PanBaiduCom extends PluginForDecrypt {
 
     private static final String                TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#(dir|list)/path=%.+)";
     private static final String                TYPE_FOLDER_GENERAL                   = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#(list|dir)/path=%2F.+))";
-    private static final String                TYPE_FOLDER_NORMAL                    = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
+    private static final String                TYPE_FOLDER_NORMAL                    = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(%20%E5%AF%86%E7%A0%81:.+)?";
     private static final String                TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "https?://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String                TYPE_FOLDER_SHORT                     = "https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
     private static final String                TYPE_FOLDER_USER_HOME                 = ".+/share/home.+";
@@ -146,9 +146,12 @@ public class PanBaiduCom extends PluginForDecrypt {
         String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
         if (br.getURL().contains("/share/init")) {
-            if (parameter.matches(TYPE_FOLDER_GENERAL)) {
+            if (parameter.matches(TYPE_FOLDER_GENERAL) || parameter.matches(TYPE_FOLDER_NORMAL)) {
                 uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
                 shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
+                if (link_password == null && parameter.matches(TYPE_FOLDER_NORMAL)) {
+                    link_password = new Regex(parameter, "%20%E5%AF%86%E7%A0%81:(.+)").getMatch(0);
+                }
             } else {
                 uk = new Regex(br.getURL(), "uk=(\\d+)").getMatch(0);
                 shareid = new Regex(br.getURL(), "shareid=(\\d+)").getMatch(0);
