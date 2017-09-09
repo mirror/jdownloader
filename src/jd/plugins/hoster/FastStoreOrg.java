@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -25,6 +24,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -50,14 +54,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faststore.org" }, urls = { "https?://(www\\.)?faststore\\.org/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faststore.org" }, urls = { "https?://(www\\.)?faststore\\.org/(embed\\-)?[a-z0-9]{12}" })
 public class FastStoreOrg extends PluginForHost {
-
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -96,7 +94,6 @@ public class FastStoreOrg extends PluginForHost {
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
-
     public static final long               trust_cookie_age             = 300000l;
 
     /* DEV NOTES */
@@ -108,7 +105,6 @@ public class FastStoreOrg extends PluginForHost {
     // captchatype: recaptcha
     // other:
     // TODO: Add case maintenance + alternative filesize check
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -370,10 +366,13 @@ public class FastStoreOrg extends PluginForHost {
                 if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
-                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        letters = new Regex(br, "<span style=\"position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
+                        if (letters == null || letters.length == 0) {
+                            logger.warning("plaintext captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                     for (String[] letter : letters) {
@@ -420,7 +419,6 @@ public class FastStoreOrg extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -586,14 +584,11 @@ public class FastStoreOrg extends PluginForHost {
     private void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -625,26 +620,21 @@ public class FastStoreOrg extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -1173,5 +1163,4 @@ public class FastStoreOrg extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
