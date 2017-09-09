@@ -334,7 +334,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private String getDOWNLOADdownloadlink() {
-        return br.getRegex("\"(https?://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+        return br.getRegex("data-download_url=\"(https?://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
     }
 
     private String getfileSize() {
