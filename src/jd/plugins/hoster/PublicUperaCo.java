@@ -39,9 +39,10 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "public.upera.co" }, urls = { "https?://(?:www\\.)?public\\.upera\\.co/[A-Za-z0-9]+" })
 public class PublicUperaCo extends antiDDoSForHost {
+
     public PublicUperaCo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("");
     }
 
     @Override
@@ -65,12 +66,12 @@ public class PublicUperaCo extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Invalid or Deleted File") || !this.br.containsHTML("id=\"pay_modes\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Invalid or Deleted File") || !br.containsHTML("id=\"pay_modes\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("> Download File ([^<>\"]+) \\(<a").getMatch(0);
+        String filename = br.getRegex(">\\s*Download File\\s+([^<>\"]+)\\s*\\(<a").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]+) \\| upera</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]+)\\s+\\| upera</title>").getMatch(0);
         }
         String filesize = br.getRegex("<b>Size:</b>([^<>\"]+)<").getMatch(0);
         if (filename == null || filesize == null) {
@@ -90,17 +91,17 @@ public class PublicUperaCo extends antiDDoSForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String dlformAction = this.br.getURL();
-            Form dlform = this.br.getFormbyKey("ns");
+            final String dlformAction = br.getURL();
+            Form dlform = br.getFormbyKey("ns");
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.br.submitForm(dlform);
+            br.submitForm(dlform);
             /* Sometimes there is a waittime before the user can enter the captcha. */
-            final String continueURL = this.br.getRegex("\\'(https?://[^/\"\\']+/[^/]+\\&showrecaptcha=1[^<>\"\\']+)\\'").getMatch(0);
+            final String continueURL = br.getRegex("\\'(https?://[^/\"\\']+/[^/]+\\&showrecaptcha=1[^<>\"\\']+)\\'").getMatch(0);
             if (continueURL != null) {
                 int wait = 45;
-                final String waitStr = this.br.getRegex("id=\"count\">(\\d+)<").getMatch(0);
+                final String waitStr = br.getRegex("id=\"count\">(\\d+)<").getMatch(0);
                 if (waitStr != null) {
                     wait = Integer.parseInt(waitStr);
                 }
@@ -110,16 +111,16 @@ public class PublicUperaCo extends antiDDoSForHost {
             String captchaUrl = null;
             boolean success = false;
             for (int i = 0; i <= 7; i++) {
-                dlform = this.br.getFormbyKey("ns");
-                captchaUrl = this.br.getRegex("(/captcha/[^<>\"]+)\"").getMatch(0);
+                dlform = br.getFormbyKey("ns");
+                captchaUrl = br.getRegex("(/captcha/[^<>\"]+)\"").getMatch(0);
                 if (captchaUrl == null || dlform == null || !dlform.hasInputFieldByName("g-recaptcha-response")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dlform.setAction(dlformAction);
                 final String code = this.getCaptchaCode(captchaUrl, downloadLink);
                 dlform.put("g-recaptcha-response", Encoding.urlEncode(code));
-                this.br.submitForm(dlform);
-                if (!this.br.containsHTML("name=\"recaptcha\\-srm\"")) {
+                br.submitForm(dlform);
+                if (!br.containsHTML("name=\"recaptcha\\-srm\"")) {
                     success = true;
                     break;
                 }
@@ -135,7 +136,7 @@ public class PublicUperaCo extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -186,12 +187,12 @@ public class PublicUperaCo extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 br.setFollowRedirects(false);
-                getPage("");
-                postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                getPage("http://public.upera.co/");
+                postPage("/", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(this.getHost(), "") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -199,7 +200,7 @@ public class PublicUperaCo extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -222,12 +223,11 @@ public class PublicUperaCo extends antiDDoSForHost {
             ai.setUsedSpace(space.trim());
         }
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("free", false)) {
+        if (false) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
         } else {
             final String expire = br.getRegex("").getMatch(0);
             if (expire == null) {
@@ -242,7 +242,6 @@ public class PublicUperaCo extends antiDDoSForHost {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
         }
         account.setValid(true);
         return ai;
@@ -265,7 +264,7 @@ public class PublicUperaCo extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -279,6 +278,10 @@ public class PublicUperaCo extends antiDDoSForHost {
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
+    }
+
+    public void getPage(final String page) throws Exception {
+        super.getPage(page);
     }
 
     @Override
