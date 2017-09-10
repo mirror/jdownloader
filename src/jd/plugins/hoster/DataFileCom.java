@@ -140,10 +140,11 @@ public class DataFileCom extends antiDDoSForHost {
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         String filesize = null;
-        // Limit reached -> Let's use their linkchecker to at least find the filesize and onlinestatus
+        // Limit reached -> Let's use their linkchecker to at least find the filesize and online status
         if (br.getURL().contains("code=7") || br.getURL().contains("code=9")) {
             final Browser br2 = br.cloneBrowser();
-            postPage(br2, "https://www.datafile.com/linkchecker.html", "btn=&links=" + Encoding.urlEncode(link.getDownloadURL()));
+            // can not be https, will redirect and fail. respect current protocol in case this changes.
+            postPage(br2, "//www.datafile.com/linkchecker.html", "btn=&links=" + Encoding.urlEncode(link.getDownloadURL()));
             filesize = br2.getRegex("title=\"File size\">([^<>\"]*?)</td>").getMatch(0);
             if (filesize != null) {
                 link.getLinkStatus().setStatusText("Cannot show filename when a downloadlimit is reached");
@@ -164,7 +165,7 @@ public class DataFileCom extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         /* Invalid link */
-        if (br.containsHTML("<div class=\"error\\-msg\">")) {
+        if (br.containsHTML("<div class=\"error-msg\">")) {
             if (urlFileName != null) {
                 link.setName(urlFileName);
             }
@@ -185,7 +186,7 @@ public class DataFileCom extends antiDDoSForHost {
         }
         final String urlfilename = link.getStringProperty("urlfilename", null);
         final String decrypterfilename = link.getStringProperty("decrypterfilename", null);
-        String sitefilename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
+        String sitefilename = br.getRegex("class=\"file-name\">([^<>\"]*?)</div>").getMatch(0);
         filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(">Filesize: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
@@ -522,7 +523,7 @@ public class DataFileCom extends antiDDoSForHost {
 
     private String getServerFilename() {
         String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        final String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
+        final String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation-date=").getMatch(0);
         if (finalFixedName != null) {
             finalname = finalFixedName;
         }
