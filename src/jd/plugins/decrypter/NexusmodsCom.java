@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,6 +20,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -32,7 +32,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/" })
 public class NexusmodsCom extends PluginForDecrypt {
-
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,8 +54,12 @@ public class NexusmodsCom extends PluginForDecrypt {
             /* Fallback */
             fpName = fid;
         }
-        br.getPage(String.format("/skyrim/ajax/modfiles/?id=%s&gid=110", fid));
-        final String[] links = br.getRegex("(https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+)").getColumn(0);
+        final Browser br2 = br.cloneBrowser();
+        br2.getPage(String.format("/skyrim/ajax/modfiles/?id=%s&gid=110", fid));
+        String[] links = br2.getRegex("(https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+)").getColumn(0);
+        if (jd.plugins.hoster.NexusmodsCom.isOffline(br2)) {
+            links = br.getRegex("href=\"([^\"]+)\" onclick=").getColumn(0);
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -64,12 +67,9 @@ public class NexusmodsCom extends PluginForDecrypt {
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
