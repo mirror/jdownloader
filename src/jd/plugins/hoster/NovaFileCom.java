@@ -731,7 +731,7 @@ public class NovaFileCom extends antiDDoSForHost {
                         return;
                     }
                     getPage(COOKIE_HOST + "/?op=my_account");
-                    if (validateAccountCookies()) {
+                    if (validateAccountCookies() && !br._getURL().getPath().equals("/login")) {
                         return;
                     }
                     br.setCookiesExclusive(true);
@@ -769,7 +769,7 @@ public class NovaFileCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                if (!validateAccountCookies()) {
+                if (!validateAccountCookies() && !br._getURL().getPath().equals("/login")) {
                     invalidAccountException();
                 }
                 if (!br.getRequest().getURL().getFile().equals("/?op=my_account")) {
