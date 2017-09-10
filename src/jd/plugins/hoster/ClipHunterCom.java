@@ -16,13 +16,14 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -37,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" })
 public class ClipHunterCom extends PluginForHost {
@@ -107,7 +106,7 @@ public class ClipHunterCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -115,12 +114,12 @@ public class ClipHunterCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean linkOk(final DownloadLink dl) throws IOException {
+    private boolean linkOk(final DownloadLink dl) throws Exception {
         boolean linkOk = false;
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
                 dl.setDownloadSize(con.getLongContentLength());
                 linkOk = true;
             }
