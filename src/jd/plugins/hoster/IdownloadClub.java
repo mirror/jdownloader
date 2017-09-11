@@ -16,6 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -125,14 +128,14 @@ public class IdownloadClub extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force && cookies.get("PHPSESSID") != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 br.setFollowRedirects(true);
                 getPage("https://www." + getHost());
                 postPage("/members/index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
-                final String txtPassword_hashed = this.br.getRegex("txtPassword=\"\\+encodeURIComponent\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
-                if (this.br.getCookie(this.getHost(), "PHPSESSID") == null) {
+                final String txtPassword_hashed = br.getRegex("txtPassword=\"\\+encodeURIComponent\\('([^<>\"']+)'\\)").getMatch(0);
+                if (br.getCookie(this.getHost(), "PHPSESSID") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -140,7 +143,7 @@ public class IdownloadClub extends antiDDoSForHost {
                     }
                 }
                 getPage("/members/ext/index.php?page=VIDEO");
-                if (!this.br.containsHTML("\\?logout=logout")) {
+                if (!br.containsHTML("\\?logout=logout")) {
                     /* Double-check */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -148,7 +151,7 @@ public class IdownloadClub extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -167,20 +170,24 @@ public class IdownloadClub extends antiDDoSForHost {
         }
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final String days_left = this.br.getRegex(";\\s*(\\d+)\\s*Days Left").getMatch(0);
+        // (10/Sep/2017&nbsp;-&nbsp;10/Oct/2017)
+        final String expire = br.getRegex("\\(\\d+/[A-Za-z]+/\\d{4}&nbsp;-&nbsp;(\\d+/[A-Za-z]+/\\d{4})\\)").getMatch(0);
+        String days_left = br.getRegex(";\\s*(\\d+)\\s*Days Left").getMatch(0);
         long expireIn = days_left == null ? -1 : (System.currentTimeMillis() + Integer.parseInt(days_left) * (1000l * 60 * 60 * 24));
+        if (expire != null && days_left == null) {
+            days_left = "notnull";
+            expireIn = TimeFormatter.getMilliSeconds(expire, "dd/MMM/yyyy", Locale.ENGLISH);
+        }
         if (days_left == null || expireIn - System.currentTimeMillis() < 60 * 1000l) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
-            ai.setStatus("Free Account");
         } else {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setValidUntil(expireIn);
-            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -191,7 +198,7 @@ public class IdownloadClub extends antiDDoSForHost {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
