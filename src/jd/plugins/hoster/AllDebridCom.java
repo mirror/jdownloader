@@ -71,8 +71,11 @@ public class AllDebridCom extends antiDDoSForHost {
             if (token != null) {
                 getPage(api + "/user/login?token=" + token);
             }
-            if (token == null || 11 == parseError()) {
-                getPage(api + "/user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            {
+                final int error = parseError();
+                if (token == null || error == 1 || error == 5) {
+                    getPage(api + "/user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                }
             }
             handleErrors();
             {
@@ -156,10 +159,10 @@ public class AllDebridCom extends antiDDoSForHost {
         case 102: {
             throw new AccountUnavailableException("Too many login attempts", 6 * 60 * 60 * 1000l);
         }
-        // will/should never happen exception
         case 1:
         case 5: {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            this.currAcc.removeProperty("token");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
         // download related
         // 30 This link is not valid or not supported.
@@ -174,7 +177,7 @@ public class AllDebridCom extends antiDDoSForHost {
             mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "Down for maintance");
         case 31:
         case 39:
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
 
         }
     }
