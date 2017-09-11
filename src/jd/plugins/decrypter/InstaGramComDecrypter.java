@@ -18,10 +18,9 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -38,9 +37,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
-
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -249,7 +250,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (linkid_main == null) {
             linkid_main = (String) entries.get("shortcode");
         }
-        final String description = (String) entries.get("caption");
+        String description = (String) entries.get("caption");
+        if (description == null) {
+            try {
+                Map<String, Object> edge_media_to_caption = ((Map<String, Object>) entries.get("edge_media_to_caption"));
+                List<Map<String, Object>> edges = (List<Map<String, Object>>) edge_media_to_caption.get("edges");
+                Map<String, Object> node = (Map<String, Object>) edges.get(0).get("node");
+                description = (String) node.get("text");
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
             /*

@@ -146,6 +146,11 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             return null;
         }
 
+        @Override
+        public boolean hideLinks() {
+            return false;
+        }
+
         private void parseProperties(final List<CrawledLink> results, String str) throws Exception {
             final ClassCache cc = ClassCache.getClassCache(CrawlJobStorable.class);
             CrawlJobStorable entry = null;
