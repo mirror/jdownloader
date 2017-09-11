@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shesfreaky.com" }, urls = { "http://(www\\.)?shesfreaky\\.com/video/[A-Za-z0-9\\-_]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shesfreaky.com" }, urls = { "https?://(www\\.)?shesfreaky\\.com/video/[A-Za-z0-9\\-_]+\\.html" })
 public class ShesFreakyCom extends PluginForHost {
-
     public ShesFreakyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,7 +48,6 @@ public class ShesFreakyCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -58,7 +55,7 @@ public class ShesFreakyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h2.*?>([^<>\"]*?)</h2>").getMatch(0);
-        dllink = br.getRegex("url: escape\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        dllink = br.getRegex("url: escape\\(\\'(https?://[^<>\"]*?)\\'\\)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<source src=\"(.*?)\"").getMatch(0);
         }

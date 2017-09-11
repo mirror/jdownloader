@@ -2168,7 +2168,7 @@ public class LinkCrawler {
         }
         if (checkStartNotify(generation)) {
             try {
-                final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink, possibleCryptedLink.getURL());
+                final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
                 PluginForHost wplg = null;
                 /*
                  * use a new PluginClassLoader here
@@ -2280,10 +2280,6 @@ public class LinkCrawler {
     }
 
     public String[] getAndClearSourceURLs(final CrawledLink link) {
-        return getAndClearSourceURLs(link, null);
-    }
-
-    public String[] getAndClearSourceURLs(final CrawledLink link, final String ignore) {
         final ArrayList<String> sources = new ArrayList<String>();
         CrawledLink next = link;
         CrawledLink previous = link;
@@ -2291,7 +2287,7 @@ public class LinkCrawler {
             final CrawledLink current = next;
             next = current.getSourceLink();
             final String currentURL = cleanURL(current.getURL());
-            if (currentURL != null && !StringUtils.equals(ignore, currentURL)) {
+            if (currentURL != null) {
                 if (sources.size() == 0) {
                     sources.add(currentURL);
                 } else {
