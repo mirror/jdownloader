@@ -1072,7 +1072,7 @@ public class FastStoreOrg extends PluginForHost {
                     }
                     loginform.put("code", code.toString());
                     Thread.sleep(5000); // Prevent skipped countdown
-                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                    logger.info("Put captchacode " + code.toString() + " obtained by captcha method \"plaintext captchas\" in the form.");
                 }
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
