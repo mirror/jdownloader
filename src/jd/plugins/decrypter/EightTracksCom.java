@@ -13,15 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,19 +32,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class EightTracksCom extends PluginForDecrypt {
-
     // NOTE: short link is within Rdrctr.
-
     private static final String  MAINPAGE          = "http://8tracks.com/";
     private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js|explore|auth|settings|mixes|developers|users|job)/.+|[\\w\\-]+/homepage|sets/new|collections/.+|sonos/.+)";
     private static final String  TYPE_GENERAL      = "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
     private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
-
     private String               clipData;
     private static final String  TEMP_EXT          = ".mp3";
-
     private static final boolean TEST_MODE         = false;
     private static final String  TEST_MODE_TOKEN   = null;
 
@@ -65,13 +60,11 @@ public class EightTracksCom extends PluginForDecrypt {
         offline.setAvailable(false);
         offline.setProperty("offline", true);
         setBrowserExclusive();
-
         if (parameter.matches(UNSUPPORTEDLINKS)) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-
         br.setFollowRedirects(true);
         br.setReadTimeout(90 * 1000);
         /* nachfolgender UA sorgt für bessere Audioqualität */
@@ -118,7 +111,6 @@ public class EightTracksCom extends PluginForDecrypt {
             if (mixid == null) {
                 mixid = br.getRegex("/mixes/(\\d+)/").getMatch(0);
             }
-
             String fpName = br.getRegex("<meta content=\"([^\"]+)\" property=\"og:title\"").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("alt=\"([^\"]+)\" id=\"cover_art\"").getMatch(0);
@@ -131,7 +123,6 @@ public class EightTracksCom extends PluginForDecrypt {
             }
             fpName = Encoding.htmlDecode(fpName.trim());
             fpName = encodeUnicode(fpName);
-
             /* tracks in mix */
             String tracksInMix = br.getRegex("<span[^>]+class=\"gray\">\\((\\d+) tracks?\\)</span>").getMatch(0);
             if (tracksInMix == null) {
@@ -164,7 +155,6 @@ public class EightTracksCom extends PluginForDecrypt {
                 // "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + trackid +
                 // "&format=jsonh");
             }
-
             /*
              * For GEO-blocked playlists, users cannot listen to them from 8tracks but they can watch YouTube videos --> This way WE can get
              * the track-names :)
@@ -173,11 +163,9 @@ public class EightTracksCom extends PluginForDecrypt {
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("tracks");
             final int listmax = ressourcelist.size() - 1;
-
             final int tracks_in_mix = Integer.parseInt(tracksInMix);
             final DecimalFormat df = (tracks_in_mix < 100 ? new DecimalFormat("00") : new DecimalFormat("000"));
             for (int i = 1; i <= tracks_in_mix; i++) {
-
                 final String formatted_tracknumber = df.format(i);
                 String temp_name = null;
                 if (i - 1 <= listmax) {
@@ -191,7 +179,6 @@ public class EightTracksCom extends PluginForDecrypt {
                 if (temp_name == null) {
                     temp_name = fpName + "_track" + formatted_tracknumber;
                 }
-
                 final DownloadLink dl = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 dl.setName(temp_name.concat(TEMP_EXT));
                 dl.setProperty("playtoken", playToken);
@@ -215,7 +202,6 @@ public class EightTracksCom extends PluginForDecrypt {
             fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -228,7 +214,7 @@ public class EightTracksCom extends PluginForDecrypt {
         String dllink = null;
         final String soundcloud_trackID = new Regex(clipData, "\"uid\":\"sc\\-(\\d+)\"").getMatch(0);
         if (soundcloud_trackID != null) {
-            dllink = "https://api.soundcloud.com/tracks/" + soundcloud_trackID + "/stream?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            dllink = "https://api.soundcloud.com/tracks/" + soundcloud_trackID + "/stream?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID_8TRACKS;
         } else {
             dllink = PluginJSonUtils.getJsonValue(this.br, "track_file_stream_url");
         }
@@ -269,5 +255,4 @@ public class EightTracksCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

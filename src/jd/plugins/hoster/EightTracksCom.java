@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" })
 public class EightTracksCom extends antiDDoSForHost {
-
     public EightTracksCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,7 +53,6 @@ public class EightTracksCom extends antiDDoSForHost {
     private static final String  MAINPAGE                                          = "http://8tracks.com/";
     private static final String  NICE_HOST                                         = "8tracks.com";
     private static final String  NICE_HOSTproperty                                 = "8trackscom";
-
     // Waittimes
     private static final int     WAITTIME_SECONDS_DEFAULT                          = 300;
     private static final int     WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION = 32;
@@ -65,21 +62,17 @@ public class EightTracksCom extends antiDDoSForHost {
     private static final int     WAITTIME_SECONDS_TEST_MODE                        = 10;
     // private static final long BITRATE_SOUNDCLOUD = 11250;
     private static final long    SOURCE_8TRACKS_BITRATE                            = 5000;
-
     /* sets wrong waittimes to check skip_failed errorhandling */
     private static final boolean TEST_MODE                                         = false;
     private static final String  TEST_MODE_TOKEN                                   = null;
-
     /* 8tracks.com has a bug - the playlists length they tell you is always -1 track */
     private static final boolean EIGHT_TRACKS_BUG_EXISTS                           = false;
-
     private static Object        LOCK                                              = new Object();
     private String               MAIN_LINK                                         = null;
     private String               clipData;
     private boolean              AT_END                                            = false;
     private boolean              AT_LAST_TRACK                                     = false;
     private static boolean       pluginloaded                                      = false;
-
     private String               currenttrackid                                    = null;
     private DownloadLink         current_downloadlink                              = null;
 
@@ -108,7 +101,6 @@ public class EightTracksCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-
         /* Difference between dllink and finallink: dllink can also be a soundcloud API link - this is easier to re-use later */
         String finallink = checkDirectLink(downloadLink, "savedlink");
         String dllink = null;
@@ -127,7 +119,6 @@ public class EightTracksCom extends antiDDoSForHost {
             if (currenttrackid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             clipData = pageGet(MAINPAGE + "sets/play_track/" + currenttrackid + "?format=jsonh");
             dllink = getDllink();
             if (dllink == null) {
@@ -145,7 +136,6 @@ public class EightTracksCom extends antiDDoSForHost {
             if (tracknumber == -1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             String sameLink = "";
             String playToken = downloadLink.getStringProperty("playtoken", null);
             if (TEST_MODE && TEST_MODE_TOKEN != null) {
@@ -172,7 +162,6 @@ public class EightTracksCom extends antiDDoSForHost {
                 startPlaylist(playToken, mixid);
                 currenttrackid = mixid;
             }
-
             /* limit to 100 API calls per minute -> Usually we will not exceed this limit */
             for (int i = 1; i <= tracknumber; i++) {
                 if (i == 1) {
@@ -222,14 +211,12 @@ public class EightTracksCom extends antiDDoSForHost {
                         // currenttrackid + "&format=jsonh");
                         /* Wait till "the song is (probably) "over" */
                         handleLongWait(dllink);
-
                         clipData = pageGet(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                     } else {
                         logger.info("We are still allowed to skip");
                         /* Skip track */
                         clipData = pageGet(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                     }
-
                     /*
                      * If skip track fails because of too short waittime, even multiple times, we simply wait a minute and try again till we
                      * can finally get to the next track
@@ -284,7 +271,6 @@ public class EightTracksCom extends antiDDoSForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             /* Not yet sure how to handle these cases */
             if (EIGHT_TRACKS_BUG_EXISTS) {
                 if (NEED_LAST_TRACK && !AT_LAST_TRACK) {
@@ -344,7 +330,6 @@ public class EightTracksCom extends antiDDoSForHost {
         } else {
             downloadLink.setFinalFileName(filename + "." + ext);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -484,15 +469,15 @@ public class EightTracksCom extends antiDDoSForHost {
         String dllink = null;
         final String soundcloud_trackID = new Regex(clipData, "\"uid\":\"sc\\-(\\d+)\"").getMatch(0);
         if (soundcloud_trackID != null) {
-            dllink = "https://api.soundcloud.com/tracks/" + soundcloud_trackID + "/stream?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            dllink = "https://api.soundcloud.com/tracks/" + soundcloud_trackID + "/stream?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID_8TRACKS;
         } else {
             dllink = getClipData("track_file_stream_url");
         }
         return dllink;
     }
 
-    private void accessSoundcloudLink(final Browser brsc, final String sclink) throws IOException, PluginException {
-        brsc.getPage("https://api.soundcloud.com/tracks/" + getSoundcloudTrackID(sclink) + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(null) + "&format=json");
+    private void accessSoundcloudLink(final Browser brsc, final String sclink) throws Exception {
+        brsc.getPage("https://api.soundcloud.com/tracks/" + getSoundcloudTrackID(sclink) + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID_8TRACKS + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(null) + "&format=json");
     }
 
     private String getSoundcloudTrackID(final String sclink) {
@@ -517,7 +502,6 @@ public class EightTracksCom extends antiDDoSForHost {
         if (album != null && (album.equals(title) || StringUtils.isEmpty(album))) {
             album = null;
         }
-
         title = encodeUnicode(Encoding.htmlDecode(title.trim()));
         artist = encodeUnicode(Encoding.htmlDecode(artist.trim()));
         if (album != null) {
@@ -592,5 +576,4 @@ public class EightTracksCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
