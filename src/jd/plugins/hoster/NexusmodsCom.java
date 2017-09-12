@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+" })
 public class NexusmodsCom extends PluginForHost {
-
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.nexusmods.com/skyrim/users/register/");
@@ -55,19 +53,17 @@ public class NexusmodsCom extends PluginForHost {
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
     private static final int     FREE_MAXDOWNLOADS            = 20;
-
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               dllink                       = null;
     private boolean              isAccountOnly                = false;
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet|>File not found<|/noimage-1.png");
     }
 
     public static Browser prepBR(final Browser br) {
@@ -244,5 +240,4 @@ public class NexusmodsCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
