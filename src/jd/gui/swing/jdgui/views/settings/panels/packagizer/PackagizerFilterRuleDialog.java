@@ -628,15 +628,13 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                     lblCrawlerSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
                 } else if (!lblSource.isEnabled() && !cbRename.isSelected() && !cbMove.isSelected()) {
                     cbSource.setSelected(wasSelectedSource);
-                    cbCrawlerSource.setSelected(wasSelectedCrawlerSource);
-                    cbSource.setEnabled(true);
                     cobSource.setEnabled(cbSource.isSelected());
                     txtSource.setEnabled(cbSource.isSelected());
-                    lblSource.setEnabled(true);
-                    cbCrawlerSource.setEnabled(true);
+                    lblSource.setEnabled(cbSource.isSelected());
+                    cbCrawlerSource.setSelected(wasSelectedCrawlerSource);
                     cobCrawlerSource.setEnabled(cbCrawlerSource.isSelected());
                     cobCrawlerSourceOptions.setEnabled(cbCrawlerSource.isSelected());
-                    lblCrawlerSource.setEnabled(true);
+                    lblCrawlerSource.setEnabled(cbCrawlerSource.isSelected());
                     cbSource.setToolTipText(null);
                     cobSource.setToolTipText(null);
                     txtSource.setToolTipText(null);

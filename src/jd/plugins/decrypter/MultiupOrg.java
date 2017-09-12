@@ -27,6 +27,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -62,6 +63,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
             return decryptedLinks;
         }
+        final String filesize = getFileSize(parameter);
         if (filename != null) {
             parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
             param.setCryptedUrl(parameter);
@@ -88,10 +90,24 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         for (String singleLink : links) {
             if (singleLink.startsWith("http")) {
                 singleLink = singleLink.trim().replaceFirst(":/+", "://");
-                decryptedLinks.add(createDownloadlink(singleLink));
+                final DownloadLink downloadLink = createDownloadlink(singleLink);
+                if (filename != null) {
+                    downloadLink.setFinalFileName(filename);
+                }
+                if (filesize != null) {
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+                decryptedLinks.add(downloadLink);
             }
         }
         return decryptedLinks;
+    }
+
+    private String getFileSize(String parameter) throws Exception {
+        if (br.getRequest() == null) {
+            getPage(parameter);
+        }
+        return br.getRegex("Size\\s*:\\s*([0-9\\.]+\\s*[GMK]iB)\\s*<br").getMatch(0);
     }
 
     private String getFilename(String parameter) throws Exception {

@@ -64,13 +64,11 @@ public class Ardmediathek extends PluginForDecrypt {
     ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
     private final List<String>                  all_known_qualities   = Arrays.asList("http_0_720", "hls_0_720", "http_0_540", "hls_0_540", "http_0_360", "hls_0_360", "http_0_280", "hls0_280", "http_0_270", "hls_0_270", "http_0_180", "hls_0_180");
-
     private String                              subtitleLink          = null;
     private String                              parameter             = null;
     private String                              title                 = null;
     private String                              date                  = null;
     private String                              date_formatted        = null;
-
     private boolean                             grabHLS               = false;
 
     public Ardmediathek(final PluginWrapper wrapper) {
@@ -83,9 +81,7 @@ public class Ardmediathek extends PluginForDecrypt {
 
     @PluginHost(host = "rbb-online.de", type = Type.CRAWLER)
     public static interface ArdConfigInterface extends PluginConfigInterface {
-
         public static class TRANSLATION {
-
             public String getFastLinkcheckEnabled_label() {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }
@@ -233,7 +229,6 @@ public class Ardmediathek extends PluginForDecrypt {
         boolean isGrabHTTP720pVideoEnabled();
 
         void setGrabHTTP720pVideoEnabled(boolean b);
-
     }
 
     @Override
@@ -264,7 +259,6 @@ public class Ardmediathek extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         final List<String> selectedQualities = new ArrayList<String>();
         final boolean addHLS180 = cfg.isGrabHLS180pVideoEnabled();
@@ -273,9 +267,7 @@ public class Ardmediathek extends PluginForDecrypt {
         final boolean addHLS360 = cfg.isGrabHLS360pVideoEnabled();
         final boolean addHLS540 = cfg.isGrabHLS540pVideoEnabled();
         final boolean addHLS720 = cfg.isGrabHLS720pVideoEnabled();
-
         grabHLS = addHLS180 || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS720;
-
         if (addHLS180) {
             selectedQualities.add("hls_0_180");
         }
@@ -312,7 +304,6 @@ public class Ardmediathek extends PluginForDecrypt {
         if (cfg.isGrabHTTP720pVideoEnabled()) {
             selectedQualities.add("http_0_720");
         }
-
         try {
             if (br.getURL().matches(type_ard_mediathek) || parameter.matches(type_rbb_mediathek)) {
                 decryptMediathek();
@@ -421,14 +412,12 @@ public class Ardmediathek extends PluginForDecrypt {
                     directURLs = new ArrayList<Object>();
                     directURLs.add(streammap.get("_stream"));
                 }
-
                 final int width = (int) JavaScriptEngineFactory.toLong(streammap.get("_width"), 0);
                 final int height = (int) JavaScriptEngineFactory.toLong(streammap.get("_height"), 0);
                 final int qualityNumber = (int) JavaScriptEngineFactory.toLong(streammap.get("_quality"), -1);
                 int counter = 0;
-
                 for (final Object qualityURLo : directURLs) {
-                    final String directurl = (String) qualityURLo;
+                    final String directurl = br.getURL((String) qualityURLo).toString();
                     if (isUnsupportedProtocol(directurl)) {
                         continue;
                     }
@@ -549,14 +538,11 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Skip items for which we cannot find out the resolution. */
             return;
         }
-
         final String height_final = getHeightForQualitySelection(height);
-
         long filesize = 0;
         if (filesize_str != null && filesize_str.matches("\\d+")) {
             filesize = Long.parseLong(filesize_str);
         }
-
         final String resolution = width + "x" + height;
         final String protocol;
         if (directurl.contains("m3u8")) {
@@ -564,7 +550,6 @@ public class Ardmediathek extends PluginForDecrypt {
         } else {
             protocol = "http";
         }
-
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         final String plain_name = title + "_" + protocol + "_" + resolution;
         final String full_name = plain_name + ".mp4";
@@ -588,19 +573,16 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (cfg.isFastLinkcheckEnabled()) {
             link.setAvailable(true);
         }
-
         foundQualitiesMap.put(qualityStringSelection, link);
     }
 
     private void handleUserQualitySelection(List<String> selectedQualities) {
         /* We have to re-add the subtitle for the best quality if wished by the user */
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
-
         if (PluginJsonConfig.get(getConfigInterface()).isGrabBESTEnabled()) {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
         } else {
-
             final boolean grabUnknownQualities = PluginJsonConfig.get(getConfigInterface()).isAddUnknownQualitiesEnabled();
             boolean atLeastOneSelectedItemExists = false;
             for (final String quality : all_known_qualities) {
@@ -616,7 +598,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 logger.info("User selected no quality at all --> Adding ALL qualities instead");
                 selectedQualities = all_known_qualities;
             }
-
             final Iterator<Entry<String, DownloadLink>> it = foundQualitiesMap.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, DownloadLink> entry = it.next();
@@ -661,7 +642,6 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
-
         if (all_known_qualities.isEmpty()) {
             logger.info("Failed to find any quality at all");
         }
