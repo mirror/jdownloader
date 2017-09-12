@@ -38,7 +38,7 @@ public class NexusmodsCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http:", "https:");
         final String fid = jd.plugins.hoster.NexusmodsCom.getFID(parameter);
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
