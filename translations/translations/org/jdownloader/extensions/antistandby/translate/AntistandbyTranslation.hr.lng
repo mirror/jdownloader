@@ -1,4 +1,6 @@
+gui_config_antistandby_whilecrawl=Sakupljač je u tijeku
 gui_config_antistandby_whiledl2=preuzimanje u tijeku
+gui_config_antistandby_whiledl2orcrawl=Preuzimanje ili Sakupljač je u tijeku
 gui_config_antistandby_whilejd2=JDownloader pokrenut
 jd_plugins_optional_antistandby_jdantistandby=Anti StandBy
 jd_plugins_optional_antistandby_jdantistandby_description=Jednostavno nedozvoljava vašem računalu da ide u stanje\r\npripravnosti ili mirovanja kako bi preuzimanja zadržao aktivnima.

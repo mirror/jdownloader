@@ -6,6 +6,7 @@ config_toolbarbutton=Vidljiv dugme alatne trake
 gui_config_jdshutdown_close=Izlaz iz JD-a
 gui_config_jdshutdown_forceshutdown=Prisili na gašenje računala (nije za sve sustave)
 gui_config_jdshutdown_hibernate=Hibernacija (nije za sve sustave)
+gui_config_jdshutdown_logoff=Odjava
 gui_config_jdshutdown_mode=Odabir načina:
 gui_config_jdshutdown_shutdown=Gašenje računala
 gui_config_jdshutdown_standby=Stanje pripravnosti (nije za sve sustave)
@@ -18,6 +19,7 @@ interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sustav će se isk
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sustav će ići u stanje pripravnosti!</font></h2>
 interaction_shutdown_dialog_title_closejd=Zatvoriti JD?
 interaction_shutdown_dialog_title_hibernate=Hibernacija?
+interaction_shutdown_dialog_title_logoff=Odjava?
 interaction_shutdown_dialog_title_shutdown=Isključivanje?
 interaction_shutdown_dialog_title_standby=Stanje pripravnosti?
 jd_plugins_optional_jdshutdown=JD isključivanje
