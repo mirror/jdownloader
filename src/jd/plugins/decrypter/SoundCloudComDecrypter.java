@@ -51,6 +51,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
+
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -107,6 +108,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
+
             @Override
             public boolean add(DownloadLink e) {
                 distribute(e);
@@ -246,7 +248,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             parameter = newparameter;
         } else if (TYPE_API_TRACK.matcher(parameter).find()) {
-            String get_data = "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            String get_data = "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br);
             final String secret_token = new Regex(originalLink, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
             if (secret_token != null) {
                 get_data += "&secret_token=" + secret_token;
@@ -273,7 +275,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         } else if (TYPE_API_PLAYLIST.matcher(parameter).find()) {
             final Regex info = new Regex(parameter, "api\\.soundcloud\\.com/playlists/(\\d+)(?:\\?|.*?&)secret_token=([A-Za-z0-9\\-_]+)");
-            br.getPage("https://api.soundcloud.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
+            br.getPage("https://api.soundcloud.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&format=json");
             String newparameter = br.getRegex("\"permalink_url\":\"(http://(www\\.)?soundcloud\\.com/[^<>\"/]*?/sets/[^<>\"]*?)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
@@ -314,7 +316,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
              */
             tracks = (List<Map<String, Object>>) data.get("tracks");
             if (tracks == null || tracks.size() == 0) {
-                br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+                br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
                 data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 tracks = (List<Map<String, Object>>) data.get("tracks");
             }
@@ -389,7 +391,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
             }
             /* Get information about our remaining tracks. */
-            br.getPage("https://api-v2.soundcloud.com/tracks?ids=" + Encoding.urlEncode(idsToGrab) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+            br.getPage("https://api-v2.soundcloud.com/tracks?ids=" + Encoding.urlEncode(idsToGrab) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object tracko : ressourcelist) {
                 itemsFound.add(tracko);
@@ -475,7 +477,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int page = 1;
         int offset = 0;
         while (true) {
-            String next_page_url = "https://api.soundcloud.com/users/" + user_id + "/playlists?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=favorited_at&page_number=" + offset + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            String next_page_url = "https://api.soundcloud.com/users/" + user_id + "/playlists?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=favorited_at&page_number=" + offset + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br);
             br.getPage(next_page_url);
             Map<String, Object> response = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             List<Map<String, Object>> collection = (List<Map<String, Object>>) response.get("collection");
@@ -513,7 +515,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int offset = 0;
         setFilePackage(username, playlistname);
         while (true) {
-            String next_page_url = "https://api.soundcloud.com/tracks/" + user_id + "/playlists?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            String next_page_url = "https://api.soundcloud.com/tracks/" + user_id + "/playlists?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br);
             br.getPage(next_page_url);
             Map<String, Object> response = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             List<Map<String, Object>> collection = (List<Map<String, Object>>) response.get("collection");
@@ -535,7 +537,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private void decryptLikes() throws Exception {
-        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br));
         data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         String user_id = null;
         if ("302 - Found".equals(data.get("status"))) {
@@ -565,7 +567,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
-            final String next_page_url = nextPage != null ? nextPage : "https://api.soundcloud.com/e1/users/" + user_id + "/likes?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + ((page - 1) * max_entries_per_request) + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            final String next_page_url = nextPage != null ? nextPage : "https://api.soundcloud.com/e1/users/" + user_id + "/likes?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + ((page - 1) * max_entries_per_request) + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br);
             br.getPage(next_page_url);
             List<Map<String, Object>> collection = parseCollection();
             page++;
@@ -596,7 +598,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
-            final String next_page_url = "https://api.soundcloud.com/groups/" + group_id + "/tracks?app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=approved_at";
+            final String next_page_url = "https://api.soundcloud.com/groups/" + group_id + "/tracks?app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=approved_at";
             br.getPage(next_page_url);
             final int pre = decryptedLinks.size();
             final List<Map<String, Object>> collection = parseCollection();
@@ -621,7 +623,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> parseTracklist(List<Map<String, Object>> collection) throws ParseException, IOException {
+    public List<Map<String, Object>> parseTracklist(List<Map<String, Object>> collection) throws Exception {
         for (final Map<String, Object> item : collection) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
@@ -686,7 +688,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         String offset = "0";
         final String url = String.format("https://api-v2.soundcloud.com/stream/users/%s%s", userID, type);
         do {
-            final String base = url + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br);
+            final String base = url + "?client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br);
             br.getPage(base);
             final List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {
@@ -785,16 +787,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     /**
      * Accesses the soundcloud resolve url which returns important information about the user-profile or url (if parameter != null).
      *
-     * @throws DecrypterException
+     * @throws Exception
      */
-    private void resolve(final String forced_url) throws IOException, DecrypterException {
+    private void resolve(final String forced_url) throws Exception {
         String resolveurl;
         if (forced_url != null) {
             resolveurl = forced_url;
         } else {
             resolveurl = "https://soundcloud.com/" + url_username;
         }
-        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=10&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=10&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br));
         if (br.containsHTML("\"404 \\- Not Found\"")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -856,7 +858,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return formattedpackagename;
     }
 
-    private DownloadLink setDlDataJson(final DownloadLink dl, final Map<String, Object> data) throws ParseException, IOException {
+    private DownloadLink setDlDataJson(final DownloadLink dl, final Map<String, Object> data) throws Exception {
         dl.setProperty("plain_url_username", url_username);
         if (data != null) {
             final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatusJson(this, dl, data, false);
