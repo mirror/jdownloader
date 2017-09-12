@@ -1,5 +1,8 @@
 package jd.controlling.linkcollector;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 
 import org.appwork.utils.StringUtils;
@@ -8,9 +11,8 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class LinkCollectingJob {
     private String                jobContent;
     private String                customSourceUrl;
-    private CrawledLinkModifier   crawledLinkModifierPrePackagizer = null;
-    private final UniqueAlltimeID uniqueAlltimeID                  = new UniqueAlltimeID();
-    private boolean               assignJobID                      = false;
+    private final UniqueAlltimeID uniqueAlltimeID = new UniqueAlltimeID();
+    private boolean               assignJobID     = false;
 
     public boolean isAssignJobID() {
         return assignJobID;
@@ -32,25 +34,36 @@ public class LinkCollectingJob {
         return sb.toString();
     }
 
-    public CrawledLinkModifier getCrawledLinkModifierPrePackagizer() {
-        return crawledLinkModifierPrePackagizer;
+    private final CopyOnWriteArrayList<CrawledLinkModifier> prePackagizerModifier = new CopyOnWriteArrayList<CrawledLinkModifier>();
+
+    public List<CrawledLinkModifier> getPrePackagizerModifier() {
+        return prePackagizerModifier;
     }
 
-    public void setCrawledLinkModifierPrePackagizer(CrawledLinkModifier crawledLinkModifierPrePackagizer) {
-        this.crawledLinkModifierPrePackagizer = crawledLinkModifierPrePackagizer;
+    public boolean addPrePackagizerModifier(CrawledLinkModifier modifier) {
+        return modifier != null && prePackagizerModifier.addIfAbsent(modifier);
     }
 
-    public CrawledLinkModifier getCrawledLinkModifierPostPackagizer() {
-        return crawledLinkModifierPostPackagizer;
+    public boolean removePrePackagizerModifier(CrawledLinkModifier modifier) {
+        return modifier != null && prePackagizerModifier.remove(modifier);
     }
 
-    public void setCrawledLinkModifierPostPackagizer(CrawledLinkModifier crawledLinkModifierPostPackagizer) {
-        this.crawledLinkModifierPostPackagizer = crawledLinkModifierPostPackagizer;
+    private final CopyOnWriteArrayList<CrawledLinkModifier> postPackagizerModifier = new CopyOnWriteArrayList<CrawledLinkModifier>();
+
+    public List<CrawledLinkModifier> getPostPackagizerModifier() {
+        return postPackagizerModifier;
     }
 
-    private CrawledLinkModifier crawledLinkModifierPostPackagizer = null;
-    private boolean             deepAnalyse;
-    private String              crawlerPassword                   = null;
+    public boolean addPostPackagizerModifier(CrawledLinkModifier modifier) {
+        return modifier != null && postPackagizerModifier.addIfAbsent(modifier);
+    }
+
+    public boolean removePostPackagizerModifier(CrawledLinkModifier modifier) {
+        return modifier != null && postPackagizerModifier.remove(modifier);
+    }
+
+    private boolean deepAnalyse;
+    private String  crawlerPassword = null;
 
     public String getCrawlerPassword() {
         return crawlerPassword;

@@ -24,7 +24,9 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
@@ -44,7 +46,6 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
-import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
@@ -377,66 +378,13 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
         if (StringUtils.isNotEmpty(query.getComment())) {
-            modifiers.add(new CrawledLinkModifier() {
-                final String comment = query.getComment();
-
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    if (StringUtils.isEmpty(link.getComment())) {
-                        link.setComment(comment);
-                    }
-                    PackageInfo existing = link.getDesiredPackageInfo();
-                    if (existing == null) {
-                        existing = new PackageInfo();
-                    }
-                    if (StringUtils.isEmpty(existing.getComment()) || overwritePackagizerRules) {
-                        existing.setComment(comment);
-                        existing.setIgnoreVarious(true);
-                        existing.setUniqueId(null);
-                        link.setDesiredPackageInfo(existing);
-                    }
-                }
-            });
+            modifiers.add(new CommentModifier(query.getComment()));
         }
         if (StringUtils.isNotEmpty(query.getPackageName())) {
-            PackageHistoryManager.getInstance().add(query.getPackageName());
-            modifiers.add(new CrawledLinkModifier() {
-                final String packageName = query.getPackageName();
-
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    PackageInfo existing = link.getDesiredPackageInfo();
-                    if (existing == null) {
-                        existing = new PackageInfo();
-                    }
-                    if (StringUtils.isEmpty(existing.getName()) || overwritePackagizerRules) {
-                        existing.setName(packageName);
-                        existing.setIgnoreVarious(true);
-                        existing.setUniqueId(null);
-                        link.setDesiredPackageInfo(existing);
-                    }
-                }
-            });
+            modifiers.add(new PackageNameModifier(query.getPackageName(), overwritePackagizerRules));
         }
         if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
-            DownloadPathHistoryManager.getInstance().add(query.getDestinationFolder());
-            modifiers.add(new CrawledLinkModifier() {
-                final String dest = query.getDestinationFolder();
-
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    PackageInfo existing = link.getDesiredPackageInfo();
-                    if (existing == null) {
-                        existing = new PackageInfo();
-                    }
-                    if (StringUtils.isEmpty(existing.getDestinationFolder()) || overwritePackagizerRules) {
-                        existing.setDestinationFolder(dest);
-                        existing.setIgnoreVarious(true);
-                        existing.setUniqueId(null);
-                        link.setDesiredPackageInfo(existing);
-                    }
-                }
-            });
+            modifiers.add(new DownloadFolderModifier(query.getDestinationFolder(), overwritePackagizerRules));
         }
         if (StringUtils.isNotEmpty(query.getDownloadPassword())) {
             modifiers.add(new CrawledLinkModifier() {
@@ -452,18 +400,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             });
         }
         if (query.isAutostart() != null) {
+            final boolean autostart = Boolean.TRUE.equals(query.isAutostart());
             modifiers.add(new CrawledLinkModifier() {
-                final Boolean autostart = query.isAutostart();
-
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
-                    if (Boolean.TRUE.equals(autostart)) {
-                        link.setAutoConfirmEnabled(true);
-                        link.setAutoStartEnabled(true);
-                    } else {
-                        link.setAutoConfirmEnabled(false);
-                        link.setAutoStartEnabled(false);
-                    }
+                    link.setAutoConfirmEnabled(autostart);
+                    link.setAutoStartEnabled(autostart);
                 }
             });
         }
@@ -477,17 +419,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         if (query.isAutoExtract() != null) {
             modifiers.add(new CrawledLinkModifier() {
-                final Boolean autoExtract = query.isAutoExtract();
+                final BooleanStatus autoExtract = BooleanStatus.convert(query.isAutoExtract());
 
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
-                    BooleanStatus existingAutoExtractStatus = BooleanStatus.UNSET;
-                    if (link.hasArchiveInfo()) {
-                        existingAutoExtractStatus = link.getArchiveInfo().getAutoExtract();
-                    }
-                    if (existingAutoExtractStatus == null || BooleanStatus.UNSET.equals(existingAutoExtractStatus)) {
-                        link.getArchiveInfo().setAutoExtract(BooleanStatus.convert(autoExtract));
-                    }
+                    link.getArchiveInfo().setAutoExtract(autoExtract);
                 }
             });
         }
@@ -518,9 +454,10 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     }
                 }
             };
-            job.setCrawledLinkModifierPrePackagizer(modifier);
             if (overwritePackagizerRules) {
-                job.setCrawledLinkModifierPostPackagizer(modifier);
+                job.addPostPackagizerModifier(modifier);
+            } else {
+                job.addPrePackagizerModifier(modifier);
             }
         }
         LinkCollector.getInstance().getAddLinksThread(job, null).start();

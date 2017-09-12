@@ -1981,7 +1981,11 @@ public class LinkCrawler {
                                 }
                             }
                             if (depth <= rule.getMaxDecryptDepth()) {
+                                // okay
                                 return rule;
+                            } else {
+                                // too deep
+                                continue;
                             }
                         }
                     }
@@ -2114,6 +2118,9 @@ public class LinkCrawler {
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
                 // modify sourceLink because link arise from source(getMatchingLinks)
                 link.setSourceLink(source.getSourceLink());
+                if (source.getMatchingRule() != null) {
+                    link.setMatchingRule(source.getMatchingRule());
+                }
                 ret.add(link);
             }
             return ret;
@@ -2152,6 +2159,9 @@ public class LinkCrawler {
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
                 // modify sourceLink because link arise from source(getMatchingLinks)
                 link.setSourceLink(source.getSourceLink());
+                if (source.getMatchingRule() != null) {
+                    link.setMatchingRule(source.getMatchingRule());
+                }
                 ret.add(link);
             }
             return ret;
@@ -2254,6 +2264,9 @@ public class LinkCrawler {
                                 forwardCrawledLinkInfos(possibleCryptedLink, crawledLink, parentLinkModifier, sourceURLs, singleDest);
                                 // modify sourceLink because crawledLink arise from possibleCryptedLink(wplg.getDownloadLinks)
                                 crawledLink.setSourceLink(possibleCryptedLink.getSourceLink());
+                                if (possibleCryptedLink.getMatchingRule() != null) {
+                                    crawledLink.setMatchingRule(possibleCryptedLink.getMatchingRule());
+                                }
                                 handleFinalCrawledLink(crawledLink);
                             }
                         }
