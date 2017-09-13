@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -24,10 +23,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -54,11 +49,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" })
 public class FileRioCom extends PluginForHost {
-
     private final static String SSL_CONNECTION      = "SSL_CONNECTION";
-
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://filerio.in";
@@ -128,6 +125,9 @@ public class FileRioCom extends PluginForHost {
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(correctedBR, ">\\s*([0-9\\.]+\\s*[GKM]B)\\s*</").getMatch(0);
+            }
         }
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
@@ -160,7 +160,6 @@ public class FileRioCom extends PluginForHost {
             logger.info("Found md5hash: " + md5hash);
             downloadLink.setMD5Hash(md5hash);
         }
-
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
          * Video links can already be found here, if a link is found here we can skip wait times and captchas
@@ -192,7 +191,6 @@ public class FileRioCom extends PluginForHost {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-
             /* Captcha START */
             if (correctedBR.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -457,26 +455,21 @@ public class FileRioCom extends PluginForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -759,5 +752,4 @@ public class FileRioCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

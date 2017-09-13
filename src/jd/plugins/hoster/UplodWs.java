@@ -299,10 +299,6 @@ public class UplodWs extends PluginForHost {
                             if (fileInfo[1] == null) {
                                 fileInfo[1] = new Regex(correctedBR, "(?i)(\\d+(?:\\.\\d+)? (KB|MB|GB))").getMatch(0);
                             }
-                            // generic failover#2
-                            if (fileInfo[1] == null) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-                            }
                         }
                     }
                 }

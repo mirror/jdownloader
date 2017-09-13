@@ -185,6 +185,15 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         }
     }
 
+    public String getUrlLink() {
+        final Object llink = link;
+        if (llink instanceof CharSequence) {
+            return llink.toString();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * @return the cLink
      */
@@ -512,43 +521,32 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public boolean hasAutoCaptcha() {
         final PluginForHost plugin = gethPlugin();
-        if (plugin != null) {
-            return plugin.hasAutoCaptcha();
-        }
-        return true;
+        return plugin != null && plugin.hasAutoCaptcha();
     }
 
     public boolean hasCaptcha(Account acc) {
         final PluginForHost plugin = gethPlugin();
         final DownloadLink dlLink = getDownloadLink();
-        if (plugin != null && dlLink != null) {
-            return Boolean.TRUE.equals(plugin.expectCaptcha(dlLink, acc));
-        }
-        return false;
+        return plugin != null && dlLink != null && Boolean.TRUE.equals(plugin.expectCaptcha(dlLink, acc));
     }
 
     public boolean isDirectHTTP() {
         final PluginForHost plugin = gethPlugin();
-        if (plugin != null) {
-            return plugin.getClass().getName().endsWith("r.DirectHTTP");
-        }
-        return false;
+        return plugin != null && plugin.getClass().getName().endsWith("r.DirectHTTP");
     }
 
     public boolean isFTP() {
         final PluginForHost plugin = gethPlugin();
-        if (plugin != null) {
-            return plugin.getClass().getName().endsWith("r.Ftp");
-        }
-        return false;
+        return plugin != null && plugin.getClass().getName().endsWith("r.Ftp");
     }
 
     public DomainInfo getDomainInfo() {
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getDomainInfo();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public CrawledLinkModifier getCustomCrawledLinkModifier() {
@@ -707,10 +705,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     @Override
     public boolean hasNotificationListener() {
         final CrawledPackage lparent = parent;
-        if (lparent != null && lparent.hasNotificationListener()) {
-            return true;
-        }
-        return false;
+        return lparent != null && lparent.hasNotificationListener();
     }
 
     @Override
@@ -722,8 +717,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getArchiveID();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void firePropertyChanged(CrawledLinkProperty.Property property, Object value) {
@@ -741,14 +737,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setComment(String comment) {
-        this.getDownloadLink().setComment(comment);
-        if (hasNotificationListener()) {
-            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
+        final DownloadLink link = getDownloadLink();
+        if (link != null) {
+            link.setComment(comment);
+            if (hasNotificationListener()) {
+                nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
+            }
         }
     }
 
     public String getComment() {
-        return getDownloadLink().getComment();
+        final DownloadLink link = getDownloadLink();
+        if (link != null) {
+            return link.getComment();
+        } else {
+            return null;
+        }
     }
 
     @Override
