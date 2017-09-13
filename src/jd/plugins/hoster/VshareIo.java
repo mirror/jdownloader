@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,9 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/(?:d|v)/[a-z0-9]+" })
-public class VshareIo extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "https?://(?:www\\.)?vshare\\.io/(?:d|v)/[a-z0-9]+" })
+public class VshareIo extends PluginForHost {
     public VshareIo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,7 +60,6 @@ public class VshareIo extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -78,6 +75,21 @@ public class VshareIo extends PluginForHost {
         String filesize = finfo.getMatch(1);
         if (filename == null) {
             filename = br.getRegex(">\\s*([^<>]+)<br/>\\s*<iframe").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("div id=\"404\".*?>\\s*(.*?)\\s*<").getMatch(0);
+                if (filename != null) {
+                    String dllink = br.getRegex("style=\"text-decoration:none;\" href=\"(https?[^<>\"]+)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/[^<>\"]+)\"").getMatch(0);
+                    }
+                    if (dllink != null) {
+                        final String ext = getFileNameExtensionFromURL(dllink);
+                        if (ext != null) {
+                            filename = filename + ext;
+                        }
+                    }
+                }
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -99,7 +111,7 @@ public class VshareIo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("style=\"text-decoration:none;\" href=\"(http[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("style=\"text-decoration:none;\" href=\"(https?[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/[^<>\"]+)\"").getMatch(0);
             }
@@ -153,5 +165,4 @@ public class VshareIo extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
