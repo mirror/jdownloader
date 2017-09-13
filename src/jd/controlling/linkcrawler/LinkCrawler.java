@@ -75,6 +75,7 @@ import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -930,7 +931,11 @@ public class LinkCrawler {
                         break;
                     }
                 }
-                br.setCurrentURL(source.getURL());
+                if (round < 1) {
+                    br.setCurrentURL(source.getURL());
+                } else {
+                    br.setCurrentURL(URLHelper.parseLocation(new URL(source.getURL()), "/"));
+                }
                 urlConnection.disconnect();
                 return openCrawlDeeperConnection(br, source, round + 1);
             }
@@ -2116,10 +2121,12 @@ public class LinkCrawler {
                 cryptedLink.setLazyC(lazyC);
                 final CrawledLink link = crawledLinkFactorybyCryptedLink(cryptedLink);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
-                // modify sourceLink because link arise from source(getMatchingLinks)
-                link.setSourceLink(source.getSourceLink());
-                if (source.getMatchingRule() != null) {
-                    link.setMatchingRule(source.getMatchingRule());
+                if (source.getUrlLink() == null) {
+                    // modify sourceLink because link arise from source(getMatchingLinks)
+                    link.setSourceLink(source.getSourceLink());
+                    if (source.getMatchingRule() != null) {
+                        link.setMatchingRule(source.getMatchingRule());
+                    }
                 }
                 ret.add(link);
             }
@@ -2157,10 +2164,12 @@ public class LinkCrawler {
             for (final String match : matches) {
                 final CrawledLink link = crawledLinkFactorybyURL(match);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
-                // modify sourceLink because link arise from source(getMatchingLinks)
-                link.setSourceLink(source.getSourceLink());
-                if (source.getMatchingRule() != null) {
-                    link.setMatchingRule(source.getMatchingRule());
+                if (source.getUrlLink() == null) {
+                    // modify sourceLink because link arise from source(getMatchingLinks)
+                    link.setSourceLink(source.getSourceLink());
+                    if (source.getMatchingRule() != null) {
+                        link.setMatchingRule(source.getMatchingRule());
+                    }
                 }
                 ret.add(link);
             }
@@ -2262,10 +2271,12 @@ public class LinkCrawler {
                             final boolean singleDest = crawledLinks.size() == 1;
                             for (final CrawledLink crawledLink : crawledLinks) {
                                 forwardCrawledLinkInfos(possibleCryptedLink, crawledLink, parentLinkModifier, sourceURLs, singleDest);
-                                // modify sourceLink because crawledLink arise from possibleCryptedLink(wplg.getDownloadLinks)
-                                crawledLink.setSourceLink(possibleCryptedLink.getSourceLink());
-                                if (possibleCryptedLink.getMatchingRule() != null) {
-                                    crawledLink.setMatchingRule(possibleCryptedLink.getMatchingRule());
+                                if (possibleCryptedLink.getUrlLink() == null) {
+                                    // modify sourceLink because crawledLink arise from possibleCryptedLink(wplg.getDownloadLinks)
+                                    crawledLink.setSourceLink(possibleCryptedLink.getSourceLink());
+                                    if (possibleCryptedLink.getMatchingRule() != null) {
+                                        crawledLink.setMatchingRule(possibleCryptedLink.getMatchingRule());
+                                    }
                                 }
                                 handleFinalCrawledLink(crawledLink);
                             }

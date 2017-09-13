@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,13 +36,14 @@ public class MirroraceCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>\\s*(?:Download)?\\s*([^<]*?)\\s*(?:-\\s*MirrorAce)?\\s*</title>").getMatch(0);
-        final String[] links = br.getRegex("\"(https?://mirrorace\\.com/m/[A-Za-z0-9]+/\\d+[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(https?://mirrorace\\.com/m/[A-Za-z0-9]+/\\d+\\?t=[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -55,7 +57,19 @@ public class MirroraceCom extends PluginForDecrypt {
             if (finallink == null) {
                 return null;
             }
-            final DownloadLink dl = createDownloadlink(finallink);
+            final DownloadLink dl;
+            if (finallink.contains("mirrorace.com")) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(false);
+                brc.getPage(finallink);
+                if (brc.getRedirectLocation() != null) {
+                    dl = createDownloadlink(brc.getRedirectLocation());
+                } else {
+                    continue;
+                }
+            } else {
+                dl = createDownloadlink(finallink);
+            }
             decryptedLinks.add(dl);
             distribute(dl);
         }
