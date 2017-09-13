@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
@@ -33,6 +33,7 @@ import jd.plugins.download.HashInfo.TYPE;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -298,54 +299,87 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public HashInfo getHashInfo() {
-        // StatsManager
         final HashInfo hashInfo = downloadLink.getHashInfo();
         if (hashInfo != null) {
             return hashInfo;
         }
         final String name = getName();
-        String hash = null;
-        if ((hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
-            return new HashInfo(hash, HashInfo.TYPE.CRC32, false);
-        } else {
-            FilePackage filePackage = downloadLink.getFilePackage();
-            if (!FilePackage.isDefaultFilePackage(filePackage)) {
-                ArrayList<DownloadLink> SFVs = new ArrayList<DownloadLink>();
-                boolean readL = filePackage.getModifyLock().readLock();
-                try {
-                    for (DownloadLink dl : filePackage.getChildren()) {
-                        if (dl != downloadLink && FinalLinkState.CheckFinished(dl.getFinalLinkState()) && dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
-                            SFVs.add(dl);
-                        }
-                    }
-                } finally {
-                    filePackage.getModifyLock().readUnlock(readL);
-                }
-                /* SFV File Available, lets use it */
-                for (DownloadLink SFV : SFVs) {
-                    File file = getFileOutput(SFV, false);
-                    if (file.exists()) {
-                        String sfvText;
-                        try {
-                            sfvText = IO.readFileToString(file);
-                            if (sfvText != null) {
-                                /* Delete comments */
-                                sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
-                                if (sfvText != null && sfvText.contains(name)) {
-                                    hash = new Regex(sfvText, Pattern.quote(name) + "\\s*([A-Fa-f0-9]{8})").getMatch(0);
-                                    if (hash != null) {
-                                        return new HashInfo(hash, HashInfo.TYPE.CRC32);
-                                    }
-                                }
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
+        final List<HashInfo> hashInfos = new ArrayList<HashInfo>();
+        for (final HashInfo.TYPE type : HashInfo.TYPE.values()) {
+            if (!HashInfo.TYPE.NONE.equals(type)) {
+                final String hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{" + type.getSize() + "})\\]").getMatch(0);
+                if (hash != null) {
+                    hashInfos.add(new HashInfo(hash, type, false));
                 }
             }
         }
-        return null;
+        final FilePackage filePackage = downloadLink.getFilePackage();
+        if (!FilePackage.isDefaultFilePackage(filePackage)) {
+            final ArrayList<File> checkSumFiles = new ArrayList<File>();
+            final boolean readL = filePackage.getModifyLock().readLock();
+            try {
+                for (final DownloadLink dl : filePackage.getChildren()) {
+                    if (dl != downloadLink && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                        final File checkSumFile = getFileOutput(dl, false);
+                        final String fileName = checkSumFile.getName();
+                        if (fileName.matches(".*\\.(sfv|md5|sha1|sha256|sha512)$") && checkSumFile.exists() && !checkSumFiles.contains(checkSumFile)) {
+                            checkSumFiles.add(checkSumFile);
+                        }
+                    }
+                }
+            } finally {
+                filePackage.getModifyLock().readUnlock(readL);
+            }
+            final File[] files = new File(filePackage.getDownloadDirectory()).listFiles();
+            if (files != null) {
+                for (final File file : files) {
+                    final String fileName = file.getName();
+                    if (fileName.matches(".*\\.(sfv|md5|sha1|sha256|sha512)$") && file.isFile() && !checkSumFiles.contains(file)) {
+                        checkSumFiles.add(file);
+                    }
+                }
+            }
+            for (final File checkSumFile : checkSumFiles) {
+                try {
+                    final String content = IO.readFileToString(checkSumFile);
+                    if (StringUtils.isNotEmpty(content)) {
+                        final String lines[] = Regex.getLines(content);
+                        for (final String line : lines) {
+                            if (line.startsWith(";") || !line.contains(name)) {
+                                continue;
+                            }
+                            for (final HashInfo.TYPE type : HashInfo.TYPE.values()) {
+                                if (!HashInfo.TYPE.NONE.equals(type)) {
+                                    final String hash = new Regex(line, "(?:^|\\s+)([A-Fa-f0-9]{" + type.getSize() + "})(\\s+|$)").getMatch(0);
+                                    if (hash != null) {
+                                        hashInfos.add(new HashInfo(hash, type));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+        if (hashInfos.size() == 1) {
+            return hashInfos.get(0);
+        } else if (hashInfos.size() > 1) {
+            HashInfo best = null;
+            for (final HashInfo info : hashInfos) {
+                if (best == null) {
+                    best = info;
+                } else if (info.isStrongerThan(best) && (info.isTrustworthy() || !best.isTrustworthy())) {
+                    best = info;
+                } else if (info.isTrustworthy() && !best.isTrustworthy()) {
+                    best = info;
+                }
+            }
+            return best;
+        } else {
+            return null;
+        }
     }
 
     private File getFileOutput(DownloadLink link, boolean ignoreCustom) {
