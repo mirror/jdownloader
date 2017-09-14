@@ -28,11 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,9 +51,13 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/(d/[A-Za-z0-9]+(/[^<>\"/]+)?|download/.*?i=[A-Za-z0-9]+)" })
 public class DataFileCom extends antiDDoSForHost {
-
     public DataFileCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -738,14 +737,14 @@ public class DataFileCom extends antiDDoSForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
-        if (useAPI.get()) {
+        if (useAPI.get() && false) {
+            // broken at the moment. online shown as *deleted*, offline shown as *online*
             return checkLinks_API(urls, null);
         }
         return false;
     }
 
     // api stuff
-
     private static AtomicBoolean useAPI = new AtomicBoolean(true);
     private final String         apiURL = "https://api.datafile.com";
 
@@ -856,8 +855,9 @@ public class DataFileCom extends antiDDoSForHost {
                 }
                 sb.delete(0, sb.capacity());
                 sb.append("file=");
+                final int initLength = sb.length();
                 for (final DownloadLink dl : links) {
-                    if (sb.length() > 0) {
+                    if (sb.length() > initLength) {
                         sb.append(",");
                     }
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -1020,5 +1020,4 @@ public class DataFileCom extends antiDDoSForHost {
         }
         return apiToken;
     }
-
 }
