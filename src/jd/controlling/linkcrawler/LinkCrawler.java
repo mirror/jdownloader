@@ -1912,12 +1912,15 @@ public class LinkCrawler {
                     if (base64.contains("%3D")) {
                         base64 = URLDecoder.decode(base64, "UTF-8");
                     }
-                    String possibleURLs = new String(Base64.decode(base64), "UTF-8");
-                    if (HTMLParser.getProtocol(possibleURLs) == null) {
-                        possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
-                    }
-                    if (HTMLParser.getProtocol(possibleURLs) != null) {
-                        possibleEmbeddedLinks.add(possibleURLs);
+                    final byte[] decoded = Base64.decode(base64);
+                    if (decoded != null) {
+                        String possibleURLs = new String(decoded, "UTF-8");
+                        if (HTMLParser.getProtocol(possibleURLs) == null) {
+                            possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
+                        }
+                        if (HTMLParser.getProtocol(possibleURLs) != null) {
+                            possibleEmbeddedLinks.add(possibleURLs);
+                        }
                     }
                 }
             }
