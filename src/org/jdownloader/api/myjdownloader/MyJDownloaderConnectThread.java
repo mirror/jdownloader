@@ -438,17 +438,17 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     response.getRequest().getSession().setState(SessionInfoWrapper.STATE.INVALID);
                     return connectionStatus;
                 case KEEPALIVE:
-                    log("KEEPALIVE:" + response.getUniqueID());
                     usedConnection.reset();
                     final Thread keepAlivehandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
+                            final DeviceConnectionHelper connection = response.getRequest().getConnectionHelper();
                             try {
                                 socket.getSocket().setSoTimeout(5000);
                                 long syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
                                 sync(syncMark, currentSession);
                             } catch (final Throwable e) {
                             } finally {
-                                log("KEEPALIVE:" + response.getUniqueID() + "|SyncMark:" + syncMark.get());
+                                log(connection + "|KEEPALIVE:" + response.getUniqueID() + "|SyncMark:" + syncMark.get());
                                 try {
                                     socket.close();
                                 } catch (final Throwable e) {
@@ -474,14 +474,14 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                     return connectionStatus;
                 case OK_SYNC:
                     usedConnection.reset();
-                    log(usedConnection + "|OK_SYNC:" + response.getUniqueID());
                     final Thread okHandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
+                            final DeviceConnectionHelper connection = response.getRequest().getConnectionHelper();
                             boolean closeSocket = true;
                             try {
                                 final long syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
-                                log(response.getRequest().getConnectionHelper() + "|OK_SYNC:" + response.getUniqueID() + "|SyncMark:" + syncMark);
-                                response.getThread().putRequest(new MyJDownloaderConnectionRequest(currentSession, response.getRequest().getConnectionHelper()));
+                                log(connection + "|OK_SYNC:" + response.getUniqueID() + "|SyncMark:" + syncMark);
+                                response.getThread().putRequest(new MyJDownloaderConnectionRequest(currentSession, connection));
                                 handleConnection(socket);
                                 sync(syncMark, currentSession);
                                 closeSocket = false;
@@ -492,6 +492,9 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                                         socket.close();
                                     }
                                 } catch (final Throwable e) {
+                                }
+                                if (closeSocket) {
+                                    log(connection + "|OK_SYNC:" + response.getUniqueID());
                                 }
                             }
                         };

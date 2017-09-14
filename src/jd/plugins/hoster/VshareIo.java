@@ -67,7 +67,7 @@ public class VshareIo extends PluginForHost {
         correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404/") || br.containsHTML(">We are sorry,")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("error=404") || br.getURL().contains("/404/") || br.containsHTML(">We are sorry,")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("<p>([^<>\"]+) - (\\d{1,4}(?:\\.\\d{1,2})? [A-Za-z]{1,5})</p>");
