@@ -24,9 +24,6 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,6 +47,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
@@ -166,15 +166,17 @@ public class XHamsterCom extends PluginForHost {
         fq.put("720p", q720);
         fq.put("480p", q480);
         fq.put("240p", true); // Default
-        String video = br.getRegex("(video: \\{.*?\\}\\))").getMatch(0);
-        // logger.info("video: " + video);
+        // String video = br.getRegex("(video: \\{.*?\\}\\))").getMatch(0);
+        String videoUrls = br.getRegex("(videoUrls\":\"\\{.*?\\]\\})").getMatch(0).replace("\\", "");
+        // logger.info("videoUrls: " + videoUrls);
         for (String key : fq.keySet()) {
             logger.info(key + ":\t" + fq.get(key));
             if (fq.get(key)) {
-                dllink = new Regex(video, key + "\":\"(https?:[^\"]+)\"").getMatch(0);
+                // dllink = new Regex(video, key + "\":\"(https?:[^\"]+)\"").getMatch(0);
+                dllink = new Regex(videoUrls, key + "\":\\[\"(https?:[^\"]+)\"").getMatch(0);
                 if (dllink != null) {
                     vq = key;
-                    dllink = dllink.replace("\\/", "/");
+                    // dllink = dllink.replace("\\/", "/");
                     logger.info("vq: " + vq + ", dllink: " + dllink);
                     return dllink;
                     // break;
