@@ -55,12 +55,12 @@ import jd.plugins.PluginProgress;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.noestasinvitado\\.com|youpaste\\.co)/(!|%21)[A-Za-z0-9\\-_\\!%]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.noestasinvitado\\.com|youpaste\\.co|shurcrypter\\.se)/(!|%21)[A-Za-z0-9\\-_\\!%]+" })
 public class MegaCrypterCom extends antiDDoSForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "megacrypter.noestasinvitado.com", "youpaste.co" };
+        return new String[] { "megacrypter.noestasinvitado.com", "youpaste.co", "shurcrypter.se" };
     }
 
     // note: hosts removed due to be down.
@@ -91,7 +91,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         if (false && downloadLink.getDownloadURL().matches("(?i)")) {
             supportsHTTPS = false;
             enforcesHTTPS = false;
-        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/")) {
+        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/") || downloadLink.getPluginPatternMatcher().contains("shurcrypter.se")) {
             // all others enable by default.
             supportsHTTPS = true;
             enforcesHTTPS = true;
