@@ -146,32 +146,52 @@ public class ImgSrcRu extends PluginForHost {
     private void getDllink() {
         final String[] qual = { "pic_o", "pic_b" };
         boolean done = false;
-        String js = br.getRegex("<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+)</script>").getMatch(1);
+        String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
+        Object result = null;
         if (js != null) {
-            Object result = null;
-            try {
-                final String[] var = new Regex(js, "(var (\\w+)\\s*=\\s*document\\.getElementById\\('([\\w_]+)'\\).(\\w+),)").getRow(0);
-                final String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
-                final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
-                js = js.replace(var[0], "");
-                for (final String q : qual) {
-                    if (js.contains("document.getElementById('" + q + "')")) {
-                        if (!done) {
-                            js = js.replaceFirst("document.getElementById\\('" + q + "'\\)\\.\\w+=", "var result=");
-                            done = true;
-                        } else {
-                            // we don't need
-                            js = js.replaceFirst("document.getElementById\\('" + q + "'\\)[^\r\n]+", "");
-                        }
+            final String[] var = new Regex(js, "(var (\\w+)\\s*=\\s*document\\.getElementById\\('([\\w_]+)'\\).(\\w+),)").getRow(0);
+            final String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
+            final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
+            js = js.replace(var[0], "");
+            for (final String q : qual) {
+                if (js.contains("document.getElementById('" + q + "')")) {
+                    if (!done) {
+                        js = js.replaceFirst("document.getElementById\\('" + q + "'\\)\\.\\w+=", "var result=");
+                        done = true;
+                    } else {
+                        // we don't need
+                        js = js.replaceFirst("document.getElementById\\('" + q + "'\\)[^\r\n]+", "");
                     }
                 }
-                final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                final ScriptEngine engine = mgr.getEngineByName("javascript");
-                engine.put(var[1], varsrc);
-                engine.eval(js);
-                result = engine.get("result");
-            } catch (Throwable e) {
-                e.printStackTrace();
+            }
+            while (true) {
+                try {
+                    final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                    final ScriptEngine engine = mgr.getEngineByName("javascript");
+                    engine.put(var[1], varsrc);
+                    engine.eval(js);
+                    result = engine.get("result");
+                } catch (final Throwable e) {
+                    // my youtube approach -raztoki
+                    if (e.getMessage() != null) {
+                        // do not use language components of the error message. Only static identifies, otherwise other languages will fail!
+                        final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
+                        if (ee != null) {
+                            // lets look for missing reference
+                            final String ref = br.getRegex("var\\s+" + Pattern.quote(ee) + "\\s*=\\s*.*?;").getMatch(-1);
+                            if (ref != null) {
+                                js = ref + "\r\n" + js;
+                                continue;
+                            } else {
+                                logger.warning("Could not find missing var/function");
+                            }
+                        } else {
+                            logger.warning("Could not find reference Error");
+                        }
+                    }
+                    logger.log(e);
+                }
+                break;
             }
             if (result != null && result instanceof ConsString) {
                 ddlink = result.toString();
