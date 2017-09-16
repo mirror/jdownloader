@@ -18,28 +18,30 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporn.net" }, urls = { "https?://(?:www\\.)?veporn\\.net/video/[A-Za-z0-9\\-_]+" }) 
-public class VepornNet extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporn.net" }, urls = { "https?://(?:www\\.)?veporn\\.net/video/[A-Za-z0-9\\-_]+" })
+public class VepornNet extends antiDDoSForDecrypt {
 
     public VepornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("video/") || br.containsHTML("URL=http://www.veporn.net'")) {
+        br.setFollowRedirects(true);
+        getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("video/") || br.containsHTML("URL=http://www.veporn.net'")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -49,14 +51,15 @@ public class VepornNet extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int counter = 1;
         for (final String singleLink : links) {
             if (this.isAbort()) {
                 return decryptedLinks;
             }
-            this.br.getPage("http://www.veporn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
-            final String finallink = this.br.getRegex("iframe src=\"(http[^<>\"]+)\"").getMatch(0);
+            final Browser br = this.br.cloneBrowser();
+            getPage(br, "http://www.veporn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
+            final String finallink = br.getRegex("iframe src=\"(http[^<>\"]+)\"").getMatch(0);
             if (finallink == null) {
                 continue;
             }
