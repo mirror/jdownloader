@@ -72,7 +72,7 @@ public class SpankBangCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
-        parameter = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/").replace("/embed/", "/video/");
+        parameter = param.toString().replaceAll("https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "https://spankbang.com/").replace("/embed/", "/video/");
         br.setFollowRedirects(true);
         br.setCookie("http://spankbang.com/", "country", "GB");
         br.getHeaders().put("Accept-Language", "en");
