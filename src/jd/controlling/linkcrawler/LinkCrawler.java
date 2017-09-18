@@ -1984,7 +1984,7 @@ public class LinkCrawler {
                             while (it.hasNext()) {
                                 final CrawledLink next = it.next();
                                 final LinkCrawlerRule matchingRule = next.getMatchingRule();
-                                if (matchingRule != null && ruleType.equals(matchingRule.getRule())) {
+                                if (matchingRule != null && matchingRule.getId() == rule.getId()) {
                                     depth++;
                                 }
                             }
