@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,17 +30,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapters/)?digital/[^/]+/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapter/|issue/)[^/]+/\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
-
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Tags: MangaPictureCrawler */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -56,31 +53,27 @@ public class VizCom extends antiDDoSForDecrypt {
             pages_str = this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0);
         }
         final int pages = Integer.parseInt(pages_str);
-        final Regex urlinfo = new Regex(parameter, "/digital/([^/]+)/(\\d+)");
+        final Regex urlinfo = new Regex(parameter, "([^/]+)/(\\d+)");
         final String url_name = urlinfo.getMatch(0);
         final String manga_id = urlinfo.getMatch(1);
         final DecimalFormat page_formatter_page = new DecimalFormat("000");
         final String ext = ".jpg";
-
         int page_added_num = 0;
         int page_current = 0;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(manga_id + "_" + url_name);
-
         do {
             if (this.isAbort()) {
                 return decryptedLinks;
             }
             final int page_for_url_access = page_current;
             // accessPage(this.br, manga_id, Integer.toString(page_for_url_access));
-
             // final String[] urls = this.br.getRegex("url=\"(http[^<>\"]+)\"").getColumn(0);
             final String[] dummyarray = new String[] { Integer.toString(page_current), Integer.toString(page_current + 1) };
             page_added_num = dummyarray.length;
             for (final String dummy : dummyarray) {
                 final String page_formatted = page_formatter_page.format(page_current);
                 final String filename = manga_id + "_" + url_name + "_" + page_formatted + ext;
-
                 final DownloadLink dl = this.createDownloadlink("http://vizdecrypted/" + manga_id + "_" + page_current + "_" + page_for_url_access);
                 dl._setFilePackage(fp);
                 dl.setFinalFileName(filename);
@@ -96,7 +89,6 @@ public class VizCom extends antiDDoSForDecrypt {
                 }
             }
         } while (page_added_num >= 2 && page_current <= pages);
-
         return decryptedLinks;
     }
 
@@ -105,5 +97,4 @@ public class VizCom extends antiDDoSForDecrypt {
         br.getHeaders().put("Referer", "https://www.viz.com/assets/reader-" + System.currentTimeMillis() + ".swf");
         br.getPage(page_url);
     }
-
 }
