@@ -1048,6 +1048,9 @@ public class LinkCrawler {
                         }
                     } else {
                         br = new Browser();
+                        if (LogController.getInstance().isDebugMode()) {
+                            br.setLogger(LogController.CL());
+                        }
                         br.setFollowRedirects(false);
                         if (matchingRule != null && matchingRule.getCookies() != null) {
                             for (String cookie[] : matchingRule.getCookies()) {

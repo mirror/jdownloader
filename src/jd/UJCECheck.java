@@ -198,12 +198,15 @@ public class UJCECheck {
             try {
                 UJCECheck.removeCryptographyRestrictions_M1();
             } catch (final ClassNotFoundException e) {
+                e.printStackTrace();
                 try {
                     UJCECheck.removeCryptographyRestrictions_M2();
                 } catch (final ClassNotFoundException e2) {
+                    e2.printStackTrace();
                     try {
                         UJCECheck.removeCryptographyRestrictions_M3();
                     } catch (final ClassNotFoundException e3) {
+                        e3.printStackTrace();
                         throw e;
                     }
                 }
