@@ -40,7 +40,6 @@ import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
  *
  */
 public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
-
     // raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
     // openssl.org/docs/man1.0.1/apps/ciphers.html
     private static final String                   CIPHERS          = "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:SRP-DSS-AES-256-CBC-SHA:SRP-RSA-AES-256-CBC-SHA:SRP-AES-256-CBC-SHA:DHE-RSA-CAMELLIA256-SHA:DHE-DSS-CAMELLIA256-SHA:ECDH-RSA-AES256-GCM-SHA384:ECDH-ECDSA-AES256-GCM-SHA384:ECDH-RSA-AES256-SHA384:ECDH-ECDSA-AES256-SHA384:ECDH-RSA-AES256-SHA:ECDH-ECDSA-AES256-SHA:CAMELLIA256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:SRP-DSS-3DES-EDE-CBC-SHA:SRP-RSA-3DES-EDE-CBC-SHA:SRP-3DES-EDE-CBC-SHA:EDH-DSS-DES-CBC3-SHA:ECDH-RSA-DES-CBC3-SHA:ECDH-ECDSA-DES-CBC3-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:SRP-DSS-AES-128-CBC-SHA:SRP-RSA-AES-128-CBC-SHA:SRP-AES-128-CBC-SHA:DHE-DSS-AES128-SHA256:DHE-DSS-AES128-SHA:DHE-RSA-CAMELLIA128-SHA:DHE-DSS-CAMELLIA128-SHA:ECDH-RSA-AES128-GCM-SHA256:ECDH-ECDSA-AES128-GCM-SHA256:ECDH-RSA-AES128-SHA256:ECDH-ECDSA-AES128-SHA256:ECDH-RSA-AES128-SHA:ECDH-ECDSA-AES128-SHA:CAMELLIA128-SHA:!PSK:!anon";
@@ -102,7 +101,6 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
     }
 
     private static class BCTLSSocketStreamTlsClient extends DefaultTlsClient {
-
         private final String hostName;
 
         private BCTLSSocketStreamTlsClient(final String hostName) {
@@ -168,7 +166,6 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         // PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
         // out.println("TLS client received alert: " + AlertLevel.getText(alertLevel) + ", " + AlertDescription.getText(alertDescription));
         // }
-
         @Override
         public TlsAuthentication getAuthentication() throws IOException {
             final TlsAuthentication auth = new TlsAuthentication() {
@@ -178,7 +175,6 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
                 public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException {
                     return null;
                 }
-
             };
             return auth;
         }
@@ -186,11 +182,10 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         private int getSelectedCipherSuite() {
             return selectedCipherSuite;
         }
-
     }
 
     @Override
-    public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String hostName, final int port, final boolean autoclose, final boolean trustAll) throws IOException {
+    public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String hostName, final int port, final boolean autoclose, final boolean trustAll, final String[] cipherblacklist) throws IOException {
         java.security.SecureRandom secureRandom = new java.security.SecureRandom();
         final TlsClientProtocol protocol = new TlsClientProtocol(socketStream.getInputStream(), socketStream.getOutputStream(), secureRandom);
         final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName);
@@ -203,7 +198,6 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             cipherSuite = selectedCipherSuite.toString();
         }
         return new SSLSocketStreamInterface() {
-
             @Override
             public Socket getSocket() {
                 return socketStream.getSocket();
@@ -236,5 +230,4 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             }
         };
     }
-
 }

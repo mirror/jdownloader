@@ -176,7 +176,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                     }
                                 };
                                 if (addr.getPort() == 443) {
-                                    socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true);
+                                    socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true, null);
                                 }
                                 final OutputStream os = socketStream.getOutputStream();
                                 os.write(("DEVICE" + request.getSession().getSessionToken()).getBytes(ISO_8859_1));
