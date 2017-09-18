@@ -75,8 +75,6 @@ public class DepfileComDecrypter extends PluginForDecrypt {
                         d.setDownloadSize(SizeFormatter.getSize(s));
                     }
                     d.setAvailable(true);
-                    // set linkid based on info OTHER than domain, this should prevent dupes.
-                    d.setLinkID(l.replaceFirst("https?://[^/]+", ""));
                     decryptedLinks.add(d);
                 }
             }
