@@ -81,6 +81,14 @@ public class DepfileCom extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        // force https for links.
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+        // set linkid based on info OTHER than domain, this should prevent dupes.
+        link.setLinkID("depfile://" + link.getPluginPatternMatcher().replaceFirst("https?://[^/]+", ""));
+    }
+
+    @Override
     public String[] siteSupportedNames() {
         return new String[] { "depfile.com", "dipfile.com", "depfile.us" };
     }
@@ -111,14 +119,12 @@ public class DepfileCom extends PluginForHost {
         br.setCookie(MAINPAGE.get(), "sdlanguageid", "2");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         br = newBrowser();
         prepBrowser();
         br.setFollowRedirects(true);
-        // set linkid based on info OTHER than domain, this should prevent dupes.
-        link.setLinkID(link.getPluginPatternMatcher().replaceFirst("https?://[^/]+", ""));
         br.getPage(link.getPluginPatternMatcher());
         final DepfileConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DepfileCom.DepfileConfigInterface.class);
         if (isOfflineHTML() && br.containsHTML("RESTORE ACCESS TO THE FILE") && cfg.isEnableDMCADownload()) {
