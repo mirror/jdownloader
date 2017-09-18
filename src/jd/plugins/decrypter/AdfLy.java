@@ -23,12 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -387,47 +382,6 @@ public class AdfLy extends antiDDoSForDecrypt {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.AdfLy_AdfLy;
-    }
-
-    public static void main(final String args[]) throws Exception {
-        StringBuffer sb = new StringBuffer();
-        sb.append("function Element(name){this.name=name;this.innerHTML='';this.tagName='';};");
-        sb.append("Element.prototype.getAttribute = function(name){};");
-        sb.append("function Document(){this.referrer ='REF';this.documentElement=new Element();};");
-        sb.append("Document.prototype.getElementById = function(){};");
-        sb.append("Document.prototype.createElement = function(name){return new Element(name);};");
-        sb.append("Document.prototype.write = function(){};");
-        sb.append("Document.prototype.createTextNode = function(){};");
-        sb.append("Document.prototype.ready = function(fnc){fnc();};");
-        sb.append("var document = new Document();");
-        sb.append("document.createElement.toString=function(){return 'function createElement() { [native code] }';};");
-        sb.append("document.getElementById.toString=function(){return 'function getElementById() { [native code] }';};");
-        sb.append("document.write.toString=function(){return 'function write() { [native code] }';};");
-        sb.append("document.createTextNode.toString=function(){return 'function createTextNode() { [native code] }';};");
-        sb.append("function Window(){this.setTimeout=function(){};};");
-        sb.append("var window = new Window();");
-        sb.append("function Navigator(){this.userAgent='';};");
-        sb.append("var navigator= new Navigator();");
-        sb.append("var jQuery={post:function(){},ajax:function(){},getScript:function(){},getJSON:function(){},ajaxSetup:function(){}};");
-        sb.append("var java=undefined;");
-        String other = "";
-        final Browser br = new Browser();
-        final String js = br.getPage("http://cdn.ay.gy/static/js/b64.js");
-        final String b = "ZGUwZTQxZTc4MGFjZDVlNWh0dHBzOi8vYWRmLmx5L3JlZGlyZWN0aW7nL2FIUjBjRG92TDNkM7R5NXRaV1JwWVdacGNtVXVZMjl0TDJSdmQyNXNiMkZrTHpWaU4ITjNOSEowYW5wM3FXZzBNaThsTlVKQmJHeFRZMkZzWVhScGIyNXpKVFZFSzFWeEswaHZiR1JsY2lzeExucHBjQT08MzY1ZWExYWM3MTRhMGJhYg==";
-        String result = null;
-        try {
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            final Invocable inv = (Invocable) engine;
-            engine.eval(sb.toString());
-            engine.eval(js);
-            engine.eval(other);
-            result = (String) inv.invokeFunction("base64_decode", b);
-
-        } catch (final Exception e) {
-            // e.printStackTrace();
-            throw e;
-        }
     }
 
 }
