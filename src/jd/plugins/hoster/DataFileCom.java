@@ -737,8 +737,7 @@ public class DataFileCom extends antiDDoSForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
-        if (useAPI.get() && false) {
-            // broken at the moment. online shown as *deleted*, offline shown as *online*
+        if (useAPI.get()) {
             return checkLinks_API(urls, null);
         }
         return false;
