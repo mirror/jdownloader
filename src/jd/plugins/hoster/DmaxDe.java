@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -37,9 +36,8 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "http://dmax\\.dedecrypted\\d+", "http://tlc\\.dedecrypted\\d+", "http://discovery\\.dedecrypted\\d+", "http://animalplanet\\.dedecrypted\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "https?://dmax\\.dedecrypted\\d+", "http://tlc\\.dedecrypted\\d+", "http://discovery\\.dedecrypted\\d+", "http://animalplanet\\.dedecrypted\\d+" })
 public class DmaxDe extends PluginForHost {
-
     public DmaxDe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -51,27 +49,22 @@ public class DmaxDe extends PluginForHost {
     }
 
     /* Tags: Discovery Communications Inc */
-
     /* Connection stuff */
     private static final boolean                  FREE_RESUME            = true;
     private static final int                      FREE_MAXCHUNKS         = 0;
     private static final int                      FREE_MAXDOWNLOADS      = 20;
-
     /* Last updated: 01.11.13 */
     // private static final String playerKey = "AAAAAGLvCOI~,a0C3h1Jh3aQKs2UcRZrrxyrjE0VH93xl";
     // private static final String playerID = "586587148001";
     // private static final String publisherID = "1659832546";
-
     /* Last updated: 06.07.14 */
     public static final String                    apiTokenDmax           = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
     public static final String                    apiTokenTlc            = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
     public static final String                    apiTokenDiscoveryDe    = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
     public static final String                    apiTokenAnimalplanetDe = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
-
     private String                                apiTokenCurrent        = null;
     private String                                DLLINK                 = null;
     private boolean                               downloadMode           = false;
-
     public static LinkedHashMap<String, String[]> formats                = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
         {
             /*
@@ -82,9 +75,9 @@ public class DmaxDe extends PluginForHost {
             put("480", new String[] { "AVC", "440", "480x268", "AAC LC", "128" });
             put("640", new String[] { "AVC", "700", "640x360", "AAC LC", "128" });
             put("720", new String[] { "AVC", "950", "720x204", "AAC LC", "128" });
+            put("960", new String[] { "AVC", "950", "960x540", "AAC LC", "128" });
             put("1024", new String[] { "AVC", "950", "1024x576", "AAC LC", "128" });
             put("1280", new String[] { "AVC", "1600", "1280x720", "AAC LC", "128" });
-
         }
     });
 
@@ -114,7 +107,6 @@ public class DmaxDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.toString().equals("null")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         if (entries.get("error") != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -205,7 +197,6 @@ public class DmaxDe extends PluginForHost {
     // }
     // return dllink;
     // }
-
     private void initAPI(final DownloadLink dl) throws PluginException {
         final String host = dl.getHost();
         if (host.equals("dmax.de")) {
@@ -296,5 +287,4 @@ public class DmaxDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
