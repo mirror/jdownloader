@@ -45,17 +45,17 @@ public class DepfileComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = correctDownloadLink(param.toString());
+        plugin = JDUtilities.getPluginForHost("depfile.com");
+        final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         final String folder_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-        // Set English language
-        br.setCookie(this.getHost(), "sdlanguageid", "2");
+        ((jd.plugins.hoster.DepfileCom) plugin).setBrowser(br);
+        ((jd.plugins.hoster.DepfileCom) plugin).prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-
         handleErrors();
         // mass adding links from folders can cause exceptions and high server loads. when possible best practice to set all info, a full
         // linkcheck happens prior to download which can correct any false positives by doing the following..
@@ -75,6 +75,8 @@ public class DepfileComDecrypter extends PluginForDecrypt {
                         d.setDownloadSize(SizeFormatter.getSize(s));
                     }
                     d.setAvailable(true);
+                    // set linkid based on info OTHER than domain, this should prevent dupes.
+                    d.setLinkID(l.replaceFirst("https?://[^/]+", ""));
                     decryptedLinks.add(d);
                 }
             }
@@ -99,11 +101,6 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     }
 
     private PluginForHost plugin = null;
-
-    private String correctDownloadLink(String parameter) {
-        plugin = JDUtilities.getPluginForHost("depfile.com");
-        return ((jd.plugins.hoster.DepfileCom) plugin).correctDownloadLink(parameter);
-    }
 
     private void handleErrors() throws Exception {
         try {
