@@ -13,6 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -24,10 +25,20 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -41,21 +52,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
+
     private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
-    private static final String            MAINPAGE                     = "https://depfile.us/";
+    private static AtomicReference<String> MAINPAGE                     = new AtomicReference<String>("https://depfile.com/");
     private static Object                  LOCK                         = new Object();
     private static final String            ONLY4PREMIUM                 = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String            ONLY4PREMIUMUSERTEXT         = "Only downloadable for premium users";
+
     private static final long              FREE_RECONNECTWAIT           = 1 * 60 * 60 * 1001L;
     private String                         PROPERTY_LASTIP              = "DEPFILECOM_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD        = "depfilecom_lastdownload_timestamp";
@@ -77,8 +82,7 @@ public class DepfileCom extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        // keep2.cc no dns
-        return new String[] { "i-filez.com", "depfile.com", "dipfile.com", "depfile.us" };
+        return new String[] { "depfile.com", "dipfile.com", "depfile.us" };
     }
 
     @Override
@@ -99,28 +103,25 @@ public class DepfileCom extends PluginForHost {
         return "http://depfile.com/terms";
     }
 
-    public String correctDownloadLink(final String parameter) {
-        final String result = parameter.replaceFirst("(?:i-filez\\.com|dipfile\\.com|depfile\\.us)/", "depfile.com/").replace("http://", "https://");
-        return result;
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        // Links come from a decrypter
-        link.setUrlDownload(correctDownloadLink(link.getPluginPatternMatcher()));
+    public void prepBrowser() {
+        br.setCustomCharset("utf-8");
+        // they set base language on accept language without cookie
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        // Set English language
+        br.setCookie(MAINPAGE.get(), "sdlanguageid", "2");
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
-        this.setBrowserExclusive();
-        // Set English language
-        br.setCookie(MAINPAGE, "sdlanguageid", "2");
-        br.setCustomCharset("utf-8");
+        br = newBrowser();
+        prepBrowser();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        // set linkid based on info OTHER than domain, this should prevent dupes.
+        link.setLinkID(link.getPluginPatternMatcher().replaceFirst("https?://[^/]+", ""));
+        br.getPage(link.getPluginPatternMatcher());
         final DepfileConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DepfileCom.DepfileConfigInterface.class);
-        if (isOfflineHTML() && this.br.containsHTML("RESTORE ACCESS TO THE FILE") && cfg.isEnableDMCADownload()) {
+        if (isOfflineHTML() && br.containsHTML("RESTORE ACCESS TO THE FILE") && cfg.isEnableDMCADownload()) {
             return AvailableStatus.UNCHECKABLE;
         } else if (isOfflineURL()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -162,6 +163,7 @@ public class DepfileCom extends PluginForHost {
         if (br.containsHTML(ONLY4PREMIUM)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT), PluginException.VALUE_ID_PREMIUM_ONLY);
         }
+
         this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, Property.NULL);
         currentIP.set(this.getIP());
         synchronized (CTRLLOCK) {
@@ -171,7 +173,9 @@ public class DepfileCom extends PluginForHost {
                 blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
             }
         }
+
         /* 2017-03-25: It is not possible to re-use generated direct URLs --> So we don't even try it! */
+
         /**
          * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
          */
@@ -191,6 +195,7 @@ public class DepfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
             }
         }
+
         String verifycode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
         if (verifycode == null) {
             verifycode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
@@ -274,26 +279,28 @@ public class DepfileCom extends PluginForHost {
     private AccountInfo login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                br.setCookiesExclusive(true);
-                br.setCustomCharset("utf-8");
-                // Set English language
-                br.setCookie(MAINPAGE, "sdlanguageid", "2");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookiesExclusive(true);
+                    prepBrowser();
+                    br.setCookies(MAINPAGE.get(), cookies);
                     return null;
                 }
+                br = newBrowser();
+                prepBrowser();
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE, "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
+                br.getPage(MAINPAGE.get());
+                br.postPage("/", "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
                 /*
                  * they set language based on account profile, so it can be wrong post login. Language not English? Change setting and go
                  * on!
                  */
-                if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
-                    br.setCookie(MAINPAGE, "sdlanguageid", "2");
+                if (!"2".equals(br.getCookie(MAINPAGE.get(), "sdlanguageid"))) {
+                    br.setCookie(MAINPAGE.get(), "sdlanguageid", "2");
                     br.getPage("/");
                 }
-                if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) {
+
+                if (br.getCookie(MAINPAGE.get(), "sduserid") == null || br.getCookie(MAINPAGE.get(), "sdpassword") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -331,7 +338,7 @@ public class DepfileCom extends PluginForHost {
                 }
                 account.setValid(true);
                 setAccountTrafficLimits(account, ai);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(MAINPAGE.get()), "");
                 return ai;
             } catch (PluginException e) {
                 account.clearCookies("");
@@ -376,7 +383,6 @@ public class DepfileCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        br = new Browser();
         requestFileInformation(downloadLink);
         login(account, false);
         if (AccountType.FREE.equals(account.getType())) {
@@ -462,8 +468,8 @@ public class DepfileCom extends PluginForHost {
              * the only way we can get these values!
              */
             final long traffic_max;
-            final String traffic_used_str = this.br.getRegex("Used today\\s*?:\\s*?<b>([^<>\"\\']+)</b>").getMatch(0);
-            String traffic_max_str = this.br.getRegex("Download traffic per day\\s*?:\\s*?<b>([^<>\"\\']+)</b>").getMatch(0);
+            final String traffic_used_str = br.getRegex("Used today\\s*?:\\s*?<b>([^<>\"\\']+)</b>").getMatch(0);
+            String traffic_max_str = br.getRegex("Download traffic per day\\s*?:\\s*?<b>([^<>\"\\']+)</b>").getMatch(0);
             if (traffic_max_str == null) {
                 /* 2017-03-24: Hardcoded fallback */
                 traffic_max_str = "40GB";
@@ -578,7 +584,7 @@ public class DepfileCom extends PluginForHost {
     }
 
     private boolean isOfflineURL() {
-        if (this.br._getURL().getPath().equals("/premium")) {
+        if (br._getURL().getPath().equals("/premium")) {
             return true;
         }
         return false;
@@ -604,6 +610,32 @@ public class DepfileCom extends PluginForHost {
             logger.warning("File not found OR file removed from provider");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+    }
+
+    public Browser newBrowser() {
+
+        Browser nbr = new Browser() {
+
+            @Override
+            public void updateCookies(Request request) {
+                super.updateCookies(request);
+                // sync cookies between domains!
+                final String host = Browser.getHost(request.getUrl());
+                // update default host
+                if (!(Browser.getHost(MAINPAGE.get()).equals(host))) {
+                    MAINPAGE.set("https://" + host + "/");
+                }
+                for (final String domain : siteSupportedNames()) {
+                    if (domain.equals(host)) {
+                        continue;
+                    }
+                    for (Cookie c : this.getCookies(host).getCookies()) {
+                        this.setCookie(domain, c.getKey(), c.getValue());
+                    }
+                }
+            }
+        };
+        return nbr;
     }
 
     @Override
@@ -633,7 +665,9 @@ public class DepfileCom extends PluginForHost {
     }
 
     public static interface DepfileConfigInterface extends PluginConfigInterface {
+
         public static class TRANSLATION {
+
             public String getEnableDMCADownload_label() {
                 return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till depfile irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart";
             }
@@ -641,6 +675,7 @@ public class DepfileCom extends PluginForHost {
             public String getEnableReconnectWorkaround_label() {
                 return "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.";
             }
+
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -656,5 +691,7 @@ public class DepfileCom extends PluginForHost {
         boolean isEnableReconnectWorkaround();
 
         void setEnableReconnectWorkaround(boolean b);
+
     }
+
 }
