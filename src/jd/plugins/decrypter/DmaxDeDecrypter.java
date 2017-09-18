@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -38,23 +37,19 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dmax.de" }, urls = { "http://(www\\.)?(dmax|tlc|animalplanet|discovery)\\.de/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dmax.de" }, urls = { "https?://(www\\.)?(dmax|tlc|animalplanet|discovery)\\.de/.+" })
 public class DmaxDeDecrypter extends PluginForDecrypt {
-
     public DmaxDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Tags: Discovery Communications Inc */
     private static final String type_videoid    = "https?://.+/#\\d+$";
-
     private static final String DOMAIN          = "dmax.de";
-
     private String              apiTokenCurrent = null;
 
     /* Settings stuff */
     // private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
-
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister-host plugin */
@@ -65,8 +60,8 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
         ArrayList<Object> ressourcelist = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.DmaxDe.formats;
-        final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
-        final String nicehost_nicer = new Regex(parameter, "http://(?:www\\.)?([^/]+)\\.de/").getMatch(0);
+        final String nicehost = new Regex(parameter, "https?://(?:www\\.)?([^/]+)").getMatch(0);
+        final String nicehost_nicer = new Regex(parameter, "https=://(?:www\\.)?([^/]+)\\.de/").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         this.br.setFollowRedirects(false);
@@ -94,7 +89,6 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
             }
             title = encodeUnicode(title);
             FilePackage fp = null;
-
             for (final Object o : ressourcelist) {
                 final LinkedHashMap<String, Object> vdata = (LinkedHashMap<String, Object>) o;
                 String directlink = (String) vdata.get("url");
@@ -121,19 +115,16 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 if (vpath != null) {
                     directlink = "http://discoveryint1.edgeboss.net/download/discoveryint1/" + vpath;
                 }
-
                 if (fp == null) {
                     fp = FilePackage.getInstance();
                     fp.setName(date_formatted + "_" + nicehost_nicer + "_" + title);
                 }
-
                 if (width != null && height != null && osize != null && formats.containsKey(width) && cfg.getBooleanProperty(width, true)) {
                     final long filesize = JavaScriptEngineFactory.toLong(osize, -1);
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     final String[] vidinfo = formats.get(width);
                     String filename = date_formatted + "_" + nicehost_nicer + "_" + title + "_" + getFormatString(vidinfo, width + "x" + height);
                     filename += ".mp4";
-
                     try {
                         dl.setContentUrl(parameter);
                         dl.setLinkID(vid + filename);
@@ -159,7 +150,6 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                     /* Unknown format (usually only 1 quality available then --> Decrypt it regardless of the users' settings. */
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     final String filename = date_formatted + "_" + nicehost_nicer + "_" + title + ".mp4";
-
                     try {
                         dl.setContentUrl(parameter);
                         dl.setLinkID(vid);
@@ -180,7 +170,6 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 } else {
                     logger.warning("WTF");
                 }
-
             }
         } else {
             /* Playlist with videoids --> Decrypt --> Goes back into the decrypter */
@@ -293,5 +282,4 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
