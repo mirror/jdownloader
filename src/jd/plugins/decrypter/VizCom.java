@@ -15,9 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,10 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)[^/]+/\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
+
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,11 +50,11 @@ public class VizCom extends antiDDoSForDecrypt {
          * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for
          * the proper amount of pages, and then only use Length: x pages if var pages = 0
          */
-        // String pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
-        String pages_str = this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0);
-        if (pages_str == null) {
+        // String pages_str = br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
+        String pages_str = br.getRegex("var pages\\s*=\\s*(\\d+);").getMatch(0);
+        if (pages_str == null || "0".equals(pages_str)) {
             /* Fog: If it reaches this point, assume that this is the correct amount of pages (WSJ seems to always set var pages = 0) */
-            pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
+            pages_str = br.getRegex("<strong>Length</strong>\\s*(\\d+)\\s*pages\\s*</div>").getMatch(0);
         }
         final int pages = Integer.parseInt(pages_str);
         final Regex urlinfo = new Regex(parameter, "([^/]+)/(\\d+)");
@@ -71,8 +71,8 @@ public class VizCom extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             final int page_for_url_access = page_current;
-            // accessPage(this.br, manga_id, Integer.toString(page_for_url_access));
-            // final String[] urls = this.br.getRegex("url=\"(http[^<>\"]+)\"").getColumn(0);
+            // accessPage(br, manga_id, Integer.toString(page_for_url_access));
+            // final String[] urls = br.getRegex("url=\"(http[^<>\"]+)\"").getColumn(0);
             final String[] dummyarray = new String[] { Integer.toString(page_current), Integer.toString(page_current + 1) };
             page_added_num = dummyarray.length;
             for (final String dummy : dummyarray) {
@@ -96,7 +96,7 @@ public class VizCom extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    public static void accessPage(final Browser br, final String manga_id, final String page) throws IOException {
+    public static void accessPage(final Browser br, final String manga_id, final String page) throws Exception {
         final String page_url = "https://www." + br.getHost() + "/manga/get_manga_url?manga_id=" + manga_id + "&page=" + page + "&device_id=3&loadermax=1";
         br.getHeaders().put("Referer", "https://www.viz.com/assets/reader-" + System.currentTimeMillis() + ".swf");
         br.getPage(page_url);
