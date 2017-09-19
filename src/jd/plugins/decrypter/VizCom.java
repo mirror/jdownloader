@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapter/|issue/)[^/]+/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)[^/]+/\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,11 +46,15 @@ public class VizCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        /* Always visible */
-        String pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
-        if (pages_str == null) {
-            /* For premium-only content, if user is not logged in, this will always be '0'! */
-            pages_str = this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0);
+        /*
+         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for the
+         * proper amount of pages, and then only use Length: x pages if var pages = 0
+         */
+        // String pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
+        String pages_str = this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0);
+        if (pages_str.equals("0")) {
+            /* Fog: If it reaches this point, assume that this is the correct amount of pages (WSJ seems to always set var pages = 0) */
+            pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
         }
         final int pages = Integer.parseInt(pages_str);
         final Regex urlinfo = new Regex(parameter, "([^/]+)/(\\d+)");
