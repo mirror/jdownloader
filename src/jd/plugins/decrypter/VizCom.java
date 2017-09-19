@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)[^/]+/\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
@@ -47,12 +47,12 @@ public class VizCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         /*
-         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for the
-         * proper amount of pages, and then only use Length: x pages if var pages = 0
+         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for
+         * the proper amount of pages, and then only use Length: x pages if var pages = 0
          */
         // String pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
         String pages_str = this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0);
-        if (pages_str.equals("0")) {
+        if (pages_str == null) {
             /* Fog: If it reaches this point, assume that this is the correct amount of pages (WSJ seems to always set var pages = 0) */
             pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
         }
