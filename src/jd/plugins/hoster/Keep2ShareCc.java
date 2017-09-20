@@ -269,7 +269,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileNameNew2017() {
-        String fileName = br.getRegex("<span class=\"name-file\">\\s*(.*?)\\s*<em").getMatch(0);
+        String fileName = br.getRegex("<span class=\"name-file\">\\s*(.*?)\\s*(<em|</)").getMatch(0);
         if (fileName == null) {
             fileName = br.getRegex("class=\"title-file\">\\s*([^<>\"]+)\\s*<").getMatch(0);
             if (fileName == null) {
@@ -281,8 +281,11 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileSizeNew2017() {
-        final String filesize = br.getRegex("<span class=\"name-file\">.*?<em>(.*?)</em").getMatch(0);
-        return filesize;
+        String fileSize = br.getRegex("<b>Size:\\s*</b>\\s*([0-9\\.]+\\s*[TKGM]B)\\s*<").getMatch(0);
+        if (fileSize == null) {
+            fileSize = br.getRegex("<span class=\"name-file\">.*?<em>\\s*([0-9\\.]+\\s*[TKGM]B)\\s*(</em|</)").getMatch(0);
+        }
+        return fileSize;
     }
 
     public String getFileName() {
@@ -292,10 +295,10 @@ public class Keep2ShareCc extends K2SApi {
             fileName = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
         }
         if (fileName == null) {
-            fileName = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
+            fileName = br.getRegex("File: <span>\\s*([^<>\"]*?)\\s*</span>").getMatch(0);
             if (fileName == null) {
                 // offline/deleted
-                fileName = br.getRegex("File name:</b>(.*?)<br>").getMatch(0);
+                fileName = br.getRegex("File name:</b>\\s*(.*?)\\s*<br>").getMatch(0);
             }
         }
         return fileName;
@@ -313,7 +316,7 @@ public class Keep2ShareCc extends K2SApi {
                 filesize = br.getRegex("<b>File size:</b>(.*?)<br>").getMatch(0);
                 if (filesize == null) {
                     // offline/deleted
-                    filesize = br.getRegex("<span class=\"(?:name|title)-file\">\\s*.*?\\s*<em>\\s*([0-9\\. KMBT]+)").getMatch(0);
+                    filesize = br.getRegex("<span class=\"(?:name|title)-file\">\\s*.*?\\s*<em>\\s*([0-9\\.]+\\s*[TKGM]B)").getMatch(0);
                 }
             }
         }
