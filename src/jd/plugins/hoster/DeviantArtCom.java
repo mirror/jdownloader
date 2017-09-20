@@ -284,6 +284,7 @@ public class DeviantArtCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += "." + ext.trim();
         }
+        filename = filename.replaceAll(" +", " ");
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -344,6 +345,9 @@ public class DeviantArtCom extends PluginForHost {
         }
         if (DLLINK == null) {
             getDllink();
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
@@ -369,6 +373,9 @@ public class DeviantArtCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (DLLINK == null) {
             getDllink();
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");

@@ -23,7 +23,6 @@ import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.logging.LogController;
 
 public class LogAPIImpl implements LogAPI {
-
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
 
     @Override
@@ -39,7 +38,9 @@ public class LogAPIImpl implements LogAPI {
             }
         }
         if (current != null) {
-            result.add(0, LogFolderStorable.create(current));
+            final LogFolderStorable storable = LogFolderStorable.create(current);
+            storable.setCurrent(true);
+            result.add(0, storable);
         }
         return result;
     }
@@ -56,7 +57,6 @@ public class LogAPIImpl implements LogAPI {
         }
         final ArrayList<LogFolder> logFolders = AbstractLogAction.getLogFolders();
         final ArrayList<LogFolder> selectedLogFolders = new ArrayList<LogFolder>();
-
         for (final LogFolderStorable storable : selectedFolders) {
             for (final LogFolder logFolder : logFolders) {
                 if (logFolder.getCreated() == storable.getCreated() && logFolder.getLastModified() == storable.getLastModified()) {
@@ -67,7 +67,6 @@ public class LogAPIImpl implements LogAPI {
         if (!selectedLogFolders.isEmpty()) {
             final AtomicReference<String> logIDRef = new AtomicReference<String>(null);
             final Thread uploadThread = new Thread(new Runnable() {
-
                 @Override
                 public void run() {
                     String logID = null;
@@ -95,7 +94,6 @@ public class LogAPIImpl implements LogAPI {
                         if (zip != null) {
                             zip.delete();
                         }
-
                     }
                 }
             }, "LogAPIImpl:sendLogFile");

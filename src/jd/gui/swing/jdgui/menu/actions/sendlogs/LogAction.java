@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.menu.actions.sendlogs;
 
 import java.io.File;
@@ -37,7 +36,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.startup.commands.ThreadDump;
 
 public class LogAction extends AbstractLogAction {
-
     protected String id;
 
     public LogAction() {
@@ -87,5 +85,4 @@ public class LogAction extends AbstractLogAction {
         final long startup = LogController.getInstance().getInitTime();
         return startup == timestamp;
     }
-
 }
