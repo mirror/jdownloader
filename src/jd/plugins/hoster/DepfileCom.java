@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -24,14 +23,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -52,15 +43,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
-
     private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
     private static AtomicReference<String> MAINPAGE                     = new AtomicReference<String>("https://depfile.com/");
     private static Object                  LOCK                         = new Object();
     private static final String            ONLY4PREMIUM                 = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String            ONLY4PREMIUMUSERTEXT         = "Only downloadable for premium users";
-
     private static final long              FREE_RECONNECTWAIT           = 1 * 60 * 60 * 1001L;
     private String                         PROPERTY_LASTIP              = "DEPFILECOM_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD        = "depfilecom_lastdownload_timestamp";
@@ -169,7 +166,6 @@ public class DepfileCom extends PluginForHost {
         if (br.containsHTML(ONLY4PREMIUM)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT), PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-
         this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, Property.NULL);
         currentIP.set(this.getIP());
         synchronized (CTRLLOCK) {
@@ -179,9 +175,7 @@ public class DepfileCom extends PluginForHost {
                 blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
             }
         }
-
         /* 2017-03-25: It is not possible to re-use generated direct URLs --> So we don't even try it! */
-
         /**
          * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
          */
@@ -201,7 +195,6 @@ public class DepfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
             }
         }
-
         String verifycode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
         if (verifycode == null) {
             verifycode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
@@ -305,7 +298,6 @@ public class DepfileCom extends PluginForHost {
                     br.setCookie(MAINPAGE.get(), "sdlanguageid", "2");
                     br.getPage("/");
                 }
-
                 if (br.getCookie(MAINPAGE.get(), "sduserid") == null || br.getCookie(MAINPAGE.get(), "sdpassword") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -619,16 +611,14 @@ public class DepfileCom extends PluginForHost {
     }
 
     public Browser newBrowser() {
-
         Browser nbr = new Browser() {
-
             @Override
             public void updateCookies(Request request) {
                 super.updateCookies(request);
                 // sync cookies between domains!
                 final String host = Browser.getHost(request.getUrl());
                 // update default host
-                if (!(Browser.getHost(MAINPAGE.get()).equals(host))) {
+                if (!(Browser.getHost(MAINPAGE.get()).equals(host)) && !host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
                     MAINPAGE.set("https://" + host + "/");
                 }
                 for (final String domain : siteSupportedNames()) {
@@ -671,9 +661,7 @@ public class DepfileCom extends PluginForHost {
     }
 
     public static interface DepfileConfigInterface extends PluginConfigInterface {
-
         public static class TRANSLATION {
-
             public String getEnableDMCADownload_label() {
                 return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till depfile irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart";
             }
@@ -681,7 +669,6 @@ public class DepfileCom extends PluginForHost {
             public String getEnableReconnectWorkaround_label() {
                 return "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.";
             }
-
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -697,7 +684,5 @@ public class DepfileCom extends PluginForHost {
         boolean isEnableReconnectWorkaround();
 
         void setEnableReconnectWorkaround(boolean b);
-
     }
-
 }
