@@ -122,21 +122,17 @@ public class FilestoreTo extends PluginForHost {
         if (br.containsHTML(Pattern.quote(">Der Download ist nicht bereit !</span><br />Die Datei wird noch auf die Server verteilt.<br />Bitte versuche es in ein paar Minuten erneut.<"))) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         }
-        {
-            // form 1
-            final Form f = br.getFormByRegex(">Download</button>");
-            if (f != null) {
-                br.submitForm(f);
-            }
+        // form 1
+        Form f = br.getFormByRegex(">Download</button>");
+        if (f != null) {
+            br.submitForm(f);
         }
-        {
-            // form 2
-            final Form f = br.getFormByRegex(">Download starten</button>");
-            if (f != null) {
-                // not enforced
-                processWait();
-                br.submitForm(f);
-            }
+        // form 2
+        f = br.getFormByRegex(">Download starten</button>");
+        if (f != null) {
+            // not enforced
+            processWait();
+            br.submitForm(f);
         }
         final String dllink = getDllink();
         if (StringUtils.isEmpty(dllink)) {
