@@ -54,10 +54,6 @@ public class DeviantArtCom extends PluginForHost {
     public static String        CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
     private static final String GENERALFILENAMEREGEX             = "<title>([^<>\"]*?) on deviantART</title>";
     private static final String DLLINK_REFRESH_NEEDED            = "http://(www\\.)?deviantart\\.com/download/.+";
-    private static final String TYPE_DOWNLOADALLOWED_PDF         = ">Download PDF<";
-    private static final String TYPE_DOWNLOADALLOWED_SWF         = ">SWF download";
-    private static final String TYPE_DOWNLOADALLOWED_TXT         = ">TXT download<";
-    private static final String TYPE_DOWNLOADALLOWED_ZIP         = ">ZIP download<";
     private static final String TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">Download<";
     private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
     private static final String TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
@@ -139,80 +135,32 @@ public class DeviantArtCom extends PluginForHost {
         if (br.getURL().matches(TYPE_BLOG_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename;
+        String filename = null;
         String filename_server = null;
+        if (!getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
+            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename.trim());
+        }
         if (link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        } else if (link.getDownloadURL().matches(LINKTYPE_JOURNAL)) {
-            filename = br.getRegex("title>([^<>\"]*?)\\| DeviantArt</title>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("title>([^<>\"]*?)on DeviantArt</title>").getMatch(0);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else if (this.getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
-            DLLINK = getDOWNLOADdownloadlink(); // if DLLINK == null, findServerFilename -> getDllink will do getHQpic
-            filename = findServerFilename(null);
-            if (filename == null) {
-                filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-            }
-        } else {
-            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+            filename = Encoding.htmlDecode(filename.trim());
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
         String filesize = null;
         /* Check if either user wants to download the html code or if we have a linktype which needs this. */
         if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false) || link.getDownloadURL().matches(LINKTYPE_JOURNAL) || link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             HTMLALLOWED = true;
             DLLINK = br.getURL();
-            filename_server = findServerFilename(filename);
-            if (filename_server != null) {
-                filename = filename_server;
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
             }
             ext = "html";
-        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_PDF)) {
-            ext = "pdf";
-            /*
-             * Even though there is an official pdf download link for browsers which have no embedded pdf support, it won't work so we'll
-             * use the pdf viewer link which is basically the same
-             */
-            // DLLINK = getDOWNLOADdownloadlink();
-            DLLINK = br.getRegex("new PDFObject\\(\\{url: \\'(https?://[^<>\"]*?)\\'\\}").getMatch(0);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = Encoding.htmlDecode(DLLINK.trim());
-            filesize = getfileSize();
-        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_SWF)) {
-            /* For officially downloadable .swf files */
-            ext = "swf";
-            DLLINK = getDOWNLOADdownloadlink();
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = Encoding.htmlDecode(DLLINK.trim());
-            /* Special: Prefer server filename */
-            filename_server = findServerFilename(null);
-            if (filename_server != null) {
-                filename = filename_server;
-            }
-            filesize = getfileSize();
-        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_TXT)) {
-            ext = "txt";
-            DLLINK = getDOWNLOADdownloadlink();
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_ZIP)) {
-            ext = "zip";
-            DLLINK = getDOWNLOADdownloadlink();
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = Encoding.htmlDecode(DLLINK.trim());
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_GENERAL)) {
             /* Download for other extensions */
             final Regex fInfo = br.getRegex(">Download</span>[\t\n\r ]+<span class=\"text\">([A-Za-z0-9]{1,5}),? ([^<>\"]*?)</span>");
@@ -224,6 +172,9 @@ public class DeviantArtCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
+            }
         } else if (br.containsHTML(TYPE_DOWNLOADFORBIDDEN_SWF)) {
             filesize = getImageSize();
             String url_swf_sandbox = br.getRegex("class=\"flashtime\" src=\"(https?://sandbox\\.deviantart\\.com[^<>\"]*?)\"").getMatch(0);
@@ -237,18 +188,24 @@ public class DeviantArtCom extends PluginForHost {
             if (this.DLLINK == null) {
                 this.DLLINK = br.getRegex("id=\"sandboxembed\" src=\"(http[^<>\"]+\\.swf)\"").getMatch(0);
             }
-            filename = findServerFilename(filename);
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
+            }
             ext = "swf";
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_HTML)) {
             HTMLALLOWED = true;
-            filename = findServerFilename(filename);
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
+            }
             ext = "html";
             filesize = getfileSize();
         } else if (br.containsHTML(TYPE_DOWNLOADFORBIDDEN_HTML)) {
             HTMLALLOWED = true;
             // Download whole html site
             DLLINK = br.getURL();
-            filename = findServerFilename(filename);
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
+            }
             filesize = getfileSize();
             ext = "html";
             if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
@@ -261,7 +218,9 @@ public class DeviantArtCom extends PluginForHost {
             }
         } else if (br.containsHTML(TYPE_ACCOUNTNEEDED)) {
             /* Account needed to view/download */
-            filename = findServerFilename(filename);
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
+            }
             filesize = getfileSize();
             ext = "html";
         } else {
@@ -287,13 +246,6 @@ public class DeviantArtCom extends PluginForHost {
             if (cookie != null) {
                 br.setCookie(this.getHost(), "userinfo", cookie);
             }
-            if (this.getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
-                DLLINK = getDOWNLOADdownloadlink(); // if DLLINK == null, findServerFilename -> getDllink will do getHQpic
-                filename = findServerFilename(null);
-                if (filename == null) {
-                    filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-                }
-            }
             if (ext == null || ext.length() > 5) {
                 final String dllink = getCrippledDllink();
                 if (dllink != null) {
@@ -302,6 +254,9 @@ public class DeviantArtCom extends PluginForHost {
             }
             if (ext == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (filename == null) { // Config FilenameFromServer is enabled
+                filename = findServerFilename(filename); // Depends on DLLINK
             }
         }
         if (filesize != null) {
