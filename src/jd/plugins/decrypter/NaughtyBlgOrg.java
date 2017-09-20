@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,8 +28,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+/?" })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -46,9 +49,11 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         category = Category.UNDEF;
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        br = new Browser();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read") || br.containsHTML(">Deleted due DMCA report<")) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -68,7 +73,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         contentReleaseName = contentReleaseName.replace("&#8211;", "-");
         contentReleaseName = Encoding.htmlDecode(contentReleaseName).trim();
 
-        String contentReleaseNamePrecise = br.getRegex("<p>[\\r\\n\\s]*<strong>(.*?)</strong>[\\r\\n\\s]*<br[/\\s]+>[\\r\\n\\s]*<em>Released:").getMatch(0);
+        String contentReleaseNamePrecise = br.getRegex("<p>\\s*<strong>(.*?)</strong>\\s*<br[/\\s]+>\\s*<em>Released:").getMatch(0);
         if (contentReleaseNamePrecise != null) {
             // remove possible link to tag-cloud
             contentReleaseNamePrecise = contentReleaseNamePrecise.replaceAll("<.*?>", "");
@@ -79,25 +84,17 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             int pos = contentReleaseName.lastIndexOf("-");
             if (pos != -1) {
                 contentReleaseName = contentReleaseName.substring(0, pos).trim();
-
                 contentReleaseName = contentReleaseName + " - " + contentReleaseNamePrecise;
             }
         }
-
         // check if DL is from the 'clips' section
-        Regex categoryCheck = null;
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-clips.*\">");
-        if (categoryCheck.matches()) {
+        if (br.getRegex("<div id=\"post-\\d+\" class=\".*category-clips.*\">").matches()) {
             category = Category.CLIP;
-        }
-        // check if DL is from the 'movies' section
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-movies.*\">");
-        if (categoryCheck.matches()) {
+        } else if (br.getRegex("<div id=\"post-\\d+\" class=\".*category-movies.*\">").matches()) {
+            // check if DL is from the 'movies' section
             category = Category.MOVIE;
-        }
-        // check if DL is from the 'siterips' section
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-siterips.*\">");
-        if (categoryCheck.matches()) {
+        } else if (br.getRegex("<div id=\"post-\\d+\" class=\".*category-siterips.*\">").matches()) {
+            // check if DL is from the 'siterips' section
             category = Category.SITERIP;
         }
         String contentReleaseLinks = null;
@@ -105,10 +102,10 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
+                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
             }
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
+                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
             }
         } else {
             // Get all links from title till comment field
