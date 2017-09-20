@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -51,9 +50,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downace.com" }, urls = { "https?://(?:www\\.)?downace\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downace.com" }, urls = { "https?://(?:www\\.)?downace\\.com/[A-Za-z0-9]+" })
 public class DownaceCom extends PluginForHost {
-
     public DownaceCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -68,7 +66,6 @@ public class DownaceCom extends PluginForHost {
      * captchatype: null<br />
      * other:<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -99,18 +96,16 @@ public class DownaceCom extends PluginForHost {
     private static final String            errortext_ERROR_SERVER                       = "Server error";
     private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = 0;
+    private static final int               free_MAXCHUNKS                               = -8;
     private static final int               free_MAXDOWNLOADS                            = 20;
     private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = 0;
+    private static final int               account_FREE_MAXCHUNKS                       = -8;
     private static final int               account_FREE_MAXDOWNLOADS                    = 20;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = -8;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
-
     private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
@@ -681,5 +676,4 @@ public class DownaceCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }
