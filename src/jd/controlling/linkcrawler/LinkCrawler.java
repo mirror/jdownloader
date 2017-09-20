@@ -1579,6 +1579,7 @@ public class LinkCrawler {
         ret.setCollectingInfo(source.getCollectingInfo());
         ret.setSourceJob(source.getSourceJob());
         ret.setSourceUrls(source.getSourceUrls());
+        ret.setSourceLink(source);
         if (source.hasArchiveInfo()) {
             ret.setArchiveInfo(source.getArchiveInfo());
         }
@@ -2127,7 +2128,7 @@ public class LinkCrawler {
                 cryptedLink.setLazyC(lazyC);
                 final CrawledLink link = crawledLinkFactorybyCryptedLink(cryptedLink);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
-                if (source.getUrlLink() == null) {
+                if (source.getUrlLink() == null || StringUtils.equals(source.getUrlLink(), link.getURL())) {
                     // modify sourceLink because link arise from source(getMatchingLinks)
                     link.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
@@ -2170,7 +2171,7 @@ public class LinkCrawler {
             for (final String match : matches) {
                 final CrawledLink link = crawledLinkFactorybyURL(match);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
-                if (source.getUrlLink() == null) {
+                if (source.getUrlLink() == null || StringUtils.equals(source.getUrlLink(), link.getURL())) {
                     // modify sourceLink because link arise from source(getMatchingLinks)
                     link.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
@@ -2277,7 +2278,7 @@ public class LinkCrawler {
                             final boolean singleDest = crawledLinks.size() == 1;
                             for (final CrawledLink crawledLink : crawledLinks) {
                                 forwardCrawledLinkInfos(possibleCryptedLink, crawledLink, parentLinkModifier, sourceURLs, singleDest);
-                                if (possibleCryptedLink.getUrlLink() == null) {
+                                if (possibleCryptedLink.getUrlLink() == null || StringUtils.equals(possibleCryptedLink.getUrlLink(), crawledLink.getURL())) {
                                     // modify sourceLink because crawledLink arise from possibleCryptedLink(wplg.getDownloadLinks)
                                     crawledLink.setSourceLink(possibleCryptedLink.getSourceLink());
                                     if (possibleCryptedLink.getMatchingRule() != null) {

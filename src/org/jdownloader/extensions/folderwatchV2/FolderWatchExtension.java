@@ -16,6 +16,7 @@
 package org.jdownloader.extensions.folderwatchV2;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -55,6 +56,8 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -402,13 +405,29 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     }
                 });
             }
+            final String jobIDentifier = "[folderwatch:" + UniqueAlltimeID.next() + "]";
+            final CrawledLink currentLink = getCurrentLink();
             final CrawledLinkModifier jobModifier;
             if (modifiers.size() > 0) {
                 jobModifier = new CrawledLinkModifier() {
+                    private final boolean modify(CrawledLink link) {
+                        CrawledLink source = link;
+                        while (source != null) {
+                            if (StringUtils.startsWithCaseInsensitive(source.getUrlLink(), jobIDentifier)) {
+                                return true;
+                            } else {
+                                source = source.getSourceLink();
+                            }
+                        }
+                        return false;
+                    }
+
                     @Override
                     public void modifyCrawledLink(final CrawledLink link) {
-                        for (final CrawledLinkModifier mod : modifiers) {
-                            mod.modifyCrawledLink(link);
+                        if (modify(link)) {
+                            for (final CrawledLinkModifier mod : modifiers) {
+                                mod.modifyCrawledLink(link);
+                            }
                         }
                     }
                 };
@@ -420,7 +439,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 final LinkCrawler lc = new LinkCrawler(false, false) {
                     private final CrawledLinkModifier crawledLinkModifier;
                     {
-                        final CrawledLink currentLink = getCurrentLink();
                         final LinkCollectingJob job;
                         if (jobModifier != null && currentLink != null && (job = currentLink.getSourceJob()) != null) {
                             if (crawlJob.isOverwritePackagizerEnabled()) {
@@ -433,17 +451,18 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             crawledLinkModifier = jobModifier;
                         }
                     }
+                    private final Charset             UTF8 = Charset.forName("UTF-8");
 
                     @Override
                     protected CrawledLink crawledLinkFactorybyURL(CharSequence url) {
-                        final CrawledLink ret = super.crawledLinkFactorybyURL(url);
+                        final CrawledLink ret = super.crawledLinkFactorybyURL(jobIDentifier + Base64.encodeToString(url.toString().getBytes(UTF8)));
                         ret.setCustomCrawledLinkModifier(crawledLinkModifier);
                         return ret;
                     }
                 };
-                final List<CrawledLink> result = lc.find(null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled(), false);
-                if (result != null) {
-                    results.addAll(result);
+                final List<CrawledLink> ret = lc.find(null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled(), false);
+                if (ret != null) {
+                    results.addAll(ret);
                 }
                 break;
             default:
