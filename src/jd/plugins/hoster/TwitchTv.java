@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,6 +26,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,6 +42,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -94,6 +97,12 @@ public class TwitchTv extends PluginForHost {
         final Request request = ret.createFormRequest(form);
         request.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        for (InputField inputField : form.getInputFields()) {
+            if ("authenticity_token".equals(inputField.getProperty("id", null))) {
+                request.getHeaders().put("X-CSRF-Token", Encoding.htmlDecode(URLDecoder.decode(inputField.getValue(), "UTF-8")));
+                break;
+            }
+        }
         ret.getPage(request);
         return ret;
     }
@@ -646,10 +655,15 @@ public class TwitchTv extends PluginForHost {
                         }
                         f.put("username", Encoding.urlEncode(account.getUser()));
                         f.put("password", Encoding.urlEncode(account.getPass()));
+                        f.put("redirect_path", Encoding.urlEncode("https://www.twitch.tv/"));
+                        f.put("time_to_submit", (4 + new Random().nextInt(4)) + "." + new Random().nextInt(9) + "" + new Random().nextInt(9) + "" + new Random().nextInt(9));
                         // json now!
                         final Browser ajax = ajaxSubmitForm(f);
                         // correct will redirect, with no cookies until following redirect; incorrect has error message && no cookies.
-                        final String redirect = PluginJSonUtils.getJsonValue(ajax, "redirect");
+                        String redirect = PluginJSonUtils.getJsonValue(ajax, "redirect");
+                        if (redirect == null) {
+                            redirect = PluginJSonUtils.getJsonValue(ajax, "redirect_path");
+                        }
                         if (redirect != null) {
                             // not with json headers
                             ajax.getPage(redirect);
