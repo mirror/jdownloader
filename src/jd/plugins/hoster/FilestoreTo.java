@@ -133,6 +133,8 @@ public class FilestoreTo extends PluginForHost {
             // form 2
             final Form f = br.getFormByRegex(">Download starten</button>");
             if (f != null) {
+                // not enforced
+                processWait();
                 br.submitForm(f);
             }
         }
@@ -140,7 +142,6 @@ public class FilestoreTo extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        processWait();
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -165,7 +166,7 @@ public class FilestoreTo extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("<a href=(\"|')(.*?)\\1").getMatch(1);
+        String dllink = br.getRegex("<a href=(\"|')([^>]*)\\1>hier</a>").getMatch(1);
         if (dllink == null) {
             dllink = br.getRegex("<iframe class=\"downframe\" src=\"(.*?)\"").getMatch(0);
         }
