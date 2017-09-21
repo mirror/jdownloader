@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -36,6 +37,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -56,10 +58,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     /* Settings stuff */
     @SuppressWarnings("deprecation")
     private final SubConfiguration       cfg                                 = SubConfiguration.getConfig("save.tv");
-    private static final String          ACTIVATE_BETA_FEATURES              = "ACTIVATE_BETA_FEATURES";
-    private final String                 USEAPI                              = "USEAPI";
+    // private static final String ACTIVATE_BETA_FEATURES = "ACTIVATE_BETA_FEATURES";
     private final String                 CRAWLER_ONLY_ADD_NEW_IDS            = "CRAWLER_ONLY_ADD_NEW_IDS";
-    private final String                 CRAWLER_ENABLE_FASTER               = "CRAWLER_ENABLE_FASTER_2";
     private final String                 CRAWLER_ACTIVATE                    = "CRAWLER_ACTIVATE";
     private final String                 CRAWLER_DISABLE_DIALOGS             = "CRAWLER_DISABLE_DIALOGS";
     private final String                 CRAWLER_LASTHOURS_COUNT             = "CRAWLER_LASTHOURS_COUNT";
@@ -70,8 +70,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private static final int             API_ENTRIES_PER_REQUEST             = 1000;
     /* Website gets max 35 items per request. Using too much = server will ate us and return response code 500! */
     private static final int             SITE_ENTRIES_PER_REQUEST            = 100;
-    /* Max time in which save.tv recordings are saved inside a users' account. */
-    private static final long            TELECAST_ID_EXPIRE_TIME             = 32 * 24 * 60 * 60 * 1000l;
+    /*
+     * Max time in which save.tv recordings are saved inside a users' account. This value is only used to cleanup the internal HashMap of
+     * 'already downloaded' telecastIDs!
+     */
+    private static final long            TELECAST_ID_EXPIRE_TIME             = 62 * 24 * 60 * 60 * 1000l;
     /* Decrypter variables */
     final ArrayList<DownloadLink>        decryptedLinks                      = new ArrayList<DownloadLink>();
     final ArrayList<String>              dupecheckList                       = new ArrayList<String>();
@@ -113,7 +116,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         time_crawl_started = System.currentTimeMillis();
         parameter = param.toString();
         api_enabled = jd.plugins.hoster.SaveTv.is_API_enabled(this.getHost());
-        fast_linkcheck = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
+        fast_linkcheck = cfg.getBooleanProperty(jd.plugins.hoster.SaveTv.CRAWLER_ENABLE_FAST_LINKCHECK, false);
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
         only_grab_new_entries = cfg.getBooleanProperty(CRAWLER_ONLY_ADD_NEW_IDS, false);
         grab_last_hours_num = cfg.getLongProperty(CRAWLER_LASTHOURS_COUNT, 0);
@@ -254,16 +257,37 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     /** This will first grab alle IDs, then their details as the 2nd used request returns more information than the first one. */
     @SuppressWarnings("unchecked")
     private void api_decrypt_All(final Account acc) throws Exception {
+        /*
+         * We need the parameters here already as we might limit what the API sends us so we should apply the filter to the 'count' request
+         * as well so that we get a correct number.
+         */
+        final String api_records_parameters = getParametersRecordsAPI();
         /* First let's find the number of items to expect */
-        api_GET(this.br, "/records/count");
+        api_GET(this.br, "/records/count" + "?" + api_records_parameters);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        totalLinksNum = (int) JavaScriptEngineFactory.toLong(entries.get("count"), 0);
+        totalLinksNum += (int) JavaScriptEngineFactory.toLong(entries.get("count"), 0);
+        if (totalLinksNum == 0) {
+            logger.info("WTF zero entries in archive of current account");
+            return;
+        }
         /* Find out how many requests we will need */
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / API_ENTRIES_PER_REQUEST);
         requestCountMax = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
+        // /* We do not want entries which are in the future! */
+        // final String formattedMaxDate = formatToStvDate(time_crawl_started);
         /* Now let's decrypt everything */
         int offset = 0;
         int currentRequestCount = 0;
+        /**
+         * 'recordstates' Values: <br />
+         * 1 = The user has requested the format. <br />
+         * 2 = The format was successfully recorded or the recording process failed.<br />
+         * 3 = The format was recorded and encoded successful and the user can download the format.<br />
+         * 4 = The recording or encoding process produced errors. The user cannot download the format.<br />
+         * 5 = The user has deleted the format. <br />
+         * (Comma separated)
+         */
+        final String api_get_data = "?fields=" + jd.plugins.hoster.SaveTv.getRecordsFieldsValue() + "&" + api_records_parameters + "&offset=" + offset;
         /* API does not tell us the total number of telecastIDs so let's find that out first! */
         ArrayList<Object> ressourcelist;
         do {
@@ -271,9 +295,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 throw new DecrypterException("Decrypt aborted!");
             }
             logger.info("Request " + currentRequestCount + " of " + requestCountMax);
-            api_GET(this.br,
-                    "/records?fields=adfreeavailable%2C%20adfreelength%2C%20createdate%2C%20defect.adcut.availablelength%2C%20defect.adcut.expectedlength%2C%20defect.adcut.istelecastendset%2C%20defect.adcut.istelecaststartset%2C%20defect.encoding.followuptime.availablelength%2C%20defect.encoding.followuptime.expectedlength%2C%20defect.encoding.leadtime.availablelength%2C%20defect.encoding.leadtime.expectedlength%2C%20defect.encoding.telecast.availablelength%2C%20telecast.hasmoved%2C%20defect.encoding.telecast.expectedlength%2C%20enddate%2C%20formats%2C%20formats.recordformat.id%2C%20formats.recordformat.name%2C%20formats.recordstate.id%2C%20formats.recordstate.name%2C%20formats.retentiondate%2C%20formats.uncutvideosize%2C%20isadcutenabled%2C%20startdate%2C%20telecast.country%2C%20telecast.description%2C%20telecast.enddate%2C%20telecast.episode%2C%20telecast.id%2C%20telecast.startdate%2C%20telecast.subject%2C%20telecast.subtitle%2C%20telecast.title%2C%20telecast.tvcategory.id%2C%20telecast.tvcategory.name%2C%20telecast.tvstation.id%2C%20telecast.tvstation.name%2C%20telecast.tvsubcategory.id%2C%20telecast.tvsubcategory.name%2C%20telecast.year%2C%20telecastid%2C%20updatedate&limit="
-                            + API_ENTRIES_PER_REQUEST + "&offset=" + offset);
+            api_GET(this.br, "/records" + api_get_data + offset);
             ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object telecastID_o : ressourcelist) {
                 addID_api(acc, telecastID_o);
@@ -302,6 +324,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final int totalLinksInsideCurrentAccount_int = (int) Double.parseDouble(totalLinksInsideCurrentAccount);
         /* Parse as double as 'totalLinks' can contain dots although it makes absolutely no sense as that number will always be flat! */
         totalLinksNum += totalLinksInsideCurrentAccount_int;
+        if (totalLinksInsideCurrentAccount_int == 0) {
+            logger.info("WTF zero entries in archive of current account");
+            return;
+        }
         /* Save on account to display in account information */
         acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, Integer.toString(totalLinksInsideCurrentAccount_int));
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / SITE_ENTRIES_PER_REQUEST);
@@ -368,9 +394,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             throw new DecrypterException("Decryption aborted because of dupecheck-failure!");
         }
         final DownloadLink dl = createStvDownloadlink(acc, telecast_id);
+        /* 2017-09-21: API provides all information we need which is why we do not need a 'fast-linkcheck-setting' anymore! */
+        dl.setAvailable(true);
         jd.plugins.hoster.SaveTv.parseFilenameInformation_api(dl, entries, true);
         jd.plugins.hoster.SaveTv.parseQualityTagAPI(dl, jd.plugins.hoster.SaveTv.jsonGetFormatArrayAPI(entries));
-        if (id_IS_Allowed(dl)) {
+        if (telecastID_IS_AllowedGeneral(dl)) {
             dl.setName(jd.plugins.hoster.SaveTv.getFilename(this, dl));
             distribute(dl);
             decryptedLinks.add(dl);
@@ -389,9 +417,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             throw new DecrypterException("Decryption aborted because of dupecheck-failure!");
         }
         final DownloadLink dl = createStvDownloadlink(acc, telecast_id);
+        if (fast_linkcheck) {
+            dl.setAvailable(true);
+        }
         jd.plugins.hoster.SaveTv.parseFilenameInformation_site(dl, entries);
         jd.plugins.hoster.SaveTv.parseQualityTagWebsite(dl, (ArrayList) entries.get("ARRALLOWDDOWNLOADFORMATS"));
-        if (id_IS_Allowed(dl)) {
+        if (telecastID_IS_AllowedWebsite(dl)) {
             dl.setName(jd.plugins.hoster.SaveTv.getFilename(this, dl));
             distribute(dl);
             decryptedLinks.add(dl);
@@ -405,9 +436,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecastID;
         final DownloadLink dl = createDownloadlink(telecast_url);
         dl.setName(telecastID + ".mp4");
-        if (fast_linkcheck) {
-            dl.setAvailable(true);
-        }
         dl.setContentUrl(telecast_url);
         dl.setLinkID(account_username + telecastID);
         /* Property is needed to later determine which url is downloadable via which account. */
@@ -416,17 +444,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /** Checks if telecastID should be added in respects of the users' settings. */
-    private boolean id_IS_Allowed(final DownloadLink dl) {
-        final long datemilliseconds = dl.getLongProperty("originaldate", 0);
+    private boolean telecastID_IS_AllowedWebsite(final DownloadLink dl) {
+        final long datemilliseconds = dl.getLongProperty(jd.plugins.hoster.SaveTv.PROPERTY_originaldate, 0);
         final long current_tdifference = time_crawl_started - datemilliseconds;
-        /* TODO: Change from property to 'getLinkid()' */
-        final String telecastID = dl.getStringProperty("LINKDUPEID", null);
         boolean isAllowed = false;
-        if (only_grab_new_entries && !crawledTelecastIDsMap.containsKey(telecastID)) {
-            /* User only wants telecastIDs which he did not add before and this ID has not been added before --> Allow to add it! */
-            crawledTelecastIDsMap.put(telecastID, datemilliseconds);
-            isAllowed = true;
-        } else if (!only_grab_new_entries && (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds)) {
+        if (!only_grab_new_entries && (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds)) {
             /* User only wants to add telecastIDs of a user-defined time-range. */
             /*
              * TODO: For API handling: Maybe add timeframe to filter parameters so that the Stv servers filter out (most of) the items we
@@ -434,7 +456,58 @@ public class SaveTvDecrypter extends PluginForDecrypt {
              */
             isAllowed = true;
         }
+        if (!only_grab_new_entries && (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds)) {
+            /* User only wants to add telecastIDs of a user-defined time-range. */
+            /*
+             * TODO: For API handling: Maybe add timeframe to filter parameters so that the Stv servers filter out (most of) the items we
+             * don't want.
+             */
+            isAllowed = true;
+        } else {
+            isAllowed = telecastID_IS_AllowedGeneral(dl);
+        }
         return isAllowed;
+    }
+
+    /** Checks if telecastID should be added in respects of the users' settings. */
+    private boolean telecastID_IS_AllowedGeneral(final DownloadLink dl) {
+        final long datemilliseconds = dl.getLongProperty(jd.plugins.hoster.SaveTv.PROPERTY_originaldate, 0);
+        /* TODO: Change from property to 'getLinkid()' */
+        final String telecastID = dl.getLinkID();
+        final boolean telecastIDHasBeenCrawledBefore = crawledTelecastIDsMap.containsKey(telecastID);
+        final boolean isAllowed;
+        if (only_grab_new_entries && !telecastIDHasBeenCrawledBefore) {
+            /* User only wants telecastIDs which he did not add before and this ID has not been added before --> Allow to add it! */
+            crawledTelecastIDsMap.put(telecastID, datemilliseconds);
+            isAllowed = true;
+        } else if (only_grab_new_entries && telecastIDHasBeenCrawledBefore) {
+            isAllowed = false;
+        } else {
+            isAllowed = true;
+        }
+        return isAllowed;
+    }
+
+    public static String formatToStvDateAPI(final long milliseconds) {
+        final Date theDate = new Date(milliseconds);
+        final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss'Z'");
+        final String formattedDate = formatter.format(theDate);
+        return formattedDate;
+    }
+
+    /** Returns basic parameters for '/records' request. */
+    private String getParametersRecordsAPI() {
+        final String formattedMinDate;
+        if (grab_last_hours_num > 0) {
+            formattedMinDate = formatToStvDateAPI(System.currentTimeMillis() - (grab_last_hours_num * 60 * 60 * 1000));
+        } else {
+            formattedMinDate = null;
+        }
+        String api_records_parameters = "nopagingheader=false&recordstates=2&limit=" + API_ENTRIES_PER_REQUEST;
+        if (formattedMinDate != null) {
+            api_records_parameters += "&minstartdate=" + Encoding.urlEncode(formattedMinDate);
+        }
+        return api_records_parameters;
     }
 
     @SuppressWarnings("deprecation")
@@ -507,22 +580,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return br.toString();
     }
 
-    // /**
-    // * @param soapAction
-    // * : The soap link which should be accessed
-    // * @param soapPost
-    // * : The soap post data
-    // */
-    // private void api_doSoapRequest(final String soapAction, final String soapPost) throws IOException {
-    // final String method = new Regex(soapAction, "([A-Za-z0-9]+)$").getMatch(0);
-    // br.getHeaders().put("SOAPAction", soapAction);
-    // br.getHeaders().put("Content-Type", "text/xml");
-    // final String postdata =
-    // "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"
-    // xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\"
-    // xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><"
-    // + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + soapPost + "</" + method + "></v:Body></v:Envelope>";
-    // br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
     // }
     private void handleEndDialogs() {
         if (!crawler_DialogsDisabled) {
