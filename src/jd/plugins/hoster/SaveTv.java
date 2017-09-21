@@ -62,117 +62,119 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|archive/VideoArchiveStreaming|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
     /* Static information */
     /* API functions developed for API version 3.0.0.1631 */
     // private static final String API_APP_NAME = "JDownloader";
-    private static final String   API_PUBLIC_KEY                            = "2005d51304a04a6398bfbc1f3c2a1c8b";
-    private static final String   API_SECRET_KEY                            = "3711128ae57644e9a6278adda57a85de457a257fc3ca4130ab5ac863940923be";
-    public static final String    HOST_STATIC                               = "save.tv";
-    // /* Normal url */
-    // private final String LINKTYPE_NORMAL = ".+/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+";
-    // /* User has programmed something but it has not aired yet (is not downloadable yet) --> We will change these urls to LINKTYPE_NORMAL
-    // */
-    // private final String LINKTYPE_MAYBE_NOT_YET_DOWNLOADABLE = ".+/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
-    /* Direct url --> We will change these to LINKTYPE_NORMAL */
-    private final static String   LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
-    public static final String    API_BASE                                  = "https://api.save.tv/v3";
-    public static final String    API_BASE_AUTH                             = "https://auth.save.tv/";
-    public static final double    QUALITY_HD_MB_PER_SECOND                  = 0.3735593220338983;
-    public static final double    QUALITY_H264_NORMAL_MB_PER_SECOND         = 0.1944268524382521;
-    public static final double    QUALITY_H264_MOBILE_MB_PER_SECOND         = 0.0740975300823306;
+    private static final String   API_PUBLIC_KEY                               = "2005d51304a04a6398bfbc1f3c2a1c8b";
+    private static final String   API_SECRET_KEY                               = "3711128ae57644e9a6278adda57a85de457a257fc3ca4130ab5ac863940923be";
+    public static final String    HOST_STATIC                                  = "save.tv";
+    /* Linktypes */
+    public static final String    LINKTYPE_TELECAST_ID                         = ".+/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+";
+    /*
+     * User has programmed something but it has not aired yet (is not downloadable yet) OR it is offline for a long time already
+     */
+    public static final String    LINKTYPE_TELECAST_ID_RECORD_OVERVIEW         = ".+/STV/M/obj/TC/SendungsDetails\\.cfm\\?TelecastID=\\d+";
+    public static final String    LINKTYPE_TELECAST_ID_VIDEO_ARCHIVE_STREAMING = ".+/STV/M/obj/archive/VideoArchiveStreaming\\.cfm\\?TelecastID=\\d+";
+    public static final String    LINKTYPE_DIRECT                              = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
+    /* API static information */
+    public static final String    API_BASE                                     = "https://api.save.tv/v3";
+    public static final String    API_BASE_AUTH                                = "https://auth.save.tv/";
+    public static final double    QUALITY_HD_MB_PER_SECOND                     = 0.3735593220338983;
+    public static final double    QUALITY_H264_NORMAL_MB_PER_SECOND            = 0.1944268524382521;
+    public static final double    QUALITY_H264_MOBILE_MB_PER_SECOND            = 0.0740975300823306;
     /* Properties */
-    private static final String   CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS       = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
-    private static final String   CRAWLER_PROPERTY_LASTCRAWL                = "CRAWLER_PROPERTY_LASTCRAWL";
+    private static final String   CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS          = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
+    private static final String   CRAWLER_PROPERTY_LASTCRAWL                   = "CRAWLER_PROPERTY_LASTCRAWL";
     /* Frequently used internal plugin properties */
-    public static final String    PROPERTY_ACCOUNT_API_SESSIONID            = "sessionid";
-    public static final String    PROPERTY_quality                          = "quality";
-    public static final String    PROPERTY_plainfilename                    = "plainfilename";
-    public static final String    PROPERTY_server_filename                  = "server_filename";
-    public static final String    PROPERTY_acc_username                     = "acc_username";
-    public static final String    PROPERTY_ad_free                          = "ad_free";
-    public static final String    PROPERTY_producecountry                   = "producecountry";
-    public static final String    PROPERTY_genre                            = "genre";
-    public static final String    PROPERTY_type                             = "type";
-    public static final String    PROPERTY_produceyear                      = "produceyear";
-    public static final String    PROPERTY_plain_tv_station                 = "plain_tv_station";
-    public static final String    PROPERTY_plain_site_category              = "plain_site_category";
-    public static final String    PROPERTY_episodename                      = "episodename";
-    public static final String    PROPERTY_originaldate                     = "originaldate";
-    public static final String    PROPERTY_episodenumber                    = "episodenumber";
-    public static final String    PROPERTY_acc_count_telecast_ids           = "acc_count_telecast_ids";
-    public static final String    PROPERTY_acc_type                         = "acc_type";
-    public static final String    PROPERTY_acc_count_archive_entries        = "acc_count_archive_entries";
-    public static final String    PROPERTY_category                         = "category";
-    public static final String    PROPERTY_stv_randomnumber                 = "stv_randomnumber";
-    public static final String    PROPERTY_originaldate_end                 = "originaldate_end";
-    public static final String    PROPERTY_site_runtime_seconds_withads     = "site_runtime_minutes";
-    public static final String    PROPERTY_site_runtime_seconds_adsfree     = "site_runtime_minutes_adsfree";
-    public static final String    PROPERTY_acc_expire                       = "acc_expire";
-    public static final String    PROPERTY_acc_package                      = "acc_package";
-    public static final String    PROPERTY_acc_price                        = "acc_price";
-    public static final String    PROPERTY_acc_runtime                      = "acc_runtime";
-    public static final String    PROPERTY_has_moved                        = "has_moved";
-    public static final String    PROPERTY_downloadable_via                 = "downloadable_via";
-    public static final String    PROPERTY_refresh_token                    = "refresh_token";
-    public static final String    PROPERTY_expires_in                       = "expires_in";
+    public static final String    PROPERTY_ACCOUNT_API_SESSIONID               = "sessionid";
+    public static final String    PROPERTY_quality                             = "quality";
+    public static final String    PROPERTY_plainfilename                       = "plainfilename";
+    public static final String    PROPERTY_server_filename                     = "server_filename";
+    public static final String    PROPERTY_acc_username                        = "acc_username";
+    public static final String    PROPERTY_ad_free                             = "ad_free";
+    public static final String    PROPERTY_producecountry                      = "producecountry";
+    public static final String    PROPERTY_genre                               = "genre";
+    public static final String    PROPERTY_type                                = "type";
+    public static final String    PROPERTY_produceyear                         = "produceyear";
+    public static final String    PROPERTY_plain_tv_station                    = "plain_tv_station";
+    public static final String    PROPERTY_plain_site_category                 = "plain_site_category";
+    public static final String    PROPERTY_episodename                         = "episodename";
+    public static final String    PROPERTY_originaldate                        = "originaldate";
+    public static final String    PROPERTY_episodenumber                       = "episodenumber";
+    public static final String    PROPERTY_acc_count_telecast_ids              = "acc_count_telecast_ids";
+    public static final String    PROPERTY_acc_type                            = "acc_type";
+    public static final String    PROPERTY_acc_count_archive_entries           = "acc_count_archive_entries";
+    public static final String    PROPERTY_category                            = "category";
+    public static final String    PROPERTY_stv_randomnumber                    = "stv_randomnumber";
+    public static final String    PROPERTY_originaldate_end                    = "originaldate_end";
+    public static final String    PROPERTY_site_runtime_seconds_withads        = "site_runtime_minutes";
+    public static final String    PROPERTY_site_runtime_seconds_adsfree        = "site_runtime_minutes_adsfree";
+    public static final String    PROPERTY_acc_expire                          = "acc_expire";
+    public static final String    PROPERTY_acc_package                         = "acc_package";
+    public static final String    PROPERTY_acc_price                           = "acc_price";
+    public static final String    PROPERTY_acc_runtime                         = "acc_runtime";
+    public static final String    PROPERTY_has_moved                           = "has_moved";
+    public static final String    PROPERTY_downloadable_via                    = "downloadable_via";
+    public static final String    PROPERTY_refresh_token                       = "refresh_token";
+    public static final String    PROPERTY_expires_in                          = "expires_in";
     /* Settings stuff */
-    private static final String   PROPERTY_USEORIGINALFILENAME              = "USEORIGINALFILENAME";
-    public static final String    PROPERTY_PREFERADSFREE                    = "PREFERADSFREE";
-    private static final String   ADS_FREE_UNAVAILABLE_HOURS                = "DOWNLOADONLYADSFREE_RETRY_HOURS";
-    private final static String   SELECTED_VIDEO_FORMAT                     = "selected_video_format";
+    private static final String   PROPERTY_USEORIGINALFILENAME                 = "USEORIGINALFILENAME";
+    public static final String    PROPERTY_PREFERADSFREE                       = "PREFERADSFREE";
+    private static final String   ADS_FREE_UNAVAILABLE_HOURS                   = "DOWNLOADONLYADSFREE_RETRY_HOURS";
+    private final static String   SELECTED_VIDEO_FORMAT                        = "selected_video_format";
     /* Text strings displayed to the user in various cases */
-    private final static String   USERTEXT_NOCUTAVAILABLE                   = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
+    private final static String   USERTEXT_NOCUTAVAILABLE                      = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
     /* The list of qualities/formats displayed to the user */
-    private static final String[] FORMATS                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
+    private static final String[] FORMATS                                      = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
     /* Crawler settings */
-    private static final String   CRAWLER_ONLY_ADD_NEW_IDS                  = "CRAWLER_ONLY_ADD_NEW_IDS";
-    private static final String   ACTIVATE_BETA_FEATURES                    = "ACTIVATE_BETA_FEATURES";
-    private static final String   USEAPI                                    = "USEAPI_2017_08";
-    private static final String   CRAWLER_ACTIVATE                          = "CRAWLER_ACTIVATE";
-    private static final String   CRAWLER_ENABLE_FASTER                     = "CRAWLER_ENABLE_FASTER_2";
-    private static final String   CRAWLER_DISABLE_DIALOGS                   = "CRAWLER_DISABLE_DIALOGS";
-    private static final String   CRAWLER_LASTHOURS_COUNT                   = "CRAWLER_LASTHOURS_COUNT";
-    private static final String   DISABLE_LINKCHECK                         = "DISABLE_LINKCHECK";
-    private static final String   DELETE_TELECAST_ID_AFTER_DOWNLOAD         = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
-    private static final String   DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS = "DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS";
+    private static final String   CRAWLER_ONLY_ADD_NEW_IDS                     = "CRAWLER_ONLY_ADD_NEW_IDS";
+    private static final String   ACTIVATE_BETA_FEATURES                       = "ACTIVATE_BETA_FEATURES";
+    private static final String   USEAPI                                       = "USEAPI_2017_08";
+    private static final String   CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
+    public static final String    CRAWLER_ENABLE_FAST_LINKCHECK                = "CRAWLER_ENABLE_FASTER_2";
+    private static final String   CRAWLER_DISABLE_DIALOGS                      = "CRAWLER_DISABLE_DIALOGS";
+    private static final String   CRAWLER_LASTHOURS_COUNT                      = "CRAWLER_LASTHOURS_COUNT";
+    private static final String   DISABLE_LINKCHECK                            = "DISABLE_LINKCHECK";
+    private static final String   DELETE_TELECAST_ID_AFTER_DOWNLOAD            = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
+    private static final String   DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS    = "DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS";
     /* Custom filename settings stuff */
-    private static final String   CUSTOM_DATE                               = "CUSTOM_DATE";
-    private static final String   CUSTOM_FILENAME_MOVIES                    = "CUSTOM_FILENAME_MOVIES";
-    private static final String   CUSTOM_FILENAME_SERIES                    = "CUSTOM_FILENAME_SERIES_3";
-    private static final String   CUSTOM_FILENAME_SEPERATION_MARK           = "CUSTOM_FILENAME_SEPERATION_MARK";
-    private static final String   CUSTOM_FILENAME_EMPTY_TAG_STRING          = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
-    private static final String   FORCE_ORIGINALFILENAME_SERIES             = "FORCE_ORIGINALFILENAME_SERIES";
-    private static final String   FORCE_ORIGINALFILENAME_MOVIES             = "FORCE_ORIGINALFILENAME_MOVIES";
+    private static final String   CUSTOM_DATE                                  = "CUSTOM_DATE";
+    private static final String   CUSTOM_FILENAME_MOVIES                       = "CUSTOM_FILENAME_MOVIES";
+    private static final String   CUSTOM_FILENAME_SERIES                       = "CUSTOM_FILENAME_SERIES_3";
+    private static final String   CUSTOM_FILENAME_SEPERATION_MARK              = "CUSTOM_FILENAME_SEPERATION_MARK";
+    private static final String   CUSTOM_FILENAME_EMPTY_TAG_STRING             = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
+    private static final String   FORCE_ORIGINALFILENAME_SERIES                = "FORCE_ORIGINALFILENAME_SERIES";
+    private static final String   FORCE_ORIGINALFILENAME_MOVIES                = "FORCE_ORIGINALFILENAME_MOVIES";
     /* Variables */
-    private boolean               FORCE_LINKCHECK                           = false;
+    private boolean               FORCE_LINKCHECK                              = false;
     /* Download connections constants */
-    private static final boolean  ACCOUNT_PREMIUM_RESUME                    = true;
-    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS                 = -2;
-    private static final int      ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
-    private static final int      FREE_MAXDOWNLOADS                         = -1;
+    private static final boolean  ACCOUNT_PREMIUM_RESUME                       = true;
+    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS                    = -2;
+    private static final int      ACCOUNT_PREMIUM_MAXDOWNLOADS                 = -1;
+    private static final int      FREE_MAXDOWNLOADS                            = -1;
     /* Other API/site errorhandling constants */
-    public static final String    URL_LOGGED_OUT                            = "Token=MSG_LOGOUT_B";
+    public static final String    URL_LOGGED_OUT                               = "Token=MSG_LOGOUT_B";
     /* Property / Filename constants / States / Small user display texts */
-    public static final String    STATE_QUALITY_LQ                          = "LQ";
-    public static final String    STATE_QUALITY_HQ                          = "HQ";
-    public static final String    STATE_QUALITY_HD                          = "HD";
-    public static final String    STATE_QUALITY_UNKNOWN                     = "XX";
-    public static final String    STATE_ad_free_true                        = "true";
-    public static final String    STATE_ad_free_false                       = "false";
-    public static final String    STATE_ad_free_unknown                     = "XX";
-    public static final String    EXTENSION_default                         = ".mp4";
+    public static final String    STATE_QUALITY_LQ                             = "LQ";
+    public static final String    STATE_QUALITY_HQ                             = "HQ";
+    public static final String    STATE_QUALITY_HD                             = "HD";
+    public static final String    STATE_QUALITY_UNKNOWN                        = "XX";
+    public static final String    STATE_ad_free_true                           = "true";
+    public static final String    STATE_ad_free_false                          = "false";
+    public static final String    STATE_ad_free_unknown                        = "XX";
+    public static final String    EXTENSION_default                            = ".mp4";
     /* Save.tv internal quality/format constants (IDs) for the API & website */
-    private static final int      SITE_FORMAT_HD                            = 6;
-    private static final int      SITE_FORMAT_HQ                            = 5;
-    private static final int      SITE_FORMAT_LQ                            = 4;
+    private static final int      SITE_FORMAT_HD                               = 6;
+    private static final int      SITE_FORMAT_HQ                               = 5;
+    private static final int      SITE_FORMAT_LQ                               = 4;
     /* Other */
-    public static Object          LOCK                                      = new Object();
-    public static Object          LOCK_login                                = new Object();
+    public static Object          LOCK                                         = new Object();
+    public static Object          LOCK_login                                   = new Object();
     /* TODO: Maybe remove 'currAcc' */
-    private Account               currAcc                                   = null;
-    private SubConfiguration      cfg                                       = null;
+    private Account               currAcc                                      = null;
+    private SubConfiguration      cfg                                          = null;
 
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
@@ -223,7 +225,7 @@ public class SaveTv extends PluginForHost {
     /**
      * @property "category": 0 = undefined, 1 = movies,category: 2 = series, 3 = show, 7 = music
      */
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
@@ -283,7 +285,7 @@ public class SaveTv extends PluginForHost {
         link.setFinalFileName(null);
         link.setName(null);
         link.setName(availablecheck_filename);
-        return AvailableStatus.TRUE;
+        return availablestatus;
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -316,36 +318,90 @@ public class SaveTv extends PluginForHost {
         login_api(this.br, account, false);
         /* Let's assume that all URLs the user adds are telecastIDs which have already been recorded. */
         /* TODO: Maybe add erorhandling based on recordStateID, see: https://api.save.tv:443/v3/recordstates */
-        api_GET(this.br, "/records/" + getTelecastId(link) + "?fields=adfreeavailable%2C%20adfreelength%2C%20createdate%2C%20telecast.hasmoved%2C%20enddate%2C%20formats%2C%20formats.recordformat.id%2C%20formats.recordformat.name%2C%20formats.recordstate.id%2C%20formats.recordstate.name%2C%20formats.retentiondate%2C%20formats.uncutvideosize%2C%20isadcutenabled%2C%20startdate%2C%20telecast.country%2C%20telecast.description%2C%20telecast.enddate%2C%20telecast.episode%2C%20telecast.id%2C%20telecast.startdate%2C%20telecast.subject%2C%20telecast.subtitle%2C%20telecast.title%2C%20telecast.tvcategory.id%2C%20telecast.tvcategory.name%2C%20telecast.tvstation.id%2C%20telecast.tvstation.name%2C%20telecast.tvsubcategory.id%2C%20telecast.tvsubcategory.name%2C%20telecast.year%2C%20telecastid");
-        final ArrayList<Object> qualityList;
-        final LinkedHashMap<String, Object> entries;
-        final boolean hasToGrabTelecastMap;
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /* Item not downloadable --> No quality list given */
-            qualityList = null;
-            hasToGrabTelecastMap = false;
-            logger.info("Failed to find record --> Checking if maybe it just hasn't been recorded yet");
-            /*
-             * ID not available? We cannot yet be sure whether it is offline or just hasn't been recorded yet --> Try to find telecastID
-             * (NOT 'record') information.
-             */
-            api_GET(this.br, "/telecasts/" + getTelecastId(link) + "?fields=country%2C%20description%2C%20enddate%2C%20episode%2C%20id%2C%20startdate%2C%20subject%2C%20subtitle%2C%20title%2C%20tvcategory.id%2C%20tvcategory.name%2C%20tvstation.id%2C%20tvstation.name%2C%20tvsubcategory.id%2C%20tvsubcategory.name%2C%20year");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                logger.info("telecastID is definitly offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                logger.info("telecastID is online but has not yet been recorded --> NOT downloadable at this stage");
+        final String telecastID = getTelecastId(link);
+        ArrayList<Object> qualityList = null;
+        LinkedHashMap<String, Object> entries = null;
+        boolean existsRecord = false;
+        if (isTypeTelecastIDOverview(link)) {
+            /* telecast info --> If available, find record info */
+            callAPITelecastsSingle(telecastID);
+            /* Object could be offline here but that does not matter, we will check for this later! */
+            try {
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                existsRecord = ((Boolean) entries.get("existsRecord")).booleanValue();
+            } catch (final Throwable e) {
+                /* On offline, we might get a Map instead of LinkedHashMap here */
+            }
+            if (existsRecord) {
+                /* Item downloadable --> Find quality list */
+                logger.info("Assumed not-yet-recorded telecastID is recorded and downloadable");
+                callAPIRecordsSingle(telecastID);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                /* Set current correct downloadurl so that on next linkcheck, we can request the record information right away. */
+                link.setUrlDownload(buildArchiveDownloadURL(link));
             }
         } else {
-            /* Item downloadable --> Find quality list */
-            hasToGrabTelecastMap = true;
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            /* record info --> If NOT available, find telecast info */
+            callAPIRecordsSingle(telecastID);
+            if (isOfflineAPI(this.br)) {
+                /* Item not downloadable --> At least try to get general information about this ID */
+                logger.info("Failed to find record --> Checking if maybe it hasn't been recorded yet or is too old (offline)");
+                callAPITelecastsSingle(telecastID);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            } else {
+                /* Item downloadable --> Find quality list */
+                existsRecord = true;
+                /*
+                 * Only parse json if we know that the telecastID is not offline because else we might get an Exception as we get a Map
+                 * instead of the expected LinkedHashMap!
+                 */
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            }
+        }
+        if (isOfflineAPI(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (existsRecord) {
             qualityList = jsonGetFormatArrayAPI(entries);
         }
-        parseFilenameInformation_api(link, entries, hasToGrabTelecastMap);
+        parseFilenameInformation_api(link, entries, existsRecord);
         parseQualityTagAPI(link, qualityList);
+        if (!existsRecord && link.getLongProperty(PROPERTY_originaldate_end, 0) < System.currentTimeMillis()) {
+            /*
+             * TODO: Maybe make this boolean public to make SURE that we do never try to download such URLs as we KNOW that they are NOT
+             * downloadable.
+             */
+            logger.info("This telecastID has probably been deleted a long time ago --> Found information but it is offline nevertheless");
+            /*
+             * As a final attempt to provide a working example URL for the user, let's set the 'overview-URL' to make sure whenever he
+             * copies the URL he will have a URL which actually shows information in browser. We could also verify this status via
+             * TELECAST_ID_EXPIRE_TIME but it leaves room for errors open so let's assume that this is a definite offline case!
+             */
+            link.setContentUrl(buildNotYetRecordedOrOfflineDownloadURL(link));
+            return AvailableStatus.FALSE;
+        } else if (!existsRecord && !allowNonProgrammedTelecastIDs()) {
+            logger.info("telecastID exists but has not been programmed to record AND non programmed telecastIDs are not allowed at the moment --> Display as offline");
+            return AvailableStatus.FALSE;
+        } else if (!existsRecord) {
+            logger.info("telecastID is online but has not not been programmed by the user --> NOT downloadable at this stage");
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private void callAPITelecastsSingle(final String telecastID) throws Exception {
+        api_GET(this.br, "/telecasts/" + telecastID + "?fields=country%2C%20description%2C%20enddate%2C%20episode%2C%20existsrecord%2C%20id%2C%20startdate%2C%20subject%2C%20subtitle%2C%20title%2C%20tvcategory.id%2C%20tvcategory.name%2C%20tvstation.id%2C%20tvstation.name%2C%20tvsubcategory.id%2C%20tvsubcategory.name%2C%20year");
+    }
+
+    private void callAPIRecordsSingle(final String telecastID) throws Exception {
+        api_GET(this.br, "/records/" + telecastID + "?fields=" + getRecordsFieldsValue());
+    }
+
+    public static String getRecordsFieldsValue() {
+        return "adfreeavailable%2C%20adfreelength%2C%20createdate%2C%20telecast.hasmoved%2C%20enddate%2C%20formats%2C%20formats.recordformat.id%2C%20formats.recordformat.name%2C%20formats.recordstate.id%2C%20formats.recordstate.name%2C%20formats.retentiondate%2C%20formats.uncutvideosize%2C%20isadcutenabled%2C%20startdate%2C%20telecast.country%2C%20telecast.description%2C%20telecast.enddate%2C%20telecast.episode%2C%20telecast.id%2C%20telecast.startdate%2C%20telecast.subject%2C%20telecast.subtitle%2C%20telecast.title%2C%20telecast.tvcategory.id%2C%20telecast.tvcategory.name%2C%20telecast.tvstation.id%2C%20telecast.tvstation.name%2C%20telecast.tvsubcategory.id%2C%20telecast.tvsubcategory.name%2C%20telecast.year%2C%20telecastid";
+    }
+
+    private boolean isOfflineAPI(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     @SuppressWarnings("deprecation")
@@ -493,6 +549,13 @@ public class SaveTv extends PluginForHost {
 
     /**
      * Get- and set the information we later need for the custom filenames. <br />
+     *
+     * @param dl
+     *            : Given DownloadLink
+     * @param entries
+     *            : Given json --> Java Map
+     * @param hasToGrabTelecastMap
+     *            : For downloadable telecastIDs we're not yet at the telecastMap which is why we have to grab it (this is set to true)!
      */
     @SuppressWarnings("unchecked")
     public static void parseFilenameInformation_api(final DownloadLink dl, LinkedHashMap<String, Object> entries, final boolean hasToGrabTelecastMap) throws PluginException {
@@ -502,17 +565,19 @@ public class SaveTv extends PluginForHost {
         /* First grab the only property (in this function) which is only available for finished 'records' which are downloadable. */
         final short isAdsFreeAvailable = jsonGetAdsFreeAvailableAPIDetailed(entries);
         final int runtime_seconds_adsfree = (int) JavaScriptEngineFactory.toLong(entries.get("adFreeLength"), -1);
-        final String runtime_start = (String) entries.get("startDate");
-        final String runtime_end = (String) entries.get("endDate");
-        final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd'T'HH:mm:ss", Locale.GERMAN);
-        final long datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd'T'HH:mm:ss", Locale.GERMAN);
-        final int site_runtime_seconds_withads = (int) ((runtime_end_long - datemilliseconds) / 1000);
         if (hasToGrabTelecastMap) {
             entries = (LinkedHashMap<String, Object>) entries.get("telecast");
             if (entries == null) {
                 return;
             }
         }
+        // ---------------------------------------------
+        final String runtime_start = (String) entries.get("startDate");
+        final String runtime_end = (String) entries.get("endDate");
+        final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.GERMANY);
+        final long runtime_start_long = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.GERMANY);
+        final int site_runtime_seconds_withads = (int) ((runtime_end_long - runtime_start_long) / 1000);
+        // ---------------------------------------------
         final Object hasMovedO = entries.get("hasMoved");
         final boolean hasMoved = hasMovedO != null ? ((Boolean) hasMovedO).booleanValue() : false;
         final String site_title = (String) entries.get("title");
@@ -555,9 +620,10 @@ public class SaveTv extends PluginForHost {
             dl.setProperty(PROPERTY_ad_free, STATE_ad_free_true);
         } else if (isAdsFreeAvailable == 0) {
             dl.setProperty(PROPERTY_ad_free, STATE_ad_free_false);
+        } else {
+            // Status unknown - do not set status at all
         }
-        // else do not set status
-        dl.setProperty(PROPERTY_originaldate, datemilliseconds);
+        dl.setProperty(PROPERTY_originaldate, runtime_start_long);
         dl.setProperty(PROPERTY_originaldate_end, runtime_end_long);
         dl.setProperty(PROPERTY_site_runtime_seconds_withads, site_runtime_seconds_withads);
         dl.setProperty(PROPERTY_site_runtime_seconds_adsfree, runtime_seconds_adsfree);
@@ -630,7 +696,10 @@ public class SaveTv extends PluginForHost {
         dl.setDownloadSize(calculateFilesize(dl, final_quality));
     }
 
-    /** Sets available quality as PROPERTY_quality and sets filesize. */
+    /**
+     * Sets available quality as PROPERTY_quality and sets filesize. <br />
+     * Has fallback for all possible errorcases!
+     */
     public static void parseQualityTagAPI(final DownloadLink dl, final ArrayList<Object> sourcelist) {
         final int selected_video_format = getConfiguredVideoFormatID(dl);
         /*
@@ -668,6 +737,7 @@ public class SaveTv extends PluginForHost {
             }
         }
         dl.setProperty(PROPERTY_quality, final_quality);
+        /* Finally set downloadsize based on given format information. */
         dl.setDownloadSize(calculateFilesize(dl, final_quality));
     }
 
@@ -1943,6 +2013,14 @@ public class SaveTv extends PluginForHost {
         return ad_free_status;
     }
 
+    public static boolean allowNonProgrammedTelecastIDs() {
+        /*
+         * 2017-09-21: Set this to false for now - it might be useful in the future. In general it makes no sense to display non programmed
+         * IDs as online.
+         */
+        return false;
+    }
+
     /**
      * @return true: DownloadLink is a series false: DownloadLink is no series based on existing information.
      */
@@ -2098,10 +2176,53 @@ public class SaveTv extends PluginForHost {
         return account_username_from_which_url_was_added != null && account_username != null && account_username_from_which_url_was_added.equals(account_username);
     }
 
+    public static boolean isTypeTelecastIDOverview(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), Pattern.compile(LINKTYPE_TELECAST_ID_RECORD_OVERVIEW, Pattern.CASE_INSENSITIVE)).matches();
+    }
+
+    public static boolean isTypeTelecastID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), Pattern.compile(LINKTYPE_TELECAST_ID, Pattern.CASE_INSENSITIVE)).matches();
+    }
+
+    public static boolean isTypeTelecastIDVideoArchiveStreaming(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), Pattern.compile(LINKTYPE_TELECAST_ID_VIDEO_ARCHIVE_STREAMING, Pattern.CASE_INSENSITIVE)).matches();
+    }
+
+    public static boolean isTypeDirect(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), Pattern.compile(LINKTYPE_DIRECT, Pattern.CASE_INSENSITIVE)).matches();
+    }
+
     @Override
     public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        if (isTypeDirect(downloadLink)) {
+            /*
+             * Directurls can expire --> Return Archive-Downloadurl if URL is online and telecastID overview URL if status is unknown or
+             * offline
+             */
+            if (downloadLink.isAvailable()) {
+                return buildArchiveDownloadURL(downloadLink);
+            } else {
+                return buildNotYetRecordedOrOfflineDownloadURL(downloadLink);
+            }
+        } else {
+            return downloadLink.getDownloadURL();
+        }
+    }
+
+    /** Returns 'normal' save.tv downloadurl. */
+    private String buildArchiveDownloadURL(final DownloadLink downloadLink) {
         final String telecastID = getTelecastId(downloadLink);
         return String.format("https://www.%s/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=%s", this.getHost(), telecastID);
+    }
+
+    /**
+     * Returns downloadurl for non-yet recorded shows or, in some cases this is also suitable for records which are already offline --> Via
+     * this URL the user will still get information via browser. <br />
+     * LINKTYPE_RECORD_OVERVIEW
+     */
+    private String buildNotYetRecordedOrOfflineDownloadURL(final DownloadLink downloadLink) {
+        final String telecastID = getTelecastId(downloadLink);
+        return String.format("https://www.%s/STV/M/obj/TC/SendungsDetails.cfm?TelecastId=%s", this.getHost(), telecastID);
     }
 
     @Override
@@ -2114,7 +2235,7 @@ public class SaveTv extends PluginForHost {
     private final static String  defaultCustomSeperationMark                = "+";
     private final static String  defaultCustomStringForEmptyTags            = "-";
     private final static int     defaultCrawlLasthours                      = 0;
-    private final static int     defaultADS_FREE_UNAVAILABLE_HOURS          = 72;
+    private final static int     defaultADS_FREE_UNAVAILABLE_HOURS          = 24;
     private static final boolean defaultDisableLinkcheck                    = false;
     private static final boolean defaultCrawlerActivate                     = false;
     private static final boolean defaultCrawlerFastLinkcheck                = true;
@@ -2137,7 +2258,14 @@ public class SaveTv extends PluginForHost {
         final ConfigEntry crawlerAddNew = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, JDL.L("plugins.hoster.SaveTv.crawlerOnlyAddNewIDs", "Nur neue abgeschlossene Aufnahmen crawlen?\r\nJDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!\r\n<html><b>Wichtig:</b> JDownloader kann nicht wissen, welche Sendungen du bereits geladen hast - nur, welche bereits in JDownloader eingefügt wurden!</html>")).setDefaultValue(defaultCrawlerAddNew).setEnabledCondidtion(crawlerActivate, true);
         getConfig().addEntry(crawlerAddNew);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTHOURS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.lastHours", "Nur Aufnahmen der letzten X Stunden crawlen??\r\nAnzahl der Stunden, die gecrawlt werden sollen [0 = komplettes Archiv]:"), 0, 1000, 24).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(crawlerAddNew, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Kategorie) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(defaultCrawlerFastLinkcheck).setEnabledCondidtion(crawlerActivate, true));
+        /*
+         * 2017-09-21: Disable this setting as we're switching to API-only mode and API provides all required information straight away so
+         * this is not required anymore.
+         */
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FAST_LINKCHECK,
+        // "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller
+        // im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Kategorie) verfügbar - erst beim Download oder späterem
+        // Linkcheck\r\n").setDefaultValue(defaultCrawlerFastLinkcheck).setEnabledCondidtion(crawlerActivate, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(defaultInfoDialogsDisable).setEnabledCondidtion(crawlerActivate, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
