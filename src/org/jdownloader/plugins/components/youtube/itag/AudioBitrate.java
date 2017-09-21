@@ -42,8 +42,9 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
     public static AudioBitrate getByVariant(AbstractVariant o1) {
         if (o1 instanceof AudioInterface) {
             return ((AudioInterface) o1).getAudioBitrate();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static int getSortId(AbstractVariant v) {
@@ -60,9 +61,11 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
 
     public static AudioBitrate getByInt(int bitrate) {
         AudioBitrate best = null;
-        for (final AudioBitrate b : values()) {
-            if (best == null || Math.abs(best.getKbit() - bitrate) > Math.abs(b.getKbit() - bitrate)) {
-                best = b;
+        final AudioBitrate[] values = AudioBitrate.values();
+        for (int index = values.length - 1; index >= 0; index--) {
+            final AudioBitrate rate = values[index];
+            if (best == null || (bitrate <= rate.getKbit() * 1024 && bitrate >= best.getKbit() * 1024)) {
+                best = rate;
             }
         }
         return best;

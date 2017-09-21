@@ -44,7 +44,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     // }
     //
     // }
-
     @Override
     public String createAdvancedName() {
         switch (getProjection()) {
@@ -55,14 +54,12 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         case SPHERICAL_3D:
             return "360° VR, 3D, " + super.createAdvancedName();
         }
-
         return super.createAdvancedName();
     }
 
     @Override
     public void setJson(String jsonString) {
         setGenericInfo(JSonStorage.restoreFromString(jsonString, new TypeRef<GenericVideoInfo>() {
-
         }));
     }
 
@@ -71,7 +68,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
 
     public String getTypeId() {
         String id = TYPE_ID_PATTERN;
-
         id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
         id = id.replace("*HEIGHT*", getVideoHeight() + "");
         id = id.replace("*FPS*", getVideoFrameRate() + "");
@@ -95,7 +91,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
             id = id.replace("*360*", "360°");
             break;
         }
-
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
         case AAC_SPATIAL:
         case VORBIS_SPATIAL:
@@ -106,7 +101,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         }
         id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
         return id;
-
     }
 
     public Projection getProjection() {
@@ -115,21 +109,17 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
 
     @Override
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
-
         if (vid != null) {
             //
             getGenericInfo().setProjection(vid.getProjection());
-
         }
         if (getBaseVariant().name().contains("_3D")) {
             getGenericInfo().setProjection(Projection.ANAGLYPH_3D);
         }
-
         if (video != null) {
             for (YoutubeStreamData stream : video) {
                 if (stream.getHeight() > 0) {
                     getGenericInfo().setHeight(stream.getHeight());
-
                 }
                 if (stream.getWidth() > 0) {
                     getGenericInfo().setWidth(stream.getWidth());
@@ -142,10 +132,8 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
                         Log.log(e);
                     }
                 }
-
             }
         }
-
     }
 
     @Override
@@ -181,7 +169,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     // }
     // return base;
     // }
-
     @Override
     public String getStandardGroupingID() {
         return getGroup().name() + "_" + getProjection().name();
@@ -189,9 +176,7 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
 
     @Override
     public String _getName(Object caller) {
-
         String id = TYPE_ID_PATTERN;
-
         id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
         id = id.replace("*HEIGHT*", getVideoHeight() + "");
         id = id.replace("*FPS*", getVideoFrameRate() + "");
@@ -223,25 +208,20 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         default:
             id = id.replace("*SPATIAL*", "");
         }
-
         id = id.trim().replace(" - ", "-").replaceAll("[ ]+", " ");
         return id.trim();
-
     }
 
     @Override
     public String getFileNamePattern() {
-
         return PluginJsonConfig.get(YoutubeConfig.class).getVideoFilenamePattern();
     }
 
     @Override
     public String getFileNameQualityTag() {
         switch (getProjection()) {
-
         case SPHERICAL:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 360VR";
-
         case ANAGLYPH_3D:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps" + " 3D";
         case SPHERICAL_3D:
@@ -249,7 +229,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
         default:
             return getVideoHeight() + "p " + getVideoFrameRate() + "fps";
         }
-
     }
 
     public AudioCodec getAudioCodec() {
@@ -257,26 +236,30 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     }
 
     public AudioBitrate getAudioBitrate() {
-        if (getGenericInfo().getaBitrate() > 0) {
-            return AudioBitrate.getByInt(getGenericInfo().getaBitrate());
+        final int bitRate = getGenericInfo().getaBitrate();
+        if (bitRate > 0) {
+            return AudioBitrate.getByInt(bitRate);
+        } else {
+            return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
         }
-        return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
     }
 
     @Override
     public VideoCodec getVideoCodec() {
         if (getiTagVideo() == null) {
             return null;
+        } else {
+            return getiTagVideo().getVideoCodec();
         }
-        return getiTagVideo().getVideoCodec();
     }
 
     @Override
     public VideoResolution getVideoResolution() {
         if (getiTagVideo() == null) {
             return null;
+        } else {
+            return getiTagVideo().getVideoResolution();
         }
-        return getiTagVideo().getVideoResolution();
     }
 
     @Override
