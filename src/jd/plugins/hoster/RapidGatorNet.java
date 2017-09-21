@@ -799,12 +799,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     account.setAccountInfo(ac);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-                final boolean sessionReset;
-                if (session_id != null && session_id.equals(account.getStringProperty("session_id", null))) {
-                    sessionReset = true;
-                } else {
-                    sessionReset = false;
-                }
+                final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty("session_id", null));
                 if (errorMessage.contains("Please wait")) {
                     if (link == null) {
                         /* we are inside fetchAccountInfo */
@@ -815,6 +810,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                 } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
                     if (sessionReset) {
+                        logger.info("SessionReset:" + sessionReset);
                         account.setProperty("session_id", Property.NULL);
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -851,6 +847,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                 } else if (errorMessage.contains("Session not exist")) {
                     if (sessionReset) {
+                        logger.info("SessionReset:" + sessionReset);
                         account.setProperty("session_id", Property.NULL);
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);

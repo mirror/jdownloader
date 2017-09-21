@@ -21,13 +21,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,9 +45,15 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download\\.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
-
     private static final String POSTTHATREGEX            = "\"((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.*?)\"";
     private static final String POSTTHATREGEX2           = "((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.+)";
     private static final String TEMPORARYUNAVAILABLE     = "Download not available at the moment";
@@ -550,7 +549,7 @@ public class FilesMonsterCom extends PluginForHost {
         }
         if (br.containsHTML("\">Today you have already downloaded ") || br.containsHTML("\">You have not enough traffic in your account to download this file") || br.containsHTML("You have reached your download limit")) {
             logger.info("Traffic limit reached!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         String premlink = br.getRegex("\"(https?://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) {
