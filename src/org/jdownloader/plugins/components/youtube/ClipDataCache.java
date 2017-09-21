@@ -38,7 +38,7 @@ public class ClipDataCache {
         public boolean hasValidProxyList(List<HTTPProxy> validateList) {
             if (proxyList != null && validateList != null) {
                 for (final HTTPProxy proxy : proxyList) {
-                    if (validateList.contains(proxy)) {
+                    if (!validateList.contains(proxy)) {
                         return false;
                     }
                 }
@@ -64,13 +64,13 @@ public class ClipDataCache {
     }
 
     private static MinTimeWeakReferenceCleanup CLEANUP = new MinTimeWeakReferenceCleanup() {
-        @Override
-        public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
-            synchronized (LOCK) {
-                CACHE.remove(minTimeWeakReference.getID());
-            }
-        }
-    };
+                                                           @Override
+                                                           public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+                                                               synchronized (LOCK) {
+                                                                   CACHE.remove(minTimeWeakReference.getID());
+                                                               }
+                                                           }
+                                                       };
 
     private static CachedClipData getInternal(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
         synchronized (LOCK) {
