@@ -80,10 +80,12 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     public AudioBitrate getAudioBitrate() {
-        if (getGenericInfo().getaBitrate() > 0) {
-            return AudioBitrate.getByInt(getGenericInfo().getaBitrate());
+        final int bitRate = getGenericInfo().getaBitrate();
+        if (bitRate > 0) {
+            return AudioBitrate.getByInt(bitRate);
+        } else {
+            return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
         }
-        return getiTagAudioOrVideoItagEquivalent().getAudioBitrate();
     }
 
     @Override
@@ -110,27 +112,4 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
         return id;
     }
-    // @Override
-    // public String getTypeId() {
-    // StringBuilder sb = new StringBuilder();
-    //
-    // if (getiTagVideo() != null) {
-    // sb.append(getFileExtension().toUpperCase(Locale.ENGLISH));
-    // if (sb.length() > 0) {
-    // sb.append("_");
-    // }
-    // sb.append(getiTagVideo().getAudioBitrate().getKbit()).append("KBIT");
-    //
-    // } else {
-    // if (getBaseVariant().getiTagAudio() != null) {
-    // sb.append(getFileExtension().toUpperCase(Locale.ENGLISH));
-    // if (sb.length() > 0) {
-    // sb.append("_");
-    // }
-    // sb.append(getBaseVariant().getiTagAudio().getAudioBitrate().getKbit()).append("KBIT");
-    // }
-    // }
-    // return sb.toString();
-    //
-    // }
 }

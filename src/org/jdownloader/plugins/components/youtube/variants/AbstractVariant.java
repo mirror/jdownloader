@@ -41,14 +41,12 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         AbstractVariant o1 = this;
         AbstractVariant o2 = (AbstractVariant) o;
         int ret = 0;
-
         for (QualitySortIdentifier q : YT_STATICS.SORTIDS) {
             ret = q.compare(o1, o2);
             if (ret != 0) {
                 return ret;
             }
         }
-
         return ret;
     }
 
@@ -140,7 +138,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     // this.baseVariant = baseVariant;
     // this.storable = base;
     // }
-
     protected AbstractVariant(VariantBase v) {
         baseVariant = v;
     }
@@ -160,7 +157,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public FileContainer getContainer() {
-
         return getBaseVariant().getContainer();
     }
 
@@ -171,9 +167,9 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     public YoutubeITAG getiTagAudioOrVideoItagEquivalent() {
         if (baseVariant.getiTagAudio() != null) {
             return baseVariant.getiTagAudio();
+        } else {
+            return baseVariant.getiTagVideo();
         }
-
-        return baseVariant.getiTagVideo();
     }
 
     public YoutubeITAG getiTagData() {
@@ -215,7 +211,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     public abstract String getFileNameQualityTag();
 
     public String modifyFileName(String formattedFilename, DownloadLink link) {
-
         return formattedFilename;
     }
 
@@ -301,7 +296,6 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     // return ret;
     //
     // }
-
     public void setGenericInfo(Data genericInfo) {
         this.genericInfo = genericInfo;
     }
@@ -315,10 +309,8 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public static AbstractVariant get(VariantBase base, YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
-
         AbstractVariant v = get(base.name());
         v.fill(vid, audio, video, data);
-
         return v;
     }
 
@@ -369,27 +361,23 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                 if (dupes.add(dupeid(var))) {
                     sorted.add((var));
                 }
-
                 var = AbstractVariant.get(b);
                 ((VideoVariant) var).getGenericInfo().setProjection(Projection.SPHERICAL);
                 if (dupes.add(dupeid(var))) {
                     sorted.add((var));
                 }
-
                 var = AbstractVariant.get(b);
                 ((VideoVariant) var).getGenericInfo().setProjection(Projection.SPHERICAL_3D);
                 if (dupes.add(dupeid(var))) {
                     sorted.add((var));
                 }
             }
-
         }
         VARIANTS_LIST = sorted;
         return Collections.unmodifiableList(sorted);
     }
 
     public String getStandardGroupingID() {
-
         return getGroup().name();
     }
 
@@ -400,6 +388,5 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     public VariantInfo getVariantInfo() {
         return variantInfo;
     }
-
     // public abstract void setAlternatives(List<String> altIds);
 }
