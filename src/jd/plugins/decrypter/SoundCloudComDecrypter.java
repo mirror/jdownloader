@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,9 +47,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
-
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -108,7 +107,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
-
             @Override
             public boolean add(DownloadLink e) {
                 distribute(e);
@@ -369,7 +367,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
              */
             final ArrayList<Object> itemsFound = new ArrayList<Object>();
             String idsToGrab = "";
-            int counter_item_collector = 0;
             boolean forceItemsToQueue = false;
             for (final Map<String, Object> item : tracks) {
                 final String track_id = getString(item, "id");
@@ -377,14 +374,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     throw new DecrypterException("null");
                 }
                 final Object permalink = item.get("permalink");
-                if (permalink == null || forceItemsToQueue) {
+                if (permalink == null || (permalink instanceof String) || forceItemsToQueue) {
                     /* Add IDs for which we have to get the information later. */
                     forceItemsToQueue = true;
-                    if (counter_item_collector > 0) {
+                    if (idsToGrab.length() > 0) {
                         idsToGrab += ",";
                     }
                     idsToGrab += track_id;
-                    counter_item_collector++;
                 } else if (permalink != null) {
                     /* Save full Object for later */
                     itemsFound.add(item);
