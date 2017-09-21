@@ -307,8 +307,10 @@ public class SubyShareCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            // Form dlForm = br.getFormbyProperty("name", "F1");
-            Form dlForm = br.getFormByInputFieldKeyValue("op", "download1");
+            Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm == null) {
+                dlForm = br.getFormByInputFieldKeyValue("op", "download1");
+            }
             if (dlForm == null) {
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
