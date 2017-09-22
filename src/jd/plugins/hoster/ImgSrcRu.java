@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -22,7 +24,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.ConsString;
 
 import jd.PluginWrapper;
@@ -144,7 +145,7 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
-        final String[] qual = { "pic_o", "pic_b" };
+        final String[] qual = { "pic_o", "pic_b", "bip" };
         boolean done = false;
         String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
         Object result = null;
