@@ -122,7 +122,7 @@ public class SaveTv extends PluginForHost {
     /* Settings stuff */
     private static final String   PROPERTY_USEORIGINALFILENAME                 = "USEORIGINALFILENAME";
     public static final String    PROPERTY_PREFERADSFREE                       = "PREFERADSFREE";
-    private static final String   ADS_FREE_UNAVAILABLE_HOURS                   = "DOWNLOADONLYADSFREE_RETRY_HOURS";
+    private static final String   ADS_FREE_UNAVAILABLE_HOURS                   = "DOWNLOADONLYADSFREE_RETRY_HOURS_2";
     private final static String   SELECTED_VIDEO_FORMAT                        = "selected_video_format";
     /* Text strings displayed to the user in various cases */
     private final static String   USERTEXT_NOCUTAVAILABLE                      = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
@@ -135,20 +135,18 @@ public class SaveTv extends PluginForHost {
     private static final String   CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
     public static final String    CRAWLER_ENABLE_FAST_LINKCHECK                = "CRAWLER_ENABLE_FASTER_2";
     private static final String   CRAWLER_DISABLE_DIALOGS                      = "CRAWLER_DISABLE_DIALOGS";
-    private static final String   CRAWLER_LASTHOURS_COUNT                      = "CRAWLER_LASTHOURS_COUNT";
-    private static final String   DISABLE_LINKCHECK                            = "DISABLE_LINKCHECK";
+    public static final String    CRAWLER_GRAB_TIMEFRAME_COUNT                 = "CRAWLER_GRAB_TIMEFRAME_COUNT";
     private static final String   DELETE_TELECAST_ID_AFTER_DOWNLOAD            = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
     private static final String   DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS    = "DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS";
     /* Custom filename settings stuff */
     private static final String   CUSTOM_DATE                                  = "CUSTOM_DATE";
     private static final String   CUSTOM_FILENAME_MOVIES                       = "CUSTOM_FILENAME_MOVIES";
     private static final String   CUSTOM_FILENAME_SERIES                       = "CUSTOM_FILENAME_SERIES_3";
+    public static final String    CUSTOM_API_CRAWLER_FILTER_tags               = "CUSTOM_API_CRAWLER_FILTER_tags";
     private static final String   CUSTOM_FILENAME_SEPERATION_MARK              = "CUSTOM_FILENAME_SEPERATION_MARK";
     private static final String   CUSTOM_FILENAME_EMPTY_TAG_STRING             = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
     private static final String   FORCE_ORIGINALFILENAME_SERIES                = "FORCE_ORIGINALFILENAME_SERIES";
     private static final String   FORCE_ORIGINALFILENAME_MOVIES                = "FORCE_ORIGINALFILENAME_MOVIES";
-    /* Variables */
-    private boolean               FORCE_LINKCHECK                              = false;
     /* Download connections constants */
     private static final boolean  ACCOUNT_PREMIUM_RESUME                       = true;
     private static final int      ACCOUNT_PREMIUM_MAXCHUNKS                    = -2;
@@ -225,7 +223,6 @@ public class SaveTv extends PluginForHost {
     /**
      * @property "category": 0 = undefined, 1 = movies,category: 2 = series, 3 = show, 7 = music
      */
-    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
@@ -267,10 +264,6 @@ public class SaveTv extends PluginForHost {
             link.setLinkID(account.getUser() + telecast_ID);
         }
         setConstants(account, link);
-        if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
-            link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
-            return AvailableStatus.TRUE;
-        }
         final AvailableStatus availablestatus;
         if (is_API_enabled(this.getHost())) {
             availablestatus = requestFileInformationAPI(link, account);
@@ -572,10 +565,10 @@ public class SaveTv extends PluginForHost {
             }
         }
         // ---------------------------------------------
-        final String runtime_start = (String) entries.get("startDate");
-        final String runtime_end = (String) entries.get("endDate");
-        final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.GERMANY);
-        final long runtime_start_long = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.GERMANY);
+        final String runtime_start = ((String) entries.get("startDate")).replace("Z", "+0000");
+        final String runtime_end = ((String) entries.get("endDate")).replace("Z", "+0000");
+        final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd'T'HH:mm:ssZ", Locale.GERMANY);
+        final long runtime_start_long = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd'T'HH:mm:ssZ", Locale.GERMANY);
         final int site_runtime_seconds_withads = (int) ((runtime_end_long - runtime_start_long) / 1000);
         // ---------------------------------------------
         final Object hasMovedO = entries.get("hasMoved");
@@ -753,7 +746,6 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialogCrawler();
             checkFeatureDialogNew();
         }
-        FORCE_LINKCHECK = true;
         requestFileInformation(link);
         setConstants(account, link);
         /* Check whether content has been recorded already or not! */
@@ -764,7 +756,7 @@ public class SaveTv extends PluginForHost {
              * Content not yet recorded --> Show errormessage with waittime. Waittime = Releasedate(END-Timestamp of video) of content + 10
              * minutes! Most times Stv needs between 10 and 60 minutes to get the downloads ready.
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen/ausgestrahlt!", released_since * (-1) + 10 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen!", released_since * (-1) + 10 * 60 * 60 * 1000l);
         }
         if (this.apiActive()) {
             handlePremiumAPI(link, account);
@@ -882,10 +874,13 @@ public class SaveTv extends PluginForHost {
             final long timestamp_with_ads_allowed = timestamp_releasedate + userDefinedWaitHours * 60 * 60 * 1000;
             final boolean allow_load_with_ads = userDefinedWaitHours > 0 && System.currentTimeMillis() > timestamp_with_ads_allowed;
             if (allow_load_with_ads) {
-                logger.info("Ad-free version is unavailable --> Downloading version with ads instead");
+                logger.info("Ad-free version is unavailable AND download with-ads is allowed by user defined timeout --> Downloading version with ads instead");
                 preferAdsFree = false;
+            } else if (userDefinedWaitHours == 0) {
+                logger.info("Ad-free version is unavailable AND download with ads is prohibited by user timeout(default==never_allow_ads) --> Waiting");
+                errorAdsFreeUnavailable(60 * 60 * 1000l, null);
             } else {
-                logger.info("Ad-free version is unavailable --> Wait and retry later");
+                logger.info("Ad-free version is unavailable AND download with ads is prohibited by user timeout(" + userDefinedWaitHours + ") --> Waiting");
                 final String adsfree_unavailable_message;
                 final long waitMilliseconds;
                 final long waitMillisecondsDefault = 60 * 60 * 1000l;
@@ -907,9 +902,9 @@ public class SaveTv extends PluginForHost {
             }
         } else if (preferAdsFree) {
             /* User selection (with- or without ads) is available! */
-            logger.info("Ad-free version is available and will be downloaded");
+            logger.info("Ad-free version is available AND preferred by the user AND will be downloaded");
         } else {
-            logger.info("Version with ads is selected and will be downloaded");
+            logger.info("Version with ads is available AND preferred by the user AND will be downloaded");
         }
         return preferAdsFree;
     }
@@ -1281,14 +1276,14 @@ public class SaveTv extends PluginForHost {
     /* Always compare to the decrypter */
     private void getPageSafe(final String url, final Account account) throws Exception {
         this.br.getPage(url);
-        handleErrorsWebsite(br);
+        handleErrorsWebsite(br, account);
     }
 
     /*
      * Handles website json errors.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void handleErrorsWebsite(final Browser br) throws Exception {
+    private void handleErrorsWebsite(final Browser br, final Account account) throws Exception {
         /*
          * Do NOT use the json parser for the first check as especially when used via decrypter, the amount of data can be huge which can
          * lead to parser memory problems/crashes.
@@ -1308,8 +1303,9 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Undehandelter Fehler: " + errormessage, 30 * 60 * 1000l);
             }
         } else if (br.getURL().contains(URL_LOGGED_OUT)) {
-            logger.info("We were loggedout for unknown reasons");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Loginproblem", 1 * 60 * 1000l);
+            logger.info("We were loggedout for unknown reasons --> Trying to perform full login");
+            login_website(br, account, true);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Loginproblem", 30 * 1000l);
         }
     }
 
@@ -2257,7 +2253,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(crawlerActivate);
         final ConfigEntry crawlerAddNew = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, JDL.L("plugins.hoster.SaveTv.crawlerOnlyAddNewIDs", "Nur neue abgeschlossene Aufnahmen crawlen?\r\nJDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!\r\n<html><b>Wichtig:</b> JDownloader kann nicht wissen, welche Sendungen du bereits geladen hast - nur, welche bereits in JDownloader eingefügt wurden!</html>")).setDefaultValue(defaultCrawlerAddNew).setEnabledCondidtion(crawlerActivate, true);
         getConfig().addEntry(crawlerAddNew);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTHOURS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.lastHours", "Nur Aufnahmen der letzten X Stunden crawlen??\r\nAnzahl der Stunden, die gecrawlt werden sollen [0 = komplettes Archiv]:"), 0, 1000, 24).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(crawlerAddNew, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_GRAB_TIMEFRAME_COUNT, "Nur Aufnahmen der letzten X Tage crawlen??\r\nAnzahl der Tage, die gecrawlt werden sollen [0 = komplettes Archiv]:", 0, 62, 1).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(crawlerAddNew, false));
         /*
          * 2017-09-21: Disable this setting as we're switching to API-only mode and API provides all required information straight away so
          * this is not required anymore.
@@ -2271,7 +2267,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* Format & Quality settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Format & Qualitäts-Einstellungen:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, JDL.L("plugins.hoster.SaveTv.prefer_format", "Bevorzugtes Format (ist dieses nicht verfügbar, wird das beste verfügbare genommen)")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, JDL.L("plugins.hoster.SaveTv.prefer_format", "Bevorzugtes Format (ist dieses nicht verfügbar, wird das beste verfügbare genommen):")).setDefaultValue(0));
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PROPERTY_PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen?")).setDefaultValue(defaultPreferAdsFree);
         getConfig().addEntry(preferAdsFree);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_HOURS, "Download von Aufnahmen ohne Schnittliste erzwingen, sofern X Stunden nach Aufnahmedatum keine Schnittliste verfügbar ist? <html><b><br />[0 = nie erzwingen = ausschließlich werbefreie Aufnahmen herunterladen]</b></html>", 0, 720, 24).setDefaultValue(defaultADS_FREE_UNAVAILABLE_HOURS).setEnabledCondidtion(preferAdsFree, true));
@@ -2358,14 +2354,14 @@ public class SaveTv extends PluginForHost {
         // Die API ist nur mit gültigem API-Key (in der Regel mit den Standardeinstellungen)
         // nutzbar!</p></html>")).setDefaultValue(defaultCONFIGURED_APIKEY).setEnabledCondidtion(api, true).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren <html><b>[Nicht empfohlen]</b>?\r\n<p style=\"color:#F62817\"><b>Vorteile:\r\n</b>-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\n<b>Nachteile:\r\n</b>-Im Linkgrabber werden zunächst nur die telecastIDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt</p></html>")).setDefaultValue(defaultDisableLinkcheck));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in bestimmten Situationen aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Gelöschte telecastIDs können nicht wiederhergestellt werden!</p></html>"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDAfterDownload));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, "Falls Datei bereits auf der Festplatte existiert, telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in irgendeinem Fall aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Gelöschte telecastIDs können nicht wiederhergestellt werden!</p></html>"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDAfterDownload));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveIfFileAlreadyExists", "Falls Datei bereits auf der Festplatte existiert, telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_API_CRAWLER_FILTER_tags, "Crawler: Werte für API Zugriff 'tags' Parameter (kommasepariert)\r\nBeispiele:\r\n'record:manual' : Manuell programmierte Aufnahmen crawlen (nützlich bei aktivem 'Catch All')\r\n'record:guard' : Vom Guard programmierte Aufnahmen crawlen\r\nMehr Informationen siehe: api.save.tv/v3/docs/index#!/Records_%7C_get/Records_Get\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Falsche Werte können den Crawler 'kaputtmachen' (ggf. Einstellungen zurücksetzen)!</p></html>").setDefaultValue(null).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SEPERATION_MARK, JDL.L("plugins.hoster.savetv.customFilenameSeperationmark", "Trennzeichen als Ersatz für '/'  (da ungültig in Dateinamen):")).setDefaultValue(defaultCustomSeperationMark).setEnabledCondidtion(origName, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, JDL.L("plugins.hoster.savetv.customEmptyTagsString", "Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen:")).setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SEPERATION_MARK, "Trennzeichen als Ersatz für '/'  (da ungültig in Dateinamen):").setDefaultValue(defaultCustomSeperationMark).setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, "Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen:").setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sbmore = new StringBuilder();
@@ -2649,7 +2645,7 @@ public class SaveTv extends PluginForHost {
             panel.addStringPair("Sendungen im Archiv:", acc_count_archive_entries);
             panel.addStringPair("Ladbare Sendungen im Archiv (telecast-IDs):", acc_count_telecast_ids);
             panel.addStringPair("Datum des letzten erfolgreichen Crawlvorganges: ", user_lastcrawl_date);
-            panel.addStringPair("Zuletzt neue Sendungen (siehe Plugin Einstellung) gefunden:", user_lastcrawl_newlinks_date);
+            panel.addStringPair("Zuletzt erfolgreich telecastIDs per Crawler hinzugefügt:", user_lastcrawl_newlinks_date);
             panel.addHeader(_GUI.T.lit_download(), new AbstractIcon(IconKey.ICON_DOWNLOAD, 18));
             panel.addStringPair(_GUI.T.lit_max_simultanous_downloads(), "20");
             panel.addStringPair(_GUI.T.lit_max_chunks_per_link(), maxchunks);
