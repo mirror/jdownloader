@@ -56,7 +56,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/");
+        parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/").replaceFirst("https://((?:www\\.)?linx\\.cloud/)", "http://$1");
         getPage(parameter);
         /* Defaultpasswörter der Seite setzen */
         final ArrayList<String> link_passwds = new ArrayList<String>();
