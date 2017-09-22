@@ -55,8 +55,9 @@ public class FuxCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Fux - Error - Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>|class='videoNotAvailable')") || br.getURL().matches(".+/video\\?error=\\d+")) {
+        if (br.getURL().matches(".+/videos?\\?error=\\d+") || br.containsHTML("<title>Fux - Error - Page not found</title>|<h2>Page<br />not found</h2>|We can't find that page you're looking for|<h3>Oops!</h3>|class='videoNotAvailable'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
