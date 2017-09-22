@@ -15,10 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -83,23 +84,17 @@ public class WeTransferCom extends PluginForHost {
         if (security_hash == null || id_main == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final boolean withRecepient = false;
-        if (withRecepient) {
-            br.getPage("https://" + this.getHost() + "/api/ui/transfers/" + id_main + "/" + security_hash + "/download?recipient_id=" + security_hash);
-        } else {
-            /*
-             * https://wetransfer.com/api/ui/transfers/0d9f92839e6772d79ce5ee4256d936a620170524074451/4fd9d9/files/
-             * cbd496b1ef50e4ff5d98ffb9337e394920170524074451/download
-             */
-            final String referer = link.getStringProperty("referer", null);
-            if (referer != null) {
-                br.getPage(referer);
-            }
-            // now without id_single
-            br.getHeaders().put("Accept", "application/json");
-            br.getHeaders().put("Content-Type", "application/json");
-            br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{\"file_ids\":[\"" + this.id_single + "\"]}");
-        }
+        /*
+         * https://wetransfer.com/api/ui/transfers/0d9f92839e6772d79ce5ee4256d936a620170524074451/4fd9d9/files/
+         * cbd496b1ef50e4ff5d98ffb9337e394920170524074451/download
+         */
+        final String referer = link.getStringProperty("referer");
+        br.getPage(referer);
+        // now without id_single
+        br.getHeaders().put("Accept", "application/json");
+        br.getHeaders().put("Content-Type", "application/json");
+        final String recipient_id = referer.replaceFirst("https?://[^/]+/+", "").split("/")[2];
+        br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{\"recipient_id\":\"" + recipient_id + "\"}");
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
