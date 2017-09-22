@@ -136,11 +136,11 @@ public class DownaceCom extends PluginForHost {
             }
             final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+            filename = this.br.getRegex("(?:>|\")(?:Information\\s*about|Informacion)\\s*([^<>\"]*?)(?:<|\")").getMatch(0);
             if (filename == null) {
                 filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             }
-            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
             try {
                 /* Language-independant attempt ... */
                 if (filename == null) {
