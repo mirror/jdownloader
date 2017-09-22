@@ -16,18 +16,19 @@
 
 package jd.plugins.decrypter;
 
+import org.appwork.utils.StringUtils;
+
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" })
 public class XxxBunkerCom extends PornEmbedParser {
@@ -42,12 +43,13 @@ public class XxxBunkerCom extends PornEmbedParser {
     private static final String INVALIDLINKS = "http://(www\\.)?xxxbunker\\.com/(search|javascript|tos|flash|footer|display|videoList|embedcode_|categories|newest|toprated|mostviewed|pornstars|forgotpassword|ourfavorites|signup|contactus|community|tags)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
@@ -121,8 +123,15 @@ public class XxxBunkerCom extends PornEmbedParser {
         }
         externID3 = br.getRegex("lvid=(\\d+)").getMatch(0);
         if (externID3 != null) {
-            br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID3 + "&autoplay=true&ageconfirm=true&title=true&html5=false&hasflash=true&r=" + System.currentTimeMillis());
-            externID = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
+            final Browser br = this.br.cloneBrowser();
+            // without https you wont get response
+            br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&autoplay=true");
+            // source
+            externID = br.getRegex("<source src=\"(http.*?)\"").getMatch(0);
+            // window location also
+            if (externID == null) {
+                externID = br.getRegex("window\\.location\\.href=(\"|')(http.*?)\\1").getMatch(1);
+            }
             if (externID != null) {
                 final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
                 decryptedLinks.add(dl);

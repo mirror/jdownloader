@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -62,8 +63,9 @@ public class XxxBunkerCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
+        br = new Browser();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,7 +109,7 @@ public class XxxBunkerCom extends PluginForHost {
         } else {
             // html5!
             br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&autoplay=false&index=false");
-            dllink = br.getRegex(".+<source src=(\"|')(http[^<>\"]*?)\\1").getMatch(1);
+            dllink = br.getRegex("<source src=(\"|')(http[^<>\"]*?)\\1").getMatch(1);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -155,6 +157,11 @@ public class XxxBunkerCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Referer", "");
+        br.setCookie(br.getURL(), "ageconfirm", "20150302");
+        br.setCookie(br.getURL(), "autostart", "1");
+        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
