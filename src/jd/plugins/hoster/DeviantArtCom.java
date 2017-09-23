@@ -136,8 +136,8 @@ public class DeviantArtCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
-        String filename_server = null;
-        if (!getPluginConfig().getBooleanProperty(FilenameFromServer, false)) {
+        // String filename_server = null;
+        if (!getPluginConfig().getBooleanProperty(FilenameFromServer, false) && !link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
