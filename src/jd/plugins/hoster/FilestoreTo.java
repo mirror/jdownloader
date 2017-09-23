@@ -83,7 +83,7 @@ public class FilestoreTo extends PluginForHost {
             } catch (final Exception e) {
                 continue;
             }
-            if (br.containsHTML(">Download-Datei wurde nicht gefunden<")) {
+            if (br.containsHTML(">Download-Datei wurde nicht gefunden<|>Datei nicht gefunden<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML(">Download-Datei wurde gesperrt<")) {
