@@ -680,6 +680,7 @@ LinkGrabberTableModel_partcolumn=Archívum rész
 LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links=Kérjük, várjon. Linkek betöltése...
 LinkGrabberTable_onSingleClick_dupe_msg=Ez a link már szerepel a letöltési listában, ezért pirossal van kiemelve.
 LinkGrabberTable_onSingleClick_dupe_title=Duplikált link észlelve!
+LinkIDColumn_LinkIDColumn=Kapcsolat azonosító
 LinkURLEditor=Forrás URL a letöltési linkhez
 LinkURLEditor_onContextMenu_copy_=Webcím - ek másolása
 LinkgrabberContextMenuManager_getName=Linkgyűjtő lista - jobb klikk menü
@@ -1656,6 +1657,7 @@ ask=Kérdezze meg
 authtablemodel_column_enabled=Használja a bejelentkezésekhez
 authtablemodel_column_host=Állomás/URL
 authtablemodel_column_password=Jelszó
+authtablemodel_column_realm=Tartomány
 authtablemodel_column_type=Szerver típusa
 authtablemodel_column_type_ftp=ftp://
 authtablemodel_column_type_http=http://
@@ -1708,6 +1710,8 @@ downloadview_skipped=Átugrott letöltések
 downloadview_successful=Sikeres letöltések
 downloadview_todo=Letöltések függőben
 extensionManager_title=Bővítő modulok
+extension_recommended=<p>Ahhoz, hogy olvashatóbb és jobban megoldható képkód legyen, javasoljuk, hogy telepítse a hivatalos <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader  böngészõ kiterjesztést.</a></p>
+extension_required=<b><p style='color:#ff0000'>Az ilyen típusú képkód megoldásához használja a <a href='https://my.jdownloader.org/apps' target='_blank'>Android alkalmazás használatakor a "my.jdownloader" segítségével '</a>, vagy a <a href='https://my.jdownloader.org/apps' target='_blank'>Saját JDownloader böngésző kiterjesztéssel.</a></p></b>
 ffmpeg_install_now=FFmpeg™ telepítése most
 file_exists_want_to_overwrite_question=A %s1 fájl már létezik. Szeretné felülírni?
 filecolumn_title=Neve
