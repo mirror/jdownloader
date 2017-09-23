@@ -54,11 +54,11 @@ public class XvidStageCom extends PluginForHost {
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://rapidvideo.ws";
+    private static final String            COOKIE_HOST                  = "http://xvidstage.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(rapidvideo\\.ws|xvidstage\\.com)";
+    private static final String            DOMAINS                      = "xvidstage\\.com";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -97,16 +97,6 @@ public class XvidStageCom extends PluginForHost {
     // captchatype: null
     // other: Related domains: faststream.in
     // TODO: Add case maintenance + alternative filesize check
-    @Override
-    public String rewriteHost(String host) {
-        if ("xvidstage.com".equals(getHost())) {
-            if (host == null || "xvidstage.com".equals(host)) {
-                return "rapidvideo.ws";
-            }
-        }
-        return super.rewriteHost(host);
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -141,6 +131,7 @@ public class XvidStageCom extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         /* 2016-05-24: Domainchange from xvidstage.com to rapidvideo.ws (xvidstage.com had its own plugin as well as rapidvideo.ws) */
+        // 2017-09-23: rapidvideo is listed in Offline.java
         final String newURL = new Regex(correctedBR, "<frame src=\"(https?://(?:www\\.)?rapidvideo\\.ws/[a-z0-9]{12})\"").getMatch(0);
         if (newURL != null && link.getDownloadURL().contains("xvidstage.com")) {
             getPage(newURL);
@@ -226,7 +217,7 @@ public class XvidStageCom extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         /* standard traits from base page */
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
