@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(www\\.)?movie4k\\.(?:to|tv)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
 public class Mv2kTo extends PluginForDecrypt {
-
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,7 +45,7 @@ public class Mv2kTo extends PluginForDecrypt {
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String old_domain = new Regex(param.toString(), "https?://(?:www\\.)?([^/]+/)").getMatch(0);
-        final String parameter = param.toString().replace(old_domain, "movie4k.to/");
+        final String parameter = param.toString().replace(old_domain, "movie4k.tv/");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.setFollowRedirects(true);
@@ -71,7 +69,6 @@ public class Mv2kTo extends PluginForDecrypt {
                 fpName = br.getRegex("<title>(.*?) online").getMatch(0);
             }
             Browser br2 = br.cloneBrowser();
-
             int mirror = 1, part = 1, m = 0;
             String mirrors[] = br.getRegex("<OPTION\\s+(?:selected\\s+)?value=\"([^\"]+)\"").getColumn(0);
             if (mirrors != null && mirrors.length > 1) {
@@ -81,14 +78,13 @@ public class Mv2kTo extends PluginForDecrypt {
             if (parts != null && parts.length > 1) {
                 part = parts.length;
             }
-
             for (int i = 0; i <= mirror; i++) {
                 m++;
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim() + (mirror > 1 ? "@Mirror " + i : "")));
                 secondary: for (int j = 1; j <= part; j++) {
-                    final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"((?!http://get\\.adobe\\.com/flashplayer/)(?:https?://)?[^<>\"]*?)\"", "0" }, { "<a href=\"((?!http://get\\.adobe\\.com/flashplayer/)(?:https?://)?[^<>\"]+)\" target=\"_blank\"", "0" }, { "<IFRAME SRC=\"(https?://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(https?://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(https?://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(https?://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(https?://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" }, { "(https?://embed\\.yesload\\.net/[\\w\\?]+)", "0" },
-                            { "\"(https?://(www\\.)?videoweed\\.es/embed\\.php\\?v=[a-z0-9]+)\"", "0" } };
+                    final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"((?!https?://get\\.adobe\\.com/flashplayer/)(?:https?://)?[^<>\"]*?)\"", "0" }, { "<a href=\"((?!https?://get\\.adobe\\.com/flashplayer/|https?://www.imdb.com/title/)(?:https?://)?[^<>\"]+)\" target=\"_blank\"", "0" }, { "<IFRAME SRC=\"(https?://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(https?://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(https?://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(https?://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(https?://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" },
+                            { "(https?://embed\\.yesload\\.net/[\\w\\?]+)", "0" }, { "\"(https?://(www\\.)?videoweed\\.es/embed\\.php\\?v=[a-z0-9]+)\"", "0" } };
                     for (String[] regex : regexes) {
                         String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
                         if (finallink != null) {
@@ -121,6 +117,7 @@ public class Mv2kTo extends PluginForDecrypt {
                                     distribute(dl);
                                 }
                                 decryptedLinks.add(dl);
+                                logger.info(finallink + " has been created.");
                                 continue secondary;
                             }
                         }
@@ -166,7 +163,6 @@ public class Mv2kTo extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         return decryptedLinks;
     }
 
@@ -174,5 +170,4 @@ public class Mv2kTo extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
