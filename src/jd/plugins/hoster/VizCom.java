@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Random;
@@ -37,7 +36,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "http://vizdecrypted/\\d+_\\d+_\\d+" })
 public class VizCom extends PluginForHost {
-
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("");
@@ -47,7 +45,6 @@ public class VizCom extends PluginForHost {
     // Tags:
     // protocol: https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension            = ".jpg";
     /* Connection stuff */
@@ -60,7 +57,6 @@ public class VizCom extends PluginForHost {
     private final boolean       ACCOUNT_PREMIUM_RESUME       = false;
     private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String              dllink                       = null;
     private boolean             server_issues                = false;
     private boolean             premiumonly                  = false;
@@ -78,21 +74,17 @@ public class VizCom extends PluginForHost {
         premiumonly = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             this.login(aa, false);
         }
-
         final String[] ids = link.getDownloadURL().replace("http://vizdecrypted/", "").split("_");
         final String manga_id = ids[0];
         final String page = ids[1];
         final String page_for_url = ids[2];
-
         /* Access mainpage to get cookies - important! */
         this.br.getPage("https://www.viz.com/");
         jd.plugins.decrypter.VizCom.accessPage(this.br, manga_id, page_for_url);
-
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -107,7 +99,8 @@ public class VizCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ("no_auth".equalsIgnoreCase(json_value_data)) {
             premiumonly = true;
-        } else if (dllink == null) {
+            logger.info("premiumonly = true has been set");
+        } else if (dllink == null) { // and !premiumonly
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
@@ -126,20 +119,22 @@ public class VizCom extends PluginForHost {
         link.setName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setProperty("directlink", dllink);
-            } else {
-                server_issues = true;
-            }
-        } finally {
+        if (dllink != null) {
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("directlink", dllink);
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
