@@ -27,9 +27,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "https?://(www\\.)?fux\\.com/(video|embed)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "https?://(www\\.)?fux\\.com/(videos?|embed)/\\d+" })
 public class FuxCom extends PluginForHost {
-
     public FuxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
