@@ -68,10 +68,14 @@ public class StreamangoCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = br.getRegex("type:\"video/mp4\",src:\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String[] match = br.getRegex("type:\"video/mp4\",src:d\\('([^']+)',(\\d+)\\)").getRow(0);
+        if (match == null || match.length != 2) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = decode(match[0], Integer.parseInt(match[1]));
         if (dllink.startsWith("//")) {
             dllink = "http:" + dllink;
         }
@@ -110,6 +114,34 @@ public class StreamangoCom extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String decode(final String url, final int mask) {
+        final String key = "=/+9876543210zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA";
+        StringBuffer result = new StringBuffer();
+        final String u = url.replaceAll("[^A-Za-z0-9\\+\\/\\=]", "");
+        int idx = 0;
+        while (idx < u.length()) {
+            int a = key.indexOf(u.substring(idx, idx + 1));
+            idx++;
+            int b = key.indexOf(u.substring(idx, idx + 1));
+            idx++;
+            int c = key.indexOf(u.substring(idx, idx + 1));
+            idx++;
+            int d = key.indexOf(u.substring(idx, idx + 1));
+            idx++;
+            int s1 = ((a << 0x2) | (b >> 0x4)) ^ mask;
+            result.append(Character.valueOf((char) s1));
+            int s2 = ((b & 0xf) << 0x4) | (c >> 0x2);
+            if (c != 0x40) {
+                result.append(Character.valueOf((char) s2));
+            }
+            int s3 = ((c & 0x3) << 0x6) | d;
+            if (d != 0x40) {
+                result.append(Character.valueOf((char) s3));
+            }
+        }
+        return result.toString();
     }
 
     @Override
