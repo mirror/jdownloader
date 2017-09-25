@@ -2,7 +2,10 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -23,16 +26,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www\\.)?crunchyroll\\.com(?:\\.br)?/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www\\.)?crunchyroll.com(?:\\.br)?/(?!forumtopic)(?:comics_read(?:\\/(?:manga|comipo|artistalley))?\\?(?:volume\\_id|series\\_id)\\=[0-9]+&chapter\\_num\\=[0-9]+(?:\\.[0-9])?|[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
 public class CrhyRllCom extends PluginForDecrypt {
-
     // Define the video quality codes used for RTMP
     public static enum DestinationQuality {
         VIDEO1080P("1080p", new String[] { "80" }),
         VIDEO360P("360p", new String[] { "60", "10" }),
         VIDEO480P("480p", new String[] { "61", "20" }),
         VIDEO720P("720p", new String[] { "62", "30" });
-
         private String   text;
         private String[] val;
 
@@ -57,7 +58,6 @@ public class CrhyRllCom extends PluginForDecrypt {
         public String toString() {
             return this.text;
         }
-
     }
 
     static private final Pattern CONFIG_SUBS    = Pattern.compile("<subtitle id='([0-9]+?)' link='(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*?/>", Pattern.CASE_INSENSITIVE);
@@ -77,6 +77,8 @@ public class CrhyRllCom extends PluginForDecrypt {
     private final String         SUFFIX_ANDROID = ".android.english";
     private final String         EXT_UNKNOWN    = ".unk";
     private final String         EXT_SUBS       = ".ass";
+    private final String         EXT_MANGA      = ".jpg";
+    final FilePackage            filePackage    = FilePackage.getInstance();
 
     @SuppressWarnings("deprecation")
     public CrhyRllCom(final PluginWrapper wrapper) {
@@ -94,7 +96,6 @@ public class CrhyRllCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
             // Attempt to login
             this.setBrowserExclusive();
@@ -112,163 +113,210 @@ public class CrhyRllCom extends PluginForDecrypt {
             this.br.setFollowRedirects(true);
             cryptedLink.setCryptedUrl(cryptedLink.getCryptedUrl().replace("crunchyroll.com.br/", "crunchyroll.com/"));
             getPage(cryptedLink.getCryptedUrl());
-            if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
-                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Regioned Blocked"));
-                return decryptedLinks;
+            // Fog: Check for manga link first before handling videos/subs
+            if (br.getURL().contains("comics_read")) {
+                final String series_id = br.getRegex("seriesId\\=(\\d+)").getMatch(0);
+                final String session_id = br.getRegex("session_id\\=(\\w+)").getMatch(0);
+                String auth = br.getRegex("auth\\=([_%a-zA-Z0-9]+)").getMatch(0);
+                final String name = br.getRegex("<a href=\"/comics/manga/([a-zA-Z0-9_ :,\\-!\\?]+)/").getMatch(0);
+                if (auth == null) {
+                    // Fog: This can happen if you are not logged into an account, and is a valid input for certain free titles
+                    auth = "null";
+                }
+                String chapter_number = br.getRegex("chapterNumber\\=(\\d+\\.\\d+)").getMatch(0);
+                // Fog: Check to see if the regex failed to grab the second 0 in some chapters
+                if (chapter_number.contains(".0") && (!chapter_number.contains(".00"))) {
+                    chapter_number += "0";
+                }
+                filePackage.setName(name + "-" + chapter_number.replace(".", "-"));
+                getPage("http://api-manga.crunchyroll.com/chapters?series_id=" + series_id);
+                if (br.containsHTML("\"error\"")) {
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab series information"));
+                    return decryptedLinks;
+                }
+                String json_source = br.toString();
+                json_source = Encoding.htmlDecode(json_source);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                final ArrayList<Object> chapter_array = (ArrayList<Object>) entries.get("chapters");
+                String chapter_id = null;
+                for (Object c : chapter_array) {
+                    entries = (LinkedHashMap<String, Object>) c;
+                    final String number = (String) entries.get("number");
+                    if (chapter_number.equals(number)) {
+                        chapter_id = (String) entries.get("chapter_id");
+                        break;
+                    }
+                }
+                getPage("http://api-manga.crunchyroll.com/list_chapter?session_id=" + session_id + "&chapter_id=" + chapter_id + "&auth=" + auth);
+                if (br.toString().contains("\"error\"")) {
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab chapter information"));
+                    return decryptedLinks;
+                }
+                json_source = br.toString();
+                json_source = Encoding.htmlDecode(json_source);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                final ArrayList<Object> pages_array = (ArrayList<Object>) entries.get("pages");
+                for (Object p : pages_array) {
+                    entries = (LinkedHashMap<String, Object>) p;
+                    // Fog: Store this just in case the composed image is not available.
+                    final String temp_image = (String) entries.get("image_url");
+                    final String page_number = (String) entries.get("number");
+                    entries = (LinkedHashMap<String, Object>) entries.get("locale");
+                    entries = (LinkedHashMap<String, Object>) entries.get("enUS");
+                    String image = (String) entries.get("encrypted_composed_image_url");
+                    // Fog: This can apparently happen somehow, so try to grab the raw uncomposed image.
+                    if (image == null) {
+                        image = temp_image;
+                    }
+                    // Fog: If image is still null even after the previous check, then abandon all hope of grabbing a proper image file.
+                    if (image == null) {
+                        decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab image information"));
+                        return decryptedLinks;
+                    }
+                    final DownloadLink dl = this.createDownloadlink(image);
+                    dl._setFilePackage(filePackage);
+                    dl.setFinalFileName(name + "-" + chapter_number.replace(".", "-") + "-" + page_number + EXT_MANGA);
+                    dl.setContentUrl(cryptedLink.getCryptedUrl());
+                    dl.setLinkID(name + "-" + chapter_number.replace(".", "-") + "-" + page_number + EXT_MANGA);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
             }
-            if (br.containsHTML("\"Note: This video requires a")) {
-                logger.info("Video only available for premium users (in the current region): " + cryptedLink.getCryptedUrl());
-                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
-                return decryptedLinks;
-            }
-
-            // Determine if the video exists
-            if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {
-                // not available == offline, no need to show error message
-                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl()));
-                return decryptedLinks;
-            }
-            if (br.getURL().contains("maturity_wall")) {
-                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
-                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Account Holders"));
-                return decryptedLinks;
-            }
-            if (br.containsHTML("This video has not been released yet")) {
-                logger.info("Video is not released yet -> Cannot decrypt link: " + cryptedLink.getCryptedUrl());
-                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Content not released yet!"));
-                return decryptedLinks;
-            }
-
-            // Get the episode name
-            String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
-            if (title == null) {
-                title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
-            }
-            if (title == null) {
-                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Plugin Error: Title could not be found."));
-                return decryptedLinks;
-            }
-
-            // Get the link to the XML file
-            final Regex configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"");
-            if (!configUrlSearch.matches()) {
-                throw new DecrypterException("Failed to get config url");
-            }
-
-            final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
-            final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
-            if (!configUrl.matches()) {
-                if (configUrlDecode.contains("video_format=0") && !configUrlDecode.contains("video_quality")) {
-                    /* 2016-10-19: Added some errorhandling for premiumonly content. */
-                    final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
-                    logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
+            // Fog: Manga link not found, assume that it's a video/sub link
+            else {
+                if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Regioned Blocked"));
+                    return decryptedLinks;
+                }
+                if (br.containsHTML("\"Note: This video requires a")) {
+                    logger.info("Video only available for premium users (in the current region): " + cryptedLink.getCryptedUrl());
                     decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
                     return decryptedLinks;
                 }
-                throw new DecrypterException("Invalid config url");
-            }
-
-            // Get the link to the SWF file
-            final Regex swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"");
-            if (!swfUrlSearch.matches()) {
-                logger.warning("WTF");
-                throw new DecrypterException("Failed to get SWF url");
-            }
-
-            final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch.getMatch(0).replaceAll("\\\\/", "/"));
-            final Regex swfUrl = new Regex(swfUrlDecode, CrhyRllCom.SWF_URL);
-            if (!swfUrl.matches()) {
-                throw new DecrypterException("Invalid SWF url");
-            }
-
-            // Find the available qualities by looking for the buttons
-            String[] qualities = this.br.getRegex("\\?p([0-9]+)=1").getColumn(0);
-            if (qualities == null || qualities.length == 0) {
-                qualities = br.getRegex("token=\"showmedia\\.(\\d+)p\"").getColumn(0);
+                // Determine if the video exists
+                if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {
+                    // not available == offline, no need to show error message
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl()));
+                    return decryptedLinks;
+                }
+                if (br.getURL().contains("maturity_wall")) {
+                    logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Account Holders"));
+                    return decryptedLinks;
+                }
+                if (br.containsHTML("This video has not been released yet")) {
+                    logger.info("Video is not released yet -> Cannot decrypt link: " + cryptedLink.getCryptedUrl());
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Content not released yet!"));
+                    return decryptedLinks;
+                }
+                // Get the episode name
+                String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
+                if (title == null) {
+                    title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
+                }
+                if (title == null) {
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Plugin Error: Title could not be found."));
+                    return decryptedLinks;
+                }
+                // Get the link to the XML file
+                final Regex configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"");
+                if (!configUrlSearch.matches()) {
+                    throw new DecrypterException("Failed to get config url");
+                }
+                final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
+                final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
+                if (!configUrl.matches()) {
+                    if (configUrlDecode.contains("video_format=0") && !configUrlDecode.contains("video_quality")) {
+                        /* 2016-10-19: Added some errorhandling for premiumonly content. */
+                        final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
+                        logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
+                        decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
+                        return decryptedLinks;
+                    }
+                    throw new DecrypterException("Invalid config url");
+                }
+                // Get the link to the SWF file
+                final Regex swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"");
+                if (!swfUrlSearch.matches()) {
+                    logger.warning("WTF");
+                    throw new DecrypterException("Failed to get SWF url");
+                }
+                final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch.getMatch(0).replaceAll("\\\\/", "/"));
+                final Regex swfUrl = new Regex(swfUrlDecode, CrhyRllCom.SWF_URL);
+                if (!swfUrl.matches()) {
+                    throw new DecrypterException("Invalid SWF url");
+                }
+                // Find the available qualities by looking for the buttons
+                String[] qualities = this.br.getRegex("\\?p([0-9]+)=1").getColumn(0);
                 if (qualities == null || qualities.length == 0) {
-                    throw new DecrypterException("No qualities found");
+                    qualities = br.getRegex("token=\"showmedia\\.(\\d+)p\"").getColumn(0);
+                    if (qualities == null || qualities.length == 0) {
+                        throw new DecrypterException("No qualities found");
+                    }
                 }
+                filePackage.setProperty("ALLOW_MERGE", true);
+                filePackage.setName(title);
+                for (String quality : qualities) {
+                    quality += "p"; // '360' => '360p'
+                    // Try and find the RTMP quality codes
+                    CrhyRllCom.DestinationQuality qualityValue = null;
+                    if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO360P.toString())) {
+                        qualityValue = CrhyRllCom.DestinationQuality.VIDEO360P;
+                    } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO480P.toString())) {
+                        qualityValue = CrhyRllCom.DestinationQuality.VIDEO480P;
+                    } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO720P.toString())) {
+                        qualityValue = CrhyRllCom.DestinationQuality.VIDEO720P;
+                    } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO1080P.toString())) {
+                        qualityValue = DestinationQuality.VIDEO1080P;
+                    }
+                    if (qualityValue == null) {
+                        continue;
+                    }
+                    final String xmlUrl = configUrl.getMatch(0) + qualityValue.getFirstValue() + configUrl.getMatch(3);
+                    final String filename = title + "." + quality + SUFFIX_RAW;
+                    final DownloadLink thisLink = this.createDownloadlink(xmlUrl);
+                    thisLink.setContentUrl(cryptedLink.getCryptedUrl());
+                    thisLink.setFinalFileName(filename + EXT_UNKNOWN);
+                    thisLink.setProperty("quality", qualityValue.getFirstValue());
+                    thisLink.setProperty("filename", filename);
+                    thisLink.setProperty("swfdir", swfUrl.getMatch(1));
+                    thisLink.setProperty("valid", true);
+                    filePackage.add(thisLink);
+                    decryptedLinks.add(thisLink);
+                }
+                // Get subtitles
+                postPage(configUrlDecode, "current_page=" + cryptedLink.getCryptedUrl());
+                final String mediaId = br.getRegex("<media_id>(\\d+)</media_id>").getMatch(0);
+                postPage("http://www.crunchyroll.com/xml/", "req=RpcApiSubtitle%5FGetListing&media%5Fid=" + mediaId);
+                final String[][] subtitles = this.br.getRegex(CrhyRllCom.CONFIG_SUBS).getMatches();
+                // Loop through each subtitles xml found
+                for (final String[] subtitle : subtitles) {
+                    final String subUrl = Encoding.htmlDecode(subtitle[1]);
+                    final String subTitle = subtitle[2];
+                    String subName = new Regex(subTitle, "\\[[0-9\\s]+\\]\\s*(.+)").getMatch(0);
+                    if (subName == null) {
+                        subName = subTitle;
+                    }
+                    subName = subName.replace(' ', SEPARATOR).toLowerCase();
+                    subName = subName.replaceAll("[\\[\\]\\(\\)]+", "");
+                    final String subFile = title + "." + subName;
+                    final DownloadLink thisLink = this.createDownloadlink(subUrl);
+                    thisLink.setContentUrl(cryptedLink.getCryptedUrl());
+                    thisLink.setFinalFileName(subFile + EXT_SUBS);
+                    thisLink.setProperty("filename", subFile);
+                    thisLink.setProperty("valid", true);
+                    filePackage.add(thisLink);
+                    decryptedLinks.add(thisLink);
+                }
+                // Add the Android video file (low-res, embedded subtitles)
+                final String androidFile = title + SUFFIX_ANDROID;
+                final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
+                androidLink.setContentUrl(cryptedLink.getCryptedUrl());
+                androidLink.setFinalFileName(androidFile + EXT_UNKNOWN);
+                androidLink.setProperty("filename", androidFile);
+                filePackage.add(androidLink);
+                decryptedLinks.add(androidLink);
             }
-
-            final FilePackage filePackage = FilePackage.getInstance();
-            filePackage.setProperty("ALLOW_MERGE", true);
-            filePackage.setName(title);
-            for (String quality : qualities) {
-                quality += "p"; // '360' => '360p'
-
-                // Try and find the RTMP quality codes
-                CrhyRllCom.DestinationQuality qualityValue = null;
-                if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO360P.toString())) {
-                    qualityValue = CrhyRllCom.DestinationQuality.VIDEO360P;
-                } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO480P.toString())) {
-                    qualityValue = CrhyRllCom.DestinationQuality.VIDEO480P;
-                } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO720P.toString())) {
-                    qualityValue = CrhyRllCom.DestinationQuality.VIDEO720P;
-                } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO1080P.toString())) {
-                    qualityValue = DestinationQuality.VIDEO1080P;
-                }
-                if (qualityValue == null) {
-                    continue;
-                }
-
-                final String xmlUrl = configUrl.getMatch(0) + qualityValue.getFirstValue() + configUrl.getMatch(3);
-                final String filename = title + "." + quality + SUFFIX_RAW;
-
-                final DownloadLink thisLink = this.createDownloadlink(xmlUrl);
-
-                thisLink.setContentUrl(cryptedLink.getCryptedUrl());
-                thisLink.setFinalFileName(filename + EXT_UNKNOWN);
-                thisLink.setProperty("quality", qualityValue.getFirstValue());
-                thisLink.setProperty("filename", filename);
-                thisLink.setProperty("swfdir", swfUrl.getMatch(1));
-                thisLink.setProperty("valid", true);
-
-                filePackage.add(thisLink);
-                decryptedLinks.add(thisLink);
-            }
-
-            // Get subtitles
-            postPage(configUrlDecode, "current_page=" + cryptedLink.getCryptedUrl());
-            final String mediaId = br.getRegex("<media_id>(\\d+)</media_id>").getMatch(0);
-            postPage("http://www.crunchyroll.com/xml/", "req=RpcApiSubtitle%5FGetListing&media%5Fid=" + mediaId);
-            final String[][] subtitles = this.br.getRegex(CrhyRllCom.CONFIG_SUBS).getMatches();
-
-            // Loop through each subtitles xml found
-            for (final String[] subtitle : subtitles) {
-                final String subUrl = Encoding.htmlDecode(subtitle[1]);
-                final String subTitle = subtitle[2];
-                String subName = new Regex(subTitle, "\\[[0-9\\s]+\\]\\s*(.+)").getMatch(0);
-                if (subName == null) {
-                    subName = subTitle;
-                }
-
-                subName = subName.replace(' ', SEPARATOR).toLowerCase();
-                subName = subName.replaceAll("[\\[\\]\\(\\)]+", "");
-
-                final String subFile = title + "." + subName;
-                final DownloadLink thisLink = this.createDownloadlink(subUrl);
-
-                thisLink.setContentUrl(cryptedLink.getCryptedUrl());
-                thisLink.setFinalFileName(subFile + EXT_SUBS);
-                thisLink.setProperty("filename", subFile);
-                thisLink.setProperty("valid", true);
-
-                filePackage.add(thisLink);
-                decryptedLinks.add(thisLink);
-            }
-
-            // Add the Android video file (low-res, embedded subtitles)
-            final String androidFile = title + SUFFIX_ANDROID;
-
-            final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
-
-            androidLink.setContentUrl(cryptedLink.getCryptedUrl());
-            androidLink.setFinalFileName(androidFile + EXT_UNKNOWN);
-            androidLink.setProperty("filename", androidFile);
-
-            filePackage.add(androidLink);
-            decryptedLinks.add(androidLink);
-
         } catch (final IOException e) {
             this.logger.log(e);
             return null;
@@ -290,12 +338,10 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (br == null) {
             br = this.br;
         }
-
         // Make sure that the id is just numbers
         if (!new Regex(videoId, "^[0-9]+$").matches()) {
             return null;
         }
-
         String name = null;
         try {
             // Use a feature where you are redirected to the full-url if you go to a shortened version
@@ -304,7 +350,6 @@ public class CrhyRllCom extends PluginForDecrypt {
             name = this.nameFromVideoUrl(br.getRedirectLocation());
         } catch (final Throwable e) {
         }
-
         return name;
     }
 
@@ -314,16 +359,13 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (!urlReg.matches()) {
             return null;
         }
-
         final String series = urlReg.getMatch(0);
         String episode = urlReg.getMatch(1);
         final String title = urlReg.getMatch(2);
-
         // Pad out the episode number
         while (episode.length() < EPISODE_PAD) {
             episode = "0" + episode;
         }
-
         return series + SEPARATOR + episode + title;
     }
 
@@ -340,20 +382,17 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (br == null) {
             br = this.br;
         }
-
         // Extract the quality code from the url
         final Regex androidUrl = new Regex(downloadLink.getDownloadURL(), CrhyRllCom.ANDROID_URL);
         final String mediaId = androidUrl.getMatch(0);
         if (mediaId == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)");
         }
-
         // If the download does not yet have a filename, set a temporary filename
         String filename = "CrunchyRoll." + mediaId + SUFFIX_ANDROID;
         if (downloadLink.getFinalFileName() == null) {
             downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
         }
-
         // Load the xml using the spoofed Android headers
         // TODO Randomise UID?
         final Browser androidBr = br.cloneBrowser();
@@ -365,7 +404,6 @@ public class CrhyRllCom extends PluginForDecrypt {
         androidBr.setHeader("X-Device-Product", "htc_ace");
         androidBr.setHeader("X-Device-Is-GoogleTV", "0");
         getPage(androidBr, downloadLink.getDownloadURL());
-
         // Check if we can actually get the video
         if (androidBr.containsHTML("Video not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permission denied!");
@@ -377,18 +415,15 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (!androidBr.containsHTML("\"exception_error_code\":null")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!");
         }
-
         // Get the filetype from the JSON
         String filetype = androidBr.getRegex("video(\\.\\w+)").getMatch(0);
         if (filetype == null) {
             filetype = EXT_UNKNOWN;
         }
-
         // Get the filename, and generate a new one if it doesn't exist
         String oldFilename = downloadLink.getStringProperty("filename");
         if (oldFilename == null) {
             oldFilename = this.nameFromVideoId(mediaId, br);
-
             if (oldFilename != null) {
                 filename = oldFilename + SUFFIX_ANDROID;
                 downloadLink.setProperty("filename", filename);
@@ -397,15 +432,12 @@ public class CrhyRllCom extends PluginForDecrypt {
             filename = oldFilename;
         }
         downloadLink.setFinalFileName(filename + filetype);
-
         String videoUrl = androidBr.getRegex("\"video_url\":\"(.+?)\"").getMatch(0);
         if (videoUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to get video URL");
         }
         videoUrl = Encoding.htmlDecode(videoUrl.replaceAll("\\\\/", "/"));
-
         downloadLink.setProperty("videourl", videoUrl);
-
         // Get the HTTP response headers of the video file to check for
         // validity
         URLConnectionAdapter conn = null;
@@ -428,9 +460,9 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link.
-     * rtmphost = TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension.
-     * qualityname = text definition of the quality found ("360p", "480p", etc).
+     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link. rtmphost =
+     * TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension. qualityname = text
+     * definition of the quality found ("360p", "480p", etc).
      *
      * @param downloadLink
      *            The DownloadLink file to check
@@ -442,18 +474,15 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (br == null) {
             br = this.br;
         }
-
         if (downloadLink.getStringProperty("swfdir") == null) {
             downloadLink.setProperty("swfdir", CrhyRllCom.SWF_DIR);
         }
-
         // Extract the quality code from the url
         final Regex configUrl = new Regex(downloadLink.getDownloadURL(), CrhyRllCom.CONFIG_URL);
         final String qualityStr = configUrl.getMatch(2);
         if (qualityStr == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find quality)");
         }
-
         // Try and find that quality code in the known codes
         DestinationQuality qualityObj = null;
         for (final DestinationQuality quality : DestinationQuality.values()) {
@@ -470,14 +499,11 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (qualityObj == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown quality");
         }
-
         final String mediaId = configUrl.getMatch(1);
-
         // Get the filename, and generate a new one if it doesn't exist
         String filename = downloadLink.getStringProperty("filename");
         if (filename == null) {
             filename = this.nameFromVideoId(mediaId, br);
-
             if (filename != null) {
                 filename += "." + qualityObj.getText() + SUFFIX_RAW;
                 downloadLink.setProperty("filename", filename);
@@ -487,44 +513,36 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
         }
         downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
-
         // Loop through all of the quality codes for the given quality
         for (final String quality : qualityObj.getValues()) {
             // Get the XML file for the given quality code
             final String url = configUrl.getMatch(0) + quality + configUrl.getMatch(3);
             br.setFollowRedirects(true);
             postPage(br, url, "current_page=" + downloadLink.getDownloadURL());
-
             // Does the file actually exist?
             if (br.containsHTML("<msg>Media not found</msg>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist");
             }
-
             // Check if a premium account is needed (and we aren't using one)
             if (br.containsHTML("<upsell>1</upsell>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Premium account required for this quality");
             }
-
             // Check if the quality found is actually the one we wanted
             final String qual = Encoding.htmlDecode(br.getRegex(CrhyRllCom.RTMP_QUAL).getMatch(0));
             if (!qual.equals(quality)) {
                 continue;
             }
-
             // Get the needed RTMP details
             final String host = Encoding.htmlDecode(br.getRegex(CrhyRllCom.RTMP_HOST).getMatch(0));
             final String file = Encoding.htmlDecode(br.getRegex(CrhyRllCom.RTMP_FILE).getMatch(0));
             final String swf = br.getRegex(CrhyRllCom.RTMP_SWF).getMatch(0).replaceAll("&amp;", "&");
-
             String filetype = new Regex(file, "^(.+):.*").getMatch(0);
             if (filetype == null) {
                 filetype = EXT_UNKNOWN;
             } else {
                 filetype = "." + filetype;
             }
-
             downloadLink.setFinalFileName(filename + filetype);
-
             downloadLink.setProperty("rtmphost", host);
             downloadLink.setProperty("rtmpfile", file);
             downloadLink.setProperty("rtmpswf", swf);
@@ -569,5 +587,4 @@ public class CrhyRllCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
