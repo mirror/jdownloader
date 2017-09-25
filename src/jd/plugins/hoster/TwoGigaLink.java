@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,9 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "2giga.link" }, urls = { "https?://(?:www\\.)?2giga\\.link/d(?:ownload)?/[A-Za-z0-9]+" })
 public class TwoGigaLink extends PluginForHost {
-
     public TwoGigaLink(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,6 +60,7 @@ public class TwoGigaLink extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">File not found|Expired or deleted by Admin because it")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
