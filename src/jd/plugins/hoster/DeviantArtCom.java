@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -37,7 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
@@ -497,7 +500,7 @@ public class DeviantArtCom extends PluginForHost {
         return ai;
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
@@ -508,7 +511,24 @@ public class DeviantArtCom extends PluginForHost {
                     return;
                 }
                 br.getPage("https://www.deviantart.com/");
-                br.getPage("/users/login");
+                br.getPage("https://l.deviantart.com/");
+                if (false && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
+                    // disabled because perimeterx code is incomplete
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                    final DownloadLink odl = this.getDownloadLink();
+                    this.setDownloadLink(dummyLink);
+                    final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcj-R8TAAAAABs3FrRPuQhLMbp5QrHsHufzLf7b");
+                    if (odl != null) {
+                        this.setDownloadLink(odl);
+                    }
+                    final String uuid = new Regex(br.getURL(), "uuid=(.*?)($|&)").getMatch(0);
+                    String vid = new Regex(br.getURL(), "vid=(.*?)($|&)").getMatch(0);
+                    if (StringUtils.isEmpty(vid)) {
+                        vid = "null";
+                    }
+                    br.setCookie(getHost(), "_pxCaptcha", URLEncoder.encode(captcha.getToken(), "UTF-8") + ":" + uuid + ":" + vid);
+                    br.getPage("https://www.deviantart.com/users/login");
+                }
                 final Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
