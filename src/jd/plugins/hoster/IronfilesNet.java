@@ -36,16 +36,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ironfiles.net" }, urls = { "http://(www\\.)?ironfiles\\.net/file/download/id/\\d+(?:/key/[a-z0-9]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ironfiles.net" }, urls = { "https?://(www\\.)?ironfiles\\.net/file/download/id/\\d+(?:/key/[a-z0-9]+)?" })
 public class IronfilesNet extends PluginForHost {
     public IronfilesNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://ironfiles.net");
+        this.enablePremium("https://ironfiles.net");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://ironfiles.net/contact";
+        return "https://ironfiles.net/contact";
     }
 
     /* Connection stuff */
@@ -128,7 +128,7 @@ public class IronfilesNet extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://ironfiles.net";
+    private static final String MAINPAGE = "https://ironfiles.net";
     private static Object       LOCK     = new Object();
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -206,7 +206,7 @@ public class IronfilesNet extends PluginForHost {
             if (privatefile) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
-            dllink = "http://ironfiles.net/download/file/id/" + fid;
+            dllink = "https://ironfiles.net/download/file/id/" + fid;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
