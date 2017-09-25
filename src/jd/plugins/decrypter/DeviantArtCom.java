@@ -114,7 +114,8 @@ public class DeviantArtCom extends PluginForDecrypt {
         final Account acc = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (acc != null) {
             try {
-                jd.plugins.hoster.DeviantArtCom.login(this.br, acc, false);
+                // broken at the moment
+                // jd.plugins.hoster.DeviantArtCom.login(this.br, acc, false);
             } catch (final Throwable e) {
             }
         }
