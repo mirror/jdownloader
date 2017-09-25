@@ -15,11 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.formatter.SizeFormatter;
-
-import java.util.LinkedHashMap;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,7 +35,6 @@ import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
-
     private String security_hash = null;
     private String id_main       = null;
     private String id_single     = null;
@@ -93,8 +91,17 @@ public class WeTransferCom extends PluginForHost {
         // now without id_single
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("Content-Type", "application/json");
-        final String recipient_id = referer.replaceFirst("https?://[^/]+/+", "").split("/")[2];
-        br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{\"recipient_id\":\"" + recipient_id + "\"}");
+        final String[] recipient_id = referer.replaceFirst("https?://[^/]+/+", "").split("/");
+        if (recipient_id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (recipient_id.length == 4) {
+            br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{\"recipient_id\":\"" + recipient_id[2] + "\"}");
+        } else if (recipient_id.length == 3) {
+            br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{}");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
