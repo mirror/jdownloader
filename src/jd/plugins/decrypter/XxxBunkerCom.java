@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.appwork.utils.StringUtils;
 
 import java.util.ArrayList;
 
@@ -30,16 +27,16 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" })
 public class XxxBunkerCom extends PornEmbedParser {
-
     public XxxBunkerCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     private static final String INVALIDLINKS = "http://(www\\.)?xxxbunker\\.com/(search|javascript|tos|flash|footer|display|videoList|embedcode_|categories|newest|toprated|mostviewed|pornstars|forgotpassword|ourfavorites|signup|contactus|community|tags)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -97,7 +94,6 @@ public class XxxBunkerCom extends PornEmbedParser {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-
         String externID = null;
         String externID2 = null;
         String externID3 = null;
@@ -125,7 +121,11 @@ public class XxxBunkerCom extends PornEmbedParser {
         if (externID3 != null) {
             final Browser br = this.br.cloneBrowser();
             // without https you wont get response
-            br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&autoplay=true");
+            br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&ageconfirm=true&autoplay=true");
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">FILE NOT FOUND<")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             // source
             externID = br.getRegex("<source src=\"(http.*?)\"").getMatch(0);
             // window location also
@@ -205,5 +205,4 @@ public class XxxBunkerCom extends PornEmbedParser {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
