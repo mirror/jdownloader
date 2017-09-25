@@ -60,7 +60,7 @@ public class StreamangoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">We are unable to find the video")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">We are unable to find the video") || br.containsHTML("Converting")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
