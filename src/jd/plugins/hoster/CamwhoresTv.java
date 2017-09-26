@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +38,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores\\.tv/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
+
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.camwhores.tv/");
@@ -75,7 +75,7 @@ public class CamwhoresTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         br.setFollowRedirects(true);
@@ -129,16 +129,20 @@ public class CamwhoresTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getDllink(final DownloadLink link) throws PluginException, IOException {
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
+    private void getDllink(final DownloadLink link) throws Exception {
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
         if (dllink != null && dllink.contains("login-required")) {
             dllink = null;
         }
         this.dllink = getDllinkCrypted(this.br);
     }
 
-    /** 2017-04-28: Universal decrypt function for a lot, if not all KernelVideoSharing website which crypt their final downloadlinks. */
-    public static String getDllinkCrypted(final Browser br) throws PluginException, IOException {
+    /**
+     * 2017-04-28: Universal decrypt function for a lot, if not all KernelVideoSharing website which crypt their final downloadlinks.
+     *
+     * @throws Exception
+     */
+    public static String getDllinkCrypted(final Browser br) throws Exception {
         String dllink = null;
         final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
         final String licenseCode = br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
@@ -261,7 +265,7 @@ public class CamwhoresTv extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

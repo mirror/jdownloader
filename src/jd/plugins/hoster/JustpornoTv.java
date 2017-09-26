@@ -72,7 +72,7 @@ public class JustpornoTv extends PluginForHost {
         }
         if (this.br.getURL().contains("xxx.justporno.tv")) {
             /* KVS script running here ... */
-            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
+            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
         } else {
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }

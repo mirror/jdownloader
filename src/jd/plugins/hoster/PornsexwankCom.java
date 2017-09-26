@@ -29,6 +29,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "pornsexwankdecrypted://.+" })
 public class PornsexwankCom extends PluginForHost {
+
     public PornsexwankCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -68,11 +69,11 @@ public class PornsexwankCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "pornsexwank\\.com/([A-Za-z0-9\\-_]+)\\-\\d+\\.html").getMatch(0);
-        String filename = jd.plugins.decrypter.PornsexwankCom.getTitle(this.br);
+        String filename = jd.plugins.decrypter.PornsexwankCom.getTitle(br);
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
         // if (dllink == null) {
         // dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         // }
