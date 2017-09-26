@@ -81,28 +81,30 @@ public class MyzukaRu extends antiDDoSForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(/Song/Download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            logger.info("Could not find downloadurl, trying to get streamurl");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
-            if (br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
-            }
-            dllink = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (dllink != null) {
-                logger.info("Found streamurl");
-                dllink = Encoding.unicodeDecode(dllink);
-            } else {
-                logger.warning("Failed to find streamurl");
+            dllink = br.getRegex("\"(/Song/Play/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                logger.info("Could not find downloadurl, trying to get streamurl");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
+                }
+                dllink = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (dllink != null) {
+                    logger.info("Found streamurl");
+                    dllink = Encoding.unicodeDecode(dllink);
+                } else {
+                    logger.warning("Failed to find streamurl");
+                }
             }
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            br.setFollowRedirects(false);
+            br.getPage(dllink);
+            br.setFollowRedirects(true);
+            dllink = br.getRedirectLocation();
         }
-        dllink = Encoding.htmlDecode(dllink);
-        br.setFollowRedirects(false);
-        br.getPage(dllink);
-        br.setFollowRedirects(true);
-        dllink = br.getRedirectLocation();
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
