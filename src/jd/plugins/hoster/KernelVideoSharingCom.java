@@ -342,18 +342,17 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
         final String video_url = br.getRegex("var\\s+video_url=\"(.*?)\";").getMatch(0);
         if (inValidate(dllink, plugin) || video_url != null) {
-            if (video_url != null) {
-                Object result = new Object();
-                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-                final ScriptEngine engine = manager.getEngineByName("javascript");
-                final Invocable inv = (Invocable) engine;
-                try {
-                    engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
-                    result = inv.invokeFunction("result", video_url);
-                } catch (final Throwable e) {
-                    return null;
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final Invocable inv = (Invocable) engine;
+            try {
+                engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
+                final Object result = inv.invokeFunction("result", video_url);
+                if (result != null) {
+                    return result.toString();
                 }
-                return result != null ? result.toString() : null;
+            } catch (final Throwable e) {
+                plugin.getLogger().log(e);
             }
         }
         if (inValidate(dllink, plugin)) {
