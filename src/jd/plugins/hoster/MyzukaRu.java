@@ -100,6 +100,8 @@ public class MyzukaRu extends antiDDoSForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         sleep(5000, downloadLink);
+        br.setRequest(null);
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("gif")) {
             try {
