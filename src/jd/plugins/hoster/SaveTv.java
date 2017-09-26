@@ -131,7 +131,7 @@ public class SaveTv extends PluginForHost {
     /* Crawler settings */
     private static final String   CRAWLER_ONLY_ADD_NEW_IDS                     = "CRAWLER_ONLY_ADD_NEW_IDS";
     private static final String   ACTIVATE_BETA_FEATURES                       = "ACTIVATE_BETA_FEATURES";
-    private static final String   USEAPI                                       = "USEAPI_2017_08";
+    private static final String   USEAPI                                       = "USEAPI_2017_09";
     private static final String   CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
     public static final String    CRAWLER_ENABLE_FAST_LINKCHECK                = "CRAWLER_ENABLE_FASTER_2";
     private static final String   CRAWLER_DISABLE_DIALOGS                      = "CRAWLER_DISABLE_DIALOGS";
@@ -142,7 +142,7 @@ public class SaveTv extends PluginForHost {
     private static final String   CUSTOM_DATE                                  = "CUSTOM_DATE";
     private static final String   CUSTOM_FILENAME_MOVIES                       = "CUSTOM_FILENAME_MOVIES";
     private static final String   CUSTOM_FILENAME_SERIES                       = "CUSTOM_FILENAME_SERIES_3";
-    public static final String    CUSTOM_API_CRAWLER_FILTER_tags               = "CUSTOM_API_CRAWLER_FILTER_tags";
+    public static final String    CUSTOM_API_PARAMETERS_CRAWLER                = "CUSTOM_API_PARAMETERS_CRAWLER";
     private static final String   CUSTOM_FILENAME_SEPERATION_MARK              = "CUSTOM_FILENAME_SEPERATION_MARK";
     private static final String   CUSTOM_FILENAME_EMPTY_TAG_STRING             = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
     private static final String   FORCE_ORIGINALFILENAME_SERIES                = "FORCE_ORIGINALFILENAME_SERIES";
@@ -576,7 +576,7 @@ public class SaveTv extends PluginForHost {
         final String site_title = (String) entries.get("title");
         /* For series only */
         final String episodenumber_with_E = (String) entries.get("episode");
-        final String episodenumber = episodenumber_with_E != null ? new Regex(episodenumber_with_E, "^E(\\d+)$").getMatch(0) : null;
+        final String episodenumber = episodenumber_with_E != null ? new Regex(episodenumber_with_E, "^E(?:[0]+)?(\\d+)$").getMatch(0) : null;
         final String episodename = (String) entries.get("subTitle");
         /* General */
         final String genre = (String) JavaScriptEngineFactory.walkJson(entries, "tvSubCategory/name");
@@ -1795,7 +1795,7 @@ public class SaveTv extends PluginForHost {
     }
 
     public static boolean is_API_enabled(final String host) {
-        return SubConfiguration.getConfig(host).getBooleanProperty(USEAPI);
+        return SubConfiguration.getConfig(host).getBooleanProperty(USEAPI, defaultUSEAPI);
     }
 
     /** Corrects all kinds of Strings which Stv provides, also makes filenames look nicer. */
@@ -2241,7 +2241,7 @@ public class SaveTv extends PluginForHost {
     private static final boolean defaultUseOriginalFilename                 = false;
     private static final String  defaultCustomDate                          = "dd.MM.yyyy";
     private static final boolean defaultACTIVATE_BETA_FEATURES              = false;
-    private static final boolean defaultUSEAPI                              = false;
+    public static final boolean  defaultUSEAPI                              = true;
     private static final boolean defaultDeleteTelecastIDAfterDownload       = false;
     private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists = false;
     private static final String  ACCOUNTTYPE_UNKNOWN                        = "Unbekanntes Paket";
@@ -2358,7 +2358,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDAfterDownload));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, "Falls Datei bereits auf der Festplatte existiert, telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_API_CRAWLER_FILTER_tags, "Crawler: Werte für API Zugriff 'tags' Parameter (kommasepariert)\r\nBeispiele:\r\n'record:manual' : Manuell programmierte Aufnahmen crawlen (nützlich bei aktivem 'Catch All')\r\n'record:guard' : Vom Guard programmierte Aufnahmen crawlen\r\nMehr Informationen siehe: api.save.tv/v3/docs/index#!/Records_%7C_get/Records_Get\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Falsche Werte können den Crawler 'kaputtmachen' (ggf. Einstellungen zurücksetzen)!</p></html>").setDefaultValue(null).setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_API_PARAMETERS_CRAWLER, "Crawler: eigene API Parameter definieren (alles außer 'limit,fields,nopagingheader,paging,offset') [urlEncoded]:\r\nBeispiel: 'tags=record:manual&fsk=6'\r\nWeitere Informationen siehe: api.save.tv/v3/docs/index#!/Records_|_get/Records_Get<html><p style=\"color:#F62817\"><b>Warnung:</b> Falsche Werte können den Crawler 'kaputtmachen' und andere Crawler-Einstellungen beeinflussen (ggf. Einstellungen zurücksetzen)!</p></html>").setDefaultValue(null).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SEPERATION_MARK, "Trennzeichen als Ersatz für '/'  (da ungültig in Dateinamen):").setDefaultValue(defaultCustomSeperationMark).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, "Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen:").setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false));
@@ -2615,8 +2615,8 @@ public class SaveTv extends PluginForHost {
             final String acc_count_telecast_ids = account.getStringProperty(PROPERTY_acc_count_telecast_ids, "?");
             final String user_lastcrawl_newlinks_date;
             final String user_lastcrawl_date;
-            final long time_last_crawl_ended_newlinks = this.getPluginConfig().getLongProperty(CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
-            final long time_last_crawl_ended = this.getPluginConfig().getLongProperty(CRAWLER_PROPERTY_LASTCRAWL, 0);
+            final long time_last_crawl_ended_newlinks = account.getLongProperty(CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS, 0);
+            final long time_last_crawl_ended = account.getLongProperty(CRAWLER_PROPERTY_LASTCRAWL, 0);
             final String maxchunks;
             if (ACCOUNT_PREMIUM_MAXCHUNKS == 0) {
                 maxchunks = "20";
