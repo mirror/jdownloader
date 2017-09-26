@@ -23,6 +23,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -41,19 +54,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+" })
 public class HighWayMe extends UseNet {
@@ -821,10 +821,11 @@ public class HighWayMe extends UseNet {
         return 0;
     }
 
+    /** According to High-Way staff, Usenet SSL is unavailable since 2017-08-01 */
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("reader.high-way.me", true, 563));
+        ret.addAll(UsenetServer.createServerList("reader.high-way.me", false, 119));
         return ret;
     }
 
