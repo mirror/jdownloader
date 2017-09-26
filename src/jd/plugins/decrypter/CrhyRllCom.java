@@ -26,7 +26,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www\\.)?crunchyroll.com(?:\\.br)?/(?!forumtopic)(?:comics_read(?:\\/(?:manga|comipo|artistalley))?\\?(?:volume\\_id|series\\_id)\\=[0-9]+&chapter\\_num\\=[0-9]+(?:\\.[0-9])?|[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www.)?crunchyroll.com(?:.br)?/(?!forumtopic)(?:comics_read(?:/(?:manga|comipo|artistalley))?\\?(?:volume_id|series_id)=[0-9]+&chapter_num=[0-9]+\\.[0-9]+|[\\w_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
 public class CrhyRllCom extends PluginForDecrypt {
     // Define the video quality codes used for RTMP
     public static enum DestinationQuality {
@@ -113,24 +113,21 @@ public class CrhyRllCom extends PluginForDecrypt {
             this.br.setFollowRedirects(true);
             cryptedLink.setCryptedUrl(cryptedLink.getCryptedUrl().replace("crunchyroll.com.br/", "crunchyroll.com/"));
             getPage(cryptedLink.getCryptedUrl());
+            System.out.print(br.toString());
             // Fog: Check for manga link first before handling videos/subs
             if (br.getURL().contains("comics_read")) {
                 final String series_id = br.getRegex("seriesId\\=(\\d+)").getMatch(0);
                 final String session_id = br.getRegex("session_id\\=(\\w+)").getMatch(0);
                 String auth = br.getRegex("auth\\=([_%a-zA-Z0-9]+)").getMatch(0);
-                final String name = br.getRegex("<a href=\"/comics/manga/([a-zA-Z0-9_ :,\\-!\\?]+)/").getMatch(0);
+                final String name = br.getRegex("manga%252F([a-zA-Z0-9_\\-]+)").getMatch(0);
+                // Fog: This can happen if you are not logged into an account, and is a valid input for certain free titles
                 if (auth == null) {
-                    // Fog: This can happen if you are not logged into an account, and is a valid input for certain free titles
                     auth = "null";
                 }
-                String chapter_number = br.getRegex("chapterNumber\\=(\\d+\\.\\d+)").getMatch(0);
-                // Fog: Check to see if the regex failed to grab the second 0 in some chapters
-                if (chapter_number.contains(".0") && (!chapter_number.contains(".00"))) {
-                    chapter_number += "0";
-                }
+                String chapter_number = br.getRegex("chapterNumber\\=(\\d+(\\.*)(\\d+))").getMatch(0);
                 filePackage.setName(name + "-" + chapter_number.replace(".", "-"));
                 getPage("http://api-manga.crunchyroll.com/chapters?series_id=" + series_id);
-                if (br.containsHTML("\"error\"")) {
+                if (br.toString().contains("\"error\"")) {
                     decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab series information"));
                     return decryptedLinks;
                 }
@@ -141,9 +138,9 @@ public class CrhyRllCom extends PluginForDecrypt {
                 String chapter_id = null;
                 for (Object c : chapter_array) {
                     entries = (LinkedHashMap<String, Object>) c;
-                    final String number = (String) entries.get("number");
+                    final String number = entries.get("number").toString();
                     if (chapter_number.equals(number)) {
-                        chapter_id = (String) entries.get("chapter_id");
+                        chapter_id = entries.get("chapter_id").toString();
                         break;
                     }
                 }
@@ -159,25 +156,26 @@ public class CrhyRllCom extends PluginForDecrypt {
                 for (Object p : pages_array) {
                     entries = (LinkedHashMap<String, Object>) p;
                     // Fog: Store this just in case the composed image is not available.
-                    final String temp_image = (String) entries.get("image_url");
-                    final String page_number = (String) entries.get("number");
+                    final String temp_image = entries.get("image_url").toString();
+                    final String page_number = entries.get("number").toString();
                     entries = (LinkedHashMap<String, Object>) entries.get("locale");
                     entries = (LinkedHashMap<String, Object>) entries.get("enUS");
-                    String image = (String) entries.get("encrypted_composed_image_url");
+                    String image = entries.get("encrypted_composed_image_url").toString();
                     // Fog: This can apparently happen somehow, so try to grab the raw uncomposed image.
-                    if (image == null) {
+                    if (image == null && temp_image != null) {
                         image = temp_image;
                     }
-                    // Fog: If image is still null even after the previous check, then abandon all hope of grabbing a proper image file.
-                    if (image == null) {
+                    // Fog: If both are null, then abandon all hope of grabbing a proper image file.
+                    else if (image == null && temp_image == null) {
                         decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab image information"));
                         return decryptedLinks;
                     }
+                    final String filename = name + "-" + chapter_number.replace(".", "-") + "-" + page_number + EXT_MANGA;
                     final DownloadLink dl = this.createDownloadlink(image);
                     dl._setFilePackage(filePackage);
-                    dl.setFinalFileName(name + "-" + chapter_number.replace(".", "-") + "-" + page_number + EXT_MANGA);
+                    dl.setFinalFileName(filename);
                     dl.setContentUrl(cryptedLink.getCryptedUrl());
-                    dl.setLinkID(name + "-" + chapter_number.replace(".", "-") + "-" + page_number + EXT_MANGA);
+                    dl.setLinkID(filename);
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
