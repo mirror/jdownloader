@@ -340,9 +340,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 dllink = httpurl_temp;
             }
         }
-        // upornia
-        if (inValidate(dllink, plugin)) {
-            final String video_url = br.getRegex("var\\s+video_url=\"(.*?)\";").getMatch(0);
+        final String video_url = br.getRegex("var\\s+video_url=\"(.*?)\";").getMatch(0);
+        if (inValidate(dllink, plugin) || video_url != null) {
             if (video_url != null) {
                 Object result = new Object();
                 final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
