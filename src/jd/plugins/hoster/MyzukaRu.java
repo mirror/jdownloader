@@ -77,32 +77,27 @@ public class MyzukaRu extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
-        boolean resume = false;
+        String dllink = br.getRegex("\"(/Song/Download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(/Song/Download/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                logger.info("Could not find downloadurl, trying to get streamurl");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
-                if (br.getHttpConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
-                }
-                dllink = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (dllink != null) {
-                    resume = true;
-                    logger.info("Found streamurl");
-                    dllink = Encoding.unicodeDecode(dllink);
-                } else {
-                    logger.warning("Failed to find streamurl");
-                }
+            logger.info("Could not find downloadurl, trying to get streamurl");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
             }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) {
+                logger.info("Found streamurl");
+                dllink = Encoding.unicodeDecode(dllink);
+            } else {
+                logger.warning("Failed to find streamurl");
             }
         }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
