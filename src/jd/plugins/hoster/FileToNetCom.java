@@ -28,6 +28,9 @@ public class FileToNetCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         final String iframe = br.getRegex("src=\"(https?://dn\\d+\\.filetonet\\.com/file/\\?v=[a-fA-F0-9]+)\"").getMatch(0);
         if (iframe == null) {
+            if (br.containsHTML("<h1>\\s*404")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(iframe);
