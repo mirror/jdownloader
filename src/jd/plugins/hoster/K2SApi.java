@@ -23,13 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -56,6 +49,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
@@ -64,7 +64,6 @@ import jd.plugins.components.UserAgents;
  *
  */
 public abstract class K2SApi extends PluginForHost {
-
     private String                         authToken;
     protected String                       directlinkproperty;
     protected int                          chunks;
@@ -466,9 +465,9 @@ public abstract class K2SApi extends PluginForHost {
                     long passedTimeSinceLastDl = 0;
                     logger.info("New Download: currentIP = " + currentIP.get());
                     /*
-                     * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he tries to start
-                     * more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download using the same free accounts
-                     * after performing a reconnect!
+                     * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts
+                     * if he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
+                     * download using the same free accounts after performing a reconnect!
                      */
                     lastdownload = getPluginSavedLastDownloadTimestamp();
                     passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
@@ -561,7 +560,6 @@ public abstract class K2SApi extends PluginForHost {
      */
     protected Browser newBrowser() {
         Browser nbr = new Browser() {
-
             /**
              * overrides openPostConnection and turns it into openPostRawConnection
              *
@@ -604,7 +602,6 @@ public abstract class K2SApi extends PluginForHost {
 
     public Browser newWebBrowser() {
         Browser nbr = new Browser() {
-
             @Override
             public void updateCookies(Request request) {
                 super.updateCookies(request);
@@ -779,23 +776,26 @@ public abstract class K2SApi extends PluginForHost {
 
     private String getAuthToken(final Account account) throws Exception {
         synchronized (ACCLOCK) {
-            if (authToken == null) {
-                authToken = account.getStringProperty(AUTHTOKEN, null);
-                if (authToken == null) {
+            String currentAuthToken = account.getStringProperty(AUTHTOKEN, authToken);
+            try {
+                if (StringUtils.isEmpty(currentAuthToken)) {
                     // we don't want to pollute this.br
-                    Browser auth = prepBrowser(newBrowser());
+                    final Browser auth = prepBrowser(newBrowser());
                     postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass()) + "\"}", account);
-                    authToken = PluginJSonUtils.getJsonValue(auth, "auth_token");
-                    if (authToken == null) {
+                    currentAuthToken = PluginJSonUtils.getJsonValue(auth, "auth_token");
+                    if (StringUtils.isEmpty(currentAuthToken)) {
+                        account.removeProperty(AUTHTOKEN);
                         // problemo?
                         logger.warning("problem in the old carel");
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     } else {
-                        account.setProperty(AUTHTOKEN, authToken);
+                        account.setProperty(AUTHTOKEN, currentAuthToken);
                     }
                 }
+                return currentAuthToken;
+            } finally {
+                authToken = currentAuthToken;
             }
-            return authToken;
         }
     }
 
@@ -1222,10 +1222,14 @@ public abstract class K2SApi extends PluginForHost {
     private void dumpAuthToken(Account account) {
         synchronized (ACCLOCK) {
             // only wipe token when authToken equals current storable
-            final String propertyToken = account.getStringProperty(AUTHTOKEN, null);
-            if (authToken != null && propertyToken != null && authToken.equals(propertyToken)) {
-                account.setProperty(AUTHTOKEN, Property.NULL);
-                authToken = null;
+            try {
+                final boolean dump = StringUtils.equals(account.getStringProperty(AUTHTOKEN, null), this.authToken);
+                if (dump) {
+                    account.removeProperty(AUTHTOKEN);
+                }
+                logger.info("dumpAuthToken:" + this.authToken + "|" + dump);
+            } finally {
+                this.authToken = null;
             }
         }
     }
@@ -1328,8 +1332,8 @@ public abstract class K2SApi extends PluginForHost {
      **/
     protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -1701,7 +1705,6 @@ public abstract class K2SApi extends PluginForHost {
                         this.setDownloadLink(dllink);
                         final Form cf = cloudflare;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-
                             {
                                 boundToDomain = true;
                             }
