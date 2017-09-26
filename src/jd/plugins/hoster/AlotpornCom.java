@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
@@ -32,6 +30,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alotporn.com" }, urls = { "https?://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/" })
 public class AlotpornCom extends PluginForHost {
+
     public AlotpornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -72,7 +71,7 @@ public class AlotpornCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -85,12 +84,12 @@ public class AlotpornCom extends PluginForHost {
         url_filename = new Regex(br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
         String filename = br.getRegex("<div class=\"headline\">[\t\n\r ]*?<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = jd.plugins.hoster.KernelVideoSharingCom.regexStandardTitleWithHost(this.br, this.getHost());
+            filename = jd.plugins.hoster.KernelVideoSharingCom.regexStandardTitleWithHost(br, this.getHost());
         }
         if (filename == null) {
             filename = url_filename;
         }
-        this.dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(this.br);
+        this.dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -139,7 +138,7 @@ public class AlotpornCom extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
