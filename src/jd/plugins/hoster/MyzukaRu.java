@@ -78,6 +78,7 @@ public class MyzukaRu extends antiDDoSForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
+        boolean resume = false;
         if (dllink == null) {
             dllink = br.getRegex("\"(/Song/Download/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -89,6 +90,7 @@ public class MyzukaRu extends antiDDoSForHost {
                 }
                 dllink = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
+                    resume = true;
                     logger.info("Found streamurl");
                     dllink = Encoding.unicodeDecode(dllink);
                 } else {
@@ -100,7 +102,7 @@ public class MyzukaRu extends antiDDoSForHost {
             }
         }
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
