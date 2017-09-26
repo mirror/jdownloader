@@ -277,15 +277,22 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             if ("loaded".equals(pDo)) {
                 HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
                 browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
-                if (BrowserSolverService.getInstance().getConfig().isAutoClickEnabled()) {
+                final BrowserCaptchaSolverConfig config = BrowserSolverService.getInstance().getConfig();
+                if (config.isAutoClickEnabled()) {
                     Rectangle elementBounds = null;
                     try {
+                        if (CrossSystem.isUnix()) {
+                            config.setAutoClickEnabled(false);
+                            config._getStorageHandler().write();
+                        }
                         elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
                         this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
                         if (viewport != null) {
                             viewport.onLoaded();
                         }
                     } catch (Throwable e) {
+                    } finally {
+                        config.setAutoClickEnabled(true);
                     }
                     response.getOutputStream(true).write("Thanks".getBytes("UTF-8"));
                 }
