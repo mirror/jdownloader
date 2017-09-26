@@ -59,6 +59,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
             for (final String mediakey : mediakeys) {
                 final String url = String.format("https://deluxetv-vimp.mivitec.net/video/discodeluxe_set/%s", mediakey);
                 final DownloadLink dl = this.createDownloadlink(url);
+                dl.setLinkID(mediakey);
                 decryptedLinks.add(dl);
             }
         } else {
