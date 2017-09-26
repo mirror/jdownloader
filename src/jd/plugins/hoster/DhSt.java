@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -27,10 +27,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "http://(www\\.)?d\\-h\\.st/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "https?://(www\\.)?d-h\\.st/[A-Za-z0-9]+" })
 public class DhSt extends PluginForHost {
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        // doesn't support https at this time. redirects back to http.
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("https://", "http://"));
+    }
 
     public DhSt(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,18 +45,19 @@ public class DhSt extends PluginForHost {
         return "http://d-h.st/tos";
     }
 
-    private final String        INVALIDLINKS  = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
+    private final String        INVALIDLINKS  = "https?://(www\\.)?d-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
     private final String        tempSiteIssue = ">It appears something went wrong\\.{1,}</h\\d+>";
     private static final String NOCHUNKS      = "NOCHUNKS";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+        if (link.getPluginPatternMatcher().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)") || br.getURL().equals("http://d-h.st/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -66,7 +71,7 @@ public class DhSt extends PluginForHost {
         }
         String filename = br.getRegex(">Filename:</span> <div title=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Dev\\-Host \\- ([^<>\"]*?) \\- The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
+            filename = br.getRegex("<title>Dev-Host - ([^<>\"]*?) - The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
         }
         String filesize = br.getRegex("\\((\\d+(?:\\.\\d{1,2})? (?:bytes|MB))\\)").getMatch(0);
         if (filename == null) {
@@ -98,9 +103,12 @@ public class DhSt extends PluginForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
@@ -129,12 +137,12 @@ public class DhSt extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("<form style=\"margin\\-top: \\-27px; margin\\-bottom: \\-2px;\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<form style=\"margin-top: -27px; margin-bottom: -2px;\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.d-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]*?)(\"|')").getMatch(1);
+            dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.d-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]*?)\\1").getMatch(1);
         }
         return dllink;
     }
