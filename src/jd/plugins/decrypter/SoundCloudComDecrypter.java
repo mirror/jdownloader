@@ -626,7 +626,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 return null;
             }
             DownloadLink dl = null;
-            String type = getString(item, "type");
+            final String type = getString(item, "type");
             Map<String, Object> entry = null;
             if (type == null) {
                 entry = (Map<String, Object>) item.get("track");
@@ -634,6 +634,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 entry = (Map<String, Object>) item.get("track");
             } else if ("track_repost".equals(type) || "track-repost".equals(type)) {
                 entry = (Map<String, Object>) item.get("track");
+            } else if ("playlist-repost".equals(type) || "playlist_repost".equals(type)) {
+                entry = (Map<String, Object>) item.get("playlist");
             } else if ("playlist".equals(type)) {
                 entry = (Map<String, Object>) item.get("playlist");
             } else {
@@ -649,7 +651,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 continue;
             }
-            if (type != null && type.equals("playlist")) {
+            if (type != null && type.contains("playlist")) {
                 dl = createDownloadlink("https://soundcloud.com/" + url_username + "/sets/" + url);
             } else {
                 String track_url = permalink_url.replace("http://", "https://").replace("soundcloud.com", "soundclouddecrypted.com");
