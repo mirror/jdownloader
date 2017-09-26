@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -37,15 +36,14 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
-
     private String  dllink        = null;
     private boolean server_issues = false;
 
@@ -85,15 +83,15 @@ public class ZdfDeMediathek extends PluginForHost {
         if (dllink.contains("m3u8")) {
             checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
-            final StreamInfo streamInfo = downloader.getProbe();
-            if (streamInfo == null) {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                server_issues = true;
-            } else {
-                final long estimatedSize = downloader.getEstimatedSize();
-                if (estimatedSize > 0) {
-                    link.setDownloadSize(estimatedSize);
+            final int hlsBandwidth = link.getIntegerProperty("hlsBandwidth", -1);
+            if (hlsBandwidth > 0) {
+                for (M3U8Playlist playList : downloader.getPlayLists()) {
+                    playList.setAverageBandwidth(hlsBandwidth);
                 }
+            }
+            final long estimatedSize = downloader.getEstimatedSize();
+            if (estimatedSize > 0) {
+                link.setDownloadSize(estimatedSize);
             }
         } else {
             URLConnectionAdapter con = null;
@@ -182,10 +180,8 @@ public class ZdfDeMediathek extends PluginForHost {
 
     private boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         final StringBuilder xml = new StringBuilder();
         final String lineseparator = System.getProperty("line.separator");
-
         Scanner in = null;
         try {
             in = new Scanner(new FileReader(source));
@@ -216,7 +212,6 @@ public class ZdfDeMediathek extends PluginForHost {
      */
     public static boolean convertSubtitleWdr(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         BufferedWriter dest = null;
         try {
             File output = new File(source.getAbsolutePath().replace(".xml", ".srt"));
@@ -228,11 +223,9 @@ public class ZdfDeMediathek extends PluginForHost {
             } catch (IOException e1) {
                 return false;
             }
-
             final StringBuilder xml = new StringBuilder();
             int counter = 1;
             final String lineseparator = System.getProperty("line.separator");
-
             Scanner in = null;
             try {
                 in = new Scanner(new FileReader(source));
@@ -250,11 +243,9 @@ public class ZdfDeMediathek extends PluginForHost {
                 final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
                 for (String[] match : matches) {
                     dest.write(counter++ + lineseparator);
-
                     final Double start = Double.valueOf(match[0]) + starttime;
                     final Double end = Double.valueOf(match[1]) + starttime;
                     dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-
                     String text = match[2].trim();
                     text = text.replaceAll(lineseparator, " ");
                     text = text.replaceAll("&amp;", "&");
@@ -264,7 +255,6 @@ public class ZdfDeMediathek extends PluginForHost {
                     text = text.replaceAll("<br />", lineseparator);
                     text = text.replace("</p>", "");
                     text = text.replace("<span ", "").replace("</span>", "");
-
                     final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.*?)($|tts:))").getMatches();
                     if (textReplaces != null && textReplaces.length != 0) {
                         for (final String[] singleText : textReplaces) {
@@ -276,7 +266,6 @@ public class ZdfDeMediathek extends PluginForHost {
                         }
                     }
                     dest.write(text + lineseparator + lineseparator);
-
                 }
             } catch (Exception e) {
                 return false;
@@ -288,7 +277,6 @@ public class ZdfDeMediathek extends PluginForHost {
             }
         }
         source.delete();
-
         return true;
     }
 
@@ -304,9 +292,7 @@ public class ZdfDeMediathek extends PluginForHost {
         String minute = "00";
         String second = "00";
         String millisecond = "0";
-
         Integer itime = Integer.valueOf(time.intValue());
-
         // Hour
         Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
         if (timeHour < 10) {
@@ -314,7 +300,6 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             hour = timeHour.toString();
         }
-
         // Minute
         Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
         if (timeMinute < 10) {
@@ -322,7 +307,6 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             minute = timeMinute.toString();
         }
-
         // Second
         Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
         if (timeSecond < 10) {
@@ -330,7 +314,6 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             second = timeSecond.toString();
         }
-
         // Millisecond
         millisecond = String.valueOf(time - itime).split("\\.")[1];
         if (millisecond.length() == 1) {
@@ -342,10 +325,8 @@ public class ZdfDeMediathek extends PluginForHost {
         if (millisecond.length() > 2) {
             millisecond = millisecond.substring(0, 3);
         }
-
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
-
         return result;
     }
 
@@ -378,9 +359,7 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     public static interface ZdfmediathekConfigInterface extends PluginConfigInterface {
-
         public static class TRANSLATION {
-
             public String getFastLinkcheckEnabled_label() {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }
@@ -539,7 +518,5 @@ public class ZdfDeMediathek extends PluginForHost {
         boolean isGrabHTTPWebmHDVideoEnabled();
 
         void setGrabHTTPWebmHDVideoEnabled(boolean b);
-
     }
-
 }
