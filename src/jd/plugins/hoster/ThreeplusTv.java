@@ -13,12 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,9 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3plus.tv" }, urls = { "https?://(?:www\\.)?3plus.tv/(?:episode/[a-z0-9\\-]+/[a-z0-9\\-]+|videos/\\d+/\\d+)" })
 public class ThreeplusTv extends PluginForHost {
-
     public ThreeplusTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,18 +42,15 @@ public class ThreeplusTv extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private String               dllink_hls        = null;
     private boolean              server_issues     = false;
-
     private static final String  type_videos       = ".+/videos/\\d+/\\d+";
 
     @Override
@@ -95,7 +92,6 @@ public class ThreeplusTv extends PluginForHost {
             this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
             this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
         }
-
         final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
         for (final String possibleQuality : qualities) {
             dllink = this.br.getRegex("src\\s*?:\\s*?\\'(https?[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*?type\\s*?:\\s*?\\'video(?:/|\\x2F)mp4\\',\\s*?quality\\s*?:\\s*?\\'" + possibleQuality + "\\'").getMatch(0);
@@ -104,7 +100,6 @@ public class ThreeplusTv extends PluginForHost {
             }
         }
         dllink_hls = this.br.getRegex("\\'(https?://[^<>\"\\']+\\.m3u8[^<>\"\\']*?)").getMatch(0);
-
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -153,6 +148,9 @@ public class ThreeplusTv extends PluginForHost {
         if (ret == null) {
             /* 2017-02-02: E.g. for '/videos/' urls. */
             ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([^<>\"\\']+)<").getMatch(0);
+            if (ret == null) {
+                ret = this.br.getRegex("playout\\.3qsdn\\.com/([0-9a-f\\-]+)").getMatch(0);
+            }
         }
         ret = Encoding.unicodeDecode(ret);
         return ret;
