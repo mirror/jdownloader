@@ -28,11 +28,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -44,6 +39,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(syncvideoimport_beitrag_\\d+|[a-f0-9\\-]+)", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -440,7 +441,17 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 /* Access (hls) master. */
                                 this.br.getPage(uri);
                                 final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
+                                long duration = -1;
                                 for (final HlsContainer hlscontainer : allHlsContainers) {
+                                    if (duration == -1) {
+                                        duration = 0;
+                                        final List<M3U8Playlist> playList = hlscontainer.getM3U8(br.cloneBrowser());
+                                        if (playList != null) {
+                                            for (M3U8Playlist play : playList) {
+                                                duration += play.getEstimatedDuration();
+                                            }
+                                        }
+                                    }
                                     final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
                                     final String resolution = hlscontainer.getResolution();
                                     final_download_url = hlscontainer.getDownloadurl();
@@ -457,6 +468,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                         highestHlsDownload = dl;
                                     }
                                     setDownloadlinkProperties(dl, date_formatted, final_filename, type, linkid);
+                                    dl.setProperty("hlsBandwidth", hlscontainer.getBandwidth());
+                                    if (duration > 0 && hlscontainer.getBandwidth() > 0) {
+                                        dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
+                                    }
                                     all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, height_for_quality_selection), dl);
                                 }
                                 /* Set this so we do not crawl this particular hls master again next round. */
