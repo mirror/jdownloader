@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -34,14 +31,12 @@ import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "https?://(?:www\\.)?moviki\\.ru/(?:embed|videos)/\\d+(.+)?" })
 public class MovikiRu extends PluginForHost {
-
     public MovikiRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension = ".mp4";
-
     private String              dllink            = null;
     private boolean             server_issues     = false;
 
@@ -59,7 +54,7 @@ public class MovikiRu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         final String fid = new Regex(downloadLink.getDownloadURL(), "moviki\\.ru/(?:embed|videos)/(\\d+)").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
