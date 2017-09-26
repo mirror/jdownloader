@@ -121,7 +121,7 @@ public class PixivNet extends PluginForDecrypt {
             int counter = 1;
             for (String singleLink : links) {
                 singleLink = singleLink.replaceAll("\\\\", "");
-                String filename = lid + "_" + df.format(counter++) + (fpName != null ? fpName : "");
+                String filename = lid + "_p" + (counter++) + (fpName != null ? fpName : "");
                 final String ext = getFileNameExtensionFromString(singleLink, jd.plugins.hoster.PixivNet.default_extension);
                 filename += ext;
                 final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
