@@ -99,8 +99,15 @@ public class MyzukaRu extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        br.getHeaders().put("Accept-Encoding", "identity");
-        dllink = dllink + "?_t=" + System.currentTimeMillis();
+        br.setFollowRedirects(false);
+        br.getPage(dllink);
+        br.setFollowRedirects(true);
+        dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            dllink = dllink + "?t=" + System.currentTimeMillis();
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("gif")) {
             try {
