@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,9 +27,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me)/Song/(\\d+)" })
 public class MyzukaRu extends antiDDoSForHost {
-
     public MyzukaRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -118,17 +118,21 @@ public class MyzukaRu extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getContentType().contains("gif") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return dllink;
