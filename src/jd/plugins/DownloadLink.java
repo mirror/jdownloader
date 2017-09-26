@@ -1579,9 +1579,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setFinalFileName(String newfinalFileName) {
         final String oldName = getName();
         if (!StringUtils.isEmpty(newfinalFileName)) {
-            if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (new Regex(newfinalFileName, Pattern.compile("r(ar|\\d{2,3})\\.html?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
-                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
+                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
             newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName);
             this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName);

@@ -66,10 +66,10 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
     private JCheckBox                                               specificDaysSun;
     private JSpinner                                                timeSpinnerSpecificDays;
     private final JLabel                                            emptyLabel = new JLabel() {
-        {
-            setOpaque(false);
-        }
-    };
+                                                                                   {
+                                                                                       setOpaque(false);
+                                                                                   }
+                                                                               };
 
     public AddScheduleEntryDialog() {
         super(UserIO.NO_ICON, T.T.addScheduleEntryDialog_title(), null, _GUI.T.lit_save(), null);
@@ -100,7 +100,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             timestamp.set(Calendar.MINUTE, d.getMinutes());
             actionStorable.setTimestamp(timestamp.getTimeInMillis() / 1000l);
         }
-        break;
+            break;
         case SPECIFICDAYS: {
             Date d = (Date) timeSpinnerSpecificDays.getValue();
             Calendar timestamp = Calendar.getInstance();
@@ -132,13 +132,13 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             }
             actionStorable._setSelectedDays(days);
         }
-        break;
+            break;
         case CHOOSEINTERVAL: {
             actionStorable.setTimestamp(Calendar.getInstance().getTimeInMillis() / 1000l);
             actionStorable.setIntervalHour((Integer) hourSpinnerInterval.getValue());
             actionStorable.setIntervalMin((Integer) minuteSpinnerInterval.getValue());
         }
-        break;
+            break;
         case ONLYONCE:
         default: {
             Date time = (Date) timeSpinnerOnce.getValue();
@@ -148,7 +148,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             timestamp.set(Calendar.SECOND, 0);
             actionStorable.setTimestamp(timestamp.getTimeInMillis() / 1000l);
         }
-        break;
+            break;
         }
         actionStorable._setTimeType(timeType);
         try {
@@ -247,7 +247,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         dateSpinnerOnce.setEditor(new DateEditor(dateSpinnerOnce, ((SimpleDateFormat) SimpleDateFormat.getDateInstance()).toPattern()));
         dateSpinnerOnce.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.ONLYONCE) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
         timeSpinnerOnce = new JSpinner(new SpinnerDateModel());
-        timeSpinnerOnce.setEditor(new DateEditor(timeSpinnerOnce, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern().replaceAll("h", "H").replaceAll("a", "")));
+        timeSpinnerOnce.setEditor(new DateEditor(timeSpinnerOnce, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern().replaceAll("h", "H").replaceAll("a", "").trim()));
         timeSpinnerOnce.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.ONLYONCE) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
         JLabel dateOnlyOnceLabel;
         timeOptionPaneOnlyOnce.add(dateOnlyOnceLabel = new JLabel(T.T.addScheduleEntryDialog_date() + ":"));
@@ -281,7 +281,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         timeOptionPaneSpecificDays.add(timeSpecificDaysLabel);
         constraints.put(timeSpecificDaysLabel, "gapleft 10,");
         timeSpinnerSpecificDays = new JSpinner(new SpinnerDateModel());
-        timeSpinnerSpecificDays.setEditor(new DateEditor(timeSpinnerSpecificDays, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern().replaceAll("h", "H").replaceAll("a", "")));
+        timeSpinnerSpecificDays.setEditor(new DateEditor(timeSpinnerSpecificDays, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern().replaceAll("h", "H").replaceAll("a", "").trim()));
         timeSpinnerSpecificDays.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.SPECIFICDAYS) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
         timeOptionPaneSpecificDays.add(timeSpinnerSpecificDays);
         JLabel daySpecificDaysLabel = new JLabel(T.T.addScheduleEntryDialog_days() + ":");
