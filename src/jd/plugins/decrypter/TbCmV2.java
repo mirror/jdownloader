@@ -28,6 +28,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.utils.locale.JDL;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -65,26 +82,8 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.utils.locale.JDL;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
 public class TbCmV2 extends PluginForDecrypt {
-
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
     private static final int DDOS_INCREASE_FACTOR = 15;
 
@@ -163,7 +162,6 @@ public class TbCmV2 extends PluginForDecrypt {
             return ret;
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
-
             @Override
             public boolean add(DownloadLink e) {
                 distribute(e);
@@ -191,8 +189,8 @@ public class TbCmV2 extends PluginForDecrypt {
         helper = new YoutubeHelper(br, getLogger());
         /*
          * you can not use this with /c or /channel based urls, it will pick up false positives. see
-         * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only contains 27
-         * videos not the entire channels 112
+         * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only
+         * contains 27 videos not the entire channels 112
          */
         if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
             playlistID = getListIDByUrls(cleanedurl);
@@ -223,7 +221,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
                     if (playListAction == IfUrlisAPlaylistAction.ASK) {
                         ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isplaylist.question.message", "This link is a Play-List or Channel-List or User-List. What would you like to do?"), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process Playlist?"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do Nothing?")) {
-
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -258,7 +255,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
                     if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
                         ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist")) {
-
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -299,7 +295,8 @@ public class TbCmV2 extends PluginForDecrypt {
             Boolean channelWorkaround = null;
             if (StringUtils.isNotEmpty(userID) && StringUtils.isEmpty(playlistID)) {
                 /*
-                 * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist instead
+                 * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
+                 * instead
                  */
                 br.getPage("https://www.youtube.com/user/" + userID + "/featured");
                 helper.parserJson();
@@ -315,12 +312,13 @@ public class TbCmV2 extends PluginForDecrypt {
             if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
                 /*
                  * you can not use this with /c or /channel based urls, it will pick up false positives. see
-                 * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only contains 27
-                 * videos not the entire channels 112
+                 * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only
+                 * contains 27 videos not the entire channels 112
                  */
                 if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
                     /*
-                     * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist instead
+                     * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this
+                     * playlist instead
                      */
                     br.getPage("https://www.youtube.com/channel/" + channelID);
                     playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
@@ -571,14 +569,12 @@ public class TbCmV2 extends PluginForDecrypt {
                         continue;
                     }
                     Collections.sort(cutLinkVariantsDropdown, new Comparator<VariantInfo>() {
-
                         @Override
                         public int compare(VariantInfo o1, VariantInfo o2) {
                             return o2.compareTo(o1);
                         }
                     });
                     Collections.sort(linkVariants, new Comparator<VariantInfo>() {
-
                         @Override
                         public int compare(VariantInfo o1, VariantInfo o2) {
                             return o2.compareTo(o1);
@@ -619,18 +615,17 @@ public class TbCmV2 extends PluginForDecrypt {
                             if (extras != null) {
                                 for (String s : extras) {
                                     if (s != null) {
-                                        VariantInfo lng = null;
                                         for (VariantInfo vi : linkVariants) {
                                             if (vi.getVariant() instanceof SubtitleVariant) {
-                                                if (StringUtils.equalsIgnoreCase(((SubtitleVariant) vi.getVariant()).getGenericInfo().getLanguage(), s)) {
-                                                    lng = vi;
+                                                if ("*".equals(s)) {
+                                                    lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
+                                                    decryptedLinks.add(lnk);
+                                                } else if (StringUtils.equalsIgnoreCase(((SubtitleVariant) vi.getVariant()).getGenericInfo().getLanguage(), s)) {
+                                                    lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
+                                                    decryptedLinks.add(lnk);
                                                     break;
                                                 }
                                             }
-                                        }
-                                        if (lng != null) {
-                                            lnk = createLink(l, lng, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
-                                            decryptedLinks.add(lnk);
                                         }
                                     }
                                 }
@@ -648,7 +643,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                 }
                 Collections.sort(linkVariants, new Comparator<VariantInfo>() {
-
                     @Override
                     public int compare(VariantInfo o1, VariantInfo o2) {
                         return o2.compareTo(o1);
