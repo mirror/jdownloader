@@ -52,7 +52,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
 
     private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
