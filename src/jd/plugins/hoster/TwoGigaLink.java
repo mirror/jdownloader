@@ -13,9 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,10 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "2giga.link" }, urls = { "https?://(?:www\\.)?2giga\\.link/d(?:ownload)?/[A-Za-z0-9]+" })
 public class TwoGigaLink extends PluginForHost {
+
     public TwoGigaLink(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,23 +57,29 @@ public class TwoGigaLink extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">File not found|Expired or deleted by Admin because it")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">File not found|Expired or deleted by Admin because it")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = this.br.getRegex("<p>([^<>\"]+) \\((\\d+ [A-Za-z]+)\\)</p>");
+        final Regex finfo = br.getRegex("<p>([^<>\"]+) \\((\\d+ [A-Za-z]+)\\)</p>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -87,6 +93,15 @@ public class TwoGigaLink extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             dllink = br.getRegex("(https?://[^<>\"]+/openbar/[^<>\"]+)").getMatch(0);
+            if (dllink != null) {
+                dllink = Encoding.htmlOnlyDecode(dllink);
+                // they do some trickery
+                final String expire = new Regex(dllink, "(&expires=\\d+)").getMatch(0);
+                final String var = br.getRegex("var exp\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                if (var != null && expire != null) {
+                    dllink = dllink.replace(expire, Encoding.Base64Decode(var));
+                }
+            }
             if (dllink == null) {
                 // decrypterLink
                 final String decrypterLink = br.getRegex("href=\"([^\"]+)\"[^>]*>Download</a>").getMatch(0);
@@ -101,12 +116,11 @@ public class TwoGigaLink extends PluginForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                dllink = Encoding.htmlOnlyDecode(dllink);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -155,4 +169,5 @@ public class TwoGigaLink extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
+
 }
