@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -38,7 +37,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member_illust\\.php\\?id=\\d+)" })
 public class PixivNet extends PluginForDecrypt {
-
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -123,10 +121,9 @@ public class PixivNet extends PluginForDecrypt {
             int counter = 1;
             for (String singleLink : links) {
                 singleLink = singleLink.replaceAll("\\\\", "");
-                String filename = lid + (fpName != null ? fpName : "") + "_" + df.format(counter);
+                String filename = lid + "_" + df.format(counter++) + (fpName != null ? fpName : "");
                 final String ext = getFileNameExtensionFromString(singleLink, jd.plugins.hoster.PixivNet.default_extension);
                 filename += ext;
-
                 final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("galleryid", lid);
@@ -135,7 +132,6 @@ public class PixivNet extends PluginForDecrypt {
                 dl.setFinalFileName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
-                counter++;
             }
         } else {
             /* Decrypt user */
@@ -178,11 +174,9 @@ public class PixivNet extends PluginForDecrypt {
                 page++;
             } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page);
         }
-
         if (fpName == null) {
             fpName = lid;
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
@@ -203,5 +197,4 @@ public class PixivNet extends PluginForDecrypt {
     public static boolean isAccountOrRightsRequired(final Browser br) {
         return br.getURL().contains("return_to=");
     }
-
 }
