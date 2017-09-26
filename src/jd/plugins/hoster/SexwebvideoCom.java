@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -32,7 +29,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexwebvideo.com" }, urls = { "https?://(?:www\\.)?sexwebvideo\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class SexwebvideoCom extends PluginForHost {
-
     public SexwebvideoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,14 +37,12 @@ public class SexwebvideoCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -59,7 +53,7 @@ public class SexwebvideoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
