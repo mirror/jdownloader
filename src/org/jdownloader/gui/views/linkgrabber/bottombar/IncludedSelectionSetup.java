@@ -14,7 +14,6 @@ public class IncludedSelectionSetup implements ActionContext {
     private boolean                           includeSelectedLinks     = true;
     private final PackageControllerTable      table;
     private final PackageControllerTableModel model;
-
     private ExtTableModelListener             modelListener;
     private ExtTableListener                  tableListener;
     public static final String                INCLUDE_SELECTED_LINKS   = "includeSelectedLinks";
@@ -30,14 +29,13 @@ public class IncludedSelectionSetup implements ActionContext {
     public SelectionType getSelectionType() {
         if (isIncludeSelectedLinks() && isIncludeUnselectedLinks()) {
             return SelectionType.ALL;
-        }
-        if (isIncludeSelectedLinks()) {
+        } else if (isIncludeSelectedLinks()) {
             return SelectionType.SELECTED;
-        }
-        if (isIncludeUnselectedLinks()) {
+        } else if (isIncludeUnselectedLinks()) {
             return SelectionType.UNSELECTED;
+        } else {
+            return SelectionType.NONE;
         }
-        return SelectionType.NONE;
     }
 
     public void updateListeners() {

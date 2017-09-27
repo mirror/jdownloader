@@ -1934,7 +1934,7 @@ public class LinkCrawler {
         if (possibleEmbeddedLinks.size() > 0) {
             final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
             for (final String possibleURL : possibleEmbeddedLinks) {
-                final List<CrawledLink> links = find(generation, possibleURL, null, false, false);
+                final List<CrawledLink> links = find(generation, possibleURL, null, source.isCrawlDeep(), false);
                 if (links != null) {
                     embeddedLinks.addAll(links);
                 }
