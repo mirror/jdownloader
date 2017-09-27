@@ -269,17 +269,20 @@ public class DeviantArtCom extends PluginForHost {
             /* Workaround for old downloadcore bug that can lead to incomplete files */
             br2.getHeaders().put("Accept-Encoding", "identity");
             URLConnectionAdapter con = null;
-            try {
-                con = br2.openGetConnection(getDllink());
-                if (con.getContentType().contains("html") && !HTMLALLOWED) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    link.setDownloadSize(con.getLongContentLength());
-                }
-            } finally {
+            final String dlLink = getDllink();
+            if (dlLink != null) {
                 try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                    con = br2.openGetConnection(dlLink);
+                    if (con.getContentType().contains("html") && !HTMLALLOWED) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
         }
@@ -466,12 +469,11 @@ public class DeviantArtCom extends PluginForHost {
                     }
                 }
             }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink != null) {
+                dllink = dllink.replace("\\", "");
+                dllink = Encoding.htmlDecode(dllink);
+                DLLINK = dllink;
             }
-            dllink = dllink.replace("\\", "");
-            dllink = Encoding.htmlDecode(dllink);
-            DLLINK = dllink;
         }
         return DLLINK;
     }
