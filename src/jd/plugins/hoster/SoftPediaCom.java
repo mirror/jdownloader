@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,17 +33,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.|drivers\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?\\-download\\-\\d+\\.(s)?html)" })
 public class SoftPediaCom extends PluginForHost {
-    private static final String SOFTPEDIASERVERS = "allservers";
-    private static final String SERVER0          = "SP Mirror (US)";
-    private static final String SERVER1          = "SP Mirror (RO)";
-    private static final String SERVER2          = "Softpedia Mirror (US)";
-    private static final String SERVER3          = "Softpedia Mirror (RO)";
+    private static final String SOFTPEDIASERVERS  = "allservers";
+    private static final String SERVER0           = "SP Mirror (US)";
+    private static final String SERVER1           = "SP Mirror (RO)";
+    private static final String SERVER2           = "Softpedia Mirror (US)";
+    private static final String SERVER3           = "Softpedia Mirror (RO)";
     /** The list of server values displayed to the user */
-    private final String[]      servers          = new String[] { SERVER0, SERVER1, SERVER2, SERVER3 };
+    private final String[]      servers           = new String[] { SERVER0, SERVER1, SERVER2, SERVER3 };
+    private static final int    FREE_MAXCHUNKS    = 1;
+    private static final int    FREE_MAXDOWNLOADS = -1;
 
     public SoftPediaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,7 +84,7 @@ public class SoftPediaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
@@ -96,8 +99,9 @@ public class SoftPediaCom extends PluginForHost {
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage("http://www.softpedia.com/_xaja/dlinfo.php", "t=15&id=" + fileID);
-        String mirrorPage = br.getRegex("\\'(https?://(www\\.)?softpedia\\.com/dyn\\-postdownload\\.php/[^<>\"]*?)\\'").getMatch(0);
+        String xajaRoot = br.getRegex("var sp_xaja_root=\"([^\"]+)").getMatch(0);
+        br.postPage(xajaRoot + "_xaja/dlinfo.php", new UrlQuery().append("t", "15", false).append("id", fileID, false));
+        String mirrorPage = br.getRegex("'(" + xajaRoot + "dyn\\-postdownload\\.php/[^<>\"]*?)'").getMatch(0);
         if (mirrorPage == null) {
             /* Unmaintained code */
             if (server == 0) {
@@ -120,7 +124,7 @@ public class SoftPediaCom extends PluginForHost {
         br.getPage(mirrorPage);
         // They have many mirrors, we just pick a random one here because all
         // downloadlinks look pretty much the same
-        String dllink = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+; url=(http://.*?)\"").getMatch(0);
+        String dllink = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+; url=(https?://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("automatically in a few seconds\\.\\.\\. If it doesn\\'t, please <a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) {
@@ -131,7 +135,7 @@ public class SoftPediaCom extends PluginForHost {
             /* Some links simply don't work */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -161,15 +165,18 @@ public class SoftPediaCom extends PluginForHost {
         if (br.containsHTML("No htmlCode read")) {
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
+        String filename = br.getRegex("FILENAME:.+?title=\"([^\"]+)").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
+            filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
+                filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<title>([^<>\"]*?)Free Download</title>").getMatch(0);
+                    filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("title=\"Click here to download ([^<>\"]*?)\"").getMatch(0);
+                        filename = br.getRegex("<title>([^<>\"]*?)Free Download</title>").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("title=\"Click here to download ([^<>\"]*?)\"").getMatch(0);
+                        }
                     }
                 }
             }
