@@ -161,7 +161,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
             final String subHeaderResY = subHeaderElem.getAttributeNode("play_res_y").getNodeValue();
             final String subHeader = "[Script Info]\nTitle: " + subHeaderTitle + "\nScriptType: v4.00+\nWrapStyle: " + subHeaderWrap + "\nPlayResX: " + subHeaderResX + "\nPlayResY: " + subHeaderResY + "\n";
             // Get the styles
-            String subStyles = "[V4 Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
+            String subStyles = "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
             final NodeList subStylesNodes = subs.getElementsByTagName("style");
             for (int i = 0; i < subStylesNodes.getLength(); i++) {
                 final Element subStylesElem = (Element) subStylesNodes.item(i);
@@ -195,7 +195,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 if (subStylesScaleY.equals("0")) {
                     subStylesScaleY = "100";
                 }
-                subStyles += "Style: " + subStylesName + ", " + subStylesFontName + ", " + subStylesFontSize + ", " + subStylesPriColor + ", " + subStylesSecColor + ", " + subStylesOutColor + ", " + subStylesBacColor + ", " + subStylesBold + ", " + subStylesItalic + ", " + subStylesUnderline + ", " + subStylesStrikeout + ", " + subStylesScaleX + ", " + subStylesScaleY + ", " + subStylesSpacing + ", " + subStylesAngle + ", " + subStylesBorder + ", " + subStylesOutline + ", " + subStylesShadow + ", " + subStylesAlignment + ", " + subStylesMarginL + ", " + subStylesMarginR + ", " + subStylesMarginV + ", " + subStylesEncoding + "\n";
+                subStyles += "Style: " + subStylesName + "," + subStylesFontName + "," + subStylesFontSize + "," + subStylesPriColor + "," + subStylesSecColor + "," + subStylesOutColor + "," + subStylesBacColor + "," + subStylesBold + "," + subStylesItalic + "," + subStylesUnderline + "," + subStylesStrikeout + "," + subStylesScaleX + "," + subStylesScaleY + "," + subStylesSpacing + "," + subStylesAngle + "," + subStylesBorder + "," + subStylesOutline + "," + subStylesShadow + "," + subStylesAlignment + "," + subStylesMarginL + "," + subStylesMarginR + ", " + subStylesMarginV + "," + subStylesEncoding + "\n";
             }
             // Get the elements
             String subEvents = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n";
