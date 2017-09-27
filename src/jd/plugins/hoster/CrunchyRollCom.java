@@ -81,7 +81,6 @@ public class CrunchyRollCom extends antiDDoSForHost {
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
     static private final String                              RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
     static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
-    static private final String                              RCP_API_ANDROID      = "RpcApiAndroid_GetVideoWithAcl";
     private String                                           rtmp_path_or_hls_url = null;
 
     @SuppressWarnings("deprecation")
@@ -274,26 +273,6 @@ public class CrunchyRollCom extends antiDDoSForHost {
     }
 
     /**
-     * Download the given file using the HTTP Android method. The file will be mp4 and have subtitles hardcoded.
-     *
-     * @param downloadLink
-     *            The DownloadLink to try and download using RTMP
-     */
-    private void downloadAndroid(final DownloadLink downloadLink) throws Exception {
-        // Check if the link appears to be valid
-        final String videoUrl = downloadLink.getStringProperty("videourl");
-        if ((Boolean) downloadLink.getProperty("valid", false) && videoUrl != null) {
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, videoUrl, true, 0);
-            if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video")) {
-                downloadLink.setProperty("valid", false);
-                this.dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            this.dl.startDownload();
-        }
-    }
-
-    /**
      * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
      * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
      *
@@ -432,8 +411,6 @@ public class CrunchyRollCom extends antiDDoSForHost {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
-            this.downloadAndroid(downloadLink);
         } else if (downloadLink.getDownloadURL().contains("manga")) {
             this.downloadManga(downloadLink);
         }
@@ -450,8 +427,6 @@ public class CrunchyRollCom extends antiDDoSForHost {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
-            this.downloadAndroid(downloadLink);
         } else if (downloadLink.getDownloadURL().contains("manga")) {
             this.downloadManga(downloadLink);
         }
@@ -627,14 +602,6 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
-            // Find matching decrypter
-            final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("crunchyroll.com");
-            if (plugin == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link");
-            }
-            // Set the Android video details (exception on error)
-            ((jd.plugins.decrypter.CrhyRllCom) plugin).setAndroid(downloadLink, this.br);
         }
         if ((Boolean) downloadLink.getProperty("valid", false)) {
             return AvailableStatus.TRUE;
