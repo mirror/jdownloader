@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -117,8 +116,7 @@ public class PixivNet extends PluginForDecrypt {
                     fpName += "」";
                 }
             }
-            final DecimalFormat df = new DecimalFormat("000");
-            int counter = 1;
+            int counter = 0;
             for (String singleLink : links) {
                 singleLink = singleLink.replaceAll("\\\\", "");
                 String filename = lid + "_p" + (counter++) + (fpName != null ? fpName : "");

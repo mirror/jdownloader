@@ -29,6 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
@@ -77,9 +78,11 @@ public class ThreeplusTv extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        String player_get_parameters = "?timestamp=0&key=0&js=true&autoplay=true&container=sdnPlayer_player&width=100%25&height=100%25&protocol=http&token=0&jscallback=sdnPlaylistBridge";
+        final String player_get_parameters;
         if (vastid != null) {
-            player_get_parameters += "&vastid=" + vastid;
+            player_get_parameters = "?timestamp=0&key=0&js=true&autoplay=false&container=sdnPlayer_player&width=100%25&height=100%25&protocol=http&token=0&vastid=" + vastid + "&jscallback=sdnPlaylistBridge";
+        } else {
+            player_get_parameters = "?timestamp=0&key=0&js=true&autoplay=false&container=sdnPlayer_player&width=100%25&height=100%25&protocol=http&token=0&vastid=0&jscallback=sdnPlaylistBridge";
         }
         String get_url = "http://playout.3qsdn.com/" + sdnPlayoutId;
         if (!link.getDownloadURL().matches(type_videos)) {
@@ -91,6 +94,17 @@ public class ThreeplusTv extends PluginForHost {
             /* First ID goes to second ID --> Access that */
             this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
             this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
+            final String label = br.getRegex("label\\s*:\\s*'(.*?)'").getMatch(0);
+            if (label != null) {
+                filename = label;
+            }
+            final String sdnPlayoutIdBefore = sdnPlayoutId;
+            sdnPlayoutId = getsdnPlayoutId();
+            if (sdnPlayoutId != null && !StringUtils.equals(sdnPlayoutId, sdnPlayoutIdBefore)) {
+                /* First ID goes to second second ID --> Access that */
+                this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
+                this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
+            }
         }
         final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
         for (final String possibleQuality : qualities) {
