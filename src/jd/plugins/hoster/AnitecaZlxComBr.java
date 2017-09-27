@@ -68,8 +68,8 @@ public class AnitecaZlxComBr extends antiDDoSForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://uploadbits.com";
-    private final String                   domains                                      = "(uploadbits\\.com)";
+    private final String                   mainpage                                     = "http://aniteca.zlx.com.br";
+    private final String                   domains                                      = "(aniteca\\.zlx\\.com\\.br)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
