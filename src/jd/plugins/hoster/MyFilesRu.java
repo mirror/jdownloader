@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "my-files.ru" }, urls = { "https?://(?:www\\.)?my\\-files\\.ru/[A-Za-z0-9]+" })
 public class MyFilesRu extends PluginForHost {
-
     public MyFilesRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,7 +58,6 @@ public class MyFilesRu extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -83,10 +80,14 @@ public class MyFilesRu extends PluginForHost {
         link.setName(filename);
         if (filesize != null) {
             filesize = filesize.replace("Мбайт", "MB");
+            filesize = filesize.replace("Кбайт", "KB");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         if (md5 != null) {
             link.setMD5Hash(md5);
+        }
+        if (br.containsHTML("Файл был удалён")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
@@ -158,5 +159,4 @@ public class MyFilesRu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
