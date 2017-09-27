@@ -211,7 +211,7 @@ public class HighWayMe extends UseNet {
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
                     /* Avoid bad 'Account missing' errormessage for this case */
-                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 30 * 1000, null));
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }
