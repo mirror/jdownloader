@@ -183,6 +183,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         }
                         setFilePackage(username, playlistname);
                         dl = setDlDataJson(dl, entry);
+                        final Number duration = (Number) entry.get("duration");
+                        if (duration != null && duration.longValue() > 0) {
+                            dl.setDownloadSize(128 / 8 * 1024 * duration.longValue() / 1000);
+                        }
                         addLink(dl);
                         if (decryptPurchaseURL) {
                             getPurchaseURL(entry);
@@ -404,6 +408,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + userPermalink + "/" + permalink);
                 dl.setProperty("setsposition", counter + ".");
                 dl = setDlDataJson(dl, data);
+                final Number duration = (Number) data.get("duration");
+                if (duration != null && duration.longValue() > 0) {
+                    dl.setDownloadSize(128 / 8 * 1024 * duration.longValue() / 1000);
+                }
                 addLink(dl);
                 get500Thumbnail(dl, data);
                 getOriginalThumbnail(dl, data);
@@ -660,6 +668,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
                 dl = createDownloadlink(track_url);
                 dl = setDlDataJson(dl, entry);
+                final Number duration = (Number) entry.get("duration");
+                if (duration != null && duration.longValue() > 0) {
+                    dl.setDownloadSize(128 / 8 * 1024 * duration.longValue() / 1000);
+                }
                 get500Thumbnail(dl, entry);
                 getOriginalThumbnail(dl, entry);
             }
