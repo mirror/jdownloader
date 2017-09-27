@@ -25,13 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.TumblrComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,6 +42,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+|/likes)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
@@ -246,6 +246,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (fpName == null) {
             // use google carousel json...
             fpName = PluginJSonUtils.getJsonValue(getGoogleCarousel(br), "articleBody");
+            if (fpName != null && fpName.length() > 250) {
+                fpName = fpName.substring(0, 250) + "...";
+            }
             if (fpName == null) {
                 // this can get false positives. eg. "the funniest posts on tumblr," thenwhatyouwanthere.
                 fpName = br.getRegex("<meta name=\"description\" content=\"([^/\"]+)").getMatch(0);
@@ -468,11 +471,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
             final Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(JSON);
             final String articleBody = (String) json.get("articleBody");
-            final String fpName = articleBody != null ? articleBody.replaceAll("[\r\n]+", "").trim() : fpname;
             final String postURL = (String) json.get("url");
-            if (fpName != null) {
+            if (fpname != null) {
                 fp = FilePackage.getInstance();
-                fp.setName(fpName);
+                fp.setName(fpname);
+                if (articleBody != null) {
+                    fp.setComment(articleBody.replaceAll("[\r\n]+", "").trim());
+                }
             }
             // single entry objects are not in 'list'
             ArrayList<Object> results = null;
@@ -493,7 +498,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                         fp.add(dl);
                     }
                     // cleanup... im
-                    final String filename = setFileName(cleanupName(df.format(count) + " - " + fpName), puid) + getFileNameExtensionFromString(url);
+                    final String name = fpname == null ? "" : fpname;
+                    final String filename = setFileName(cleanupName(df.format(count) + " - " + name), puid) + getFileNameExtensionFromString(url);
                     if (!useOriginalFilename) {
                         dl.setFinalFileName(filename);
                     } else {
