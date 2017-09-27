@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,10 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class PremboxCom extends PluginForHost {
     private static final String                            CLEAR_DOWNLOAD_HISTORY                    = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
@@ -54,8 +54,7 @@ public class PremboxCom extends PluginForHost {
     private static final String                            API_SERVER                                = "http://prembox.com/uapi";
     private static final String                            NICE_HOST                                 = "prembox.com";
     private static final String                            NICE_HOSTproperty                         = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NOCHUNKS                                  = NICE_HOSTproperty + "NOCHUNKS";
-    private static final String                            NORESUME                                  = NICE_HOSTproperty + "NORESUME";
+    private static final String                            PROPERTY_DLLINK_EXPIRE_TIMESTAMP          = "PROPERTY_DLLINK_EXPIRE_TIMESTAMP";
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME                    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
@@ -187,6 +186,19 @@ public class PremboxCom extends PluginForHost {
         setConstants(account, link);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
+            final long timestamp_generated_dllink_expires = link.getLongProperty(PROPERTY_DLLINK_EXPIRE_TIMESTAMP, 0);
+            if (timestamp_generated_dllink_expires > 0 && System.currentTimeMillis() < timestamp_generated_dllink_expires) {
+                /**
+                 * 2017-09-27: According to admin, generated directurls last 3 days. <br />
+                 * Their system is messed up which means if we request a new directurl because the old generated one does not work, this
+                 * pulls more traffic from the users' account this 'JDownloader is wasting traffic'. <br />
+                 * We've told the admin numerous times that the issue is on their side and happens because of bad design but he wanted us to
+                 * fix it by re-using generated directurls for the full 3 days [= do not generate new URL if current url is < 3 days old,
+                 * regardless whether that url is downloadable or not].
+                 */
+                logger.info("Old generated directurl is not yet over 3 days old --> NOT generating new directurl");
+                handleErrorRetries("not_yet_allowed_to_generate_new_directurl", 15, 2 * 60 * 1000l);
+            }
             if (cloudOnlyHosts.contains(link.getHost())) {
                 /* Try max 10 minutes */
                 int counter = 0;
@@ -219,7 +231,7 @@ public class PremboxCom extends PluginForHost {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
             }
-            dllink = dllink.replaceAll("\\\\/", "/");
+            link.setProperty(PROPERTY_DLLINK_EXPIRE_TIMESTAMP, System.currentTimeMillis() + 3 * 24 * 60 * 60 * 1000);
         }
         handleDL(account, link, dllink);
     }
@@ -240,7 +252,6 @@ public class PremboxCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         // final String requestID = link.getStringProperty("premboxrequestId", null);
         /* we want to follow redirects in final stage */
@@ -258,66 +269,32 @@ public class PremboxCom extends PluginForHost {
                 }
             }
         }
-        if (link.getBooleanProperty(PremboxCom.NORESUME, false)) {
-            resume = false;
-            link.setProperty(PremboxCom.NORESUME, Boolean.valueOf(false));
-        }
-        if (!resume || link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
+        if (!resume) {
             maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+        final String contenttype = dl.getConnection().getContentType();
+        if (contenttype.contains("html") || contenttype.contains("json")) {
+            br.followConnection();
+            updatestatuscode();
+            handleAPIErrors(this.br);
+            handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
+        }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-            if (dl.getConnection().getResponseCode() == 416) {
-                logger.info("Resume impossible, disabling it for the next try");
-                link.setChunksProgress(null);
-                link.setProperty(PremboxCom.NORESUME, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (dl.getConnection().getResponseCode() == 503 && link.getBooleanProperty(NICE_HOSTproperty + PremboxCom.NOCHUNKS, false) == false) {
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                link.setProperty(NICE_HOSTproperty + PremboxCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html") || contenttype.contains("json")) {
-                br.followConnection();
-                updatestatuscode();
-                handleAPIErrors(this.br);
-                handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
-            }
-            try {
-                controlSlot(+1);
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
+            controlSlot(+1);
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
                     }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NICE_HOSTproperty + PremboxCom.NOCHUNKS, false) == false) {
-                        link.setProperty(NICE_HOSTproperty + PremboxCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+                } catch (final Throwable e) {
                 }
-            } catch (final PluginException e) {
-                e.printStackTrace();
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + PremboxCom.NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + PremboxCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw e;
-            } finally {
-                // remove usedHost slot from hostMap
-                // remove download slot
-                controlSlot(-1);
             }
-        } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-            throw e;
+        } finally {
+            // remove usedHost slot from hostMap
+            // remove download slot
+            controlSlot(-1);
         }
     }
 
@@ -329,11 +306,9 @@ public class PremboxCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
