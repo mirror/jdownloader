@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,7 +33,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(www\\.)?viki\\.(com|mx|jp)/videos/\\d+v" })
 public class VikiCom extends PluginForHost {
-
     public VikiCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,7 +43,6 @@ public class VikiCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
     private boolean              geoblocked        = false;
@@ -64,10 +63,12 @@ public class VikiCom extends PluginForHost {
      * to get the video streams is not public and only works with their own API secret which we don't have: http://dev.viki.com/v4/streams/
      * ...which is why we're using the html5 version for now. In case we ever use the API - here is the needed hmac hash function:
      * http://stackoverflow.com/questions/6312544/hmac-sha1-how-to-do-it-properly-in-java
+     *
+     * @throws Exception
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         geoblocked = false;
         final String vid = getVID(downloadLink);
         downloadLink.setName(vid);
@@ -84,11 +85,13 @@ public class VikiCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
+        LinkedHashMap<String, Object> entries = null;
         if (br.containsHTML("\"geo\":true")) {
             geoblocked = true;
         } else {
             br.getPage("https://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
-            geoblocked = this.br.containsHTML("Sorry, this content is( currently)? not available in your region|\"geo\":true");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            geoblocked = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "blocking/geo")).booleanValue();
         }
         if (geoblocked) {
             downloadLink.getLinkStatus().setStatusText("Not available in your country (geo block)");
@@ -105,9 +108,10 @@ public class VikiCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         dllink = br.getRegex("<source type=\"video/mp4\" src=\"(https?://[^<>\"]*?)\">").getMatch(0);
-        final String idpart = this.br.getMatch("oster=\"httpss?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
+        final String idpart = this.br.getMatch("oster=\"https?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
         if (idpart != null) {
             /* Thx: https://github.com/dknlght/dkodi/blob/master/plugin.video.viki/plugin.video.viki-1.1.44.zip */
+            /* 2017-09-27: Check this: https://forum.kodi.tv/showthread.php?tid=148429 */
             /* 2017-03-11 - also possible for: 360p, 480p */
             dllink = String.format("http://content.viki.com/%s/%s_high_720p_%s.mp4", vid, vid, idpart);
         }
@@ -199,7 +203,6 @@ public class VikiCom extends PluginForHost {
     // }
     // return dllink;
     // }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
