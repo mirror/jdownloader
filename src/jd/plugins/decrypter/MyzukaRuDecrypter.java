@@ -16,8 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -28,9 +27,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me)/Album/(\\d+)" })
 public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
-
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,8 +63,8 @@ public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
         }
         for (final String singleLink : info) {
             final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[^<>\"/]+)\"").getMatch(0);
-            final String title = new Regex(singleLink, "href=\"/Song/\\d+/[^<>\"/]+\">([^<>\"]*?)</a>").getMatch(0);
-            final String artist = new Regex(singleLink, "href=\"/Artist/\\d+/[^<>\"/]+\">([^<>\"]*?)</a>").getMatch(0);
+            final String title = new Regex(singleLink, "href=\"/Song/\\d+/[^<>\"/]+\">([^<>\"]*?)<").getMatch(0);
+            final String artist = new Regex(singleLink, "href=\"/Artist/\\d+/[^<>\"/]+\">([^<>\"]*?)<").getMatch(0);
             String filesize = new Regex(singleLink, "class=\"time\">([^<>\"]*?)<").getMatch(0);
             if (url == null || title == null || artist == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
