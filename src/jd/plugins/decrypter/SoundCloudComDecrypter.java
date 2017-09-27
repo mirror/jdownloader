@@ -659,8 +659,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 continue;
             }
-            if (type != null && type.contains("playlist")) {
+            if (type != null && type.equals("playlist")) {
                 dl = createDownloadlink("https://soundcloud.com/" + url_username + "/sets/" + url);
+            } else if (type != null && type.equals("playlist-repost")) {
+                dl = createDownloadlink(permalink_url);
             } else {
                 String track_url = permalink_url.replace("http://", "https://").replace("soundcloud.com", "soundclouddecrypted.com");
                 if (!track_url.endsWith("/" + url)) {
