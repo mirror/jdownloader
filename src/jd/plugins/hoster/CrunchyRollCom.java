@@ -195,7 +195,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 if (subStylesScaleY.equals("0")) {
                     subStylesScaleY = "100";
                 }
-                subStyles += "Style: " + subStylesName + "," + subStylesFontName + "," + subStylesFontSize + "," + subStylesPriColor + "," + subStylesSecColor + "," + subStylesOutColor + "," + subStylesBacColor + "," + subStylesBold + "," + subStylesItalic + "," + subStylesUnderline + "," + subStylesStrikeout + "," + subStylesScaleX + "," + subStylesScaleY + "," + subStylesSpacing + "," + subStylesAngle + "," + subStylesBorder + "," + subStylesOutline + "," + subStylesShadow + "," + subStylesAlignment + "," + subStylesMarginL + "," + subStylesMarginR + ", " + subStylesMarginV + "," + subStylesEncoding + "\n";
+                subStyles += "Style: " + subStylesName + "," + subStylesFontName + "," + subStylesFontSize + "," + subStylesPriColor + "," + subStylesSecColor + "," + subStylesOutColor + "," + subStylesBacColor + "," + subStylesBold + "," + subStylesItalic + "," + subStylesUnderline + "," + subStylesStrikeout + "," + subStylesScaleX + "," + subStylesScaleY + "," + subStylesSpacing + "," + subStylesAngle + "," + subStylesBorder + "," + subStylesOutline + "," + subStylesShadow + "," + subStylesAlignment + "," + subStylesMarginL + "," + subStylesMarginR + "," + subStylesMarginV + "," + subStylesEncoding + "\n";
             }
             // Get the elements
             String subEvents = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n";
