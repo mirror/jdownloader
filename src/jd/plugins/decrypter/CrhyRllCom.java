@@ -11,7 +11,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -60,25 +59,23 @@ public class CrhyRllCom extends PluginForDecrypt {
         }
     }
 
-    static private final Pattern CONFIG_SUBS    = Pattern.compile("<subtitle id='([0-9]+?)' link='(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*?/>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern CONFIG_URL     = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=([0-9]+).*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern ANDROID_URL    = Pattern.compile("http://www\\.crunchyroll\\.com/android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl&media_id=([0-9]+).*", Pattern.CASE_INSENSITIVE);
-    static private final Pattern RTMP_FILE      = Pattern.compile("<file>(.*?)</file>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern RTMP_HOST      = Pattern.compile("<host>(rtmp.*)</host>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern RTMP_QUAL      = Pattern.compile("<video_encode_quality>(.*?)</video_encode_quality>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern RTMP_SWF       = Pattern.compile("<default:chromelessPlayerUrl>([^<>\"]+\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern CONFIG_SUBS = Pattern.compile("<subtitle id='([0-9]+?)' link='(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*?/>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern CONFIG_URL  = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=([0-9]+).*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern RTMP_FILE   = Pattern.compile("<file>(.*?)</file>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern RTMP_HOST   = Pattern.compile("<host>(rtmp.*)</host>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern RTMP_QUAL   = Pattern.compile("<video_encode_quality>(.*?)</video_encode_quality>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern RTMP_SWF    = Pattern.compile("<default:chromelessPlayerUrl>([^<>\"]+\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     /* 2016-04-29: http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf */
     /* 2016-10-19: http://static.ak.crunchyroll.com/vendor/StandardVideoPlayer-10dff2a.swf */
-    static private final Pattern SWF_URL        = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
-    static private final String  SWF_DIR        = "http://static.ak.crunchyroll.com/flash/20120424185935.0acb0eac20ff1d5f75c78ac39a889d03/";
-    private final int            EPISODE_PAD    = 3;
-    private final char           SEPARATOR      = '-';
-    private final String         SUFFIX_RAW     = ".raw";
-    private final String         SUFFIX_ANDROID = ".android.english";
-    private final String         EXT_UNKNOWN    = ".unk";
-    private final String         EXT_SUBS       = ".ass";
-    private final String         EXT_MANGA      = ".jpg";
-    final FilePackage            filePackage    = FilePackage.getInstance();
+    static private final Pattern SWF_URL     = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
+    static private final String  SWF_DIR     = "http://static.ak.crunchyroll.com/flash/20120424185935.0acb0eac20ff1d5f75c78ac39a889d03/";
+    private final int            EPISODE_PAD = 3;
+    private final char           SEPARATOR   = '-';
+    private final String         SUFFIX_RAW  = ".raw";
+    private final String         EXT_UNKNOWN = ".unk";
+    private final String         EXT_SUBS    = ".ass";
+    private final String         EXT_MANGA   = ".jpg";
+    final FilePackage            filePackage = FilePackage.getInstance();
 
     @SuppressWarnings("deprecation")
     public CrhyRllCom(final PluginWrapper wrapper) {
@@ -113,7 +110,6 @@ public class CrhyRllCom extends PluginForDecrypt {
             this.br.setFollowRedirects(true);
             cryptedLink.setCryptedUrl(cryptedLink.getCryptedUrl().replace("crunchyroll.com.br/", "crunchyroll.com/"));
             getPage(cryptedLink.getCryptedUrl());
-            System.out.print(br.toString());
             // Fog: Check for manga link first before handling videos/subs
             if (br.getURL().contains("comics_read")) {
                 final String series_id = br.getRegex("seriesId\\=(\\d+)").getMatch(0);
@@ -306,14 +302,6 @@ public class CrhyRllCom extends PluginForDecrypt {
                     filePackage.add(thisLink);
                     decryptedLinks.add(thisLink);
                 }
-                // Add the Android video file (low-res, embedded subtitles)
-                final String androidFile = title + SUFFIX_ANDROID;
-                final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
-                androidLink.setContentUrl(cryptedLink.getCryptedUrl());
-                androidLink.setFinalFileName(androidFile + EXT_UNKNOWN);
-                androidLink.setProperty("filename", androidFile);
-                filePackage.add(androidLink);
-                decryptedLinks.add(androidLink);
             }
         } catch (final IOException e) {
             this.logger.log(e);
@@ -365,96 +353,6 @@ public class CrhyRllCom extends PluginForDecrypt {
             episode = "0" + episode;
         }
         return series + SEPARATOR + episode + title;
-    }
-
-    /**
-     * Try and find the Android details for the given link. If the details are successfully found, then set the properties of the link.
-     *
-     * @param downloadLink
-     *            The DownloadLink file to check
-     * @param br
-     *            The browser to use to load the XML file with. If null, uses different browser
-     * @throws Exception
-     */
-    public void setAndroid(final DownloadLink downloadLink, Browser br) throws Exception {
-        if (br == null) {
-            br = this.br;
-        }
-        // Extract the quality code from the url
-        final Regex androidUrl = new Regex(downloadLink.getDownloadURL(), CrhyRllCom.ANDROID_URL);
-        final String mediaId = androidUrl.getMatch(0);
-        if (mediaId == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)");
-        }
-        // If the download does not yet have a filename, set a temporary filename
-        String filename = "CrunchyRoll." + mediaId + SUFFIX_ANDROID;
-        if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
-        }
-        // Load the xml using the spoofed Android headers
-        // TODO Randomise UID?
-        final Browser androidBr = br.cloneBrowser();
-        androidBr.setFollowRedirects(true);
-        androidBr.setHeader("X-Device-Uniqueidentifier", "ffffffff-ffff-ffff-ffff-ffffffffffff");
-        androidBr.setHeader("X-Device-Manufacturer", "HTC");
-        androidBr.setHeader("X-Device-Model", "HTC Desire HD");
-        androidBr.setHeader("X-Application-Name", "com.crunchyroll.crunchyroid");
-        androidBr.setHeader("X-Device-Product", "htc_ace");
-        androidBr.setHeader("X-Device-Is-GoogleTV", "0");
-        getPage(androidBr, downloadLink.getDownloadURL());
-        // Check if we can actually get the video
-        if (androidBr.containsHTML("Video not found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permission denied!");
-        } else if (androidBr.containsHTML("Media not found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist!");
-        } else if (androidBr.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "http 404");
-        }
-        if (!androidBr.containsHTML("\"exception_error_code\":null")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!");
-        }
-        // Get the filetype from the JSON
-        String filetype = androidBr.getRegex("video(\\.\\w+)").getMatch(0);
-        if (filetype == null) {
-            filetype = EXT_UNKNOWN;
-        }
-        // Get the filename, and generate a new one if it doesn't exist
-        String oldFilename = downloadLink.getStringProperty("filename");
-        if (oldFilename == null) {
-            oldFilename = this.nameFromVideoId(mediaId, br);
-            if (oldFilename != null) {
-                filename = oldFilename + SUFFIX_ANDROID;
-                downloadLink.setProperty("filename", filename);
-            }
-        } else {
-            filename = oldFilename;
-        }
-        downloadLink.setFinalFileName(filename + filetype);
-        String videoUrl = androidBr.getRegex("\"video_url\":\"(.+?)\"").getMatch(0);
-        if (videoUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to get video URL");
-        }
-        videoUrl = Encoding.htmlDecode(videoUrl.replaceAll("\\\\/", "/"));
-        downloadLink.setProperty("videourl", videoUrl);
-        // Get the HTTP response headers of the video file to check for
-        // validity
-        URLConnectionAdapter conn = null;
-        try {
-            conn = br.openGetConnection(videoUrl);
-            final long respCode = conn.getResponseCode();
-            final long length = conn.getLongContentLength();
-            final String contType = conn.getContentType();
-            if (respCode == 200 && contType.startsWith("video")) {
-                // File valid, set details
-                downloadLink.setDownloadSize(length);
-                downloadLink.setProperty("valid", true);
-            }
-        } finally {
-            try {
-                conn.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
     }
 
     /**
