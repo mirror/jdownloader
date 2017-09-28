@@ -154,9 +154,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                     // Fog: Store this just in case the composed image is not available.
                     final String temp_image = entries.get("image_url").toString();
                     final String page_number = entries.get("number").toString();
-                    entries = (LinkedHashMap<String, Object>) entries.get("locale");
-                    entries = (LinkedHashMap<String, Object>) entries.get("enUS");
-                    String image = entries.get("encrypted_composed_image_url").toString();
+                    String image = JavaScriptEngineFactory.walkJson(entries, "locale/enUS/encrypted_composed_image_url").toString();
                     // Fog: This can apparently happen somehow, so try to grab the raw uncomposed image.
                     if (image == null && temp_image != null) {
                         image = temp_image;
