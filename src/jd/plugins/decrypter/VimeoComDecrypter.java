@@ -15,13 +15,17 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -48,12 +52,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
+
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
     private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
@@ -312,18 +313,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 channelName = getFormattedString(channelName);
             }
             title = getFormattedString(title);
-            String qualities[][] = getQualities(br, videoID);
+            final List<VimeoVideoContainer> qualities = getQualities(br, videoID);
             if (qualities == null) {
                 return null;
             }
-            // qx[0] = url
-            // qx[1] = extension
-            // qx[2] = format (mobile|sd|hd)
-            // qx[3] = frameSize (\d+x\d+)
-            // qx[4] = bitrate (\d+)
-            // qx[5] = fileSize (\d [a-zA-Z]{2})
-            // qx[6] = Codec
-            // qx[7] = ID
             final boolean qMobile = cfg.getBooleanProperty(Q_MOBILE, true);
             final boolean qHD = cfg.getBooleanProperty(Q_HD, true);
             final boolean qSD = cfg.getBooleanProperty(Q_SD, true);
@@ -332,12 +325,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
             int format = 0;
-            for (String quality[] : qualities) {
-                String url = quality[0];
-                String fmt = quality[2];
-                if (fmt != null) {
-                    fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
-                }
+            for (VimeoVideoContainer quality : qualities) {
+                String url = quality.getDownloadurl();
+                String fmt = quality.getQuality().toString();
                 if (fmt != null) {
                     /* best selection is done at the end */
                     if (fmt.contains("mobile")) {
@@ -385,19 +375,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
                 // there can be multiple hd/sd etc need to identify with framesize.
-                final String linkdupeid = videoID + "_" + fmt + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "") + quality[8];
+                final String linkdupeid = quality.createLinkID(videoID);
                 final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin" + format + "://"));
-                link.setProperty("directURL", url);
+                link.setLinkID(linkdupeid);
+                link.setProperty("videoID", videoID);
                 // videoTitle is required!
                 link.setProperty("videoTitle", title);
-                link.setProperty("videoQuality", fmt);
-                link.setProperty("videoExt", quality[1]);
-                link.setProperty("videoID", videoID);
-                link.setProperty("videoFrameSize", quality[3]);
-                link.setProperty("videoBitrate", quality[4]);
-                link.setProperty("videoCodec", quality[6]);
-                link.setProperty("videoType", quality[8]);
-                link.setLinkID(linkdupeid);
                 link.setContentUrl(cleanVimeoURL);
                 if (password != null) {
                     link.setProperty("pass", password);
@@ -414,9 +397,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (channelName != null) {
                     link.setProperty("channel", channelName);
                 }
+                link.setProperty(jd.plugins.hoster.VimeoCom.VVC, quality);
                 link.setFinalFileName(getFormattedFilename(link));
-                if (quality[5] != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(quality[5].trim()));
+                if (quality.getFilesize() > -1) {
+                    link.setDownloadSize(quality.getFilesize());
                 }
                 link.setAvailable(true);
                 final DownloadLink best = bestMap.get(fmt);
@@ -500,14 +484,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private PluginForHost vimeo_hostPlugin = null;
 
-    private String[][] getQualities(final Browser ibr, final String ID) throws Exception {
-        pluginLoaded();
+    private List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID) throws Exception {
         return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID);
     }
 
     private String getXsrft(final Browser br) throws Exception {
-        pluginLoaded();
-        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getXsrft(br);
+        return jd.plugins.hoster.VimeoCom.getXsrft(br);
     }
 
     private String getFormattedFilename(DownloadLink link) throws Exception {
