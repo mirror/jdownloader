@@ -43,6 +43,24 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -107,26 +125,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 public class YoutubeHelper {
-
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         String filepattern = cfg.getFilenamePattern();
@@ -178,11 +177,10 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static final LogSource             LOGGER                           = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
@@ -201,7 +199,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_AUDIO_NAME") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
@@ -218,7 +215,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_VIDEO_NAME") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
@@ -235,7 +231,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_VIDEO_ID") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
@@ -252,7 +247,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_AUDIO_ID") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
@@ -269,7 +263,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("VARIANT", "V") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 if ("name".equalsIgnoreCase(mod)) {
@@ -285,7 +278,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("QUALITY") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_quality();
@@ -309,7 +301,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("COLLECTION", "COL") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_collection();
@@ -321,7 +312,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEOID", "ID") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_id();
@@ -333,7 +323,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("360", "SPHERICAL") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_spherical();
@@ -353,7 +342,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("THREED", "3D") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_3d();
@@ -373,7 +361,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("FPS") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_fps();
@@ -392,7 +379,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("EXT", "EXTENSION") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_extension();
@@ -405,7 +391,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("HEIGHT", "H") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_height();
@@ -421,7 +406,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("WIDTH", "W") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_width();
@@ -437,7 +421,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("USERNAME", "USER") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_USER_NAME, "");
@@ -449,7 +432,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("PLAYLIST_ID") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID, "");
@@ -461,7 +443,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("PLAYLIST_NAME") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_TITLE, "");
@@ -473,7 +454,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("CHANNEL_ID") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_CHANNEL_ID, "");
@@ -485,7 +465,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("GOOGLEPLUS_ID") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, "");
@@ -501,7 +480,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("DURATION") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 int ms = link.getIntegerProperty(YoutubeHelper.YT_DURATION, -1);
@@ -521,7 +499,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("CHANNEL", "CHANNELNAME") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, "");
@@ -533,7 +510,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEONAME", "VIDEO_NAME", "TITLE") {
-
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_TITLE, "");
@@ -545,7 +521,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("DATE", "DATE_TIME") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_date();
@@ -570,7 +545,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("DATE_UDPATE") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_date();
@@ -596,7 +570,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEO_CODEC") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videoCodec();
@@ -619,7 +592,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("RESOLUTION") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_resolution();
@@ -642,7 +614,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("BESTRESOLUTION") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_resolution_best();
@@ -669,7 +640,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("AUDIO_CODEC") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_audioCodec();
@@ -691,7 +661,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("LNG") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_language();
@@ -706,7 +675,9 @@ public class YoutubeHelper {
                 AbstractVariant variant = AbstractVariant.get(link);
                 if (variant != null) {
                     if (variant instanceof SubtitleVariant) {
-                        if ("display".equalsIgnoreCase(mod)) {
+                        if ("full".equalsIgnoreCase(mod)) {
+                            return ((SubtitleVariant) variant).getGenericInfo()._getLocale().getDisplayName();
+                        } else if ("display".equalsIgnoreCase(mod)) {
                             return ((SubtitleVariant) variant).getGenericInfo()._getLocale().getDisplayLanguage();
                         } else {
                             return ((SubtitleVariant) variant).getGenericInfo().getLanguage();
@@ -717,7 +688,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("AUDIO_BITRATE") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_audioQuality();
@@ -739,7 +709,6 @@ public class YoutubeHelper {
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEONUMBER", "PLAYLIST_POSITION") {
-
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videonumber();
@@ -763,30 +732,30 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String                YT_TITLE                         = "YT_TITLE";
+    public static final String                YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String                YT_ID                            = "YT_ID";
+    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String                YT_DATE                          = "YT_DATE";
+    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String                YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -835,7 +804,6 @@ public class YoutubeHelper {
     }
 
     public class StreamMap {
-
         public StreamMap(String map, String src2) {
             this.mapData = map;
             this.src = src2;
@@ -1177,8 +1145,8 @@ public class YoutubeHelper {
                 } else if (new Regex(string, "\\d+\\s*(?:days?|hours?|minutes?|seconds?)").matches()) {
                     // Streamed live 3 hours ago
                     /*
-                     * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then construct relative to users
-                     * time. It should be equal to above as
+                     * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then
+                     * construct relative to users time. It should be equal to above as
                      */
                     final String tmpdays = new Regex(string, "(\\d+)\\s+days?").getMatch(0);
                     final String tmphrs = new Regex(string, "(\\d+)\\s+hours?").getMatch(0);
@@ -1720,7 +1688,6 @@ public class YoutubeHelper {
         }
         for (Entry<YoutubeITAG, StreamCollection> es : ret.entrySet()) {
             Collections.sort(es.getValue(), new Comparator<YoutubeStreamData>() {
-
                 @Override
                 public int compare(YoutubeStreamData o1, YoutubeStreamData o2) {
                     int ret = CompareUtils.compare(o2.getUrl().contains("ei="), o1.getUrl().contains("ei="));
@@ -1775,14 +1742,12 @@ public class YoutubeHelper {
         docFactory.setValidating(false);
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         docBuilder.setEntityResolver(new EntityResolver() {
-
             @Override
             public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
                 return null;
             }
         });
         docBuilder.setErrorHandler(new ErrorHandler() {
-
             @Override
             public void warning(SAXParseException exception) throws SAXException {
                 logger.log(exception);
@@ -2035,7 +2000,6 @@ public class YoutubeHelper {
             Transformer transformer;
             transformer = transformerFactory.newTransformer();
             transformer.setURIResolver(new URIResolver() {
-
                 @Override
                 public Source resolve(String href, String base) throws TransformerException {
                     return null;
@@ -2242,7 +2206,6 @@ public class YoutubeHelper {
             }
             br.setFollowRedirects(true);
             GoogleHelper helper = new GoogleHelper(br) {
-
                 @Override
                 protected boolean validateSuccess() {
                     return br.getCookie("http://youtube.com", "SID") != null;
@@ -2588,6 +2551,10 @@ public class YoutubeHelper {
             for (int trackIndex = 0; trackIndex < tracks.getLength(); trackIndex++) {
                 Element track = (Element) tracks.item(trackIndex);
                 String trackID = track.getAttribute("id");
+                final String cantran = track.getAttribute("cantran");
+                if (!"true".equalsIgnoreCase(cantran)) {
+                    continue;
+                }
                 String lang = track.getAttribute("lang_code");
                 name = track.hasAttribute("name") ? track.getAttribute("name") : name;
                 String kind = track.getAttribute("kind");
@@ -2599,17 +2566,18 @@ public class YoutubeHelper {
                 if (kind == null) {
                     kind = "";
                 }
+                final String lngID = lang + kind;
                 if (StringUtils.isNotEmpty(langTrans)) {
                     langOrg = langTrans;
                 }
                 if (StringUtils.isEmpty(langOrg)) {
                     langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
                 }
-                YoutubeSubtitleStorable old = urls.get(lang);
+                YoutubeSubtitleStorable old = urls.get(lngID);
                 if (old != null) {
                     // speech recognition
                     if ("asr".equalsIgnoreCase(old.getKind())) {
-                        urls.put(lang, new YoutubeSubtitleStorable(ttsUrl, name, lang, null, kind));
+                        urls.put(lngID, new YoutubeSubtitleStorable(ttsUrl, name, lang, null, kind));
                     }
                     continue;
                 }
@@ -2620,7 +2588,7 @@ public class YoutubeHelper {
                     logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
                     continue;
                 }
-                urls.put(lang, info);
+                urls.put(lngID, info);
                 if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
                     defaultLanguage = info;
                 }
@@ -2642,19 +2610,24 @@ public class YoutubeHelper {
                     if (kind == null) {
                         kind = "";
                     }
+                    final String lngID = lang + kind;
                     if (StringUtils.isNotEmpty(langTrans)) {
                         langOrg = langTrans;
                     }
                     if (StringUtils.isEmpty(langOrg)) {
                         langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
                     }
-                    YoutubeSubtitleStorable old = urls.get(lang);
+                    YoutubeSubtitleStorable old = urls.get(lngID);
                     if (old != null) {
                         // speech recognition
                         // if ("asr".equalsIgnoreCase(old.getKind())) {
                         // urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
                         //
                         // }
+                        continue;
+                    }
+                    final String cantran = target.getAttribute("cantran");
+                    if (!"true".equalsIgnoreCase(cantran)) {
                         continue;
                     }
                     YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(ttsUrl, name, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind());
@@ -2664,7 +2637,7 @@ public class YoutubeHelper {
                         logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
                         continue;
                     }
-                    urls.put(lang, info);
+                    urls.put(lngID, info);
                     // System.out.println("->" + lang);
                 }
             }

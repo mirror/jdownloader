@@ -89,6 +89,10 @@ public class ThreeplusTv extends PluginForHost {
             get_url += player_get_parameters;
         }
         this.br.getPage(get_url);
+        final String contentTitle = br.getRegex("\"og:title\" content=\"(.*?)\"").getMatch(0);
+        if (contentTitle != null) {
+            filename = contentTitle;
+        }
         sdnPlayoutId = getsdnPlayoutId();
         if (sdnPlayoutId != null) {
             /* First ID goes to second ID --> Access that */
@@ -106,9 +110,9 @@ public class ThreeplusTv extends PluginForHost {
                 this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             }
         }
-        final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
+        final String[] qualities = { "hd1080p", "hd720p", "hd720", "mediumlarge", "medium", "small" };
         for (final String possibleQuality : qualities) {
-            dllink = this.br.getRegex("src\\s*?:\\s*?\\'(https?[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*?type\\s*?:\\s*?\\'video(?:/|\\x2F)mp4\\',\\s*?quality\\s*?:\\s*?\\'" + possibleQuality + "\\'").getMatch(0);
+            dllink = this.br.getRegex("src\\s*:\\s*\\'(https?[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*type\\s*:\\s*\\'video(?:/|\\\\x2F)mp4\\',\\s*quality\\s*:\\s*\\'" + possibleQuality + "\\'").getMatch(0);
             if (dllink != null) {
                 break;
             }
@@ -158,12 +162,12 @@ public class ThreeplusTv extends PluginForHost {
     }
 
     private String getsdnPlayoutId() {
-        String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([^\"\\']+)(?:\"|\\')").getMatch(0);
+        String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([0-9a-f\\-]{10,})(?:\"|\\')").getMatch(0);
         if (ret == null) {
             /* 2017-02-02: E.g. for '/videos/' urls. */
-            ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([^<>\"\\']+)<").getMatch(0);
+            ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([0-9a-f\\-]{10,})<").getMatch(0);
             if (ret == null) {
-                ret = this.br.getRegex("playout\\.3qsdn\\.com/([0-9a-f\\-]+)").getMatch(0);
+                ret = this.br.getRegex("playout\\.3qsdn\\.com/([0-9a-f\\-]{10,})").getMatch(0);
             }
         }
         ret = Encoding.unicodeDecode(ret);
