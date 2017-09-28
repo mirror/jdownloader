@@ -1,5 +1,7 @@
 package org.jdownloader.scripting;
 
+import org.appwork.utils.reflection.Clazz;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,10 +33,6 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
-import jd.parser.Regex;
-import jd.plugins.components.ThrowingRunnable;
-
-import org.appwork.utils.reflection.Clazz;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -52,7 +50,12 @@ import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
 
+import jd.parser.Regex;
+import jd.plugins.components.ThrowingRunnable;
+import jdk.nashorn.api.scripting.NashornScriptEngine;
+
 public class JavaScriptEngineFactory {
+
     /**
      * ExternalScriptable is an implementation of Scriptable backed by a JSR 223 ScriptContext instance.
      *
@@ -60,11 +63,14 @@ public class JavaScriptEngineFactory {
      * @author A. Sundararajan
      * @since 1.6
      */
+
     public static class ExternalScriptable implements Scriptable {
+
         /*
          * Underlying ScriptContext that we use to store named variables of this scope.
          */
         private ScriptContext       context;
+
         /*
          * JavaScript allows variables to be named as numbers (indexed properties). This way arrays, objects (scopes) are treated uniformly.
          * Note that JSR 223 API supports only String named variables and so we can't store these in Bindings. Also, JavaScript allows name
@@ -73,6 +79,7 @@ public class JavaScriptEngineFactory {
          * not convert.
          */
         private Map<Object, Object> indexedProps;
+
         // my prototype
         private Scriptable          prototype;
         // my parent scope, if any
@@ -131,6 +138,7 @@ public class JavaScriptEngineFactory {
                         if (value instanceof ConsString) {
                             value = value.toString();
                         }
+
                         return Context.javaToJS(value, this);
                     } else {
                         return NOT_FOUND;
@@ -352,6 +360,7 @@ public class JavaScriptEngineFactory {
                 } else {
                     tryToString = (i == 1);
                 }
+
                 String methodName;
                 Object[] args;
                 if (tryToString) {
@@ -464,6 +473,7 @@ public class JavaScriptEngineFactory {
                 if (njb instanceof NativeJavaClass) {
                     return njb;
                 }
+
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
@@ -494,23 +504,29 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class RhinoTopLevel extends ImporterTopLevel {
+
         // variables defined always to help Java access from JavaScript
         // private static final String builtinVariables = "var com = Packages.com; \n" +
         // "var edu = Packages.edu; \n" + "var javax = Packages.javax; \n" +
         // "var net = Packages.net; \n" + "var org = Packages.org; \n";
+
         RhinoTopLevel(Context cx, RhinoScriptEngine engine) {
             super(cx);
             this.engine = engine;
+
             // initialize JSAdapter lazily. Reduces footprint & startup time.
             new LazilyLoadedCtor(this, "JSAdapter", "com.sun.script.javascript.JSAdapter", false);
+
             /*
              * initialize JavaAdapter. We can't lazy initialize this because lazy initializer attempts to define a new property. But,
              * JavaAdapter is an exisiting property that we overwrite.
              */
             JavaAdapter.init(cx, this, false);
+
             // add top level functions
             String names[] = { "bindings", "scope", "sync" };
             defineFunctionProperties(names, RhinoTopLevel.class, ScriptableObject.DONTENUM);
+
             // define built-in variables
             // cx.evaluateString(this, builtinVariables, "<builtin>", 1, null);
         }
@@ -588,6 +604,7 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class RhinoCompiledScript extends CompiledScript {
+
         private RhinoScriptEngine engine;
         private Script            script;
 
@@ -597,9 +614,11 @@ public class JavaScriptEngineFactory {
         }
 
         public Object eval(ScriptContext context) throws ScriptException {
+
             Object result = null;
             Context cx = RhinoScriptEngine.enterContext();
             try {
+
                 Scriptable scope = engine.getRuntimeScope(context);
                 Object ret = script.exec(cx, scope);
                 result = engine.unwrapReturnValue(ret);
@@ -617,15 +636,18 @@ public class JavaScriptEngineFactory {
             } finally {
                 Context.exit();
             }
+
             return result;
         }
 
         public ScriptEngine getEngine() {
             return engine;
         }
+
     }
 
     public static class InterfaceImplementor {
+
         private Invocable engine;
 
         /** Creates a new instance of Invocable */
@@ -634,10 +656,12 @@ public class JavaScriptEngineFactory {
         }
 
         public class InterfaceImplementorInvocationHandler implements InvocationHandler {
+
             private Invocable engine;
             private Object    thiz;
 
             public InterfaceImplementorInvocationHandler(Invocable engine, Object thiz) {
+
                 this.engine = engine;
                 this.thiz = thiz;
             }
@@ -680,17 +704,21 @@ public class JavaScriptEngineFactory {
      * @since 1.6
      */
     public static class RhinoScriptEngine extends AbstractScriptEngine implements Invocable, Compilable {
-        private static final boolean DEBUG = false;
+
+        private static final boolean DEBUG = true;
+
         /*
          * Scope where standard JavaScript objects and our extensions to it are stored. Note that these are not user defined engine level
          * global variables. These are variables have to be there on all compliant ECMAScript scopes. We put these standard objects in this
          * top level.
          */
         private RhinoTopLevel        topLevel;
+
         /*
          * map used to store indexed properties in engine scope refer to comment on 'indexedProps' in ExternalScriptable.java.
          */
         private Map<Object, Object>  indexedProps;
+
         private ScriptEngineFactory  factory;
         private InterfaceImplementor implementor;
 
@@ -698,15 +726,19 @@ public class JavaScriptEngineFactory {
          * Creates a new instance of RhinoScriptEngine
          */
         public RhinoScriptEngine() {
+
             Context cx = enterContext();
             try {
                 topLevel = new RhinoTopLevel(cx, this);
             } finally {
                 Context.exit();
             }
+
             indexedProps = new HashMap<Object, Object>();
+
             // construct object used to implement getInterface
             implementor = new InterfaceImplementor(this) {
+
                 protected Object convertResult(Method method, Object res) throws ScriptException {
                     Class desiredType = method.getReturnType();
                     if (desiredType == Void.TYPE) {
@@ -720,11 +752,13 @@ public class JavaScriptEngineFactory {
 
         public Object eval(Reader reader, ScriptContext ctxt) throws ScriptException {
             Object ret;
+
             Context cx = enterContext();
             try {
                 Scriptable scope = getRuntimeScope(ctxt);
                 String filename = (String) get(ScriptEngine.FILENAME);
                 filename = filename == null ? "<Unknown source>" : filename;
+
                 ret = cx.evaluateReader(scope, reader, filename, 1, null);
             } catch (RhinoException re) {
                 if (DEBUG) {
@@ -745,6 +779,7 @@ public class JavaScriptEngineFactory {
             } finally {
                 cx.exit();
             }
+
             return unwrapReturnValue(ret);
         }
 
@@ -785,15 +820,18 @@ public class JavaScriptEngineFactory {
                 if (name == null) {
                     throw new NullPointerException("method name is null");
                 }
+
                 if (thiz != null && !(thiz instanceof Scriptable)) {
                     thiz = cx.toObject(thiz, topLevel);
                 }
+
                 Scriptable engineScope = getRuntimeScope(context);
                 Scriptable localScope = (thiz != null) ? (Scriptable) thiz : engineScope;
                 Object obj = ScriptableObject.getProperty(localScope, name);
                 if (!(obj instanceof Function)) {
                     throw new NoSuchMethodException("no such method: " + name);
                 }
+
                 Function func = (Function) obj;
                 Scriptable scope = func.getParentScope();
                 if (scope == null) {
@@ -824,6 +862,7 @@ public class JavaScriptEngineFactory {
             if (thiz == null) {
                 throw new IllegalArgumentException("script object can not be null");
             }
+
             try {
                 return implementor.getInterface(thiz, clasz);
             } catch (ScriptException e) {
@@ -837,13 +876,17 @@ public class JavaScriptEngineFactory {
             if (ctxt == null) {
                 throw new NullPointerException("null script context");
             }
+
             // we create a scope for the given ScriptContext
             Scriptable newScope = new ExternalScriptable(ctxt, indexedProps);
+
             // Set the prototype of newScope to be 'topLevel' so that
             // JavaScript standard objects are visible from the scope.
             newScope.setPrototype(topLevel);
+
             // define "context" variable in the new scope
             newScope.put("context", newScope, ctxt);
+
             // define "print", "println" functions in the new scope
             Context cx = enterContext();
             try {
@@ -867,6 +910,7 @@ public class JavaScriptEngineFactory {
                 if (fileName == null) {
                     fileName = "<Unknown Source>";
                 }
+
                 Scriptable scope = getRuntimeScope(context);
                 Script scr = cx.compileReader(scope, script, fileName, 1, null);
                 ret = new RhinoCompiledScript(this, scr);
@@ -882,6 +926,7 @@ public class JavaScriptEngineFactory {
         }
 
         // package-private helpers
+
         static Context enterContext() {
             // call this always so that initializer of this class runs
             // and initializes custom wrap factory and class shutter.
@@ -907,6 +952,7 @@ public class JavaScriptEngineFactory {
             if (result instanceof Wrapper) {
                 result = ((Wrapper) result).unwrap();
             }
+
             return result instanceof Undefined ? null : result;
         }
 
@@ -915,8 +961,10 @@ public class JavaScriptEngineFactory {
                 System.out.println("No file specified");
                 return;
             }
+
             InputStreamReader r = new InputStreamReader(new FileInputStream(args[0]));
             ScriptEngine engine = new RhinoScriptEngine();
+
             engine.put("x", "y");
             engine.put(ScriptEngine.FILENAME, args[0]);
             engine.eval(r);
@@ -925,6 +973,7 @@ public class JavaScriptEngineFactory {
     }
 
     public static class CustomRhinoScriptEngineFactory implements ScriptEngineFactory {
+
         public CustomRhinoScriptEngineFactory() {
         }
 
@@ -947,7 +996,9 @@ public class JavaScriptEngineFactory {
         }
 
         public ScriptEngine getScriptEngine() {
+
             try {
+
                 RhinoScriptEngine ret = new RhinoScriptEngine();
                 ret.setEngineFactory(this);
                 return ret;
@@ -955,16 +1006,20 @@ public class JavaScriptEngineFactory {
                 e.printStackTrace();
                 throw e;
             } finally {
+
             }
+
         }
 
         public String getMethodCallSyntax(String obj, String method, String... args) {
+
             String ret = obj + "." + method + "(";
             int len = args.length;
             if (len == 0) {
                 ret += ")";
                 return ret;
             }
+
             for (int i = 0; i < len; i++) {
                 ret += args[i];
                 if (i != len - 1) {
@@ -1004,25 +1059,31 @@ public class JavaScriptEngineFactory {
             for (int i = 0; i < len; i++) {
                 ret += statements[i] + ";";
             }
+
             return ret;
         }
 
         private static List<String> NAMES;
         private static List<String> MIME_TYPES;
         private static List<String> EXTENSIONS;
+
         static {
             NAMES = new ArrayList<String>(6);
             NAMES.add("js");
             NAMES.add("rhino");
             NAMES.add("JavaScript");
             NAMES.add("javascript");
+            NAMES.add("nashorn");
+
             NAMES = Collections.unmodifiableList(NAMES);
+
             MIME_TYPES = new ArrayList<String>(4);
             MIME_TYPES.add("application/javascript");
             MIME_TYPES.add("application/ecmascript");
             MIME_TYPES.add("text/javascript");
             MIME_TYPES.add("text/ecmascript");
             MIME_TYPES = Collections.unmodifiableList(MIME_TYPES);
+
             EXTENSIONS = new ArrayList<String>(1);
             EXTENSIONS.add("js");
             EXTENSIONS = Collections.unmodifiableList(EXTENSIONS);
@@ -1062,10 +1123,11 @@ public class JavaScriptEngineFactory {
     }
 
     public static class CustomizedScriptEngineManager extends ScriptEngineManager {
+
         @Override
         public ScriptEngine getEngineByName(String shortName) {
             final ScriptEngine ret = super.getEngineByName(shortName);
-            if (ret instanceof RhinoScriptEngine) {
+            if (ret instanceof RhinoScriptEngine || ret instanceof NashornScriptEngine) {
                 return ret;
             }
             throw new RuntimeException("Bad ScriptEngine: " + ret.getClass());
@@ -1085,18 +1147,24 @@ public class JavaScriptEngineFactory {
 
     public static Object jsonToJavaObject(String string) throws Exception {
         try {
-            return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
+            final Object result = org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
             });
-        } catch (Throwable e) {
+            return result;
+        } catch (Exception e) {
             // jd 09 workaround. use rhino
-            try {
-                ScriptEngineManager mgr = getScriptEngineManager(null);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                engine.eval("var response=" + string + ";");
-                return toMap(engine.get("response"));
-            } catch (ScriptException e2) {
-                throw new Exception("JavaScript to Java failed: " + string);
-            }
+            e.printStackTrace();
+        }
+        try {
+            ScriptEngineManager mgr = getScriptEngineManager(null);
+            ScriptEngine engine = mgr.getEngineByName("JavaScript");
+
+            engine.eval("var response=" + string + ";");
+            return toMap(engine.get("response"));
+        } catch (ScriptException e2) {
+            throw new Exception("JavaScript to Java failed: " + string);
+        } catch (Exception e3) {
+            e3.printStackTrace();
+            throw new Exception("Failure");
         }
     }
 
@@ -1127,16 +1195,31 @@ public class JavaScriptEngineFactory {
      * @param crawlstring
      *            String that contains info on what to get in this format: /String/String/{number representing the number of the object
      *            inside the ArrayList}/String/and_so_on
+     * @throws Exception
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static Object walkJson(final Object json, final String crawlstring) {
-        if (crawlstring == null) {
+    public static Object walkJson(final Object input, final String crawlstring) {
+        if (crawlstring == null || input == null) {
             return null;
+        }
+        Object currentObject;
+        {
+            // string provided instead of list/maps etc.
+            try {
+                final Object json;
+                if (input instanceof String) {
+                    json = jsonToJavaObject((String) input);
+                } else {
+                    json = input;
+                }
+                currentObject = json;
+            } catch (final Exception e) {
+                return null;
+            }
         }
         final String[] crawlparts = crawlstring.split("/");
         String walkedBegin = "";
         String walkedRemains = crawlstring;
-        Object currentObject = json;
         try {
             for (int i = 0; i < crawlparts.length; i++) {
                 // speed up code by existing when null. also future proof against npe
@@ -1203,17 +1286,21 @@ public class JavaScriptEngineFactory {
                     break;
                 }
             }
+
         } catch (final Exception e) {
             e.printStackTrace();
             return null;
         }
+
         return currentObject;
     }
 
     public static Object toMap(Object obj) {
+
         if (obj == null) {
             return null;
         }
+
         if (Clazz.isPrimitiveWrapper(obj.getClass())) {
             return obj;
         } else if (obj instanceof String) {
@@ -1228,6 +1315,7 @@ public class JavaScriptEngineFactory {
                     System.out.println("Unknown Key: " + s + " " + s.getClass());
                     ret.put(s + "", toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
                 }
+
             }
             return ret;
         } else if (obj instanceof org.mozilla.javascript.NativeArray) {
@@ -1245,6 +1333,7 @@ public class JavaScriptEngineFactory {
                     System.out.println("Unknown Key: " + s + " " + s.getClass());
                     ret.put(s + "", toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
                 }
+
             }
             return ret;
         } else if (obj instanceof net.sourceforge.htmlunit.corejs.javascript.NativeArray) {
@@ -1271,4 +1360,5 @@ public class JavaScriptEngineFactory {
             JSRhinoPermissionRestricter.TRUSTED_THREAD.remove(Thread.currentThread());
         }
     }
+
 }

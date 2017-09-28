@@ -16,7 +16,16 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
+import org.jdownloader.plugins.components.containers.VimeoVideoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoVideoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,8 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +59,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" })
@@ -67,6 +76,7 @@ public class VimeoCom extends PluginForHost {
     private static final String CUSTOM_DATE        = "CUSTOM_DATE_3";
     private static final String CUSTOM_FILENAME    = "CUSTOM_FILENAME_3";
     private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME_3";
+    public static final String  VVC                = "VVC_1";
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -108,8 +118,8 @@ public class VimeoCom extends PluginForHost {
         }
         /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        while (userAgent.get() == null || userAgent.get().contains(" Chrome/")) {
-            userAgent.set(UserAgents.stringUserAgent());
+        if (userAgent.get() == null) {
+            userAgent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.setAllowedResponseCodes(418);
@@ -178,34 +188,28 @@ public class VimeoCom extends PluginForHost {
         }
         // because names can often change by the uploader, like youtube.
         String name = getTitle(br);
-        final String qualities[][] = getQualities(br, ID);
-        if (qualities == null || qualities.length == 0) {
+        final List<VimeoVideoContainer> qualities = getQualities(br, ID);
+        if (qualities.isEmpty()) {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String downloadlinkId = downloadLink.getLinkID().replace("_ORIGINAL", "");
-        final boolean hasType = downloadLink.hasProperty("videoType");
-        for (String quality[] : qualities) {
-            final String linkdupeid;
-            if (hasType) {
-                linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "") + quality[8];
-            } else {
-                linkdupeid = ID + "_" + quality[2] + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "");
-            }
-
+        // now we nuke linkids for videos.. crazzy... only remove the last one
+        final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
+        for (VimeoVideoContainer quality : qualities) {
+            final String linkdupeid = quality.createLinkID(ID);
             // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
             // over!
             if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
-                finalURL = quality[0];
+                finalURL = quality.getDownloadurl();
                 break;
             }
         }
         if (finalURL == null) {
-            for (String quality[] : qualities) {
+            for (VimeoVideoContainer quality : qualities) {
                 // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
                 // over!
-                if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality[2])) {
-                    finalURL = quality[0];
+                if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality.getQuality().toString())) {
+                    finalURL = quality.getDownloadurl();
                     break;
                 }
             }
@@ -230,11 +234,17 @@ public class VimeoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(downloadLink.getDownloadURL());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!finalURL.contains(".m3u8")) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            // hls
+            dl = new HLSDownloader(downloadLink, br, finalURL);
+            dl.startDownload();
         }
         dl.startDownload();
     }
@@ -282,7 +292,7 @@ public class VimeoCom extends PluginForHost {
                 dllink = MAINPAGE + dllink;
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -398,7 +408,7 @@ public class VimeoCom extends PluginForHost {
 
     public static final String containsPass = "<title>Private Video on Vimeo</title>|To watch this video, please provide the correct password";
 
-    private void handlePW(final DownloadLink downloadLink, final Browser br, final String url) throws PluginException, IOException {
+    private void handlePW(final DownloadLink downloadLink, final Browser br, final String url) throws Exception {
         if (br.containsHTML(containsPass)) {
             final String xsrft = getXsrft(br);
             String passCode = downloadLink.getStringProperty("pass", null);
@@ -417,117 +427,22 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static final int quality_info_length = 9;
-
     @SuppressWarnings({ "unchecked", "unused" })
-    public static String[][] getQualities(final Browser ibr, final String ID) throws Exception {
+    public static List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
         Thread.sleep(1000);
         boolean debug = false;
 
-        // qx[0] = url
-        // qx[1] = extension
-        // qx[2] = format (mobile|sd|hd|original)
-        // qx[3] = frameSize (\d+x\d+)
-        // qx[4] = bitrate (\d+)
-        // qx[5] = fileSize (\d [a-zA-Z]{2})
-        // qx[6] = Codec
-        // qx[7] = ID
-        // qx[8] = DOWNLOAD/STREAM
-
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (configURL == null) {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
             configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
         }
-        final ArrayList<String[]> results = new ArrayList<String[]>();
+        final ArrayList<VimeoVideoContainer> results = new ArrayList<VimeoVideoContainer>();
         if (ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
-            // new//
-            Browser gq = ibr.cloneBrowser();
-            /* With dl button */
-            gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String json = gq.getPage("/" + ID + "?action=load_download_config");
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            if (entries != null) {
-                final List<Object> files = (List<Object>) entries.get("files");
-                if (files != null) {
-                    for (final Object file : files) {
-                        final String[] result = new String[quality_info_length];
-                        results.add(result);
-                        final Map<String, Object> info = (Map<String, Object>) file;
-                        result[0] = String.valueOf(info.get("download_url"));
-                        final String ext = String.valueOf(info.get("extension"));
-                        if (StringUtils.isNotEmpty(ext)) {
-                            result[1] = "." + ext;
-                        }
-                        if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "sd")) {
-                            result[2] = "sd";
-                        } else if (StringUtils.containsIgnoreCase(String.valueOf(info.get("public_name")), "hd")) {
-                            result[2] = "hd";
-                        }
-                        result[3] = String.valueOf(info.get("width")) + "x" + String.valueOf(info.get("height"));
-                        result[4] = null;
-                        result[5] = String.valueOf(info.get("size"));
-                        /* No codec given */
-                        result[6] = null;
-                        /* ID */
-                        result[7] = null;
-                        result[8] = "DOWNLOAD";
-                    }
-                }
-                if (entries.containsKey("source_file")) {
-                    final Map<String, Object> file = (Map<String, Object>) entries.get("source_file");
-                    final String[] result = new String[quality_info_length];
-                    results.add(result);
-                    final Map<String, Object> info = file;
-                    result[0] = String.valueOf(info.get("download_url"));
-                    final String ext = String.valueOf(info.get("extension"));
-                    if (StringUtils.isNotEmpty(ext)) {
-                        result[1] = "." + ext;
-                    }
-                    final String height = Integer.toString(((Number) info.get("height")).intValue());
-                    final String width = Integer.toString(((Number) info.get("width")).intValue());
-                    result[2] = "original";
-                    result[3] = width + "x" + height;
-                    result[4] = null;
-                    result[5] = String.valueOf(info.get("size"));
-                    /* No codec given */
-                    result[6] = null;
-                    /* ID */
-                    result[7] = null;
-                    result[8] = "ORIGINAL";
-                }
-            }
-        } else if (ibr.containsHTML("iconify_down_b")) {
-            // old//
-            /* E.g. video 1761235 */
-            /* download button.. does this give you all qualities? If not we should drop this. */
-            Browser gq = ibr.cloneBrowser();
-            /* With dl button */
-            gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            gq.getPage("/" + ID + "?action=download");
-            /* german accept language will effect the language of this response, Datei instead of file. */
-            String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / ((?:\\d+\\.)?\\d+MB)\\)</span>").getMatches();
-            if (q != null) {
-                for (int i = 0; i < q.length; i++) {
-                    final String[] result = new String[quality_info_length];
-                    results.add(result);
-                    // does not have reference to bitrate here.
-                    result[0] = q[i][0]; // download button link expires just like the rest!
-                    result[1] = new Regex(q[i][1], ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                    result[2] = q[i][2];
-                    result[3] = q[i][3];
-                    result[4] = null;
-                    result[5] = q[i][4];
-                    /* No codec given */
-                    result[6] = null;
-                    /* ID */
-                    result[7] = null;
-                    result[8] = "DOWNLOAD";
-                }
-            }
+            results.addAll(handleDownloadConfig(ibr, ID));
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
         if (configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
@@ -548,99 +463,139 @@ public class VimeoCom extends PluginForHost {
             /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
             if (json != null) {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
-                final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
+                final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "request/files");
                 // progressive = web, hls = hls
                 if (files.containsKey("progressive")) {
-                    final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
-                    // atm they only have one object in array [] and then wrapped in {}
-                    for (final Object obj : progressive) {
-                        // todo some code to map...
-                        final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) obj;
-                        final String url = (String) abc.get("url");
-                        Integer.toString(((Number) abc.get("height")).intValue());
-                        final String height = Integer.toString(((Number) abc.get("height")).intValue());
-                        final String width = Integer.toString(((Number) abc.get("width")).intValue());
-                        String bitrate = null;
-                        final Object o_bitrate = abc.get("bitrate");
-                        if (o_bitrate != null) {
-                            /* Bitrate is 'null' for vp6 codec */
-                            bitrate = Integer.toString(((Number) o_bitrate).intValue());
-                        }
-                        String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?").getMatch(0);
-                        if (ext == null) {
-                            ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                        }
-                        final String quality = (String) abc.get("quality");
-                        final String[] result = new String[quality_info_length];
-                        results.add(result);
-                        result[0] = url;
-                        result[1] = ext;
-                        result[2] = Integer.parseInt(height) >= 720 ? "hd" : "sd";
-                        if (StringUtils.containsIgnoreCase(quality, "720") || StringUtils.containsIgnoreCase(quality, "1080")) {
-                            result[2] = "hd";
-                        }
-                        result[3] = (height == null || width == null ? null : width + "x" + height);
-                        result[4] = bitrate;
-                        /* No filesize given */
-                        result[5] = null;
-                        result[6] = ".mp4".equalsIgnoreCase(ext) ? "h264" : "vp5";
-                        /* ID */
-                        result[7] = String.valueOf(abc.get("id"));
-                        result[8] = "STREAM";
-                    }
+                    results.addAll(handleProgessive(files));
                 }
-                /*
-                 * h264 with sd, mobile and sometimes hd is available most times. vp6 is only available if a download button is available
-                 * (as far as we know) and thus should never be decrypted.
-                 */
-                final String[] codecs = { "h264", "vp6" };
-                for (final String codec : codecs) {
-                    final LinkedHashMap<String, Object> codecmap = (LinkedHashMap<String, Object>) files.get(codec);
-                    if (codecmap != null) {
-                        final String[] possibleQualities = { "mobile", "hd", "sd" };
-                        int counter = 0;
-                        for (final String currentQuality : possibleQualities) {
-                            final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) codecmap.get(currentQuality);
-                            if (qualitymap != null) {
-                                final String url = (String) qualitymap.get("url");
-                                Integer.toString(((Number) qualitymap.get("height")).intValue());
-                                final String height = Integer.toString(((Number) qualitymap.get("height")).intValue());
-                                final String width = Integer.toString(((Number) qualitymap.get("width")).intValue());
-                                String bitrate = null;
-                                final Object o_bitrate = qualitymap.get("bitrate");
-                                if (o_bitrate != null) {
-                                    /* Bitrate is 'null' for vp6 codec */
-                                    bitrate = Integer.toString(((Number) o_bitrate).intValue());
-                                }
-                                String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
-                                if (ext == null) {
-                                    ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                                }
-                                final String[] result = new String[quality_info_length];
-                                results.add(result);
-                                result[0] = url;
-                                result[1] = ext;
-                                result[2] = currentQuality;
-                                result[3] = (height == null || width == null ? null : width + "x" + height);
-                                result[4] = bitrate;
-                                /* No filesize given */
-                                result[5] = null;
-                                result[6] = codec;
-                                /* ID */
-                                result[7] = null;
-                            }
-                            counter++;
-                        }
-                    }
+                if (files.containsKey("hls")) {
+                    results.addAll(handleHLS(ibr, (LinkedHashMap<String, Object>) files.get("hls")));
                 }
             }
         }
-        return results.toArray(new String[][] {});
+        return results;
+    }
+
+    private static List<VimeoVideoContainer> handleDownloadConfig(final Browser ibr, final String ID) {
+        final ArrayList<VimeoVideoContainer> v = new ArrayList<VimeoVideoContainer>();
+        try {
+            final Browser gq = ibr.cloneBrowser();
+            /* With dl button */
+            gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final String json = gq.getPage("/" + ID + "?action=load_download_config");
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            if (entries != null) {
+                final List<Object> files = (List<Object>) entries.get("files");
+                if (files != null) {
+                    for (final Object file : files) {
+                        final Map<String, Object> info = (Map<String, Object>) file;
+                        final VimeoVideoContainer vvc = new VimeoVideoContainer();
+                        vvc.setDownloadurl((String) info.get("download_url"));
+                        final String ext = (String) info.get("extension");
+                        if (StringUtils.isNotEmpty(ext)) {
+                            vvc.setExtension("." + ext);
+                        } else {
+                            vvc.setExtension();
+                        }
+                        vvc.setWidth(((Number) info.get("width")).intValue());
+                        vvc.setHeight(((Number) info.get("height")).intValue());
+                        try {
+                            vvc.setFilesize(((Number) info.get("size")).longValue());
+                        } catch (final ClassCastException c) {
+                            // older videos its String with MB value
+                            vvc.setFilesize(SizeFormatter.getSize(((String) info.get("size"))));
+                        }
+                        vvc.setSource(Source.DOWNLOAD);
+                        final String sd = (String) info.get("public_name");
+                        if ("sd".equals(sd)) {
+                            vvc.setQuality(Quality.SD);
+                        } else if ("hd".equals(sd)) {
+                            vvc.setQuality(Quality.HD);
+                        } else {
+                            // not provided... determine by x and y
+                            vvc.setQuality();
+                        }
+                        v.add(vvc);
+                    }
+                }
+                if (entries.containsKey("source_file")) {
+                    final Map<String, Object> file = (Map<String, Object>) entries.get("source_file");
+                    final Map<String, Object> info = file;
+                    final VimeoVideoContainer vvc = new VimeoVideoContainer();
+                    vvc.setDownloadurl((String) info.get("download_url"));
+                    final String ext = (String) info.get("extension");
+                    if (StringUtils.isNotEmpty(ext)) {
+                        vvc.setExtension("." + ext);
+                    } else {
+                        vvc.setExtension();
+                    }
+                    vvc.setHeight(((Number) info.get("height")).intValue());
+                    vvc.setWidth(((Number) info.get("width")).intValue());
+                    vvc.setFilesize(((Number) info.get("size")).longValue());
+                    vvc.setSource(Source.DOWNLOAD);
+                    vvc.setQuality(Quality.ORIGINAL);
+                    v.add(vvc);
+                }
+            }
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+        return v;
+    }
+
+    private static List handleProgessive(final LinkedHashMap<String, Object> files) {
+        final ArrayList<VimeoVideoContainer> v = new ArrayList<VimeoVideoContainer>();
+        try {
+            final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
+            // atm they only have one object in array [] and then wrapped in {}
+            for (final Object obj : progressive) {
+                // todo some code to map...
+                final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) obj;
+                final VimeoVideoContainer vvc = new VimeoVideoContainer();
+                vvc.setDownloadurl((String) abc.get("url"));
+                vvc.setExtension();
+                vvc.setHeight(((Number) abc.get("height")).intValue());
+                vvc.setWidth(((Number) abc.get("width")).intValue());
+                final Object o_bitrate = abc.get("bitrate");
+                if (o_bitrate != null) {
+                    /* Bitrate is 'null' for vp6 codec */
+                    vvc.setBitrate(((Number) o_bitrate).intValue());
+                }
+                final String quality = (String) abc.get("quality");
+                vvc.setQuality(vvc.getHeight() >= 720 ? Quality.HD : Quality.SD);
+                if (StringUtils.containsIgnoreCase(quality, "720") || StringUtils.containsIgnoreCase(quality, "1080")) {
+                    vvc.setQuality(Quality.HD);
+                }
+                vvc.setCodec(".mp4".equalsIgnoreCase(vvc.getExtension()) ? "h264" : "vp5");
+                vvc.setId(((Number) abc.get("id")).longValue());
+                vvc.setSource(Source.WEB);
+                v.add(vvc);
+            }
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+        return v;
+    }
+
+    private static List<VimeoVideoContainer> handleHLS(final Browser br, final LinkedHashMap<String, Object> base) {
+        final ArrayList<VimeoVideoContainer> v = new ArrayList<VimeoVideoContainer>();
+        try {
+            // they can have audio and video seperated (usually for dash);
+            final String defaultCDN = (String) base.get("default_cdn");
+            final String m3u8 = (String) JavaScriptEngineFactory.walkJson(base, defaultCDN != null ? "cdns/" + defaultCDN + "/url" : "cdns/{0}/url");
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);
+            for (final HlsContainer quality : qualities) {
+                v.add(VimeoVideoContainer.createVimeoVideoContainer(quality));
+            }
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+        return v;
     }
 
     @SuppressWarnings("deprecation")
     public String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final VimeoVideoContainer vvc = (VimeoVideoContainer) downloadLink.getProperty(VVC, null);
         String videoTitle = downloadLink.getStringProperty("videoTitle", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
@@ -651,14 +606,27 @@ public class VimeoCom extends PluginForHost {
             formattedFilename = defaultCustomFilename;
         }
 
-        final String videoExt = downloadLink.getStringProperty("videoExt", null);
         final String date = downloadLink.getStringProperty("originalDate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
-        final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
         final String videoID = downloadLink.getStringProperty("videoID", null);
-        final String videoFrameSize = downloadLink.getStringProperty("videoFrameSize", "");
-        final String videoBitrate = downloadLink.getStringProperty("videoBitrate", "");
-        final String videoType = downloadLink.getStringProperty("videoType", null);
+        final String videoQuality;
+        final String videoFrameSize;
+        final String videoBitrate;
+        final String videoType;
+        final String videoExt;
+        if (vvc != null) {
+            videoQuality = vvc.getQuality().toString();
+            videoFrameSize = vvc.getHeight() + "x" + vvc.getWidth();
+            videoBitrate = vvc.getBitrate() == -1 ? "" : String.valueOf(vvc.getBitrate());
+            videoType = String.valueOf(vvc.getSource());
+            videoExt = vvc.getExtension();
+        } else {
+            videoQuality = downloadLink.getStringProperty("videoQuality", null);
+            videoFrameSize = downloadLink.getStringProperty("videoFrameSize", "");
+            videoBitrate = downloadLink.getStringProperty("videoBitrate", "");
+            videoType = downloadLink.getStringProperty("videoType", null);
+            videoExt = downloadLink.getStringProperty("videoExt", null);
+        }
 
         String formattedDate = null;
         if (date != null) {
