@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -30,6 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(www\\.)?viki\\.(com|mx|jp)/videos/\\d+v" })
 public class VikiCom extends PluginForHost {
@@ -46,6 +50,8 @@ public class VikiCom extends PluginForHost {
     private String               dllink            = null;
     private boolean              server_issues     = false;
     private boolean              geoblocked        = false;
+    private static final String  APP_ID            = "100005a";
+    private static final String  APP_SECRET        = "MM_d*yP@`&1@]@!AVrXf_o-HVEnoTnm$O-ti4[G~$JDI/Dc-&piU&z&5.;:}95=Iad";
 
     @Override
     public String getAGBLink() {
@@ -90,7 +96,8 @@ public class VikiCom extends PluginForHost {
             geoblocked = true;
         } else {
             br.getPage("https://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final String videoJson = br.getRegex("var video =(\\{.+?\\});").getMatch(0);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
             geoblocked = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "blocking/geo")).booleanValue();
         }
         if (geoblocked) {
@@ -107,13 +114,36 @@ public class VikiCom extends PluginForHost {
             downloadLink.setName(filename + default_Extension);
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("<source type=\"video/mp4\" src=\"(https?://[^<>\"]*?)\">").getMatch(0);
-        final String idpart = this.br.getMatch("oster=\"https?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
+        String idpart = this.br.getMatch("oster=\"https?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
+        if (idpart == null) {
+            final Browser cbr = br.cloneBrowser();
+            String apiUrl = (String) JavaScriptEngineFactory.walkJson(entries, "url/api");
+            if (apiUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            apiUrl = apiUrl.replaceFirst("\\.json", "/streams.json");
+            apiUrl += "?app=" + APP_ID + "&t=" + System.currentTimeMillis() / 1000 + "&site=www.viki.com";
+            apiUrl += "&sig=" + getSignature(apiUrl.replaceFirst("https?://[^/]+", ""));
+            cbr.getPage(apiUrl);
+            LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(cbr.toString());
+            final String url480 = (String) JavaScriptEngineFactory.walkJson(jsonEntries, "480p/http/url");
+            if (url480 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // 480p_1709221204.mp4 pattern. 720p is OK.
+            idpart = new Regex(url480, "480p_(\\d+)").getMatch(0);
+            if (idpart == null) {
+                // 480p_e63c3e_1709221204.mp4 pattern. 720p is NG.
+                dllink = url480;
+            }
+        }
         if (idpart != null) {
             /* Thx: https://github.com/dknlght/dkodi/blob/master/plugin.video.viki/plugin.video.viki-1.1.44.zip */
             /* 2017-09-27: Check this: https://forum.kodi.tv/showthread.php?tid=148429 */
             /* 2017-03-11 - also possible for: 360p, 480p */
             dllink = String.format("http://content.viki.com/%s/%s_high_720p_%s.mp4", vid, vid, idpart);
+        } else if (dllink == null) {
+            dllink = br.getRegex("<source type=\"video/mp4\" src=\"(https?://[^<>\"]*?)\">").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -151,6 +181,16 @@ public class VikiCom extends PluginForHost {
             downloadLink.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getSignature(String query) {
+        HMac hmac = new HMac(new SHA1Digest());
+        byte[] buf = new byte[hmac.getMacSize()];
+        hmac.init(new KeyParameter(APP_SECRET.getBytes()));
+        byte[] qbuf = query.getBytes();
+        hmac.update(qbuf, 0, qbuf.length);
+        hmac.doFinal(buf, 0);
+        return new String(JDHexUtils.getHexString(buf));
     }
 
     @Override
