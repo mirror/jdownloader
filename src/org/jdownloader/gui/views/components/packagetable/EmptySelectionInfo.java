@@ -8,8 +8,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class EmptySelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionInfo<PackageType, ChildrenType> {
-
-    protected EmptySelectionInfo(final PackageController<PackageType, ChildrenType> packageController) {
+    public EmptySelectionInfo(final PackageController<PackageType, ChildrenType> packageController) {
         super(packageController);
         pluginViewsInitiated.set(true);
     }
@@ -18,5 +17,4 @@ public class EmptySelectionInfo<PackageType extends AbstractPackageNode<Children
     protected void aggregate(Queue queue) {
         super.aggregate(null);
     }
-
 }
