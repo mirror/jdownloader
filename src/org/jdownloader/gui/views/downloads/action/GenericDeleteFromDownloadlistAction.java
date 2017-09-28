@@ -33,6 +33,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.EmptySelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
@@ -41,7 +42,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions
 import org.jdownloader.translate._JDT;
 
 public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener, ExtTableModelListener {
-
     public static final String                                        DELETE_ALL                = "deleteAll";
     public static final String                                        DELETE_DISABLED           = "deleteDisabled";
     public static final String                                        DELETE_FAILED             = "deleteFailed";
@@ -52,24 +52,15 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
      *
      */
     private static final long                                         serialVersionUID          = 1L;
-
     private final DelayedRunnable                                     delayer;
     private boolean                                                   deleteAll                 = false;
-
     private boolean                                                   deleteDisabled            = false;
-
     private boolean                                                   deleteFailed              = false;
-
     private boolean                                                   deleteFinished            = false;
-
     private boolean                                                   deleteOffline             = false;
-
     private boolean                                                   ignoreFiltered            = true;
-
     protected WeakReference<DownloadLink>                             lastLink                  = new WeakReference<DownloadLink>(null);
-
     private Modifier                                                  deleteFilesToggleModifier = null;
-
     protected WeakReference<SelectionInfo<FilePackage, DownloadLink>> selection                 = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(null);
 
     public static String getTranslationForDeleteFilesToggleModifier() {
@@ -98,7 +89,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     @Customizer(link = "#getTranslationForDeleteMode")
     public DeleteFileOptions getDeleteMode() {
-
         // Modifier byPassDialog = getByPassDialogToggleModifier();
         Modifier deletToggle = getDeleteFilesToggleModifier();
         if (deleteMode == null) {
@@ -129,20 +119,17 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     public void loadContextSetups() {
         super.loadContextSetups();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 setName(createName());
             }
         }.getReturnValue();
-
     }
 
     public GenericDeleteFromDownloadlistAction() {
         super();
         addContextSetup(byPassDialog = new ByPassDialogSetup());
         delayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 1500) {
-
             @Override
             public void delayedrun() {
                 update();
@@ -176,18 +163,15 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         if (keystroke == null) {
             return null;
         }
-
         ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
         Modifier mod1 = byPassDialog.getByPassDialogToggleModifier();
         if (mod1 != null) {
             ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod1.getModifier()));
         }
-
         Modifier mod2 = getDeleteFilesToggleModifier();
         if (mod2 != null) {
             ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod2.getModifier()));
         }
-
         if (mod2 != null && mod1 != null) {
             ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod2.getModifier() | mod1.getModifier()));
         }
@@ -199,7 +183,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         final SelectionInfo<FilePackage, DownloadLink> finalSelection = selection.get();
         if (finalSelection != null) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
@@ -237,14 +220,12 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                         }
                     }
                     new EDTHelper<Void>() {
-
                         @Override
                         public Void edtRun() {
                             Toolkit.getDefaultToolkit().beep();
                             Dialog.getInstance().showErrorDialog(_GUI.T.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
                             return null;
                         }
-
                     }.start(true);
                     return null;
                 }
@@ -256,25 +237,19 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         if (isDeleteAll()) {
             return true;
         }
-
         if (isDeleteDisabled() && !link.isEnabled()) {
-
             return true;
         }
         if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
-
             return true;
         }
         if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
-
             return true;
         }
         if (isDeleteFinishedPackage() && link.getFilePackage().getView().isFinished()) {
             return true;
-
         }
         if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
-
             return true;
         }
         return false;
@@ -282,38 +257,29 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     private String createName() {
         final StringBuilder sb = new StringBuilder();
-
         if (isDeleteAll()) {
             switch (includedSelection.getSelectionType()) {
             case SELECTED:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected_all().trim());
                 break;
-
             case UNSELECTED:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected().trim());
                 break;
             default:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_all().trim());
-
             }
-
         } else {
-
             switch (includedSelection.getSelectionType()) {
             case SELECTED:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected().trim());
                 break;
-
             case UNSELECTED:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected().trim());
                 break;
             default:
                 sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object().trim());
-
             }
-
             boolean first = true;
-
             if (isDeleteDisabled()) {
                 if (!first) {
                     appendMissingSpace(sb);
@@ -341,7 +307,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 appendMissingSpace(sb);
                 sb.append(_GUI.T.lit_finished().trim());
             }
-
             if (isDeleteFinishedPackage()) {
                 if (!first) {
                     appendMissingSpace(sb);
@@ -360,7 +325,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 appendMissingSpace(sb);
                 sb.append(_GUI.T.lit_offline().trim());
             }
-
         }
         switch (getDeleteMode()) {
         case REMOVE_LINKS_AND_DELETE_FILES:
@@ -429,7 +393,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public void setDeleteFinishedPackage(final boolean deleteFinished) {
         GenericDeleteFromDownloadlistAction.this.deleteFinishedPackage = deleteFinished;
-
     }
 
     @Customizer(link = "#getTranslationForDeleteFinished")
@@ -521,7 +484,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public void setDeleteAll(final boolean deleteIdle) {
         GenericDeleteFromDownloadlistAction.this.deleteAll = deleteIdle;
-
     }
 
     public void setDeleteDisabled(final boolean deleteDisabled) {
@@ -530,12 +492,10 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public void setDeleteFailed(final boolean deleteFailed) {
         GenericDeleteFromDownloadlistAction.this.deleteFailed = deleteFailed;
-
     }
 
     public void setDeleteFinished(final boolean deleteFinished) {
         GenericDeleteFromDownloadlistAction.this.deleteFinished = deleteFinished;
-
     }
 
     public void setDeleteOffline(final boolean deleteOffline) {
@@ -544,13 +504,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
         GenericDeleteFromDownloadlistAction.this.ignoreFiltered = ignoreFiltered;
-
     }
 
     protected void update() {
         if (lastLink != null) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     final SelectionInfo<FilePackage, DownloadLink> selectionInfo;
@@ -578,12 +536,18 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                         }
                         setEnabled(false);
                         return;
-                    default:
+                        // fix this
+                    case ALL:
                         if (isIgnoreFiltered()) {
                             selectionInfo = getTable().getSelectionInfo(false, true);
                         } else {
                             selectionInfo = getTable().getSelectionInfo(false, false);
                         }
+                        selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo);
+                        break;
+                    case NONE:
+                    default:
+                        selectionInfo = new EmptySelectionInfo<FilePackage, DownloadLink>(getTable().getController());
                         selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo);
                         break;
                     }
@@ -597,7 +561,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                     if (isDeleteAll() && !selectionInfo.isEmpty()) {
                         setEnabled(true);
                         return;
-
                     }
                     for (final DownloadLink child : selectionInfo.getChildren()) {
                         if (checkLink(child)) {
@@ -608,15 +571,12 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                     }
                     setEnabled(false);
                 }
-
             };
         }
-
     }
 
     @Override
     public void onExtTableModelEvent(ExtTableModelEventWrapper event) {
         delayer.resetAndStart();
     }
-
 }
