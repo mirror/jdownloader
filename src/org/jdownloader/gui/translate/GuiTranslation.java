@@ -10,7 +10,6 @@ import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
-
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String action_aboutaction();
 
@@ -6205,7 +6204,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 %s2 %s3-Audio" })
     String YoutubeVariant_name_generic_video3(String res, String fps, String audio);
 
-    @Default(lngs = { "en" }, values = { "Subtitle language. *lng*->EN *lng[display]* -> English" })
+    @Default(lngs = { "en" }, values = { "Subtitle language. *lng*->EN | *lng[display]* -> Spanish | *lng[full]* -> Spanish (Latin America and the Caribbean)" })
     String YoutubeHelper_getDescription_language();
 
     @Default(lngs = { "en" }, values = { "Hoster Logo" })
