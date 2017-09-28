@@ -75,12 +75,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:\\w+.\\w+|www)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl\\&media_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:\\w+.\\w+|www)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
 public class CrunchyRollCom extends antiDDoSForHost {
     static private Object                                    lock                 = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
     static private final String                              RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
     static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
+    static private final String                              CROLL_MANGA          = "croll_manga";
     private String                                           rtmp_path_or_hls_url = null;
 
     @SuppressWarnings("deprecation")
@@ -241,7 +242,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
     }
 
     /**
-     * Decrypt the downloaded image file from CrunchyRoll into a valid jpg file (XOR'd with key 'B').
+     * Decrypt the downloaded image file from CrunchyRoll into a valid jpeg file (XOR'd with key 'B').
      *
      * @param downloadLink
      *            The DownloadLink to decrypt the .jpg file
@@ -388,7 +389,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's CrunchyRoll Plugin helps download videos and subtitles from crunchyroll.com. Crunchyroll provides a range of qualities, and this plugin will show all those available to you.";
+        return "JDownloader's CrunchyRoll Plugin helps download videos, subtitles, and manga from crunchyroll.com. Crunchyroll provides a range of qualities, and this plugin will show all those available to you.";
     }
 
     @Override
@@ -411,7 +412,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains("manga")) {
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
             this.downloadManga(downloadLink);
         }
     }
@@ -427,7 +428,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains("manga")) {
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
             this.downloadManga(downloadLink);
         }
     }
