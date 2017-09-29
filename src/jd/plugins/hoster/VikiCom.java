@@ -97,8 +97,10 @@ public class VikiCom extends PluginForHost {
         } else {
             br.getPage("https://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
             final String videoJson = br.getRegex("var video =(\\{.+?\\});").getMatch(0);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-            geoblocked = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "blocking/geo")).booleanValue();
+            if (videoJson != null) {
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                geoblocked = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "blocking/geo")).booleanValue();
+            }
         }
         if (geoblocked) {
             downloadLink.getLinkStatus().setStatusText("Not available in your country (geo block)");
