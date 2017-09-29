@@ -95,7 +95,13 @@ public class VikiCom extends PluginForHost {
         if (br.containsHTML("\"geo\":true")) {
             geoblocked = true;
         } else {
+            if (br.containsHTML("Viki Pass does not apply on these Channels.")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage("https://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
+            if (br.containsHTML("this content is not available")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String videoJson = br.getRegex("var video =(\\{.+?\\});").getMatch(0);
             if (videoJson != null) {
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
