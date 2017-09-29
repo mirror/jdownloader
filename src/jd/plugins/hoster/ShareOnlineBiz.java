@@ -766,7 +766,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Proxy error");
         }
         errorHandling(br, downloadLink, null, null);
-        if (!br.containsHTML(">>> continue for free <<<")) {
+        if (!br.containsHTML(">>> continue for free <<<") && !br.containsHTML(">>> kostenlos weiter <<<")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String ID = getID(downloadLink);
