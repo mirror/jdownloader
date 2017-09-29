@@ -189,6 +189,7 @@ public class VimeoCom extends PluginForHost {
         }
         // because names can often change by the uploader, like youtube.
         final String name = getTitle(br);
+        // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
         final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
         final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
         final List<VimeoVideoContainer> qualities = getQualities(br, ID, StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS"));
@@ -196,7 +197,6 @@ public class VimeoCom extends PluginForHost {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // now we nuke linkids for videos.. crazzy... only remove the last one
         VimeoVideoContainer container = null;
         if (downloadlinkId != null) {
             for (VimeoVideoContainer quality : qualities) {
