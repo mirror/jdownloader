@@ -68,7 +68,7 @@ public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
             String filesize = new Regex(singleLink, "class=\"time\">([^<>\"]*?)<").getMatch(0);
             if (url == null || title == null || artist == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                continue;
             }
             filesize = new Regex(filesize, "(\\d+(?:,\\d+)?)").getMatch(0) + "MB";
             final DownloadLink fina = createDownloadlink(Request.getLocation(Encoding.htmlDecode(url), br.getRequest()));
@@ -77,7 +77,7 @@ public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
             fina.setAvailable(true);
             decryptedLinks.add(fina);
         }
-        if (fpName != null) {
+        if (fpName != null && decryptedLinks.size() > 0) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
