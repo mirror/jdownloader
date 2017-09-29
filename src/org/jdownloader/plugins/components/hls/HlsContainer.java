@@ -46,7 +46,8 @@ public class HlsContainer {
                 // name = quality
                 // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
                 final String programID = new Regex(streamInfo, "PROGRAM-ID=(\\d+)").getMatch(0);
-                final String bandwidth = new Regex(streamInfo, "BANDWIDTH=(\\d+)").getMatch(0);
+                final String bandwidth = new Regex(streamInfo, "(?: |,)\\s*BANDWIDTH=(\\d+)").getMatch(0);
+                final String average_bandwidth = new Regex(streamInfo, "AVERAGE-BANDWIDTH=(\\d+)").getMatch(0);
                 final String resolution = new Regex(streamInfo, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
                 final String framerate = new Regex(streamInfo, "FRAME\\-RATE=(\\d+)").getMatch(0);
                 final String codecs = new Regex(streamInfo, "CODECS=\"([^<>\"]+)\"").getMatch(0);
@@ -59,6 +60,11 @@ public class HlsContainer {
                 }
                 if (bandwidth != null) {
                     hls.bandwidth = Integer.parseInt(bandwidth);
+                } else {
+                    hls.bandwidth = -1;
+                }
+                if (average_bandwidth != null) {
+                    hls.bandwidth = Integer.parseInt(average_bandwidth);
                 } else {
                     hls.bandwidth = -1;
                 }
@@ -84,12 +90,13 @@ public class HlsContainer {
 
     private String             codecs;
     private String             downloadurl;
-    private List<M3U8Playlist> m3u8List  = null;
-    private int                width     = -1;
-    private int                height    = -1;
-    private int                bandwidth = -1;
-    private int                programID = -1;
-    private int                framerate = -1;
+    private List<M3U8Playlist> m3u8List          = null;
+    private int                width             = -1;
+    private int                height            = -1;
+    private int                bandwidth         = -1;
+    private int                average_bandwidth = -1;
+    private int                programID         = -1;
+    private int                framerate         = -1;
 
     protected List<M3U8Playlist> loadM3U8(Browser br) throws IOException {
         final Browser br2 = br.cloneBrowser();
@@ -103,7 +110,12 @@ public class HlsContainer {
     public List<M3U8Playlist> getM3U8(Browser br) throws IOException {
         if (m3u8List == null) {
             setM3U8(loadM3U8(br));
-            final int bandwidth = getBandwidth();
+            final int bandwidth;
+            if (getAverageBandwidth() > 0) {
+                bandwidth = getAverageBandwidth();
+            } else {
+                bandwidth = getBandwidth();
+            }
             if (m3u8List != null && bandwidth > 0) {
                 for (final M3U8Playlist m3u8 : m3u8List) {
                     m3u8.setAverageBandwidth(bandwidth);
@@ -194,6 +206,10 @@ public class HlsContainer {
 
     public int getBandwidth() {
         return this.bandwidth;
+    }
+
+    public int getAverageBandwidth() {
+        return this.average_bandwidth;
     }
 
     public HlsContainer() {

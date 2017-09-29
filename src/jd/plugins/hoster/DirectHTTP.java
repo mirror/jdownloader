@@ -287,12 +287,15 @@ public class DirectHTTP extends antiDDoSForHost {
         boolean resume = true;
         int chunks = 0;
         if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) || downloadLink.getBooleanProperty(DirectHTTP.FORCE_NORESUME, false)) {
+            logger.info("Disable Resume:" + downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) + "|" + downloadLink.getBooleanProperty(DirectHTTP.FORCE_NORESUME, false));
             resume = false;
         }
         if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || downloadLink.getBooleanProperty(DirectHTTP.FORCE_NOCHUNKS, false) || resume == false) {
+            logger.info("Disable Chunks:" + downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) + "|" + downloadLink.getBooleanProperty(DirectHTTP.FORCE_NOCHUNKS, false) + "|" + resume);
             chunks = 1;
         }
         if (downloadLink.getProperty("streamMod") != null) {
+            logger.info("Apply streamMod handling");
             resume = true;
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         }
@@ -304,6 +307,7 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
         if (downloadLink.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
+            logger.info("Apply Cloudflare BGJ bypass");
             resume = false;
             chunks = 1;
         }
@@ -314,19 +318,24 @@ public class DirectHTTP extends antiDDoSForHost {
                 this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
             }
         } catch (final IllegalStateException e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable ignore) {
+            }
             logger.log(e);
             if (StringUtils.containsIgnoreCase(e.getMessage(), "Range Error. Requested bytes=0- Got range: bytes 0-")) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e2) {
-                }
                 logger.info("Workaround for Cloudflare-Cache transparent image compression!");
                 downloadLink.setVerifiedFileSize(-1);
                 throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
+            } else {
+                throw e;
             }
-            throw e;
         }
         if (this.dl.getConnection().getResponseCode() == 503) {
+            try {
+                br.followConnection();
+            } catch (final Throwable ignore) {
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         }
         try {
@@ -357,7 +366,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             } else {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
-                    if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (1024 * 1024l)) {
+                    if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (128 * 1024l)) {
                         throw e;
                     } else {
                         /* disable multiple chunks => use only 1 chunk and retry */
