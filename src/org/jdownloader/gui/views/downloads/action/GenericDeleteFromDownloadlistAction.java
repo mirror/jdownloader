@@ -536,7 +536,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                         }
                         setEnabled(false);
                         return;
-                        // fix this
                     case ALL:
                         if (isIgnoreFiltered()) {
                             selectionInfo = getTable().getSelectionInfo(false, true);

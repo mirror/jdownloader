@@ -15,11 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,9 +48,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
-
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
     private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
@@ -347,6 +345,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 link.setFinalFileName(getFormattedFilename(link));
                 if (quality.getFilesize() > -1) {
                     link.setDownloadSize(quality.getFilesize());
+                } else if (quality.getEstimatedSize() != null) {
+                    link.setDownloadSize(quality.getEstimatedSize());
                 }
                 link.setAvailable(true);
                 final DownloadLink best = dedupeMap.get(quality.bestString());
@@ -516,7 +516,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private PluginForHost vimeo_hostPlugin = null;
 
     private List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID) throws Exception {
-        return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID);
+        return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID, true);
     }
 
     private String getXsrft(final Browser br) throws Exception {

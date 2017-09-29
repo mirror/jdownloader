@@ -95,12 +95,18 @@ public class ThreeplusTv extends PluginForHost {
         }
         sdnPlayoutId = getsdnPlayoutId();
         if (sdnPlayoutId != null) {
+            String label = br.getRegex("label\\s*:\\s*'(.*?)'").getMatch(0);
+            if (label != null) {
+                filename = Encoding.unicodeDecode(label);
+            }
             /* First ID goes to second ID --> Access that */
             this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
             this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
-            final String label = br.getRegex("label\\s*:\\s*'(.*?)'").getMatch(0);
-            if (label != null) {
-                filename = label;
+            if (label == null) {
+                label = br.getRegex("label\\s*:\\s*'(.*?)'").getMatch(0);
+                if (label != null) {
+                    filename = Encoding.unicodeDecode(label);
+                }
             }
             final String sdnPlayoutIdBefore = sdnPlayoutId;
             sdnPlayoutId = getsdnPlayoutId();
@@ -162,12 +168,12 @@ public class ThreeplusTv extends PluginForHost {
     }
 
     private String getsdnPlayoutId() {
-        String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([0-9a-f\\-]{10,})(?:\"|\\')").getMatch(0);
+        String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([0-9a-f\\-\\\\x]{10,})(?:\"|\\')").getMatch(0);
         if (ret == null) {
             /* 2017-02-02: E.g. for '/videos/' urls. */
-            ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([0-9a-f\\-]{10,})<").getMatch(0);
+            ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([0-9a-f\\-\\\\x]{10,})<").getMatch(0);
             if (ret == null) {
-                ret = this.br.getRegex("playout\\.3qsdn\\.com/([0-9a-f\\-]{10,})").getMatch(0);
+                ret = this.br.getRegex("playout\\.3qsdn\\.com/([0-9a-f\\-\\\\x]{10,})").getMatch(0);
             }
         }
         ret = Encoding.unicodeDecode(ret);

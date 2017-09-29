@@ -10,11 +10,20 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
  *
  */
 public class VimeoVideoContainer extends VideoContainer {
-
     private Quality quality;
     private Source  source;
     private String  codec;
-    private Long    id = null;
+    private Long    estimatedSize = null;
+
+    public Long getEstimatedSize() {
+        return estimatedSize;
+    }
+
+    public void setEstimatedSize(Long estimatedSize) {
+        this.estimatedSize = estimatedSize;
+    }
+
+    private Long id = null;
 
     // order is important, worst to best
     public enum Quality {
@@ -108,8 +117,9 @@ public class VimeoVideoContainer extends VideoContainer {
     private static Quality getQuality(final int i) {
         if (i == -1) {
             return null;
+        } else {
+            return i >= 720 ? Quality.HD : Quality.SD;
         }
-        return i >= 720 ? Quality.HD : Quality.SD;
     }
 
     /**
@@ -123,6 +133,7 @@ public class VimeoVideoContainer extends VideoContainer {
         vvm.setCodec(container.getCodecs());
         vvm.setWidth(container.getWidth());
         vvm.setHeight(container.getHeight());
+        vvm.setBitrate(container.getBandwidth());
         vvm.setFramerate(container.getFramerate());
         vvm.setSource(Source.HLS);
         vvm.setQuality(getQuality(container.getHeight()));
@@ -150,5 +161,4 @@ public class VimeoVideoContainer extends VideoContainer {
     public String bestString() {
         return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight()));
     }
-
 }

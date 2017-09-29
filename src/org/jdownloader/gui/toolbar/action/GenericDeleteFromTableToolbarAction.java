@@ -9,15 +9,23 @@ import java.util.List;
 import javax.swing.KeyStroke;
 
 import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtTableEvent;
@@ -30,6 +38,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -42,15 +51,13 @@ import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.translate._JDT;
 
-public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, GUIListener, ExtTableModelListener, ActionContext {
+public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, GUIListener, ExtTableModelListener, ActionContext, DownloadControllerListener, LinkCollectorListener {
     public static final String                 ONLY_SELECTED_ITEMS = "OnlySelectedItems";
     public static final String                 DELETE_ALL          = "deleteAll";
     public static final String                 DELETE_DISABLED     = "deleteDisabled";
@@ -72,7 +79,6 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     private WeakReference<DownloadLink>        lastDownloadLink    = new WeakReference<DownloadLink>(null);
     private boolean                            onlySelectedItems   = false;
     private WeakReference<SelectionInfo<?, ?>> selection           = new WeakReference<SelectionInfo<?, ?>>(null);
-    private PackageControllerTable<?, ?>       table;
     private ByPassDialogSetup                  byPass;
 
     public GenericDeleteFromTableToolbarAction() {
@@ -180,105 +186,101 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     @Override
     public void actionPerformed(final ActionEvent e) {
-        final PackageControllerTable<?, ?> ltable = table;
         final SelectionInfo<?, ?> lselection = selection.get();
-        if (ltable == null || lselection == null || lselection.isEmpty()) {
+        if (lselection == null || lselection.isEmpty()) {
             return;
-        }
-        if (ltable instanceof DownloadsTable) {
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                @Override
-                protected Void run() throws RuntimeException {
-                    final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-                    boolean createNewSelectionInfo = false;
-                    for (final Object dl : lselection.getChildren()) {
-                        if (checkDownloadLink((DownloadLink) dl)) {
-                            nodesToDelete.add((DownloadLink) dl);
-                        } else {
-                            createNewSelectionInfo = true;
-                        }
-                    }
-                    if (nodesToDelete.size() > 0) {
-                        final SelectionInfo<FilePackage, DownloadLink> si;
-                        if (createNewSelectionInfo) {
-                            si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete);
-                        } else {
-                            si = (SelectionInfo<FilePackage, DownloadLink>) lselection;
-                        }
-                        if (si.getChildren().size() > 0) {
-                            DownloadTabActionUtils.deleteLinksRequest(si, _GUI.T.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());
-                            return null;
-                        }
-                    }
-                    new EDTHelper<Void>() {
-                        @Override
-                        public Void edtRun() {
-                            Toolkit.getDefaultToolkit().beep();
-                            Dialog.getInstance().showErrorDialog(_GUI.T.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
-                            return null;
-                        }
-                    }.start(true);
-                    return null;
-                }
-            });
-        } else if (ltable instanceof LinkGrabberTable) {
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                @Override
-                protected Void run() throws RuntimeException {
-                    final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
-                    boolean containsOnline = false;
-                    for (final Object l : lselection.getChildren()) {
-                        final CrawledLink dl = (CrawledLink) l;
-                        final CrawledPackage parentNode = dl.getParentNode();
-                        if (parentNode != null && checkCrawledLink(dl)) {
-                            nodesToDelete.add(dl);
-                            if ((TYPE.OFFLINE == parentNode.getType() || TYPE.POFFLINE == parentNode.getType())) {
-                                continue;
-                            }
-                            if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                                containsOnline = true;
+        } else {
+            if (lselection.getController() instanceof DownloadController) {
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
+                        boolean createNewSelectionInfo = false;
+                        for (final Object dl : lselection.getChildren()) {
+                            if (checkDownloadLink((DownloadLink) dl)) {
+                                nodesToDelete.add((DownloadLink) dl);
+                            } else {
+                                createNewSelectionInfo = true;
                             }
                         }
+                        if (nodesToDelete.size() > 0) {
+                            final SelectionInfo<FilePackage, DownloadLink> si;
+                            if (createNewSelectionInfo) {
+                                si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete);
+                            } else {
+                                si = (SelectionInfo<FilePackage, DownloadLink>) lselection;
+                            }
+                            if (si.getChildren().size() > 0) {
+                                DownloadTabActionUtils.deleteLinksRequest(si, _GUI.T.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());
+                                return null;
+                            }
+                        }
+                        new EDTHelper<Void>() {
+                            @Override
+                            public Void edtRun() {
+                                Toolkit.getDefaultToolkit().beep();
+                                Dialog.getInstance().showErrorDialog(_GUI.T.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+                                return null;
+                            }
+                        }.start(true);
+                        return null;
                     }
-                    if (nodesToDelete.size() > 0) {
-                        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPass.isBypassDialog(), false, false, false, false);
+                });
+            } else if (lselection.getController() instanceof LinkCollector) {
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
+                        boolean containsOnline = false;
+                        for (final Object l : lselection.getChildren()) {
+                            final CrawledLink dl = (CrawledLink) l;
+                            final CrawledPackage parentNode = dl.getParentNode();
+                            if (parentNode != null && checkCrawledLink(dl)) {
+                                nodesToDelete.add(dl);
+                                if ((TYPE.OFFLINE == parentNode.getType() || TYPE.POFFLINE == parentNode.getType())) {
+                                    continue;
+                                }
+                                if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                                    containsOnline = true;
+                                }
+                            }
+                        }
+                        if (nodesToDelete.size() > 0) {
+                            LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPass.isBypassDialog(), false, false, false, false);
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            });
+                });
+            }
         }
     }
 
     public boolean checkCrawledLink(CrawledLink cl) {
         if (isDeleteAll()) {
             return true;
-        }
-        if (isDeleteDisabled() && !cl.isEnabled()) {
+        } else if (isDeleteDisabled() && !cl.isEnabled()) {
             return true;
-        }
-        if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
+        } else if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public boolean checkDownloadLink(DownloadLink link) {
         if (isDeleteAll()) {
             return true;
-        }
-        if (isDeleteDisabled() && !link.isEnabled()) {
+        } else if (isDeleteDisabled() && !link.isEnabled()) {
             return true;
-        }
-        if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
+        } else if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
             return true;
-        }
-        if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+        } else if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
             return true;
-        }
-        if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
+        } else if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     private String createName() {
@@ -387,7 +389,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     @Override
     public void onGuiMainTabSwitch(View oldView, View newView) {
-        updateListeners();
+        update();
     }
 
     @Override
@@ -402,37 +404,37 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     public void setDeleteAll(final boolean deleteIdle) {
         GenericDeleteFromTableToolbarAction.this.deleteAll = deleteIdle;
+        update();
         updateName();
         delayer.resetAndStart();
     }
 
     public void setDeleteDisabled(final boolean deleteDisabled) {
         GenericDeleteFromTableToolbarAction.this.deleteDisabled = deleteDisabled;
+        update();
         updateName();
         delayer.resetAndStart();
     }
 
     public void setDeleteFailed(final boolean deleteFailed) {
         GenericDeleteFromTableToolbarAction.this.deleteFailed = deleteFailed;
+        update();
         updateName();
         delayer.resetAndStart();
     }
 
     public void setDeleteFinished(final boolean deleteFinished) {
         GenericDeleteFromTableToolbarAction.this.deleteFinished = deleteFinished;
+        update();
         updateName();
         delayer.resetAndStart();
     }
 
     public void setDeleteOffline(final boolean deleteOffline) {
         GenericDeleteFromTableToolbarAction.this.deleteOffline = deleteOffline;
+        update();
         updateName();
         delayer.resetAndStart();
-    }
-
-    @Override
-    public void setEnabled(boolean newValue) {
-        super.setEnabled(newValue);
     }
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
@@ -443,9 +445,23 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     public void setOnlySelectedItems(final boolean onlySelectedItems) {
         GenericDeleteFromTableToolbarAction.this.onlySelectedItems = onlySelectedItems;
-        updateListeners();
+        update();
         updateName();
         delayer.resetAndStart();
+    }
+
+    protected SelectionInfo<?, ?> fetchSelectionInfo(PackageControllerTable table) {
+        if (table == null) {
+            return null;
+        } else if (isOnlySelectedItems()) {
+            return table.getSelectionInfo(true, true);
+        } else {
+            if (isIgnoreFiltered()) {
+                return table.getSelectionInfo(false, true);
+            } else {
+                return table.getSelectionInfo(false, false);
+            }
+        }
     }
 
     protected void update() {
@@ -453,61 +469,56 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    final SelectionInfo<?, ?> selectionInfo;
-                    final PackageControllerTable<?, ?> ltable = table;
-                    if (ltable == null) {
-                        selection = new WeakReference<SelectionInfo<?, ?>>(null);
-                        return;
-                    } else {
-                        if (isOnlySelectedItems()) {
-                            selectionInfo = ltable.getSelectionInfo(true, true);
-                        } else {
-                            if (isIgnoreFiltered()) {
-                                selectionInfo = ltable.getSelectionInfo(false, true);
-                            } else {
-                                selectionInfo = ltable.getSelectionInfo(false, false);
-                            }
-                        }
+                    final View newView = MainTabbedPane.getInstance().getSelectedView();
+                    if (newView instanceof LinkGrabberView) {
+                        addListener(LinkGrabberTable.getInstance());
+                        removeListener(DownloadsTable.getInstance());
+                        final CrawledLink lastCl = lastCrawledLink.get();
+                        final SelectionInfo<?, ?> selectionInfo = fetchSelectionInfo(LinkGrabberTable.getInstance());
                         selection = new WeakReference<SelectionInfo<?, ?>>(selectionInfo);
-                        if (ltable instanceof DownloadsTable) {
-                            // we remember the last link and try it first
-                            final DownloadLink lastDl = lastDownloadLink.get();
-                            if (lastDl != null && selectionInfo.contains(lastDl)) {
-                                if (checkDownloadLink(lastDl)) {
-                                    setEnabled(true);
-                                    return;
-                                }
-                            }
-                            if (isDeleteAll() && !selectionInfo.isEmpty()) {
+                        if (lastCl != null && selectionInfo.contains(lastCl)) {
+                            if (checkCrawledLink(lastCl)) {
                                 setEnabled(true);
                                 return;
                             }
-                            for (Object link : selectionInfo.getChildren()) {
-                                if (checkDownloadLink((DownloadLink) link)) {
-                                    lastDownloadLink = new WeakReference<DownloadLink>((DownloadLink) link);
-                                    setEnabled(true);
-                                    return;
-                                }
-                            }
-                            setEnabled(false);
-                        } else if (ltable instanceof LinkGrabberTable) {
-                            final CrawledLink lastCl = lastCrawledLink.get();
-                            // we remember the last link and try it first
-                            if (lastCl != null && selectionInfo.contains(lastCl)) {
-                                if (checkCrawledLink(lastCl)) {
-                                    setEnabled(true);
-                                    return;
-                                }
-                            }
-                            for (Object link : selectionInfo.getChildren()) {
-                                if (checkCrawledLink((CrawledLink) link)) {
-                                    setEnabled(true);
-                                    lastCrawledLink = new WeakReference<CrawledLink>((CrawledLink) link);
-                                    return;
-                                }
-                            }
-                            setEnabled(false);
                         }
+                        for (Object link : selectionInfo.getChildren()) {
+                            if (checkCrawledLink((CrawledLink) link)) {
+                                setEnabled(true);
+                                lastCrawledLink = new WeakReference<CrawledLink>((CrawledLink) link);
+                                return;
+                            }
+                        }
+                        setEnabled(false);
+                    } else if (newView instanceof DownloadsView) {
+                        addListener(DownloadsTable.getInstance());
+                        removeListener(LinkGrabberTable.getInstance());
+                        final SelectionInfo<?, ?> selectionInfo = fetchSelectionInfo(DownloadsTable.getInstance());
+                        selection = new WeakReference<SelectionInfo<?, ?>>(selectionInfo);
+                        if (isDeleteAll() && !selectionInfo.isEmpty()) {
+                            setEnabled(true);
+                            return;
+                        }
+                        final DownloadLink lastDl = lastDownloadLink.get();
+                        if (lastDl != null && selectionInfo.contains(lastDl)) {
+                            if (checkDownloadLink(lastDl)) {
+                                setEnabled(true);
+                                return;
+                            }
+                        }
+                        for (Object link : selectionInfo.getChildren()) {
+                            if (checkDownloadLink((DownloadLink) link)) {
+                                lastDownloadLink = new WeakReference<DownloadLink>((DownloadLink) link);
+                                setEnabled(true);
+                                return;
+                            }
+                        }
+                        setEnabled(false);
+                    } else {
+                        selection = new WeakReference<SelectionInfo<?, ?>>(null);
+                        removeListener(LinkGrabberTable.getInstance());
+                        removeListener(DownloadsTable.getInstance());
+                        setEnabled(false);
                     }
                 }
             };
@@ -517,45 +528,136 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     private void addListener(PackageControllerTable<?, ?> table) {
         table.getEventSender().addListener(GenericDeleteFromTableToolbarAction.this, true);
         table.getModel().getEventSender().addListener(GenericDeleteFromTableToolbarAction.this, true);
+        if (table.getController() instanceof DownloadController) {
+            DownloadController.getInstance().addListener(this, true);
+        } else if (table.getController() instanceof LinkCollector) {
+            LinkCollector.getInstance().getEventsender().addListener(this, true);
+        }
     }
 
     private void removeListener(PackageControllerTable<?, ?> table) {
         table.getEventSender().removeListener(GenericDeleteFromTableToolbarAction.this);
         table.getModel().getEventSender().removeListener(GenericDeleteFromTableToolbarAction.this);
-    }
-
-    private void updateListeners() {
-        removeListener(LinkGrabberTable.getInstance());
-        removeListener(DownloadsTable.getInstance());
-        final View newView = MainTabbedPane.getInstance().getSelectedView();
-        final PackageControllerTable<?, ?> table;
-        if (newView instanceof LinkGrabberView) {
-            table = LinkGrabberTableModel.getInstance().getTable();
-            addListener(LinkGrabberTable.getInstance());
-            removeListener(DownloadsTable.getInstance());
-            update();
-        } else if (newView instanceof DownloadsView) {
-            table = DownloadsTableModel.getInstance().getTable();
-            addListener(DownloadsTable.getInstance());
-            removeListener(LinkGrabberTable.getInstance());
-        } else {
-            table = null;
-            setEnabled(false);
+        if (table.getController() instanceof DownloadController) {
+            DownloadController.getInstance().removeListener(this);
+        } else if (table.getController() instanceof LinkCollector) {
+            LinkCollector.getInstance().getEventsender().removeListener(this);
         }
-        this.table = table;
-        update();
     }
 
     private void updateName() {
-        // if (isDeleteFailed() && isDeleteDisabled() && isDeleteFinished() && isDeleteOffline()) {
-        // setName(_GUI.T.ContextMenuFactory_createPopup_cleanup_only());
-        // } else {
         new EDTRunner() {
             @Override
             protected void runInEDT() {
                 setName(createName());
             }
         };
-        // }
+    }
+
+    @Override
+    public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh() {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+        delayer.resetAndStart();
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerFinished() {
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+    }
+
+    @Override
+    public void onDownloadControllerAddedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
     }
 }
