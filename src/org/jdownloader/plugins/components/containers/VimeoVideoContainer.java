@@ -16,6 +16,7 @@ public class VimeoVideoContainer extends VideoContainer {
     private String  codec;
     private Long    id = null;
 
+    // order is important, worst to best
     public enum Quality {
         MOBILE,
         SD,
@@ -23,11 +24,12 @@ public class VimeoVideoContainer extends VideoContainer {
         ORIGINAL;
     }
 
+    // order is important, methods that can resume vs not resume.
     public enum Source {
-        DOWNLOAD, // from download button.
-        WEB, // standard mp4.
-        HLS, // hls.
-        DASH; // dash in segments.
+        HLS, // hls. (currently can't resume)
+        DASH, // dash in segments. (think this can resume)
+        WEB, // standard mp4. (can resume)
+        DOWNLOAD; // from download button. (can resume)
     }
 
     /**
@@ -97,6 +99,12 @@ public class VimeoVideoContainer extends VideoContainer {
         this.source = source;
     }
 
+    /**
+     * determines from input value
+     *
+     * @param i
+     * @return
+     */
     private static Quality getQuality(final int i) {
         if (i == -1) {
             return null;
@@ -136,7 +144,11 @@ public class VimeoVideoContainer extends VideoContainer {
 
     @Override
     public String toString() {
-        return super.toString().concat(getSource() != null ? "|" + getSource().toString() : "").concat(getQuality() != null ? "|" + getQuality().toString() : "");
+        return super.toString().concat(getQuality() != null ? "|" + getQuality().toString() : "").concat(getSource() != null ? "|" + getSource().toString() : "");
+    }
+
+    public String bestString() {
+        return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight()));
     }
 
 }
