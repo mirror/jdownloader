@@ -46,7 +46,7 @@ public class HlsContainer {
                 // name = quality
                 // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
                 final String programID = new Regex(streamInfo, "PROGRAM-ID=(\\d+)").getMatch(0);
-                final String bandwidth = new Regex(streamInfo, "(?: |,)\\s*BANDWIDTH=(\\d+)").getMatch(0);
+                final String bandwidth = new Regex(streamInfo, "(?:,|^)\\s*BANDWIDTH=(\\d+)").getMatch(0);
                 final String average_bandwidth = new Regex(streamInfo, "AVERAGE-BANDWIDTH=(\\d+)").getMatch(0);
                 final String resolution = new Regex(streamInfo, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
                 final String framerate = new Regex(streamInfo, "FRAME\\-RATE=(\\d+)").getMatch(0);
