@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,9 +34,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/(\\?v=|v/|embed/)[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:e(?:mbed)?/|(?:embed/)?\\?v=|v(?:iew)?/)[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
-
     public BitvideoIo(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -199,6 +198,27 @@ public class BitvideoIo extends PluginForHost {
                 logger.info("file: " + dllink_best);
             }
         } else {
+            final String userPreferredVideoquality = getConfiguredVideoQuality();
+            String embed = null;
+            if (link.getDownloadURL().contains("rapidvideo")) {
+                String[] qs = { "1080p", "720p", "480p", "360p" };
+                for (String q : qs) {
+                    if (br.containsHTML("q=" + q) && q.equals(userPreferredVideoquality)) {
+                        embed = link.getDownloadURL().replace("/v/", "/e/") + "&q=" + userPreferredVideoquality;
+                        br.getPage(embed);
+                        break;
+                    }
+                }
+                if (embed == null) {
+                    for (String q : qs) {
+                        if (br.containsHTML("q=" + q)) {
+                            embed = link.getDownloadURL().replace("/v/", "/e/") + "&q=" + q;
+                            br.getPage(embed);
+                            break;
+                        }
+                    }
+                }
+            }
             // could be <source>, seems that it also shows highest quality to change you do another page grab to '&q=480p | &q=360p'
             final String[] source = br.getRegex("<source .*?/\\s*>").getColumn(-1);
             if (source != null) {
@@ -233,6 +253,9 @@ public class BitvideoIo extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
+            if (dllink.contains("playercdn.net")) {
+                // br2.getHeaders().put("Referer", link.getDownloadURL().replace("/v/", "/e/"));
+            }
             URLConnectionAdapter con = null;
             try {
                 try {
