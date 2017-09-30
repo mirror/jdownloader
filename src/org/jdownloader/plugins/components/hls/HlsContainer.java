@@ -11,7 +11,6 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import jd.http.Browser;
 
 public class HlsContainer {
-
     public static HlsContainer findBestVideoByBandwidth(final List<HlsContainer> media) {
         if (media == null) {
             return null;
@@ -44,7 +43,6 @@ public class HlsContainer {
         for (final String stream[] : streams) {
             if (StringUtils.isNotEmpty(stream[1])) {
                 final String streamInfo = stream[0];
-                // name = quality
                 // final String quality = new Regex(media, "(?:,|^)\\s*NAME\\s*=\\s*\"(.*?)\"").getMatch(0);
                 final String programID = new Regex(streamInfo, "(?:,|^)\\s*PROGRAM-ID\\s*=\\s*(\\d+)").getMatch(0);
                 final String bandwidth = new Regex(streamInfo, "(?:,|^)\\s*BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
