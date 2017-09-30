@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
@@ -23,6 +22,11 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,14 +42,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "https?://it\\.dplay\\.com/.+|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/.+|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/.+|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" })
 public class DplayCom extends PluginForHost {
-
     public DplayCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -57,11 +55,9 @@ public class DplayCom extends PluginForHost {
     }
 
     private static final String           TYPE_SHORT            = "https?://[^/]+/\\?p=\\d+";
-
     /* The list of qualities displayed to the user */
     private final String[]                FORMATS               = new String[] { "1920x1080", "1280x720", "1024x576", "768x432", "640x360", "480x270", "320x180" };
     private final String                  SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
-
     private String                        dllink                = null;
     private boolean                       geo_blocked           = false;
     private boolean                       server_issues         = false;
@@ -76,7 +72,7 @@ public class DplayCom extends PluginForHost {
      * hls:<br />
      * http://dplayit-vh.akamaihd.net/i/bc/dplayit/4026928142001/201511/4026928142001,_4631567816001,_4631576081001,_4631576666001,
      * _4631579343001,_4631582324001,_4631584222001,_4631588747001,_4631514944001.mp4.csmil/master.m3u8<br />
-     * */
+     */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -84,11 +80,9 @@ public class DplayCom extends PluginForHost {
         geo_blocked = false;
         server_issues = false;
         br.setAllowedResponseCodes(new int[] { 400 });
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         host = new Regex(link.getDownloadURL(), "https?://([^/]+)/").getMatch(0);
-
         if (link.getDownloadURL().matches(TYPE_SHORT)) {
             videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
@@ -121,12 +115,10 @@ public class DplayCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-
             final long numberof_items = JavaScriptEngineFactory.toLong(entries.get("items"), 0);
             if (numberof_items == 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/{0}");
             final String video_metadata_type = (String) entries.get("video_metadata_type");
             date = (String) entries.get("created");
@@ -147,19 +139,15 @@ public class DplayCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             date_formatted = formatDate(date);
-
             filename = date_formatted + "_dplay_" + show;
-
             if (video_metadata_type.equals("episode") && !inValidate(season_str) && !inValidate(episode_str)) {
                 season = Short.parseShort(season_str);
                 episode = Short.parseShort(episode_str);
                 filename += "_S" + df.format(season) + "E" + df.format(episode);
             }
             filename += ".mp4";
-
             filename = Encoding.htmlDecode(filename);
             filename = encodeUnicode(filename);
-
             if (!inValidate(description)) {
                 link.setComment(description);
             }
@@ -180,33 +168,39 @@ public class DplayCom extends PluginForHost {
             }
             filename += "dplay_" + title + ".mp4";
             filename = Encoding.htmlDecode(filename);
-
-            /* Find downloadlink / make sure this actually is a video! */
-            String accountid = jd.plugins.decrypter.BrightcoveDecrypter.brightcoveEdgeRegexIDAccount(this.br);
-            if (accountid == null) {
-                /* Fallback - use static value */
-                accountid = "4026928142001";
-            }
-            final String policyKey = br.getCookie(getHost(), "dplayit_token").replace("\"", "");
-            if (policyKey == null) {
-                /* Probably not a video */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String authorizationValue = "Bearer " + policyKey;
-            this.br.getHeaders().put("Accept", "*/*");
-            this.br.getHeaders().put("Authorization", authorizationValue);
-            final String api_url = this.br.getRegex("(https?://[^/]+/playback/videoPlaybackInfo/\\d+)").getMatch(0);
-            if (api_url == null) {
-                /* Probably not a video */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            this.br.getPage(api_url);
-            if (this.br.getHttpConnection().getResponseCode() == 400) {
-                server_issues = true;
-            } else if (this.br.getHttpConnection().getResponseCode() == 403) {
-                geo_blocked = true;
+            String playbackJson = br.getRegex("playback_json: JSON.parse\\(\"(.+?)\"\\)").getMatch(0);
+            if (playbackJson != null) {
+                playbackJson = playbackJson.replace("\\n", "").replace("\\\"", "\"");
+                LinkedHashMap<String, Object> playbackEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(playbackJson);
+                dllink = (String) JavaScriptEngineFactory.walkJson(playbackEntries, "data/attributes/streaming/hls/url");
             } else {
-                dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+                /* Find downloadlink / make sure this actually is a video! */
+                String accountid = jd.plugins.decrypter.BrightcoveDecrypter.brightcoveEdgeRegexIDAccount(this.br);
+                if (accountid == null) {
+                    /* Fallback - use static value */
+                    accountid = "4026928142001";
+                }
+                final String policyKey = br.getCookie(getHost(), "dplayit_token").replace("\"", "");
+                if (policyKey == null) {
+                    /* Probably not a video */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String authorizationValue = "Bearer " + policyKey;
+                this.br.getHeaders().put("Accept", "*/*");
+                this.br.getHeaders().put("Authorization", authorizationValue);
+                final String api_url = this.br.getRegex("(https?://[^/]+/playback/videoPlaybackInfo/\\d+)").getMatch(0);
+                if (api_url == null) {
+                    /* Probably not a video */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                this.br.getPage(api_url);
+                if (this.br.getHttpConnection().getResponseCode() == 400) {
+                    server_issues = true;
+                } else if (this.br.getHttpConnection().getResponseCode() == 403) {
+                    geo_blocked = true;
+                } else {
+                    dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+                }
             }
         }
         link.setFinalFileName(filename);
@@ -275,11 +269,9 @@ public class DplayCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(hls_main);
-
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
             }
-
             HlsContainer hlsSelected = null;
             final String selectedResolution = getConfiguredVideoFormat();
             final List<HlsContainer> allContainers = HlsContainer.getHlsQualities(this.br);
@@ -381,5 +373,4 @@ public class DplayCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
