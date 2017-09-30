@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -53,7 +52,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rarefile.net" }, urls = { "https?://(www\\.)?rarefile\\.net/[a-z0-9]{12}" })
 public class RareFileNet extends PluginForHost {
-
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://rarefile.net";
@@ -68,7 +66,6 @@ public class RareFileNet extends PluginForHost {
     // free: Allows 1 chunk (no resume) + 2? maxsimdl (45min waits)
     // protocol: Has https cert but httpd not setup correctly
     // captchatype: 4dignum
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -175,7 +172,6 @@ public class RareFileNet extends PluginForHost {
             logger.info("Found md5hash: " + md5hash);
             downloadLink.setMD5Hash(md5hash);
         }
-
         String dllink = null;
         if (getLinkWithoutLogin) {
             dllink = downloadLink.getStringProperty("freelink");
@@ -204,12 +200,11 @@ public class RareFileNet extends PluginForHost {
                 dllink = null;
             }
         }
-
         /**
          * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
+            // checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
                 br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
                 doSomething();
@@ -229,7 +224,6 @@ public class RareFileNet extends PluginForHost {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-
             /* Captcha START */
             if (correctedBR.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -476,26 +470,21 @@ public class RareFileNet extends PluginForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -720,5 +709,4 @@ public class RareFileNet extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
