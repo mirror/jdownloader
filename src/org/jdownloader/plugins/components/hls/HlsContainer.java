@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 
+import jd.http.Browser;
+
 public class HlsContainer {
+
     public static HlsContainer findBestVideoByBandwidth(final List<HlsContainer> media) {
         if (media == null) {
             return null;
@@ -44,13 +45,13 @@ public class HlsContainer {
             if (StringUtils.isNotEmpty(stream[1])) {
                 final String streamInfo = stream[0];
                 // name = quality
-                // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-                final String programID = new Regex(streamInfo, "PROGRAM-ID=(\\d+)").getMatch(0);
-                final String bandwidth = new Regex(streamInfo, "(?:,|^)\\s*BANDWIDTH=(\\d+)").getMatch(0);
-                final String average_bandwidth = new Regex(streamInfo, "AVERAGE-BANDWIDTH=(\\d+)").getMatch(0);
-                final String resolution = new Regex(streamInfo, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
-                final String framerate = new Regex(streamInfo, "FRAME\\-RATE=(\\d+)").getMatch(0);
-                final String codecs = new Regex(streamInfo, "CODECS=\"([^<>\"]+)\"").getMatch(0);
+                // final String quality = new Regex(media, "(?:,|^)\\s*NAME\\s*=\\s*\"(.*?)\"").getMatch(0);
+                final String programID = new Regex(streamInfo, "(?:,|^)\\s*PROGRAM-ID\\s*=\\s*(\\d+)").getMatch(0);
+                final String bandwidth = new Regex(streamInfo, "(?:,|^)\\s*BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
+                final String average_bandwidth = new Regex(streamInfo, "(?:,|^)\\s*AVERAGE-BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
+                final String resolution = new Regex(streamInfo, "(?:,|^)\\s*RESOLUTION\\s*=\\s*(\\d+x\\d+)").getMatch(0);
+                final String framerate = new Regex(streamInfo, "(?:,|^)\\s*FRAME-RATE\\s*=\\s*(\\d+)").getMatch(0);
+                final String codecs = new Regex(streamInfo, "(?:,|^)\\s*CODECS\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
                 final String url = br.getURL(stream[1]).toString();
                 final HlsContainer hls = new HlsContainer();
                 if (programID != null) {
@@ -64,9 +65,9 @@ public class HlsContainer {
                     hls.bandwidth = -1;
                 }
                 if (average_bandwidth != null) {
-                    hls.bandwidth = Integer.parseInt(average_bandwidth);
+                    hls.average_bandwidth = Integer.parseInt(average_bandwidth);
                 } else {
-                    hls.bandwidth = -1;
+                    hls.average_bandwidth = -1;
                 }
                 if (codecs != null) {
                     hls.codecs = codecs.trim();
