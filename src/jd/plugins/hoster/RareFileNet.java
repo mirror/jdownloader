@@ -204,7 +204,7 @@ public class RareFileNet extends PluginForHost {
          * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
-            // checkErrors(downloadLink, false, passCode);
+            checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
                 br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
                 doSomething();
@@ -384,7 +384,7 @@ public class RareFileNet extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download\\-limit|class=\"err\">You have to wait)").matches()) {
             String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
