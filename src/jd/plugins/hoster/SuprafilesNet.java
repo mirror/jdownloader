@@ -25,13 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,9 +45,15 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.org" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org)/(?:embed\\-)?[a-z0-9]{12}" })
 public class SuprafilesNet extends PluginForHost {
-
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
@@ -124,7 +123,7 @@ public class SuprafilesNet extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.0<br />
-     * mods:<br />
+     * mods: File size <br />
      * limit-info: 2016-10-07: Failed to check limits because of server error (downloadlink generation failed)<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -339,7 +338,7 @@ public class SuprafilesNet extends PluginForHost {
                             fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
                             // generic failover#1
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                fileInfo[1] = new Regex(correctedBR, ">Size</span>\\s*<span><b>(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                             }
                             // generic failover#2
                             if (inValidate(fileInfo[1])) {
