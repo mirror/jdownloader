@@ -12,6 +12,7 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
@@ -80,7 +81,7 @@ public class DeviceAPIImpl implements DeviceAPI {
                 } else {
                     for (final InetAddress localIP : localIPs) {
                         if (localIP.isSiteLocalAddress()) {
-                            final InetAddress[] resolv = lookup(localIP.getHostAddress().replace(".", "-") + ".mydns.jdownloader.org");
+                            final InetAddress[] resolv = lookup(HexFormatter.byteArrayToHex(localIP.getAddress()) + ".mydns.jdownloader.org");
                             if (resolv == null || resolv.length != 1 || !resolv[0].equals(localIP)) {
                                 ret.setRebindProtectionDetected(true);
                                 break;
