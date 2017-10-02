@@ -15,6 +15,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -52,9 +53,10 @@ public class FunimationCom extends PluginForDecrypt {
         loadPlugin();
         ((jd.plugins.hoster.FunimationCom) plugin).setBrowser(br);
         final Account account = AccountController.getInstance().getValidAccount(plugin);
-        if (account != null) {
-            ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
+        if (account == null) {
+            throw new AccountRequiredException();
         }
+        ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
         // set utf-8
         br.setCustomCharset("utf-8");
         // Load the linked page
