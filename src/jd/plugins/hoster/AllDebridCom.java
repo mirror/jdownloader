@@ -62,6 +62,8 @@ public class AllDebridCom extends antiDDoSForHost {
     private DownloadLink                 currDownloadLink = null;
     private String                       token            = null;
     private static Object                accLock          = new Object();
+    // this is used by provider which calculates unique token to agent/client.
+    private static final String          agent            = "agent=JDownloader";
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -69,12 +71,12 @@ public class AllDebridCom extends antiDDoSForHost {
         setConstants(account, null);
         synchronized (accLock) {
             if (token != null) {
-                getPage(api + "/user/login?token=" + token);
+                getPage(api + "/user/login?" + agent + "&token=" + token);
             }
             {
                 final int error = parseError();
                 if (token == null || error == 1 || error == 5) {
-                    getPage(api + "/user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    getPage(api + "/user/login?" + agent + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 }
             }
             handleErrors();
@@ -178,7 +180,6 @@ public class AllDebridCom extends antiDDoSForHost {
         case 31:
         case 39:
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-
         }
     }
 
@@ -303,7 +304,7 @@ public class AllDebridCom extends antiDDoSForHost {
         showMessage(link, "Phase 1/2: Generating link");
         String host_downloadlink = link.getDownloadURL();
         synchronized (accLock) {
-            getPage(api + "/link/unlock?link=" + Encoding.urlEncode(host_downloadlink) + "&token=" + token);
+            getPage(api + "/link/unlock?" + agent + "&token=" + token + "&link=" + Encoding.urlEncode(host_downloadlink));
             if (11 == parseError()) {
                 fetchAccountInfo(account);
                 setConstants(account, link);
