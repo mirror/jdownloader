@@ -13,7 +13,6 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -22,7 +21,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision: 37876 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "https://(?:\\w+)\\.(?:dlvr1|cloudfront)\\.net/FunimationStoreFront/(?:\\d+)/(?:English|Japanese)/.*" })
 public class FunimationCom extends antiDDoSForHost {
-
     static private Object                                    lock         = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
@@ -30,14 +28,6 @@ public class FunimationCom extends antiDDoSForHost {
     public FunimationCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.funimation.com/log-in/");
-    }
-
-    @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (account == null) {
-            return false;
-        }
-        return super.canHandle(downloadLink, account);
     }
 
     private void downloadHls(final DownloadLink downloadLink) throws Exception {
@@ -93,7 +83,12 @@ public class FunimationCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        throw new AccountRequiredException();
+        downloadLink.setProperty("valid", false);
+        if (downloadLink.getDownloadURL().contains(".m3u8")) {
+            downloadHls(downloadLink);
+        } else if (downloadLink.getDownloadURL().contains(".mp4") || downloadLink.getDownloadURL().contains(".srt")) {
+            downloadLink(downloadLink);
+        }
     }
 
     private void downloadLink(final DownloadLink downloadLink) throws Exception {
