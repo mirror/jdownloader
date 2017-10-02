@@ -53,11 +53,7 @@ public class FunimationCom extends PluginForDecrypt {
         ((jd.plugins.hoster.FunimationCom) plugin).setBrowser(br);
         final Account account = AccountController.getInstance().getValidAccount(plugin);
         if (account != null) {
-            try {
-                ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
-            } catch (final Throwable e) {
-                throw e;
-            }
+            ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
         }
         // set utf-8
         br.setCustomCharset("utf-8");
