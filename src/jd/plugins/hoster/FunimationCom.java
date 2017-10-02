@@ -13,6 +13,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,6 +30,14 @@ public class FunimationCom extends antiDDoSForHost {
     public FunimationCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.funimation.com/log-in/");
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+        if (account == null) {
+            return false;
+        }
+        return super.canHandle(downloadLink, account);
     }
 
     private void downloadHls(final DownloadLink downloadLink) throws Exception {
@@ -84,13 +93,7 @@ public class FunimationCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        downloadLink.setProperty("valid", false);
-        requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains(".m3u8")) {
-            downloadHls(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(".mp4") || downloadLink.getDownloadURL().contains(".srt")) {
-            downloadLink(downloadLink);
-        }
+        throw new AccountRequiredException();
     }
 
     private void downloadLink(final DownloadLink downloadLink) throws Exception {
@@ -107,7 +110,6 @@ public class FunimationCom extends antiDDoSForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         downloadLink.setProperty("valid", false);
         login(account, false);
-        requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().contains(".m3u8")) {
             downloadHls(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(".mp4") || downloadLink.getDownloadURL().contains(".srt")) {
