@@ -63,7 +63,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     // private static final String ACTIVATE_BETA_FEATURES = "ACTIVATE_BETA_FEATURES";
     private final String                 CRAWLER_ONLY_ADD_NEW_IDS                     = "CRAWLER_ONLY_ADD_NEW_IDS";
     private final String                 CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
-    private final String                 CRAWLER_DISABLE_DIALOGS                      = "CRAWLER_DISABLE_DIALOGS";
     private static final String          CRAWLER_PROPERTY_TELECASTIDS_ADDED           = "CRAWLER_PROPERTY_TELECASTIDS_ADDED";
     private static final String          CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS          = "CRAWLER_PROPERTY_LASTCRAWL_NEWLINKS";
     private static final String          CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE = "CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE";
@@ -91,7 +90,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private long                         timestamp_last_crawl_ended                   = 0;
     private long                         timestamp_last_record_started                = 0;
     /* Settings */
-    private boolean                      crawler_DialogsDisabled                      = false;
+    private boolean                      crawler_DialogsEnabled                       = true;
     private boolean                      api_enabled                                  = false;
     private boolean                      only_grab_new_entries                        = false;
     /* If this != null, API is currently used */
@@ -119,7 +118,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         parameter = param.toString();
         api_enabled = jd.plugins.hoster.SaveTv.is_API_enabled(this.getHost());
         fast_linkcheck = cfg.getBooleanProperty(jd.plugins.hoster.SaveTv.CRAWLER_ENABLE_FAST_LINKCHECK, false);
-        crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
+        crawler_DialogsEnabled = cfg.getBooleanProperty(jd.plugins.hoster.SaveTv.CRAWLER_ENABLE_DIALOGS, jd.plugins.hoster.SaveTv.defaultCrawlerActivateInformationDialogs);
         only_grab_new_entries = cfg.getBooleanProperty(CRAWLER_ONLY_ADD_NEW_IDS, false);
         only_grab_entries_of_specified_timeframe = cfg.getLongProperty(jd.plugins.hoster.SaveTv.CRAWLER_GRAB_TIMEFRAME_COUNT, 0);
         this.br.setFollowRedirects(true);
@@ -174,7 +173,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             if (e instanceof DecrypterException) {
                 logger.info("Decrypt process aborted by user: " + parameter);
-                if (!crawler_DialogsDisabled) {
+                if (crawler_DialogsEnabled) {
                     try {
                         SwingUtilities.invokeAndWait(new Runnable() {
                             @Override
@@ -609,131 +608,132 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     // }
     private void handleEndDialogs() {
-        if (!crawler_DialogsDisabled) {
-            if (only_grab_new_entries && decryptedLinks.size() == 0) {
-                /* User recently added all new entries and now there are no new entries available. */
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - nichts Neues gefunden";
-                                String message = "Save.tv - es wurden keine neuen Aufnahmen gefunden!\r\n";
-                                if (timestamp_last_crawl_ended > 0) {
-                                    message += String.format("Bedenke, dass du am %s bereits alle neuen Aufnahmen eingefügt hast.\r\n", formatTimestampToGermanDate(timestamp_last_crawl_ended));
-                                }
-                                if (api_enabled && timestamp_last_record_started > 0) {
-                                    message += String.format("Höchstes StartDatum der zuletzt hinzugefügten telecastID: %s\r\n", formatTimestampToGermanDate(timestamp_last_record_started));
-                                }
-                                message += "Vermutlich gab es bisher keine (neuen) Aufnahmen!\r\n";
-                                message += getDialogAccountsInfo();
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                            } catch (final Throwable e) {
+        if (!crawler_DialogsEnabled) {
+            return;
+        }
+        if (only_grab_new_entries && decryptedLinks.size() == 0) {
+            /* User recently added all new entries and now there are no new entries available. */
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler - nichts Neues gefunden";
+                            String message = "Save.tv - es wurden keine neuen Aufnahmen gefunden!\r\n";
+                            if (timestamp_last_crawl_ended > 0) {
+                                message += String.format("Bedenke, dass du am %s bereits alle neuen Aufnahmen eingefügt hast.\r\n", formatTimestampToGermanDate(timestamp_last_crawl_ended));
                             }
-                        }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (only_grab_new_entries) {
-                /* User recently added all new entries and now there are no new entries available. */
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - neue Einträge gefunden";
-                                String message = "Save.tv - es wurden " + decryptedLinks.size() + " neue Aufnahmen gefunden!\r\n";
-                                if (timestamp_last_crawl_ended > 0) {
-                                    message += String.format("Das sind alle neuen Aufnahmen seitdem zuletzt neue gefunden wurden am %s\r\n", formatTimestampToGermanDate(timestamp_last_crawl_ended));
-                                }
-                                if (api_enabled && timestamp_last_record_started > 0) {
-                                    message += String.format("Das sind alle Aufnahmen nach dem höchsten StartDatum der zuletzt hinzugefügten telecastID: %s\r\n", formatTimestampToGermanDate(timestamp_last_record_started));
-                                }
-                                message += getDialogAccountsInfo();
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                            } catch (final Throwable e) {
+                            if (api_enabled && timestamp_last_record_started > 0) {
+                                message += String.format("Höchstes StartDatum der zuletzt hinzugefügten telecastID: %s\r\n", formatTimestampToGermanDate(timestamp_last_record_started));
                             }
+                            message += "Vermutlich gab es bisher keine (neuen) Aufnahmen!\r\n";
+                            message += getDialogAccountsInfo();
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+                        } catch (final Throwable e) {
                         }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (only_grab_entries_of_specified_timeframe > 0 && decryptedLinks.size() == 0) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - nichts gefunden";
-                                String message = "Save.tv - leider wurden keine Links gefunden!\r\n";
-                                message += "Bedenke, dass du nur alle Aufnahmen der letzten " + only_grab_entries_of_specified_timeframe + " Tage wolltest.\r\n";
-                                message += String.format("Das sind alle Aufnahmen ab dem %s.\r\n", formatTimestampToGermanDate(System.currentTimeMillis() - (only_grab_entries_of_specified_timeframe * 24 * 60 * 60 * 1000)));
-                                message += "Vermutlich gab es in diesem Zeitraum keine neuen Aufnahmen!\r\n";
-                                message += getDialogAccountsInfo();
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                            } catch (final Throwable e) {
+                    }
+                });
+            } catch (final Throwable e) {
+            }
+        } else if (only_grab_new_entries) {
+            /* User recently added all new entries and now there are no new entries available. */
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler - neue Einträge gefunden";
+                            String message = "Save.tv - es wurden " + decryptedLinks.size() + " neue Aufnahmen gefunden!\r\n";
+                            if (timestamp_last_crawl_ended > 0) {
+                                message += String.format("Das sind alle neuen Aufnahmen seitdem zuletzt neue gefunden wurden am %s\r\n", formatTimestampToGermanDate(timestamp_last_crawl_ended));
                             }
-                        }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (only_grab_entries_of_specified_timeframe > 0) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + only_grab_entries_of_specified_timeframe + " Tage wurden gefunden";
-                                String message = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + only_grab_entries_of_specified_timeframe + " Tage wurden gefunden!\r\n";
-                                message += String.format("Das sind alle Aufnahmen ab dem %s.\r\n", formatTimestampToGermanDate(System.currentTimeMillis() - (only_grab_entries_of_specified_timeframe * 24 * 60 * 60 * 1000)));
-                                message += "Es wurden " + decryptedLinks.size() + " Links gefunden!\r\n";
-                                message += getDialogAccountsInfo();
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                            } catch (Throwable e) {
+                            if (api_enabled && timestamp_last_record_started > 0) {
+                                message += String.format("Das sind alle Aufnahmen nach dem höchsten StartDatum der zuletzt hinzugefügten telecastID: %s\r\n", formatTimestampToGermanDate(timestamp_last_record_started));
                             }
+                            message += getDialogAccountsInfo();
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                        } catch (final Throwable e) {
                         }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (decryptedLinks.size() >= totalLinksNum) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler -Alle Aufnahmen des Archives gefunden";
-                                String message = "Save.tv - alle Links des Archives wurden gefunden!\r\n";
-                                message += "Es wurden " + decryptedLinks.size() + " von " + totalLinksNum + " Links gefunden!\r\n";
-                                message += getDialogAccountsInfo();
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                            } catch (Throwable e) {
-                            }
+                    }
+                });
+            } catch (final Throwable e) {
+            }
+        } else if (only_grab_entries_of_specified_timeframe > 0 && decryptedLinks.size() == 0) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler - nichts gefunden";
+                            String message = "Save.tv - leider wurden keine Links gefunden!\r\n";
+                            message += "Bedenke, dass du nur alle Aufnahmen der letzten " + only_grab_entries_of_specified_timeframe + " Tage wolltest.\r\n";
+                            message += String.format("Das sind alle Aufnahmen ab dem %s.\r\n", formatTimestampToGermanDate(System.currentTimeMillis() - (only_grab_entries_of_specified_timeframe * 24 * 60 * 60 * 1000)));
+                            message += "Vermutlich gab es in diesem Zeitraum keine neuen Aufnahmen!\r\n";
+                            message += getDialogAccountsInfo();
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+                        } catch (final Throwable e) {
                         }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (decryptedLinks.size() < totalLinksNum) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - Fehler beim Crawlen des kompletten Archives";
-                                String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
-                                message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!\r\n";
-                                message += getDialogAccountsInfo();
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                            } catch (final Throwable e) {
-                            }
+                    }
+                });
+            } catch (final Throwable e) {
+            }
+        } else if (only_grab_entries_of_specified_timeframe > 0) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + only_grab_entries_of_specified_timeframe + " Tage wurden gefunden";
+                            String message = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + only_grab_entries_of_specified_timeframe + " Tage wurden gefunden!\r\n";
+                            message += String.format("Das sind alle Aufnahmen ab dem %s.\r\n", formatTimestampToGermanDate(System.currentTimeMillis() - (only_grab_entries_of_specified_timeframe * 24 * 60 * 60 * 1000)));
+                            message += "Es wurden " + decryptedLinks.size() + " Links gefunden!\r\n";
+                            message += getDialogAccountsInfo();
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                        } catch (Throwable e) {
                         }
-                    });
-                } catch (final Throwable e) {
-                }
+                    }
+                });
+            } catch (final Throwable e) {
+            }
+        } else if (decryptedLinks.size() >= totalLinksNum) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler -Alle Aufnahmen des Archives gefunden";
+                            String message = "Save.tv - alle Links des Archives wurden gefunden!\r\n";
+                            message += "Es wurden " + decryptedLinks.size() + " von " + totalLinksNum + " Links gefunden!\r\n";
+                            message += getDialogAccountsInfo();
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                        } catch (Throwable e) {
+                        }
+                    }
+                });
+            } catch (final Throwable e) {
+            }
+        } else if (decryptedLinks.size() < totalLinksNum) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler - Fehler beim Crawlen des kompletten Archives";
+                            String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
+                            message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!\r\n";
+                            message += getDialogAccountsInfo();
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+                        } catch (final Throwable e) {
+                        }
+                    }
+                });
+            } catch (final Throwable e) {
             }
         }
     }
