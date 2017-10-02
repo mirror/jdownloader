@@ -214,6 +214,29 @@ public class AllDebridCom extends antiDDoSForHost {
         handleDL(account, link, link.getDownloadURL());
     }
 
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
+        mhm.runCheck(this.currAcc, this.currDownloadLink);
+        showMessage(link, "Phase 1/2: Generating link");
+        synchronized (accLock) {
+            final boolean cache = loadToken(account, link);
+            logger.info("Cached 'token' = " + String.valueOf(cache));
+            final String unlock = api + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getPluginPatternMatcher());
+            getPage(unlock + "&token=" + token);
+            if (11 == parseError()) {
+                loadToken(account, link);
+                getPage(unlock + "&token=" + token);
+            }
+            handleErrors();
+        }
+        final String genlink = PluginJSonUtils.getJsonValue(br, "link");
+        if (genlink == null || !genlink.matches("https?://.+")) {
+            // we need a final error handling for situations when
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        handleDL(account, link, genlink);
+    }
+
     @SuppressWarnings("deprecation")
     private void handleDL(final Account acc, final DownloadLink link, final String genlink) throws Exception {
         if (genlink == null) {
@@ -294,33 +317,22 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
-    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
-        mhm.runCheck(this.currAcc, this.currDownloadLink);
-        showMessage(link, "Phase 1/2: Generating link");
-        String host_downloadlink = link.getDownloadURL();
+    private boolean loadToken(final Account account, final DownloadLink downloadLink) throws Exception {
         synchronized (accLock) {
-            getPage(api + "/link/unlock?" + agent + "&token=" + token + "&link=" + Encoding.urlEncode(host_downloadlink));
-            if (11 == parseError()) {
+            if (token == null || account.getProperty("token", null) == null) {
                 fetchAccountInfo(account);
-                setConstants(account, link);
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                getPage(api + "&link=" + Encoding.urlEncode(host_downloadlink) + "&token=" + token);
+                setConstants(account, downloadLink);
+                return false;
             }
-            handleErrors();
+            return true;
         }
-        final String genlink = PluginJSonUtils.getJsonValue(br, "link");
-        if (genlink == null || !genlink.matches("https?://.+")) {
-            // we need a final error handling for situations when
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        handleDL(account, link, genlink);
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
     }
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
