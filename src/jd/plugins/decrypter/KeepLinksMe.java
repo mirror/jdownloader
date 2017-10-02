@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.abstractSafeLinking;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,9 +24,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.me" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu)/(p\\d*|d)/[a-z0-9]+" })
-public class KeepLinksMe extends abstractSafeLinking {
+import org.jdownloader.plugins.components.abstractSafeLinking;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.me" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu|co)/(p\\d*|d)/[a-z0-9]+" })
+public class KeepLinksMe extends abstractSafeLinking {
     public KeepLinksMe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,7 +35,7 @@ public class KeepLinksMe extends abstractSafeLinking {
     @Override
     protected String regexSupportedDomains() {
         if (getHost().contains("keeplinks.me")) {
-            return "keeplinks\\.(me|eu)";
+            return "keeplinks\\.(me|eu|co)";
         } else {
             return super.regexSupportedDomains();
         }
@@ -113,7 +111,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected String correctLink(final String string) {
-        final String s = string.replaceFirst("^https?://", enforcesHTTPS() && supportsHTTPS() ? "https://" : "http://").replaceFirst("keeplinks\\.me/", "keeplinks.eu/");
+        final String s = string.replaceFirst("^https?://", enforcesHTTPS() && supportsHTTPS() ? "https://" : "http://").replaceFirst("(keeplinks\\.(me|eu|co)/)", "keeplinks.co/");
         return s;
     }
 
@@ -180,5 +178,4 @@ public class KeepLinksMe extends abstractSafeLinking {
     protected boolean isCaptchaSkipable() {
         return true;
     }
-
 }

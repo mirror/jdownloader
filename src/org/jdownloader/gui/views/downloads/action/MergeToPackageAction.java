@@ -27,7 +27,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
-
     private static final long serialVersionUID = -4468197802870765463L;
 
     public MergeToPackageAction() {
@@ -111,26 +110,24 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
             }
             final String downloadFolder = d.getDownloadFolder();
             DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     FilePackage newPackage = FilePackage.getInstance();
                     newPackage.setExpanded(isExpandNewPackage());
                     newPackage.setName(name);
                     newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(downloadFolder, name, newPackage));
-
                     final StringBuilder sb = new StringBuilder();
                     final HashSet<String> commentDups = new HashSet<String>();
                     for (PackageView<FilePackage, DownloadLink> pv : sel.getPackageViews()) {
                         final String comment = pv.getPackage().getComment();
                         if (StringUtils.isNotEmpty(comment)) {
-                            String[] lines = Regex.getLines(comment);
-                            for (String line : lines) {
-                                if (commentDups.add(line)) {
+                            final String[] commentLines = Regex.getLines(comment);
+                            for (final String commentLine : commentLines) {
+                                if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
                                     if (sb.length() > 0) {
                                         sb.append("\r\n");
                                     }
-                                    sb.append(comment);
+                                    sb.append(commentLine);
                                 }
                             }
                         }
@@ -169,5 +166,4 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
         } catch (DialogNoAnswerException e1) {
         }
     }
-
 }

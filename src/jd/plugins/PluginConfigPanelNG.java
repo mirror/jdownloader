@@ -698,6 +698,10 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
 
     private final CopyOnWriteArraySet<ConfigInterface> interfaces = new CopyOnWriteArraySet<ConfigInterface>();
 
+    protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+        return keyHandler != null;
+    }
+
     public void build(ConfigInterface cfg) {
         interfaces.add(cfg);
         ArrayList<Group> interfaceGroups = new ArrayList<Group>();
@@ -745,6 +749,9 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
             }
         });
         parent: for (KeyHandler<?> m : list) {
+            if (!showKeyHandler(m)) {
+                continue;
+            }
             for (Group g : interfaceGroups) {
                 if (g.matches(m)) {
                     g.add(m);

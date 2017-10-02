@@ -25,7 +25,6 @@ import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.translate._JDT;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
-
     /**
      *
      */
@@ -34,7 +33,6 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
     public MergeToPackageAction() {
         setName(_GUI.T.MergeToPackageAction_MergeToPackageAction_());
         setIconKey(IconKey.ICON_PACKAGE_NEW);
-
     }
 
     private boolean expandNewPackage = false;
@@ -112,7 +110,6 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
             }
             final String downloadFolder = d.getDownloadFolder();
             LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     CrawledPackage newPackage = new CrawledPackage();
@@ -124,13 +121,13 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                     for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
                         final String comment = pv.getPackage().getComment();
                         if (StringUtils.isNotEmpty(comment)) {
-                            String[] lines = Regex.getLines(comment);
-                            for (String line : lines) {
-                                if (commentDups.add(line)) {
+                            final String[] commentLines = Regex.getLines(comment);
+                            for (String commentLine : commentLines) {
+                                if (StringUtils.isNotEmpty(commentLine) && commentDups.add(commentLine)) {
                                     if (sb.length() > 0) {
                                         sb.append("\r\n");
                                     }
-                                    sb.append(comment);
+                                    sb.append(commentLine);
                                 }
                             }
                         }
@@ -169,5 +166,4 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
         } catch (DialogNoAnswerException e1) {
         }
     }
-
 }

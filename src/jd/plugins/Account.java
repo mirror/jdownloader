@@ -24,6 +24,12 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -35,14 +41,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 public class Account extends Property {
-
     private static final String VALID_UNTIL                    = "VALID_UNTIL";
     private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
     private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
@@ -212,7 +211,7 @@ public class Account extends Property {
      * @return
      */
     private static final String trim(final String string) {
-        return (string == null) ? null : string.trim();
+        return (string == null) ? null : StringUtils.removeBOM(string.trim());
     }
 
     public void setAccountController(AccountController ac) {
@@ -336,8 +335,8 @@ public class Account extends Property {
     }
 
     /**
-     * The expire Date of an premium account. if the account is not a premium account any more, this timestamp points to the last valid expire
-     * date. it can be used to check when an account has expired
+     * The expire Date of an premium account. if the account is not a premium account any more, this timestamp points to the last valid
+     * expire date. it can be used to check when an account has expired
      *
      * @param validUntil
      */
@@ -348,8 +347,8 @@ public class Account extends Property {
     /**
      * this method returns for how long this account will be (or has been) a premium account
      *
-     * The expire Date of an premium account. if the account is not a premium account any more, this timestamp points to the last valid expire
-     * date. it can be used to check when an account has expired
+     * The expire Date of an premium account. if the account is not a premium account any more, this timestamp points to the last valid
+     * expire date. it can be used to check when an account has expired
      *
      * @param validUntil
      *
@@ -472,9 +471,9 @@ public class Account extends Property {
     }
 
     /**
-     * When sites don't tell you when the daily traffic reset is, we can assume that it is on a new day. We can use server time date stamp to
-     * determine this!, on the assumption that is when they do the reset! This method is required because, some sites do not have traffic left
-     * statistics within fetchAccountInfo, which then re-enables download and continue this cycle.
+     * When sites don't tell you when the daily traffic reset is, we can assume that it is on a new day. We can use server time date stamp
+     * to determine this!, on the assumption that is when they do the reset! This method is required because, some sites do not have traffic
+     * left statistics within fetchAccountInfo, which then re-enables download and continue this cycle.
      *
      * @author raztoki
      * @since JD2
@@ -565,7 +564,6 @@ public class Account extends Property {
     }
 
     public static interface AccountPropertyChangeHandler {
-
         boolean fireAccountPropertyChange(AccountProperty property);
     }
 
@@ -667,28 +665,24 @@ public class Account extends Property {
 
     public static enum AccountType implements LabelInterface {
         FREE {
-
             @Override
             public String getLabel() {
                 return _JDT.T.AccountType_free();
             }
         },
         PREMIUM {
-
             @Override
             public String getLabel() {
                 return _JDT.T.AccountType_premium();
             }
         },
         LIFETIME {
-
             @Override
             public String getLabel() {
                 return _JDT.T.AccountType_lifetime();
             }
         },
         UNKNOWN {
-
             @Override
             public String getLabel() {
                 return _JDT.T.AccountType_unknown();

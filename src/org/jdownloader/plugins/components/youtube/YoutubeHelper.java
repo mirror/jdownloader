@@ -675,12 +675,19 @@ public class YoutubeHelper {
                 AbstractVariant variant = AbstractVariant.get(link);
                 if (variant != null) {
                     if (variant instanceof SubtitleVariant) {
-                        if ("full".equalsIgnoreCase(mod)) {
-                            return ((SubtitleVariant) variant).getGenericInfo()._getLocale().getDisplayName();
-                        } else if ("display".equalsIgnoreCase(mod)) {
-                            return ((SubtitleVariant) variant).getGenericInfo()._getLocale().getDisplayLanguage();
+                        final SubtitleVariant subtitle = ((SubtitleVariant) variant);
+                        final String asr;
+                        if (subtitle.getGenericInfo()._isSpeechToText()) {
+                            asr = "_ASR";
                         } else {
-                            return ((SubtitleVariant) variant).getGenericInfo().getLanguage();
+                            asr = "";
+                        }
+                        if ("full".equalsIgnoreCase(mod)) {
+                            return subtitle.getGenericInfo()._getLocale().getDisplayName() + asr;
+                        } else if ("display".equalsIgnoreCase(mod)) {
+                            return subtitle.getGenericInfo()._getLocale().getDisplayLanguage() + asr;
+                        } else {
+                            return subtitle.getGenericInfo().getLanguage() + asr;
                         }
                     }
                 }

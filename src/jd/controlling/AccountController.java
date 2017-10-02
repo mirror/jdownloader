@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling;
 
 import java.io.File;
@@ -76,29 +75,22 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.statistics.StatsManager;
 
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
-
     private static final long                                                    serialVersionUID = -7560087582989096645L;
-
     private final HashMap<String, List<Account>>                                 ACCOUNTS;
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
-
     private static AccountController                                             INSTANCE         = new AccountController();
-
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
-
-    };
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
     }
 
     private AccountSettings config;
-
     private DelayedRunnable delayedSaver;
 
     private AccountController() {
@@ -108,7 +100,6 @@ public class AccountController implements AccountControllerListener, AccountProp
             config.setListID(System.currentTimeMillis());
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 save();
@@ -127,7 +118,6 @@ public class AccountController implements AccountControllerListener, AccountProp
         ACCOUNTS = loadAccounts(config, true);
         MULTIHOSTER_ACCOUNTS = new HashMap<String, List<Account>>();
         delayedSaver = new DelayedRunnable(5000, 30000) {
-
             @Override
             public String getID() {
                 return "AccountController";
@@ -161,14 +151,10 @@ public class AccountController implements AccountControllerListener, AccountProp
                     }
                 }
             }
-
         }, 1, 5, TimeUnit.MINUTES);
-
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-
                 if (JDGui.bugme(WarnLevel.SEVERE)) {
                     if (!newValue) {
                         final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.lit_are_you_sure(), _GUI.T.are_you_sure_disabled_premium(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_continue(), null);
@@ -184,17 +170,14 @@ public class AccountController implements AccountControllerListener, AccountProp
                                 org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
                             };
                         }.start();
-
                     }
                 } else {
                     return;
                 }
-
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-
             }
         });
     }
@@ -257,7 +240,6 @@ public class AccountController implements AccountControllerListener, AccountProp
         final HashMap<AccountProperty.Property, AccountProperty> propertyChanges = new HashMap<AccountProperty.Property, AccountProperty>();
         try {
             final AccountPropertyChangeHandler handler = new AccountPropertyChangeHandler() {
-
                 @Override
                 public boolean fireAccountPropertyChange(AccountProperty property) {
                     if (property != null) {
@@ -411,7 +393,6 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final String lastKnownAccountTypeProperty         = "lastKnownAccountType";
     private final String lastKnownValidUntilTimeStampProperty = "lastKnownValidUntilTimeStamp";
-
     private final long   minimumExtendTime                    = 24 * 60 * 60 * 1000l;
 
     private void checkAccountUpOrDowngrade(final Account account) {
@@ -426,22 +407,17 @@ public class AccountController implements AccountControllerListener, AccountProp
                 lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
                 account.setProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
             }
-
             final long currentValidUntilTimeStamp = account.getValidPremiumUntil();
             final boolean hasLastKnownPremiumValidUntilTimeStamp = account.hasProperty(lastKnownValidUntilTimeStampProperty);
             final long lastKnownPremiumValidUntilTimeStamp = account.getLongProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
-
             final boolean isPremiumAccount = AccountType.PREMIUM.equals(currentAccountType);
             final boolean wasPremiumAccount = AccountType.PREMIUM.name().equals(lastKnownAccountType);
             final boolean isPremiumUpgraded = isPremiumAccount && !wasPremiumAccount;
             final boolean isPremiumDowngraded = !isPremiumAccount && wasPremiumAccount;
-
             final boolean isLimitedRenewal = (currentValidUntilTimeStamp > lastKnownPremiumValidUntilTimeStamp && (currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp) > minimumExtendTime);
             final boolean isPremiumLimitedRenewal = isPremiumAccount && isLimitedRenewal;
-
             final boolean isUnlimitedRenewal = currentValidUntilTimeStamp != lastKnownPremiumValidUntilTimeStamp && currentValidUntilTimeStamp == -1;
             final boolean isPremiumUnlimitedRenewal = isPremiumAccount && isUnlimitedRenewal;
-
             if (isPremiumLimitedRenewal || isPremiumUnlimitedRenewal) {
                 account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
             } else if (isPremiumAccount && !hasLastKnownPremiumValidUntilTimeStamp) {
@@ -459,7 +435,6 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             if (isPremiumDowngraded || isPremiumUpgraded || isPremiumLimitedRenewal || isPremiumUnlimitedRenewal) {
                 getEventSender().fireEvent(new AccountUpOrDowngradeEvent(this, account) {
-
                     @Override
                     public boolean isPremiumAccount() {
                         return isPremiumAccount;
@@ -610,7 +585,6 @@ public class AccountController implements AccountControllerListener, AccountProp
                                 ac.setUser((String) a.get("user"));
                                 ac.setPassword((String) a.get("pass"));
                                 ac.setEnabled(a.containsKey("enabled"));
-
                             }
                         }
                     }
@@ -790,7 +764,6 @@ public class AccountController implements AccountControllerListener, AccountProp
             updateInternalMultiHosterMap(acc, null);
             return;
         }
-
         if (acc == null || acc != null && acc.isEnabled() == false) {
             return;
         }
@@ -965,5 +938,4 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         return added;
     }
-
 }
