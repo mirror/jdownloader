@@ -628,7 +628,7 @@ public class ClipboardMonitoring {
         return null;
     }
 
-    public synchronized void setCurrentContent(String string) {
+    public synchronized void setCurrentContent(final String string) {
         if (clipboard != null) {
             try {
                 final AtomicBoolean skipFlag = new AtomicBoolean(true);
@@ -778,9 +778,6 @@ public class ClipboardMonitoring {
         return null;
     }
 
-    private static final byte[] REPLACEMENT_CHARACTER_UTF8  = new byte[] { (byte) 0xef, (byte) 0xbf, (byte) 0xbd };
-    private static final byte[] REPLACEMENT_CHARACTER_UTF16 = new byte[] { (byte) 0xff, (byte) 0xfd };
-
     private final static boolean startsWith(byte[] array, int startIndex, byte[] check) {
         if (array != null && check != null && array.length >= startIndex + check.length) {
             for (int index = 0; index < check.length; index++) {
@@ -792,6 +789,8 @@ public class ClipboardMonitoring {
         }
         return false;
     }
+
+    private final static byte[] REPLACEMENT_CHARACTER = new byte[] { (byte) 0xef, (byte) 0xbf, (byte) 0xbd };
 
     private static String convertBytes(byte[] bytes, String charSet, boolean linuxWorkaround) throws UnsupportedEncodingException {
         if (bytes == null || bytes.length == 0) {
@@ -809,18 +808,19 @@ public class ClipboardMonitoring {
              */
             int indexOriginal = 0;
             int i = 0;
-            while (true) {
-                final BOM bom = IO.BOM.get(bytes);
-                if (bom != null) {
-                    i += bom.length();
-                    break;
-                } else if (startsWith(bytes, i, REPLACEMENT_CHARACTER_UTF8)) {
-                    i += REPLACEMENT_CHARACTER_UTF8.length;
-                } else if (startsWith(bytes, i, REPLACEMENT_CHARACTER_UTF16)) {
-                    i += REPLACEMENT_CHARACTER_UTF16.length;
-                } else {
-                    break;
+            bom: while (true) {
+                if (startsWith(bytes, i, REPLACEMENT_CHARACTER)) {
+                    i += REPLACEMENT_CHARACTER.length;
+                    continue bom;
                 }
+                for (final BOM bom : BOM.values()) {
+                    if (startsWith(bytes, i, bom.getBOM())) {
+                        i += bom.length();
+                        charSet = bom.getCharSet();
+                        continue bom;
+                    }
+                }
+                break;
             }
             for (; i < bytes.length - 1; i++) {
                 if (bytes[i] != 0) {
@@ -909,11 +909,20 @@ public class ClipboardMonitoring {
 
     public static String getStringTransferData(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
         if (isDataFlavorSupported(transferable, dataFlavors, DataFlavor.stringFlavor)) {
-            final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, DataFlavor.stringFlavor);
+            Object ret = null;
+            try {
+                ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, DataFlavor.stringFlavor);
+            } catch (UnsupportedFlavorException e) {
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "Unicode String")) {
+                    return null;
+                } else {
+                    throw e;
+                }
+            }
             if (ret == null) {
                 return null;
             } else {
-                return ret.toString();
+                return StringUtils.removeBOM(ret.toString());
             }
         }
         return null;

@@ -39,9 +39,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
     }
 
     private final ExtTextField                  name;
-
     private final ExtPasswordField              pass;
-
     private final InputChangedCallbackInterface callback;
     private static String                       EMPTYPW = "                 ";
 
@@ -68,25 +66,22 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
         if (requiresUserName) {
             add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
             add(this.name = new ExtTextField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(name);
                 }
-
             });
             name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
+            name.paste();
         } else {
             name = null;
         }
         add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
         add(this.pass = new ExtPasswordField() {
-
             @Override
             public void onChanged() {
                 callback.onChangedInput(pass);
             }
-
         }, "");
         pass.setHelpText(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_pass());
     }
@@ -102,7 +97,6 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
             }
             pass.setText(defaultAccount.getPass());
         }
-
     }
 
     @Override
@@ -123,5 +117,4 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
     public JComponent getComponent() {
         return this;
     }
-
 }

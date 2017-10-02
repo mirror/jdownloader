@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -29,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me|mobi)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?mangafox\\.(com|me|mobi)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" })
 public class Mangafox extends PluginForDecrypt {
-
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("mangafox.me", 500);
@@ -46,7 +44,6 @@ public class Mangafox extends PluginForDecrypt {
             url = url.substring(0, url.length() - 1);
         }
         br.getPage(url + "/1.html");
-
         if (br.containsHTML("cannot be found|not available yet")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
             return decryptedLinks;
@@ -62,7 +59,6 @@ public class Mangafox extends PluginForDecrypt {
             return null;
         }
         title = Encoding.htmlDecode(title.trim());
-
         int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
         final DecimalFormat df_page = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         // We load each page and retrieve the URL of the picture
@@ -93,7 +89,6 @@ public class Mangafox extends PluginForDecrypt {
             distribute(link);
             decryptedLinks.add(link);
         }
-
         return decryptedLinks;
     }
 
@@ -106,5 +101,4 @@ public class Mangafox extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
-
 }

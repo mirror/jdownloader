@@ -47,11 +47,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
@@ -65,7 +68,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountJsonConfig;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/(torrentdl|dl)/.+" })
 public class PremiumizeMe extends UseNet {
@@ -88,7 +94,38 @@ public class PremiumizeMe extends UseNet {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SENDDEBUGLOG, "Send debug logs to PremiumizeMe automatically?").setDefaultValue(true));
     }
 
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new PluginConfigPanelNG() {
+            @Override
+            public void updateContents() {
+            }
+
+            @Override
+            protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+                return "ssldownloadsenabled".equals(keyHandler.getKey());
+            }
+
+            @Override
+            public void save() {
+            }
+        };
+    }
+
     public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
+        public class Translation {
+            public String getSSLDownloadsEnabled_label() {
+                return _JDT.T.lit_ssl_enabled();
+            }
+        }
+
+        public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
+
+        @DefaultBooleanValue(true)
+        @Order(10)
+        boolean isSSLDownloadsEnabled();
+
+        void setSSLDownloadsEnabled(boolean b);
     };
 
     @Override
@@ -254,7 +291,13 @@ public class PremiumizeMe extends UseNet {
         }
         br.setCurrentURL(null);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
+            final String url;
+            if (((PremiumizeMeConfigInterface) AccountJsonConfig.get(account)).isSSLDownloadsEnabled()) {
+                url = dllink.replaceFirst("^http://", "https://");
+            } else {
+                url = dllink.replaceFirst("^https://", "http://");
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, maxConnections);
         } catch (final SocketTimeoutException e) {
             logger.info("SocketTimeoutException on downloadstart");
             int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_sockettimeout", 1);
