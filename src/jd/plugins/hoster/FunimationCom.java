@@ -1,10 +1,10 @@
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -18,11 +18,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision: 37876 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "https://(?:\\w+)\\.(?:dlvr1|cloudfront)\\.net/FunimationStoreFront/(?:\\d+)/(?:English|Japanese)/.*" })
 public class FunimationCom extends antiDDoSForHost {
+
     static private Object                                    lock         = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
@@ -33,11 +32,11 @@ public class FunimationCom extends antiDDoSForHost {
     }
 
     private void downloadHls(final DownloadLink downloadLink) throws Exception {
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, downloadLink.getDownloadURL());
         if (dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl.startDownload();
     }
 
@@ -45,7 +44,7 @@ public class FunimationCom extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            this.login(account, this.br, true);
+            login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -86,19 +85,19 @@ public class FunimationCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
-        this.requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().contains(".m3u8")) {
             downloadHls(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(".mp4") || downloadLink.getDownloadURL().contains(".srt")) {
-            this.downloadLink(downloadLink);
+            downloadLink(downloadLink);
         }
     }
 
     private void downloadLink(final DownloadLink downloadLink) throws Exception {
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-        if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("application/octet-stream")) {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("application/octet-stream")) {
             downloadLink.setProperty("valid", false);
-            this.dl.getConnection().disconnect();
+            dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dl.startDownload();
@@ -107,12 +106,12 @@ public class FunimationCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         downloadLink.setProperty("valid", false);
-        this.login(account, this.br, false);
-        this.requestFileInformation(downloadLink);
+        login(account, false);
+        requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().contains(".m3u8")) {
             downloadHls(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(".mp4") || downloadLink.getDownloadURL().contains(".srt")) {
-            this.downloadLink(downloadLink);
+            downloadLink(downloadLink);
         }
     }
 
@@ -121,16 +120,11 @@ public class FunimationCom extends antiDDoSForHost {
      *
      * @param account
      *            The account to use to log in.
-     * @param br
-     *            The browser to use to log in. This is the browser where the cookies will be saved.
      * @param refresh
      *            Should new cookies be retrieved (fresh login) even if cookies have previously been cached.
      */
-    public void login(final Account account, Browser br, final boolean refresh) throws Exception {
+    public void login(final Account account, final boolean refresh) throws Exception {
         synchronized (FunimationCom.lock) {
-            if (br == null) {
-                br = this.br;
-            }
             try {
                 this.setBrowserExclusive();
                 // Load cookies from the cache if allowed, and they exist
@@ -178,19 +172,14 @@ public class FunimationCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
         // Attempt to login
-        if (this.br.getCookies("funimation.com").isEmpty()) {
+        if (br.getCookies("funimation.com").isEmpty()) {
             final Account account = AccountController.getInstance().getValidAccount(this);
             if (account != null) {
                 try {
-                    this.login(account, this.br, false);
+                    login(account, false);
                 } catch (final Exception e) {
                 }
             }
-        }
-        // Find matching decrypter
-        final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("funimation.com");
-        if (plugin == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link");
         }
         if ((Boolean) downloadLink.getProperty("valid", false)) {
             return AvailableStatus.TRUE;
@@ -208,13 +197,6 @@ public class FunimationCom extends antiDDoSForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    /**
-     * because stable is lame!
-     */
-    public void setBrowser(final Browser ibr) {
-        this.br = ibr;
     }
 
     // required for decrypter
