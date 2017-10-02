@@ -15,7 +15,6 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -26,11 +25,9 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision: 37916 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+/.*" })
 public class FunimationCom extends PluginForDecrypt {
-
-    static private final String PLAYER_URL         = "https://www.funimation.com/player/";
-    static private final String SHOWEXPERIENCE_API = "https://www.funimation.com/api/showexperience/";
+    
+	static private final String SHOWEXPERIENCE_API = "https://www.funimation.com/api/showexperience/";
     static private final String EXPERIENCE_API     = "https://www.funimation.com/api/experience/";
-    private final char          SEPARATOR          = '-';
 
     @SuppressWarnings("deprecation")
     public FunimationCom(final PluginWrapper wrapper) {
@@ -53,10 +50,9 @@ public class FunimationCom extends PluginForDecrypt {
         loadPlugin();
         ((jd.plugins.hoster.FunimationCom) plugin).setBrowser(br);
         final Account account = AccountController.getInstance().getValidAccount(plugin);
-        if (account == null) {
-            throw new AccountRequiredException();
+        if (account != null) {
+            ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
         }
-        ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
         // set utf-8
         br.setCustomCharset("utf-8");
         // Load the linked page
@@ -104,9 +100,9 @@ public class FunimationCom extends PluginForDecrypt {
             } else {
                 final Browser br = this.br.cloneBrowser();
                 ((jd.plugins.hoster.FunimationCom) plugin).getPage(br, src);
-                List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+                final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
                 for (final HlsContainer h : qualities) {
-                    String quality = h.getResolution();
+                    final String quality = h.getResolution();
                     filename = title + "-" + quality + h.getFileExtension();
                     final DownloadLink dl = createDownloadlink(h.getDownloadurl());
                     filePackage.add(dl);
@@ -130,13 +126,14 @@ public class FunimationCom extends PluginForDecrypt {
         final ArrayList<Object> seasons_array = (ArrayList<Object>) entries.get("seasons");
         for (Object s : seasons_array) {
             entries = (LinkedHashMap<String, Object>) s;
-            String season = entries.get("seasonId").toString();
+            final String season = entries.get("seasonId").toString();
             if (season_number.equals(season)) {
                 final ArrayList<Object> episodes_array = (ArrayList<Object>) entries.get("episodes");
                 for (Object e : episodes_array) {
                     entries = (LinkedHashMap<String, Object>) e;
-                    String episode = entries.get("episodeId").toString();
-                    if (episode_number.equals(episode)) {
+                    final String episode = entries.get("episodeId").toString();
+                    final String slug = entries.get("slug").toString();
+                    if (episode_number.equals(episode) && episode_name.equals(slug)) {
                         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "languages/" + language + "/alpha/" + alpha);
                         final ArrayList<Object> sources_array = (ArrayList<Object>) entries.get("sources");
                         // Only get the first array as the sources are the same between both arrays
@@ -144,7 +141,7 @@ public class FunimationCom extends PluginForDecrypt {
                         final ArrayList<Object> text_tracks_array = (ArrayList<Object>) entries.get("textTracks");
                         for (Object t : text_tracks_array) {
                             entries = (LinkedHashMap<String, Object>) t;
-                            String src = entries.get("src").toString();
+                            final String src = entries.get("src").toString();
                             if (src.contains(".srt")) {
                                 String filename = title + ".srt";
                                 final DownloadLink dl = createDownloadlink(src);
