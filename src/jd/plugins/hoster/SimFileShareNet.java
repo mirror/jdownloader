@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -9,9 +11,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/\\d+/?)" })
+@HostPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/)\\d+/?" })
 public class SimFileShareNet extends PluginForHost {
     public SimFileShareNet(PluginWrapper wrapper) {
         super(wrapper);
