@@ -24,12 +24,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[0-9\\-_]+\\&d=.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co", "tubesafari.com", "tubeharmony.com" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubesafari\\.com/video\\?id=[0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubeharmony\\.com/video\\?id=[0-9\\-_]+\\&d=.+" })
 public class PornadoCo extends PornEmbedParser {
     public PornadoCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** E.g. more domains: xvirgo.com */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -39,7 +40,7 @@ public class PornadoCo extends PornEmbedParser {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<>\"]+) \\- pornado\\.co</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) \\- [^<>\"/]+</title>").getMatch(0);
         if (filename == null) {
             filename = new Regex(parameter, "\\&d=(.+)$").getMatch(0);
         }

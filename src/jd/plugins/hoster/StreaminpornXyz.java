@@ -46,7 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streaminporn.xyz" }, urls = { "https?://(?:www\\.)?streaminporn\\.xyz/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streaminporn.xyz" }, urls = { "https?://(?:www\\.)?streaminporn\\.xyz/(?:plugins/mediaplayer/site/_embed\\.php\\?u=)?[A-Za-z0-9]+" })
 public class StreaminpornXyz extends antiDDoSForHost {
     public StreaminpornXyz(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,7 +110,7 @@ public class StreaminpornXyz extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final Regex urlinfo = new Regex(link.getDownloadURL(), "^(https?)://.+/([A-Za-z0-9]+)$");
+        final Regex urlinfo = new Regex(link.getDownloadURL(), "^(https?)://.+(?:/|u=)([A-Za-z0-9]+)$");
         final String fid = urlinfo.getMatch(1);
         final String protocol;
         if (supportshttps && supportshttps_FORCED) {
@@ -156,7 +156,15 @@ public class StreaminpornXyz extends antiDDoSForHost {
             if (filename == null) {
                 filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             }
+            if (filename == null) {
+                /* Special 2017-10-04 */
+                filename = this.br.getRegex("File: ([^<>\"]+)<br").getMatch(0);
+            }
             filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            if (filesize == null) {
+                /* Special 2017-10-04 */
+                filesize = this.br.getRegex("Size: ([^<>\"]+)</td>").getMatch(0);
+            }
             try {
                 /* Language-independant attempt ... */
                 if (filename == null) {
