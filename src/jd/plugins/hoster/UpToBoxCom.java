@@ -791,7 +791,6 @@ public class UpToBoxCom extends antiDDoSForHost {
             doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
-            dllink = null;
             if (dllink == null) {
                 getPage(link.getDownloadURL());
                 dllink = getDllink();
