@@ -3,24 +3,24 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenext.com" }, urls = { "" })
 public class UsenextCom extends UseNet {
-
     public UsenextCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.usenext.com/signup");
@@ -59,9 +59,7 @@ public class UsenextCom extends UseNet {
             if (br.getCookie(getHost(), "SNUUID") == null) {
                 account.clearCookies("");
                 br.getPage("https://www.usenext.com/");
-                final Form login = new Form();
-                login.setAction("/Account/LogInAjax");
-                login.setMethod(MethodType.POST);
+                final Form login = br.getFormbyActionRegex(".*/Account/LogInAjax");
                 login.put("Username", Encoding.urlEncode(account.getUser()));
                 login.put("Password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
@@ -96,8 +94,11 @@ public class UsenextCom extends UseNet {
                 ai.setTrafficLeft(trafficLeft);
             }
             br.getPage("/UseNeXTDE/MemberAreaInt/obj/user/uscontract.cfm?sLangToken=ENG");
-            final String validUntil = br.getRegex("Subscription through:</td>.*?<td>(\\d+/\\d+/\\d+)</").getMatch(0);
-            final String bucketType = br.getRegex("My UseNeXT plan:</td>.*?<td>(.*?)</").getMatch(0);
+            String validUntil = br.getRegex("Subscription through:</td>.*?<td>(\\d+/\\d+/\\d+)</").getMatch(0);
+            if (validUntil == null) {
+                validUntil = br.getRegex("Minimum term until:\\s*<.*?\"paket\"\\s*>\\s*(\\d+/\\d+/\\d+)\\s*</").getMatch(0);
+            }
+            final String bucketType = br.getRegex("My UseNeXT plan:\\s*</.*?\"paket\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
             if (bucketType != null) {
                 ai.setStatus(bucketType);
             } else {
