@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -35,18 +34,26 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer;
-import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servustv\\.com/(?:de|at)/Medien/.+" })
-public class ServustvCom extends PluginForHost {
-    public ServustvCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servus\\.com/(?:de|at)/p/[^/]+/[A-Z0-9\\-]+/" })
+public class ServusCom extends PluginForHost {
+    public ServusCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.servustv.com/Nutzungsbedingungen";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("servustv.com".equals(getHost())) {
+            if (host == null || "servustv.com".equals(host)) {
+                return "servus.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
@@ -58,7 +65,7 @@ public class ServustvCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String episodenumber = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String episodenumber = new Regex(link.getDownloadURL(), "pisode\\-(\\d+)").getMatch(0);
         String date = br.getRegex("itemprop=\"uploaddate \" content=\"(\\d+)\"").getMatch(0);
         if (date == null) {
             date = this.br.getRegex("itemprop=\"description\">(\\d{2}\\.\\d{2}\\.\\d{4})<").getMatch(0);
@@ -69,12 +76,9 @@ public class ServustvCom extends PluginForHost {
         if (date == null) {
             date = this.br.getRegex("Sendung vom (\\d{1,2}\\. [A-Za-z]+ \\d{4} \\| \\d{1,2}:\\d{1,2})").getMatch(0);
         }
-        String title = br.getRegex("<h1 class=\"[^\"]+\">([^<>]+)</h1>").getMatch(0);
+        String title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
         if (title == null) {
-            title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (title == null) {
-            title = new Regex(link.getDownloadURL(), "edien/(.+)$").getMatch(0);
+            title = new Regex(link.getDownloadURL(), "/p/([^/]+)").getMatch(0);
         }
         String episodename = this.br.getRegex("<h2 class=\"HeadlineSub Headline\\-\\-serif\">([^<>]+)</h2>").getMatch(0);
         if (episodename == null) {
@@ -108,38 +112,24 @@ public class ServustvCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String url_hls = null;
         HlsContainer hlsbest = null;
+        /*
+         * 2017-10-04: It is unlikely that they still have official http urls (at this place) but we'll leave in these few lines of code
+         * anyways.
+         */
         String httpstream = this.br.getRegex("<meta property=\"twitter:player:stream\" content=\"(http[^<>\"]*?)\">").getMatch(0);
         if (httpstream == null) {
             httpstream = this.br.getRegex("\"(https?://stvmedia\\.pmd\\.servustv\\.com/media/hds/[^<>\"\\']+\\.mp4)\"").getMatch(0);
         }
         if (httpstream == null) {
-            /* 2017-07-27: http- and hls available --> Grab only http as we can download it faster */
-            final BrightcoveEdgeContainer bestQuality = jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainerAuto(this.br, Arrays.asList(new Protocol[] { Protocol.HTTP }));
-            if (bestQuality == null) {
-                /* No Brightcove videoplayer available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
+            /* 2017-10-04: Only hls available and it is very easy to create the master URL --> Do not access Brightcove stuff at all! */
+            final String videoid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-]+)/?$").getMatch(0);
+            /* Use this to get some more information about the video [in json]: https://www.servus.com/at/p/<videoid>/personalize */
+            final String hls_master = String.format("https://stv.rbmbtnx.net/api/v1/manifests/%s.m3u8", videoid);
+            br.getPage(hls_master);
+            hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
-            }
-            httpstream = bestQuality.getDownloadURL();
-        }
-        if (httpstream == null) {
-            String videoid = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
-            if (videoid == null) {
-                /* Age restricted videos can only be viewed between 8PM and 6AM --> This way we can usually download them anyways! */
-                videoid = br.getRegex("data\\-videoid=\"(\\d+)\"").getMatch(0);
-            }
-            if (videoid == null && httpstream == null) {
-                /* Hmm maybe age-restriction workaround failed */
-                if (this.br.containsHTML("<img src=\"/img/content/FSK\\d+\\.jpg\" alt=\"FSK\\d+\"")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Inhalt ist altersbeschränkt - Download wird später erneut versucht", 30 * 60 * 1000l);
-                }
-                /* Probably the user wants to download hasn't aired yet --> Wait and retry later! */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
-            }
-            if (videoid != null) {
-                /* Prefer hls as we might get a better videoquality. */
-                br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getHlsMasterHttp(videoid));
-                /* E.g. here, (mobile) HLS download is not possible: http://www.servustv.com/at/Medien/Talk-im-Hangar-7173 */
-                hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             }
         }
         if (hlsbest != null) {
