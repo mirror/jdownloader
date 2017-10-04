@@ -1083,7 +1083,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         this.loginSite(account, forceLogin);
                     } catch (final PluginException e) {
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-                            if ("de".equalsIgnoreCase(lang)) {
+                            if (br.containsHTML("This account is disabled, please contact support")) {
+                                throw e;
+                            } else if ("de".equalsIgnoreCase(lang)) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLoginversuch per Sammler Account schlug fehl - bitte dem JDownloader Support melden!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                             } else {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFailed to login via free account - please contact the JDownloader support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
