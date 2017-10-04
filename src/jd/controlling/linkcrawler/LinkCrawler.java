@@ -1874,13 +1874,24 @@ public class LinkCrawler {
                             checkParam = URLDecoder.decode(params[1], "UTF-8");
                         }
                         if (checkParam.startsWith("aHR0c") || checkParam.startsWith("ZnRwOi")) {
+                            String base64 = checkParam;
                             /* base64 http and ftp */
-                            String possibleURLs = new String(Base64.decode(checkParam), "UTF-8");
-                            if (HTMLParser.getProtocol(possibleURLs) == null) {
-                                possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
+                            while (true) {
+                                if (base64.length() % 4 != 0) {
+                                    base64 += "=";
+                                } else {
+                                    break;
+                                }
                             }
-                            if (HTMLParser.getProtocol(possibleURLs) != null) {
-                                possibleEmbeddedLinks.add(possibleURLs);
+                            final byte[] decoded = Base64.decode(base64);
+                            if (decoded != null) {
+                                String possibleURLs = new String(decoded, "UTF-8");
+                                if (HTMLParser.getProtocol(possibleURLs) == null) {
+                                    possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
+                                }
+                                if (HTMLParser.getProtocol(possibleURLs) != null) {
+                                    possibleEmbeddedLinks.add(possibleURLs);
+                                }
                             }
                         } else {
                             try {
@@ -1915,6 +1926,13 @@ public class LinkCrawler {
                 if (base64 != null) {
                     if (base64.contains("%3D")) {
                         base64 = URLDecoder.decode(base64, "UTF-8");
+                    }
+                    while (true) {
+                        if (base64.length() % 4 != 0) {
+                            base64 += "=";
+                        } else {
+                            break;
+                        }
                     }
                     final byte[] decoded = Base64.decode(base64);
                     if (decoded != null) {
