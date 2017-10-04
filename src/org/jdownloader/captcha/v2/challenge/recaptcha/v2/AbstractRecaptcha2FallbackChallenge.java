@@ -18,6 +18,8 @@ import java.util.Locale;
 
 import javax.imageio.ImageIO;
 
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -35,13 +37,15 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
-import jd.controlling.captcha.SkipRequest;
-
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
     protected final RecaptchaV2Challenge owner;
     private ArrayList<SubChallenge>      subChallenges;
     private SubChallenge                 subChallenge;
+
+    public RecaptchaV2Challenge getRecaptchaV2Challenge() {
+        return owner;
+    }
 
     public boolean hasSubChallenge() {
         return subChallenge != null;

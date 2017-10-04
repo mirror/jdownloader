@@ -407,6 +407,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             }
             final String jobIDentifier = "[folderwatch:" + UniqueAlltimeID.next() + "]";
             final CrawledLink currentLink = getCurrentLink();
+            final LinkCollectingJob job = currentLink.getSourceJob();
             final CrawledLinkModifier jobModifier;
             if (modifiers.size() > 0) {
                 jobModifier = new CrawledLinkModifier() {
@@ -460,7 +461,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         return ret;
                     }
                 };
-                final List<CrawledLink> ret = lc.find(null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep(), false);
+                final List<CrawledLink> ret = lc.find(null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
                 if (ret != null) {
                     results.addAll(ret);
                 }
