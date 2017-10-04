@@ -9,14 +9,19 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.imageio.ImageIO;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
@@ -34,15 +39,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_DBC;
 
-import jd.captcha.gui.BasicWindow;
-import jd.http.Browser;
-import org.appwork.utils.parser.UrlQuery;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-
 public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
-
     private DeathByCaptchaSettings            config;
     private static final DeathByCaptchaSolver INSTANCE   = new DeathByCaptchaSolver();
     private ThreadPoolExecutor                threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -67,149 +64,103 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
         getService().setSolver(this);
         config = JsonConfig.create(DeathByCaptchaSettings.class);
         logger = LogController.getInstance().getLogger(DeathByCaptchaSolver.class.getName());
-
         threadPool.allowCoreThreadTimeOut(true);
-
     }
-
-    // protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-    // Challenge<?> challenge = job.getChallenge();
-    // if (challenge instanceof RecaptchaV2Challenge) {
-    // challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-    // solveRecaptchaCaptchaChallenge(job, (Re) challenge);
-    // } else {
-    //
-    // solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) challenge);
-    // }
-    //
-    // }
-
-    // private void solveRecaptchaCaptchaChallenge(CESSolverJob<String> job, RecaptchaV2Challenge challenge) {
-    // }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (!validateBlackWhite(c)) {
+        if (!validateBlackWhite(c) || !isAccountLoginSupported(c)) {
             return false;
         }
-        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
-            // does not work right now. need to contact DBC
+        if (c instanceof BasicCaptchaChallenge || c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
+            return true;
+        } else {
             return false;
         }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
-
+    @Override
+    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+        Challenge<?> challenge = job.getChallenge();
+        if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
+            challenge = ((AbstractRecaptcha2FallbackChallenge) challenge).getRecaptchaV2Challenge();
+        }
         job.showBubble(this, getBubbleTimeout(challenge));
         checkInterruption();
         // final Client client = getClient();
         try {
             // Captcha captcha = null;
             challenge.sendStatsSolving(this);
-            // Put your CAPTCHA image file, file object, input stream,
-            // or vector of bytes here:
-
             job.setStatus(SolverStatus.UPLOADING);
-
             Browser br = createBrowser();
-
             PostFormDataRequest r = new PostFormDataRequest("http://api.dbcapi.me/api/captcha");
-
             r.addFormData(new FormData("username", config.getUserName()));
             r.addFormData(new FormData("password", config.getPassword()));
-            r.addFormData(new FormData("swid", "0"));
-            r.addFormData(new FormData("challenge", ""));
-            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
-                AbstractRecaptcha2FallbackChallenge fbc = ((AbstractRecaptcha2FallbackChallenge) challenge);
-
-                byte[] banner = null;
-                // Icon icon = fbc.getExplainIcon(fbc.getExplain());
-                // if (icon != null) {
-                // ByteArrayOutputStream baos;
-                // ImageIO.write(IconIO.toBufferedImage(icon), "jpg", baos = new ByteArrayOutputStream());
-                // banner = baos.toByteArray();
-                //
-                // }
-                // c.isVerbose = true;
-                // c.proxy = new Proxy(Type.HTTP, new InetSocketAddress("localhost", 8888));
-
-                // org.jdownloader.captcha.v2.solver.dbc.test.Captcha ca = c.decode(IO.readFile(challenge.getImageFile()), "", 3, banner,
-                // fbc.getExplain(), 0);
-
-                r.addFormData(new FormData("banner_text", fbc.getExplain()));
-
-                r.addFormData(new FormData("grid", fbc.getSubChallenge().getGridWidth() + "x" + fbc.getSubChallenge().getGridHeight()));
-
-                r.addFormData(new FormData("type", "3"));
-                BasicWindow.showImage(ImageIO.read(challenge.getImageFile()));
-                final byte[] bytes = IO.readFile(challenge.getImageFile());
+            if (challenge instanceof RecaptchaV2Challenge) {
+                final RecaptchaV2Challenge rv2c = (RecaptchaV2Challenge) challenge;
+                r.addFormData(new FormData("type", "4"));
+                final HashMap<String, Object> token_param = new HashMap<String, Object>();
+                token_param.put("googlekey", rv2c.getSiteKey());
+                // token_param.put("google_stoken", rv2c.getSecureToken());
+                token_param.put("pageurl", "http://" + rv2c.getSiteDomain());
+                r.addFormData(new FormData("token_params", JSonStorage.toString(token_param)));
+            } else if (challenge instanceof BasicCaptchaChallenge) {
+                final BasicCaptchaChallenge bcc = (BasicCaptchaChallenge) challenge;
+                final byte[] bytes = IO.readFile(bcc.getImageFile());
+                r.addFormData(new FormData("swid", "0"));
+                r.addFormData(new FormData("challenge", ""));
                 r.addFormData(new FormData("captchafile", "captcha", "application/octet-stream", bytes));
-                // Banner sending does not work right now
-                // server says bad request
-                // if (icon != null) {
-                // ByteArrayOutputStream baos;
-                // ImageIO.write(IconIO.toBufferedImage(icon), "jpg", baos = new ByteArrayOutputStream());
-                // r.addFormData(new FormData("banner", "banner", "application/octet-stream", baos.toByteArray()));
-                //
-                // }
-
-            } else {
-
-                final byte[] bytes = IO.readFile(challenge.getImageFile());
-                r.addFormData(new FormData("captchafile", "captcha", "application/octet-stream", bytes));
-
             }
-
             br.setAllowedResponseCodes(200, 400);
-
             URLConnectionAdapter conn = br.openRequestConnection(r);
             br.loadConnection(conn);
             DBCUploadResponse uploadStatus = JSonStorage.restoreFromString(br.toString(), DBCUploadResponse.TYPE);
             DBCUploadResponse status = uploadStatus;
             if (status != null && status.getCaptcha() > 0) {
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
-                job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + status.getCaptcha());
+                job.getLogger().info("CAPTCHA uploaded: " + status.getCaptcha());
                 long startTime = System.currentTimeMillis();
-
-                while (status != null && !status.isSolved()) {
+                while (status != null && !status.isSolved() && status.isIs_correct()) {
                     if (System.currentTimeMillis() - startTime > 5 * 60 * 60 * 1000l) {
                         throw new SolverException("Failed:Timeout");
                     }
                     Thread.sleep(1000);
                     job.getLogger().info("deathbycaptcha.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
-
                     br.getPage("http://api.dbcapi.me/api/captcha/" + uploadStatus.getCaptcha());
                     status = JSonStorage.restoreFromString(br.toString(), DBCUploadResponse.TYPE);
                 }
                 if (status != null && status.isSolved()) {
-                    job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + status.getText());
-
-                    AbstractResponse<String> answer = challenge.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), null, this);
-
-                    DeathByCaptchaResponse response = new DeathByCaptchaResponse(challenge, this, status, answer.getValue(), answer.getPriority());
-
+                    job.getLogger().info("CAPTCHA uploaded: " + status.getCaptcha() + "|solved: " + status.getText());
+                    final DeathByCaptchaResponse response;
+                    if (challenge instanceof RecaptchaV2Challenge) {
+                        final RecaptchaV2Challenge rv2c = (RecaptchaV2Challenge) challenge;
+                        response = new DeathByCaptchaResponse(rv2c, this, status, status.getText(), 100);
+                    } else {
+                        final BasicCaptchaChallenge bcc = (BasicCaptchaChallenge) challenge;
+                        AbstractResponse<String> answer = bcc.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), null, this);
+                        response = new DeathByCaptchaResponse(bcc, this, status, answer.getValue(), answer.getPriority());
+                    }
                     job.setAnswer(response);
                 } else {
                     job.getLogger().info("Failed solving CAPTCHA");
                     throw new SolverException("Failed:" + JSonStorage.serializeToJson(status));
                 }
             }
-
         } catch (Exception e) {
             job.setStatus(getErrorByException(e), new AbstractIcon(IconKey.ICON_ERROR, 20));
             job.getLogger().log(e);
-
             challenge.sendStatsError(this, e);
         } finally {
             System.out.println("DBC DONe");
         }
-
     }
 
-    private int getBubbleTimeout(BasicCaptchaChallenge challenge) {
-        HashMap<String, Integer> map = config.getBubbleTimeoutByHostMap();
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
+        throw new WTFException();
+    }
 
+    private int getBubbleTimeout(Challenge<?> challenge) {
+        HashMap<String, Integer> map = config.getBubbleTimeoutByHostMap();
         Integer ret = map.get(challenge.getHost().toLowerCase(Locale.ENGLISH));
         if (ret == null || ret < 0) {
             ret = CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout();
@@ -227,7 +178,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
         if (StringUtils.isEmpty(CFG_DBC.PASSWORD.getValue())) {
             return false;
         }
-
         return true;
     }
 
@@ -240,26 +190,17 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof DeathByCaptchaResponse) {
             threadPool.execute(new Runnable() {
-
                 @Override
                 public void run() {
-
                     try {
                         DBCUploadResponse captcha = ((DeathByCaptchaResponse) response).getCaptcha();
                         // Report incorrectly solved CAPTCHA if neccessary.
                         // Make sure you've checked if the CAPTCHA was in fact
                         // incorrectly solved, or else you might get banned as
                         // abuser.
-
-                        try {
-                            Challenge<?> challenge = response.getChallenge();
-
-                            if (challenge instanceof BasicCaptchaChallenge) {
-                                createBrowser().postPage("http://api.dbcapi.me/api/captcha/" + captcha.getCaptcha() + "/report", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
-
-                            }
-                        } finally {
-
+                        Challenge<?> challenge = response.getChallenge();
+                        if (challenge instanceof BasicCaptchaChallenge) {
+                            createBrowser().postPage("http://api.dbcapi.me/api/captcha/" + captcha.getCaptcha() + "/report", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
@@ -272,23 +213,18 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     public DBCAccount loadAccount() {
-
         DBCAccount ret = new DBCAccount();
-
         try {
             DBCGetUserResponse user = getUserData();
             ret.setBalance(user.getBalance());
             ret.setBanned(user.isIs_banned());
             ret.setId(user.getUser());
             ret.setRate(user.getRate());
-
         } catch (Exception e) {
             logger.log(e);
             ret.setError(getErrorByException(e));
-
         }
         return ret;
-
     }
 
     private String getErrorByException(Exception e) {
@@ -310,17 +246,13 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
 
     private DBCGetUserResponse getUserData() throws UnsupportedEncodingException, IOException {
         String json = createBrowser().postPage("http://api.dbcapi.me/api/user", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
-
         return JSonStorage.restoreFromString(json, DBCGetUserResponse.TYPE);
-
     }
 
     private Browser createBrowser() {
-        Browser br = new Browser();
+        final Browser br = new Browser();
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader $Revision$".replace("$Revision$", ""));
-        // br.setProxy(new HTTPProxy(TYPE.HTTP, "localhost", 8888));
         return br;
     }
-
 }
