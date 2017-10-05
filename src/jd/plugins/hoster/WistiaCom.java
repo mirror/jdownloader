@@ -93,6 +93,7 @@ public class WistiaCom extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) videoo;
             final String type = (String) entries.get("type");
             if (type.contains("hls")) {
+                /* 2017-10-05: Skip hls for now as we do not need it */
                 continue;
             }
             dllink_temp = (String) entries.get("url");
