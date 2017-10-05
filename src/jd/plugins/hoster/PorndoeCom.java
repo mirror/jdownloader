@@ -66,7 +66,7 @@ public class PorndoeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/video/")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/video/") || br.containsHTML("/deleted-scenes/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(this.br.getURL(), "/video/(.+)").getMatch(0);
