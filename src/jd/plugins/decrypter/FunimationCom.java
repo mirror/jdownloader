@@ -5,9 +5,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -22,6 +19,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision: 37916 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+/.*" })
 public class FunimationCom extends PluginForDecrypt {
@@ -57,6 +57,10 @@ public class FunimationCom extends PluginForDecrypt {
         // Load the linked page
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.FunimationCom) plugin).getPage(br, cryptedLink.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            decryptedLinks.add(this.createOfflinelink(cryptedLink.getCryptedUrl()));
+            return decryptedLinks;
+        }
         // Fog: Grab episode information
         final String video_id = br.getRegex("id: \'(\\d+)\'").getMatch(0);
         final String show_name = new Regex(cryptedLink.getCryptedUrl(), "http(?:s)://www.funimation.com/(?:shows/)([-0-9a-zA-Z]+)/").getMatch(0);
