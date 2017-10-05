@@ -1001,6 +1001,8 @@ public class DataFileCom extends antiDDoSForHost {
                 // ai.setUsedSpace(Long.parseLong(space_left));
             }
             account.setAccountInfo(ai);
+        } else if ("403".equals(code)) {
+            throw new AccountInvalidException(PluginJSonUtils.getJson(nbr, "message"));
         } else if ("400".equalsIgnoreCase(code)) {
             // {"code":403,"message":"Your IP[123.123.123.123] is not allowed to access. Try adding it to whitelist."}
             throw new AccountInvalidException("Can not login/access site from this IP address, You must whitelist the IP to your account");
