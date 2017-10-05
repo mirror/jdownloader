@@ -672,7 +672,7 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                AbstractVariant variant = AbstractVariant.get(link);
+                final AbstractVariant variant = AbstractVariant.get(link);
                 if (variant != null) {
                     if (variant instanceof SubtitleVariant) {
                         final SubtitleVariant subtitle = ((SubtitleVariant) variant);
@@ -683,7 +683,12 @@ public class YoutubeHelper {
                             asr = "";
                         }
                         if ("full".equalsIgnoreCase(mod)) {
-                            return subtitle.getGenericInfo()._getLocale().getDisplayName() + asr;
+                            final int multi = subtitle.getGenericInfo().getMulti();
+                            if (multi > 0) {
+                                return subtitle.getGenericInfo()._getLocale().getDisplayName() + "(" + multi + ")" + asr;
+                            } else {
+                                return subtitle.getGenericInfo()._getLocale().getDisplayName() + asr;
+                            }
                         } else if ("display".equalsIgnoreCase(mod)) {
                             return subtitle.getGenericInfo()._getLocale().getDisplayLanguage() + asr;
                         } else {
@@ -2590,6 +2595,9 @@ public class YoutubeHelper {
                 if (list == null) {
                     list = new ArrayList<YoutubeSubtitleStorable>();
                     urls.put(lngID, list);
+                }
+                if (list.size() > 0) {
+                    info.setMulti(list.size());
                 }
                 list.add(info);
                 if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {

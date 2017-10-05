@@ -23,6 +23,15 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
 
     private String language;
     private Locale locale;
+    private int    multi = -1;
+
+    public int getMulti() {
+        return multi;
+    }
+
+    public void setMulti(int multi) {
+        this.multi = multi;
+    }
 
     public Locale _getLocale() {
         return locale;
@@ -62,6 +71,18 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
     private String kind;
     private String base;
     private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        if (StringUtils.isEmpty(name)) {
+            this.name = null;
+        } else {
+            this.name = name;
+        }
+    }
 
     public YoutubeSubtitleStorable(String base, String name, String language, String source, String kind) {
         this.base = base;
