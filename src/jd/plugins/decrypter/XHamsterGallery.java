@@ -53,11 +53,12 @@ public class XHamsterGallery extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Sorry, no photos found|error\">Gallery not found<|>Page Not Found<")) {
-            decryptedLinks.add(createOfflinelink(parameter, "Content Offline"));
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML(">This gallery is visible for")) {
             logger.info("This gallery is only visible for specified users, account needed: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter, "Private gallery"));
             return decryptedLinks;
         }
         if (br.containsHTML(">This gallery needs password<")) {
@@ -82,10 +83,17 @@ public class XHamsterGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String urlWithoutPageParameter = this.br.getURL();
+        // final String total_numberof_pics = this.br.getRegex("<h1 class=\"gr\">[^<>]+<small>\\[(\\d+) [^<>\"]+\\]</small>").getMatch(0);
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster\\.com</title>").getMatch(0);
         if (fpname == null) {
             fpname = br.getRegex("<title>(.*?)\\s*>\\s*").getMatch(0);
         }
+        if (fpname == null) {
+            /* Final fallback */
+            fpname = new Regex(parameter, "/(?:gallery|view)/(.+)(?:\\.html)?").getMatch(0);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpname.trim()));
         int pageIndex = 1;
         while (true) {
             if (this.isAbort()) {
@@ -110,16 +118,13 @@ public class XHamsterGallery extends PluginForDecrypt {
                 }
             }
             for (final String[] thumbNail : thumbNails) {
-                DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)(160|1000)\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
+                final DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)(160|1000)\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
                 dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                distribute(dl);
                 decryptedLinks.add(dl);
             }
             pageIndex++;
-        }
-        if (fpname != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpname.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

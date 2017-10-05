@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -15,12 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.io.IOException;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,20 +29,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wistia.com" }, urls = { "https?://(?:www\\.)?ksmedia\\-gmbh\\.wistia\\.com/medias/[A-Za-z0-9]+|https?://fast\\.wistia\\.net/embed/iframe/[a-z0-9]+" })
-public class WistiaCom extends PluginForHost {
-    public WistiaCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mamasijaya.me" }, urls = { "https?://(?:www\\.)?mamasijaya\\.me/\\d+/(?:[a-z0-9\\-]+/)?" })
+public class MamasijayaMe extends PluginForHost {
+    public MamasijayaMe(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags:
+    // Tags: Porn plugin
     // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -52,84 +51,78 @@ public class WistiaCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://wistia.com/terms";
+        return "https://mamasijaya.me/static/terms-and-conditions/";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
-        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(String.format("https://fast.wistia.com/embed/medias/%s.jsonp", fid));
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = this.br.getRegex("(\\{.+);").getMatch(0);
-        if (json == null) {
-            /* Hm possibly offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            filename = url_filename;
         }
-        if ("true".equals(PluginJSonUtils.getJsonValue(this.br, "error"))) {
-            /* Offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* RegExes sometimes used for streaming */
+        final String[] qualities = this.br.getRegex("<source src=\"http[^\"]+\" type=\"video/mp4\" [^<>]+res=\"\\d+\">").getColumn(-1);
+        int quality_max = 0;
+        int quality_temp = 0;
+        String quality_temp_str = null;
+        for (final String html : qualities) {
+            quality_temp_str = new Regex(html, "res=\"(\\d+)\"").getMatch(0);
+            quality_temp = Integer.parseInt(quality_temp_str);
+            if (quality_temp > quality_max) {
+                quality_max = quality_temp;
+                dllink = new Regex(html, "src=\"(http[^\"]+)").getMatch(0);
+            }
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-        entries = (LinkedHashMap<String, Object>) entries.get("media");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("assets");
-        String filename = (String) entries.get("name");
-        final String description = (String) entries.get("seoDescription");
         if (filename == null) {
-            filename = fid;
-        }
-        /* Find highest quality */
-        long sizemax = 0;
-        long sizetemp = 0;
-        String ext = null;
-        String dllink_temp = null;
-        for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
-            final String type = (String) entries.get("type");
-            if (type.contains("hls")) {
-                continue;
-            }
-            dllink_temp = (String) entries.get("url");
-            sizetemp = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-            if (sizetemp > sizemax && dllink_temp != null) {
-                ext = (String) entries.get("ext");
-                dllink = dllink_temp;
-                sizemax = sizetemp;
-            }
-        }
-        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String dllink_id = new Regex(dllink, "([A-Za-z0-9]+)\\.bin$").getMatch(0);
-        if (dllink_id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = "https://embedwistia-a.akamaihd.net/deliveries/" + dllink_id + "/file.mp4";
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (ext != null && ext.equalsIgnoreCase("m3u8")) {
-            ext = "mp4";
-        }
-        if (ext != null && !ext.startsWith(".")) {
-            ext = "." + ext;
-        } else if (ext == null) {
-            ext = getFileNameExtensionFromString(dllink, default_Extension);
+        String ext;
+        if (!StringUtils.isEmpty(dllink)) {
+            ext = getFileNameExtensionFromString(dllink, default_extension);
+            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                ext = default_extension;
+            }
+        } else {
+            ext = default_extension;
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (description != null && description.length() > 0 && link.getComment() == null) {
-            link.setComment(description);
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            link.setFinalFileName(filename);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("directlink", dllink);
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            /* We cannot be sure whether we have the correct extension or not! */
+            link.setName(filename);
         }
-        link.setDownloadSize(sizemax);
-        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -138,7 +131,7 @@ public class WistiaCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
