@@ -28,6 +28,15 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,15 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|archive/VideoArchiveStreaming|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
@@ -476,13 +476,15 @@ public class SaveTv extends PluginForHost {
         final String genre = (String) sourcemap.get("SCHAR");
         final String producecountry = (String) sourcemap.get("SCOUNTRY");
         final Object produceyear_o = sourcemap.get("SPRODUCTIONYEAR");
-        final String produceyear;
+        String produceyear = null;
         if (produceyear_o instanceof Double) {
             /* Yes - they acrtually return a YEAR as double value */
-            produceyear = Long.toString((long) ((Double) produceyear_o).doubleValue());
-        } else {
+            produceyear = Integer.toString((int) ((Double) produceyear_o).doubleValue());
+        } else if (produceyear_o instanceof Long) {
             /* In case they correct their horrible json we might as well get a long value --> Handle this too :) */
             produceyear = Long.toString(JavaScriptEngineFactory.toLong(produceyear_o, 0));
+        } else if (produceyear_o instanceof String) {
+            produceyear = (String) produceyear_o;
         }
         final int category = (int) JavaScriptEngineFactory.toLong(sourcemap.get("TVCATEGORYID"), -1);
         final String runtime_start = (String) sourcemap.get("DSTARTDATE");
@@ -506,7 +508,7 @@ public class SaveTv extends PluginForHost {
         }
         /* Add other information */
         if (!produceyear.equals("0")) {
-            dl.setProperty(PROPERTY_produceyear, correctData(dl.getHost(), produceyear));
+            dl.setProperty(PROPERTY_produceyear, produceyear);
         }
         if (genre != null) {
             dl.setProperty(PROPERTY_genre, correctData(dl.getHost(), genre));
@@ -567,6 +569,7 @@ public class SaveTv extends PluginForHost {
         /* General */
         final String genre = (String) JavaScriptEngineFactory.walkJson(entries, "tvSubCategory/name");
         final String country = (String) entries.get("country");
+        final String produceyear = Long.toString(JavaScriptEngineFactory.toLong(entries.get("year"), 0));
         final int category = (int) JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "tvCategory/id"), -1);
         final String tv_station = (String) JavaScriptEngineFactory.walkJson(entries, "tvStation/name");
         /* Set properties which are needed for filenames */
@@ -574,6 +577,9 @@ public class SaveTv extends PluginForHost {
         setFilenameInformationSeasonnumberEpisodenumberUniversal(dl, season_episode_information);
         if (episodename != null) {
             dl.setProperty(PROPERTY_episodename, correctData(dl.getHost(), episodename));
+        }
+        if (!produceyear.equals("0")) {
+            dl.setProperty(PROPERTY_produceyear, correctData(dl.getHost(), produceyear));
         }
         /* Add other information */
         if (genre != null) {
@@ -620,10 +626,9 @@ public class SaveTv extends PluginForHost {
             final String episodeInformation = episodeO instanceof String ? (String) episodeO : null;
             String episodenumber = null;
             String seasonnumber = null;
-            if (episodeInformation != null && new Regex(episodeInformation, "^S\\d+E\\d+$").matches()) {
-                final Regex seasonAndEpisode = new Regex(episodeInformation, "^S(\\d+)E(\\d+)$");
-                episodenumber = seasonAndEpisode.getMatch(0);
-                seasonnumber = seasonAndEpisode.getMatch(1);
+            if (episodeInformation != null && (new Regex(episodeInformation, "S\\d+").matches() || new Regex(episodeInformation, "E\\d+").matches())) {
+                episodenumber = new Regex(episodeInformation, "E(\\d+)").getMatch(0);
+                seasonnumber = new Regex(episodeInformation, "S(\\d+)").getMatch(0);
             } else if (episodeInformation != null && episodeInformation.matches("\\d+")) {
                 episodenumber = episodeInformation;
             }
@@ -1924,11 +1929,6 @@ public class SaveTv extends PluginForHost {
         final String tv_station = dl.getStringProperty(PROPERTY_plain_tv_station, customStringForEmptyTags);
         final long site_category = dl.getLongProperty(PROPERTY_plain_site_category, -1);
         final String site_category_str = site_category == -1 ? defaultCustomStringForEmptyTags : Long.toString(site_category);
-        /* For series */
-        final String episodename = dl.getStringProperty(PROPERTY_episodename, customStringForEmptyTags);
-        final int seasonnumber = getEpisodeNumber(dl);
-        final int episodenumber = getSeasonNumber(dl);
-        final String seasonAndEpisodenumber = getSeasonnumberAndEpisodenumber(seasonnumber, episodenumber);
         final long date = dl.getLongProperty(PROPERTY_originaldate, 0l);
         String formattedDate = null;
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
@@ -1971,6 +1971,10 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*videotitel*", site_title);
         } else {
             /* For series */
+            final String episodename = dl.getStringProperty(PROPERTY_episodename, customStringForEmptyTags);
+            final int seasonnumber = getSeasonNumber(dl);
+            final int episodenumber = getEpisodeNumber(dl);
+            final String seasonAndEpisodenumber = getSeasonnumberAndEpisodenumber(seasonnumber, episodenumber);
             formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES, defaultCustomSeriesFilename);
             if (formattedFilename == null || formattedFilename.equals("")) {
                 formattedFilename = defaultCustomFilenameMovies;
@@ -2431,7 +2435,7 @@ public class SaveTv extends PluginForHost {
         // JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell
         // welche gibt steht im Support Forum.")).setEnabled(defaultACTIVATE_BETA_FEATURES));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "<html><p>APIv3 verwenden?</p><p>INFO: Aktiviert man die API, sind einige Features wie folgt betroffen:</p>-ENTFÄLLT: Anzeigen des Account-Ablaufdatums in der Accountverwaltung</p></html>")).setDefaultValue(defaultUSEAPI);
+        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, "<html><p>APIv3 verwenden?</p></html>").setDefaultValue(defaultUSEAPI);
         getConfig().addEntry(api);
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY,
         // JDL.L("plugins.hoster.SaveTv.apikey", "Benutzerdefinierten API-Key eingeben:\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b>
@@ -2439,8 +2443,8 @@ public class SaveTv extends PluginForHost {
         // nutzbar!</p></html>")).setDefaultValue(defaultCONFIGURED_APIKEY).setEnabledCondidtion(api, true).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in bestimmten Situationen aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Gelöschte telecastIDs können nicht wiederhergestellt werden!</p></html>"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDAfterDownload));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, "Falls Datei bereits auf der Festplatte existiert, telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_TELECAST_ID_AFTER_DOWNLOAD, "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDAfterDownload));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, "Falls Datei bereits auf der Festplatte existiert, telecastIDs aus dem save.tv Archiv löschen?").setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_API_PARAMETERS_CRAWLER, "Crawler: eigene API Parameter definieren (alles außer 'limit,fields,nopagingheader,paging,offset') [urlEncoded]:\r\nBeispiel: 'tags=record:manual&fsk=6'\r\nWeitere Informationen siehe: api.save.tv/v3/docs/index#!/Records_|_get/Records_Get<html><p style=\"color:#F62817\"><b>Warnung:</b> Falsche Werte können den Crawler 'kaputtmachen' und andere Crawler-Einstellungen beeinflussen (ggf. Einstellungen zurücksetzen)!</p></html>").setDefaultValue(null).setEnabledCondidtion(api, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
