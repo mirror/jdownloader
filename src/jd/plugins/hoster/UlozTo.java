@@ -13,17 +13,13 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,6 +34,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,19 +43,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
-
     private boolean              passwordProtected            = false;
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
     private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
     private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
     private static final String  PREMIUMONLYUSERTEXT          = "Only downloadable for premium users!";
-
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
     private static final boolean use_login_api                = false;
-
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     /* don't touch the following! */
@@ -237,6 +235,9 @@ public class UlozTo extends PluginForHost {
                 return con.getRequest().getUrl();
             }
             br.followConnection();
+            if (StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+                throw new AccountRequiredException("Not enough premium traffic available");
+            }
             i++;
         }
         responseCodeOfflineCheck();
@@ -316,7 +317,6 @@ public class UlozTo extends PluginForHost {
                 if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-
                 String code = null, ts = null, sign = null, cid = null;
                 // Tries to read if property selected
                 if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
@@ -325,7 +325,6 @@ public class UlozTo extends PluginForHost {
                     sign = getPluginConfig().getStringProperty("cid");
                     cid = getPluginConfig().getStringProperty("sign");
                 }
-
                 // If property not selected or read failed (no data), asks to solve
                 if (code == null) {
                     code = getCaptchaCode(captchaUrl, downloadLink);
@@ -338,12 +337,10 @@ public class UlozTo extends PluginForHost {
                         getPluginConfig().setProperty(REPEAT_CAPTCHA, true);
                     }
                 }
-
                 // if something failed
                 if (code == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-
                 captchaForm.put("captcha_value", Encoding.urlEncode(code));
                 captchaForm.remove(null);
                 captchaForm.remove("freeDownload");
@@ -360,7 +357,6 @@ public class UlozTo extends PluginForHost {
                 captchaForm.put("salt", salt);
                 captchaForm.put("hash", hash);
                 br.submitForm(captchaForm);
-
                 // If captcha fails, throrotws exception
                 // If in automatic mode, clears saved data
                 if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while|Chyba při ověření uživatele, zkus to znovu)")) {
@@ -374,7 +370,6 @@ public class UlozTo extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-
                 dllink = PluginJSonUtils.getJsonValue(br, "url");
                 if (dllink == null) {
                     break;
@@ -414,7 +409,6 @@ public class UlozTo extends PluginForHost {
                     } catch (Throwable e) {
                     }
                 }
-
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -558,12 +552,19 @@ public class UlozTo extends PluginForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
+                if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
+                    throw new AccountRequiredException("Not enough premium traffic available");
+                }
+                try {
+                    br.followConnection();
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -689,7 +690,10 @@ public class UlozTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String trafficleft = br.getRegex("<em>[^<]+</em>\\s*?\\(([^<>\"\\']+)\\)\\s*?</span>").getMatch(0);
+        String trafficleft = br.getRegex("<em>[^<]+</em>\\s*?\\(([^<>\"\\']+)\\)\\s*?</span>").getMatch(0);
+        if (trafficleft == null) {
+            trafficleft = br.getRegex("\"fi fi-user\">\\s*</i>\\s*<em>.*?</em>\\s*\\((.*?)\\)\\s*<").getMatch(0);
+        }
         if (trafficleft != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
@@ -735,5 +739,4 @@ public class UlozTo extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), UlozTo.REPEAT_CAPTCHA, "Solve captcha by replaying previous (disable to solve manually)").setDefaultValue(true));
     }
-
 }
