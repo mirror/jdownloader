@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -38,6 +39,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
 
 import org.appwork.utils.formatter.TimeFormatter;
@@ -162,21 +164,23 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    // private String getApiTokenFromHtml(Browser br, final String url) throws IOException {
-    // final Browser brc;
-    // if (br == null) {
-    // brc = this.br;
-    // } else {
-    // brc = br.cloneBrowser();
-    // brc.setFollowRedirects(true);
-    // brc.getPage(url);
-    // }
-    // String apitoken = brc.getRegex("apiToken\\s*?:\\s*?\\'([a-f0-9]+)\\'").getMatch(0);
-    // if (apitoken == null) {
-    // apitoken = PluginJSonUtils.getJsonNested(brc, "apiToken");
-    // }
-    // return apitoken;
-    // }
+    private String[] getApiTokenFromHtml(Browser br, final String url) throws IOException {
+        final Browser brc;
+        if (br == null) {
+            brc = this.br;
+        } else {
+            brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            brc.getPage(url);
+        }
+        String apitoken = brc.getRegex("(?:window\\.zdfsite\\s*=)?.*?apiToken\\s*?:\\s*?\\'([a-f0-9]+)\\'").getMatch(0);
+        if (apitoken == null) {
+            apitoken = PluginJSonUtils.getJsonNested(brc, "apiToken");
+        }
+        String apitoken2 = brc.getRegex("\"apiToken\"\\s*?:\\s*?\"([a-f0-9]+)\"").getMatch(0);
+        return new String[] { apitoken, apitoken2 };
+    }
+
     @SuppressWarnings({ "unchecked" })
     private void getDownloadLinksZdfNew() throws Exception {
         List<String> all_selected_qualities = new ArrayList<String>();
@@ -274,14 +278,15 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
-        final String apitoken = "d2726b6c8c655e42b68b0db26131b15b22bd1a32";// getApiTokenFromHtml();
+        final String apitoken[] = getApiTokenFromHtml(br, PARAMETER_ORIGINAL);
         /* 2016-12-21: By hardcoding the apitoken we can save one http request thus have a faster crawl process :) */
-        this.br.getHeaders().put("Api-Auth", "Bearer " + apitoken);
+        this.br.getHeaders().put("Api-Auth", "Bearer " + apitoken[0]);
         this.br.getPage(API_BASE + "/content/documents/" + sophoraID + ".json?profile=player");
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
+        this.br.getHeaders().put("Api-Auth", "Bearer " + apitoken[1]);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
         LinkedHashMap<String, Object> entries_2 = null;
         final String contentType = (String) entries.get("contentType");
