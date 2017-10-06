@@ -84,7 +84,8 @@ public class XHamsterGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String urlWithoutPageParameter = this.br.getURL();
-        // final String total_numberof_pics = this.br.getRegex("<h1 class=\"gr\">[^<>]+<small>\\[(\\d+) [^<>\"]+\\]</small>").getMatch(0);
+        final String total_numberof_picsStr = this.br.getRegex("<h1 class=\"gr\">[^<>]+<small>\\[(\\d+) [^<>\"]+\\]</small>").getMatch(0);
+        final int total_numberof_picsInt = total_numberof_picsStr != null ? Integer.parseInt(total_numberof_picsStr) : -1;
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster\\.com</title>").getMatch(0);
         if (fpname == null) {
             fpname = br.getRegex("<title>(.*?)\\s*>\\s*").getMatch(0);
@@ -114,16 +115,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
             final String[][] thumbNails = new Regex(allLinks, "(\"|')(https?://(?:ept|upt|ep\\d+)\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_(?:160|1000)\\.(je?pg|gif|png))\\1").getMatches();
             if (thumbNails == null || thumbNails.length == 0) {
-                if (pageIndex == 0) {
-                    logger.warning("Decrypter failed on page " + pageIndex);
-                    if (decryptedLinks.size() > 0) {
-                        return decryptedLinks;
-                    } else {
-                        return null;
-                    }
-                } else {
-                    break;
-                }
+                break;
             }
             for (final String[] thumbNail : thumbNails) {
                 final DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)(160|1000)\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
@@ -133,6 +125,9 @@ public class XHamsterGallery extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
             pageIndex++;
+        }
+        if (total_numberof_picsInt != -1 && decryptedLinks.size() < total_numberof_picsInt) {
+            logger.warning("Seems like not all images have been found");
         }
         return decryptedLinks;
     }
