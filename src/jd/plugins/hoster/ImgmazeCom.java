@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.SortedMap;
@@ -23,6 +24,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,12 +52,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com" }, urls = { "https?://(www\\.)?imgmaze\\.(com|co)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com", "imgtown.net", "imgoutlet.co", "imgrock.co", "imgdew.com", "imgview.net" }, urls = { "https?://(?:www\\.)?imgmaze\\.(?:com|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgtown\\.(?:net|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgoutlet\\.com?/[a-z0-9]{12}", "https?://(?:www\\.)?imgrock\\.(?:net|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgdew\\.com/[a-z0-9]{12}", "https?://(?:www\\.)?imgview\\.(?:net|co|pw)/[a-z0-9]{12}" })
 public class ImgmazeCom extends PluginForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -62,6 +63,7 @@ public class ImgmazeCom extends PluginForHost {
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
+    /* 2017-10-06: Special case: We do not have to update this string */
     private static final String            DOMAINS                         = "(imgmaze\\.(com|co))";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
@@ -133,12 +135,7 @@ public class ImgmazeCom extends PluginForHost {
         } else {
             protocol = "http://";
         }
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
-        if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
-            /* Make sure user gets the kind of content urls that he added to JD. */
-            link.setContentUrl(url_embed);
-        }
+        final String corrected_downloadurl = protocol + Browser.getHost(link.getDownloadURL()) + "/" + fuid;
         link.setUrlDownload(corrected_downloadurl);
     }
 
@@ -163,6 +160,9 @@ public class ImgmazeCom extends PluginForHost {
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
+        if (handleFirstRequest(this.br)) {
+            correctBR(this.br);
+        }
         final String jsredirect = new Regex(correctedBR, "<script type=\"text/javascript\">window\\.location\\s*?= \\s*?\"(http[^<>\"]+)\"").getMatch(0);
         if (jsredirect != null) {
             getPage(jsredirect);
@@ -335,7 +335,7 @@ public class ImgmazeCom extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            postPage(br, "//" + br.getHost() + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
             filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
@@ -418,11 +418,8 @@ public class ImgmazeCom extends PluginForHost {
             checkErrors(downloadLink, false);
             Form imghost_next_form = null;
             do {
-                imghost_next_form = this.br.getFormbyKey("next");
+                imghost_next_form = jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, this.fuid, imghost_next_form);
                 if (imghost_next_form != null) {
-                    imghost_next_form.remove("method_premium");
-                    /* end of backward compatibility */
-                    imghost_next_form = fixImghost_next_form(this.br, imghost_next_form);
                     submitForm(imghost_next_form);
                     checkErrors(downloadLink, false);
                     dllink = getDllink();
@@ -431,12 +428,8 @@ public class ImgmazeCom extends PluginForHost {
                     if (image_filename != null) {
                         downloadLink.setName(Encoding.htmlDecode(image_filename));
                     }
-                } else {
-                    final String specialvalue = new Regex(correctedBR, "name=\"([a-z0-9]+)\" value=\"1\">").getMatch(0);
-                    if (specialvalue != null) {
-                        this.postPage(this.br.getURL(), "op=view&id=" + this.fuid + "&pre=1&" + specialvalue + "=1&next=Continue+to+Image...");
-                    }
                 }
+                break;
             } while (imghost_next_form != null);
         }
         /* 7, continue like normal */
@@ -615,18 +608,29 @@ public class ImgmazeCom extends PluginForHost {
         }
     }
 
-    public static Form fixImghost_next_form(final Browser br, Form imghost_next_form) {
-        final InputField idfield = imghost_next_form.getInputFieldByName("id");
-        final String fuid = idfield != null ? idfield.getValue() : null;
-        if (fuid != null) {
-            /* 2017-07-25: Form contains bullshit --> Clear that */
+    public static boolean handleFirstRequest(final Browser br) throws IOException {
+        final String jsredirect = br.getRegex(">window\\.location\\s*?=\\s*?\"(http[^<>\"]+)\"").getMatch(0);
+        if (jsredirect != null) {
+            br.getPage(jsredirect);
+            return true;
+        }
+        return false;
+    }
+
+    public static Form fixImghost_next_form(final Browser br, String fuid, Form imghost_next_form) {
+        final InputField idfield = imghost_next_form != null ? imghost_next_form.getInputFieldByName("id") : null;
+        if (fuid == null && idfield != null) {
+            fuid = idfield.getValue();
+        }
+        if (fuid != null || imghost_next_form == null) {
+            /* 2017-07-25: Form may contain bullshit or is missing completely --> Clear that */
             imghost_next_form = new Form();
             imghost_next_form.setMethod(MethodType.POST);
             imghost_next_form.setAction("");
             imghost_next_form.put("id", fuid);
             imghost_next_form.put("op", "view");
             imghost_next_form.put("pre", "1");
-            imghost_next_form.put("next", "Continue+to+Image...");
+            // imghost_next_form.put("next", "Continue+to+Image...");
         }
         final String[] values = br.getRegex("name=\"([a-f0-9]+)\" value=\"1\"").getColumn(0);
         /* 2017-07-25 */
@@ -651,6 +655,8 @@ public class ImgmazeCom extends PluginForHost {
             /* 2017-01-06 */
             special_key = br.getRegex("name=\"([a-f0-9]{32})\" value=\"1\"").getMatch(0);
         }
+        /* 2017-10-06 */
+        special_key = br.getRegex("\\([^\\)]+.([a-f0-9]{32})'\\+''\\)\\[[^\\]]+\\]").getMatch(0);
         // if (values.length > 1) {
         // /* 2017-05-23 */
         // special_key = values[values.length - 2];
@@ -770,7 +776,6 @@ public class ImgmazeCom extends PluginForHost {
     }
 
     /** Function to find the final downloadlink. */
-    @SuppressWarnings("unused")
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
