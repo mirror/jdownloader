@@ -20,12 +20,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +39,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streaminporn.xyz" }, urls = { "https?://(?:www\\.)?streaminporn\\.xyz/(?:plugins/mediaplayer/site/_embed\\.php\\?u=)?[A-Za-z0-9]+" })
 public class StreaminpornXyz extends antiDDoSForHost {
@@ -142,7 +142,7 @@ public class StreaminpornXyz extends antiDDoSForHost {
                 }
             } else {
                 getPage(link.getDownloadURL());
-                if (br.getHttpConnection().getResponseCode() == 404) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error.html?e=")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
