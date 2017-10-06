@@ -2,6 +2,7 @@ package org.jdownloader.api.device;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.security.KeyPair;
 import java.util.ArrayList;
@@ -93,9 +94,17 @@ public class DeviceAPIImpl implements DeviceAPI {
                 ret.setRebindProtectionDetected(true);
             }
             for (final InetAddress localIP : localIPs) {
+                if (localIP.isLinkLocalAddress()) {
+                    continue;
+                }
                 final DirectConnectionInfo info = new DirectConnectionInfo();
                 info.setPort(directServer.getLocalPort());
-                info.setIp(localIP.getHostAddress());
+                if (localIP instanceof Inet6Address) {
+                    info.setIp("[" + localIP.getHostAddress().replaceFirst("%.+", "") + "]");
+                    continue;// TODO: remove until webinterface is fixed
+                } else {
+                    info.setIp(localIP.getHostAddress());
+                }
                 infos.add(info);
             }
         }
