@@ -46,6 +46,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final String replace_string = new Regex(parameter, "(https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/)").getMatch(0);
         parameter = parameter.replace(replace_string, "https://xhamster.com/");
         br.addAllowedResponseCodes(410);
+        br.addAllowedResponseCodes(452);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Login if possible
         getUserLogin(false);
@@ -102,6 +103,9 @@ public class XHamsterGallery extends PluginForDecrypt {
             }
             if (pageIndex > 1) {
                 br.getPage(urlWithoutPageParameter + "/" + pageIndex);
+                if (br.getRequest().getHttpConnection().getResponseCode() == 452) {
+                    break;
+                }
             }
             String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
@@ -112,7 +116,11 @@ public class XHamsterGallery extends PluginForDecrypt {
             if (thumbNails == null || thumbNails.length == 0) {
                 if (pageIndex == 0) {
                     logger.warning("Decrypter failed on page " + pageIndex);
-                    return null;
+                    if (decryptedLinks.size() > 0) {
+                        return decryptedLinks;
+                    } else {
+                        return null;
+                    }
                 } else {
                     break;
                 }
