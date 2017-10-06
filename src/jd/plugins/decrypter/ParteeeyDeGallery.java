@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -34,7 +33,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/(?:uploads/)?[A-Za-z0-9\\-_]*?\\d+$" })
 public class ParteeeyDeGallery extends PluginForDecrypt {
-
     public ParteeeyDeGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,8 +40,8 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String gal_ID = new Regex(param.toString(), "(\\d+)$").getMatch(0);
-        if (gal_ID == null) {
+        final String galleryID = new Regex(param.toString(), "(\\d+)$").getMatch(0);
+        if (galleryID == null) {
             final DownloadLink offline = this.createOfflinelink(param.toString());
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -52,14 +50,12 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         if (aa == null) {
             return decryptedLinks;
         }
-
         try {
-            jd.plugins.hoster.ParteeeyDe.login(this.br, aa, false);
+            jd.plugins.hoster.ParteeeyDe.login(this.br, aa);
         } catch (final Throwable e) {
             logger.info("Login failure");
             return decryptedLinks;
         }
-
         /* Show 1000 links per page --> Usually we'll only get one page no matter how big a gallery is. */
         final String parameter = param.toString() + "?oF=f.date&oD=asc&eP=1000";
         br.getPage(parameter);
@@ -74,6 +70,8 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
             /* Packagename fallback */
             fpName = url_name;
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         int page_int_max = 1;
         final String[] pages = br.getRegex("\\?p=(\\d+)\">\\d+").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -84,7 +82,6 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 }
             }
         }
-
         int counter = 1;
         final DecimalFormat df = new DecimalFormat("0000");
         for (int i = 1; i <= page_int_max; i++) {
@@ -92,7 +89,6 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 logger.info("User aborted decryption for link: " + parameter);
                 return decryptedLinks;
             }
-
             logger.info("Decrypting page " + i + " / " + page_int_max);
             if (i > 1) {
                 br.getPage(parameter + "&p=" + i);
@@ -135,21 +131,17 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 dl.setProperty("thumburl", url_thumb);
                 dl.setContentUrl(contenturl);
                 dl.setAvailable(true);
+                dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
+                this.distribute(dl);
                 counter++;
             }
         }
-
         if (decryptedLinks.size() == 0) {
-            /* WTF */
+            /* WTF, empty galleries should NOT exist! */
+            logger.warning("Gallery empty or fatal crawler failure");
             return null;
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
