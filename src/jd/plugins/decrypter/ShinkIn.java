@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -25,9 +28,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * NOTE: <br />
@@ -42,6 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(www\\.)?shink\\.(in|me)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
 public class ShinkIn extends antiDDoSForDecrypt {
+
     private static Object CTRLLOCK = new Object();
 
     public ShinkIn(PluginWrapper wrapper) {
@@ -50,7 +51,7 @@ public class ShinkIn extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace(".in/", ".me");
+        final String parameter = param.toString().replace(".in/", ".me/");
         br.setFollowRedirects(true);
         Form dform = null;
         // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
