@@ -418,7 +418,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     processIncapsula(lockObject, ibr, cookies);
                 }
                 // Sucuri
-                else if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
+                else if (containsSucuri(ibr)) {
                     processSucuri(ibr, cookies);
                 }
                 // BlazingFast
@@ -1093,6 +1093,17 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         return false;
     }
 
+    private boolean containsSucuri(Browser ibr) {
+        // newest 201710
+        if (requestHeadersHasKeyNValueRegex(ibr, "X-Sucuri-ID", "^\\d+$")) {
+            return true;
+        }
+        if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
+            return true;
+        }
+        return false;
+    }
+
     protected boolean containsBlazingFast(final Browser ibr) {
         final boolean result = ibr.containsHTML("<title>Just a moment please\\.\\.\\.</title>") && ibr.containsHTML(">Verifying your browser, please wait\\.\\.\\.<br>DDoS Protection by</font> Blazingfast\\.io<");
         return result;
@@ -1144,6 +1155,21 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             return false;
         }
         if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @author raztoki
+     */
+    private boolean requestHeadersHasKeyNValueRegex(final Browser ibr, final String k, final String v) {
+        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
+            return false;
+        }
+        final String value = ibr.getHttpConnection().getHeaderField(k);
+        if (value != null && new Regex(value, v).matches()) {
             return true;
         }
         return false;

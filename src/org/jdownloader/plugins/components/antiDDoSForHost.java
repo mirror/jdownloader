@@ -1,5 +1,13 @@
 package org.jdownloader.plugins.components;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,12 +27,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -415,7 +417,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     processIncapsula(lockObject, ibr, cookies);
                 }
                 // Sucuri
-                else if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
+                else if (containsSucuri(ibr)) {
                     processSucuri(ibr, cookies);
                 }
                 // BlazingFast
@@ -1094,6 +1096,17 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return false;
     }
 
+    private boolean containsSucuri(Browser ibr) {
+        // newest 201710
+        if (requestHeadersHasKeyNValueRegex(ibr, "X-Sucuri-ID", "^\\d+$")) {
+            return true;
+        }
+        if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
+            return true;
+        }
+        return false;
+    }
+
     protected boolean containsBlazingFast(final Browser ibr) {
         final boolean result = ibr.containsHTML("<title>Just a moment please\\.\\.\\.</title>") && ibr.containsHTML(">Verifying your browser, please wait\\.\\.\\.<br>DDoS Protection by</font> Blazingfast\\.io<");
         return result;
@@ -1145,6 +1158,21 @@ public abstract class antiDDoSForHost extends PluginForHost {
             return false;
         }
         if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @author raztoki
+     */
+    private boolean requestHeadersHasKeyNValueRegex(final Browser ibr, final String k, final String v) {
+        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
+            return false;
+        }
+        final String value = ibr.getHttpConnection().getHeaderField(k);
+        if (value != null && new Regex(value, v).matches()) {
             return true;
         }
         return false;
