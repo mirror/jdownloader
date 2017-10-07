@@ -145,7 +145,7 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
-        final String[] qual = { "pic_o", "pic_b", "bip" };
+        final String[] qual = { /* original */ "pic_o", "ori", /* big */ "pic_b", "bip" };
         boolean done = false;
         String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
         Object result = null;
