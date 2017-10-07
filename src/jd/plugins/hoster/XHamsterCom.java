@@ -15,9 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -52,9 +49,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
-
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
         // Actually only free accounts are supported
@@ -284,7 +283,7 @@ public class XHamsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
+            } else if (br.getRequest().getHttpConnection().getResponseCode() == (410 | 452)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // embeded correction --> Usually not needed
@@ -589,7 +588,7 @@ public class XHamsterCom extends PluginForHost {
 
     private void prepBr() {
         br.setCookie(MAINPAGE, "lang", "en");
-        br.setAllowedResponseCodes(new int[] { 410, 423 });
+        br.setAllowedResponseCodes(new int[] { 410, 423, 452 });
     }
 
     @Override
