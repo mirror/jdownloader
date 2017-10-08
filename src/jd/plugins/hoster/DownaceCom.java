@@ -13,21 +13,24 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -41,17 +44,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downace.com" }, urls = { "https?://(?:www\\.)?downace\\.com/[A-Za-z0-9]+" })
-public class DownaceCom extends PluginForHost {
+public class DownaceCom extends antiDDoSForHost {
+
     public DownaceCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -66,48 +63,57 @@ public class DownaceCom extends PluginForHost {
      * captchatype: null<br />
      * other:<br />
      */
+
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://downace.com";
-    private final String                   domains                                      = "(downace\\.com)";
-    private final String                   type                                         = "html";
-    private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
-    private static final int               additional_WAIT_SECONDS                      = 3;
-    private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = true;
-    private static final boolean           supportshttps_FORCED                         = true;
+    private final String         mainpage                                     = "http://downace.com";
+    private final String         domains                                      = "(downace\\.com)";
+    private final String         type                                         = "html";
+    private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
+    private static final int     additional_WAIT_SECONDS                      = 3;
+    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
+    private static final boolean supportshttps                                = true;
+    private static final boolean supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
-    private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
-    private static final boolean           useOldLoginMethod                            = false;
-    private static final boolean           enable_RANDOM_UA                             = false;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
-    private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
-    private static final String            url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
-    private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
+    private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
+    private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
     /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
     /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String            url_ERROR_PREMIUMONLY                        = "e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to";
+    private static final String  url_ERROR_PREMIUMONLY                        = "e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to";
     /* Texts for the known errors */
-    private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
-    private static final String            errortext_ERROR_SERVER                       = "Server error";
-    private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
-    private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
+    private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
+    private static final String  errortext_ERROR_SERVER                       = "Server error";
+    private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
+    private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
+
     /* Connection stuff */
-    private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = -8;
-    private static final int               free_MAXDOWNLOADS                            = 20;
-    private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = -8;
-    private static final int               account_FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = -8;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
-    private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
-    private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
+    private static final boolean free_RESUME                                  = true;
+    private static final int     free_MAXCHUNKS                               = -8;
+    private static final int     free_MAXDOWNLOADS                            = 20;
+    private static final boolean account_FREE_RESUME                          = true;
+    private static final int     account_FREE_MAXCHUNKS                       = -8;
+    private static final int     account_FREE_MAXDOWNLOADS                    = 20;
+    private static final boolean account_PREMIUM_RESUME                       = true;
+    private static final int     account_PREMIUM_MAXCHUNKS                    = -8;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.addAllowedResponseCodes(416);
+        }
+        return prepBr;
+    }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -121,24 +127,23 @@ public class DownaceCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(this.br);
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
+            final String[] tableData = br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            filename = this.br.getRegex("(?:>|\")(?:Information\\s*about|Informacion)\\s*([^<>\"]*?)(?:<|\")").getMatch(0);
+            filename = br.getRegex("(?:>|\")(?:Information\\s*about|Informacion)\\s*([^<>\"]*?)(?:<|\")").getMatch(0);
             if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                filename = br.getRegex("(?:Filename|Dateiname|اسم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             }
             filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
             try {
@@ -156,7 +161,7 @@ public class DownaceCom extends PluginForHost {
                 filename = fid;
             }
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -165,12 +170,12 @@ public class DownaceCom extends PluginForHost {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_SERVER);
                 return AvailableStatus.TRUE;
-            } else if (this.br.getURL().matches(url_ERROR_PREMIUMONLY)) {
+            } else if (br.getURL().matches(url_ERROR_PREMIUMONLY)) {
                 link.getLinkStatus().setStatusText(errortext_ERROR_PREMIUMONLY);
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
@@ -211,10 +216,10 @@ public class DownaceCom extends PluginForHost {
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
                 sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             handleErrors();
             /* Passwords are usually before waittime. */
@@ -224,7 +229,7 @@ public class DownaceCom extends PluginForHost {
                 logger.info("Handling pre-download page #" + i);
                 timeBeforeCaptchaInput = System.currentTimeMillis();
                 continue_link = getContinueLink();
-                final Form dlform = this.br.getFormbyKey("pt");
+                final Form dlform = br.getFormbyKey("pt");
                 if (i == 1 && continue_link == null && dlform == null) {
                     logger.info("No continue_link available, plugin broken");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -240,25 +245,25 @@ public class DownaceCom extends PluginForHost {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
                     /* dlform will usually redirect to final downloadlink */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlform, resume, maxchunks);
                 } else if (isDownloadlink(continue_link)) {
                     /*
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
-                } else if (br.containsHTML("data\\-sitekey=")) {
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
+                } else if (br.containsHTML("data-sitekey=")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
-                    final Recaptcha rc = new Recaptcha(this.br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -266,13 +271,13 @@ public class DownaceCom extends PluginForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                    if (br.containsHTML("api-secure\\.solvemedia\\.com/")) {
                         sm.setSecure(true);
                     }
                     File cf = null;
@@ -289,13 +294,13 @@ public class DownaceCom extends PluginForHost {
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -325,15 +330,15 @@ public class DownaceCom extends PluginForHost {
     }
 
     private String getContinueLink() {
-        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        String continue_link = br.getRegex("\\$\\('\\.download-timer'\\)\\.html\\(\"<a href='(https?://[^<>\"]*?)'").getMatch(0);
         if (continue_link == null) {
-            continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
+            continue_link = br.getRegex("class='btn btn-free' href='(https?://[^<>\"]*?)'>").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            continue_link = br.getRegex("(\"|')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)\\1").getMatch(1);
         }
         if (continue_link == null) {
             continue_link = getDllink();
@@ -350,7 +355,7 @@ public class DownaceCom extends PluginForHost {
         return isdownloadlink;
     }
 
-    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
             String passCode = dl.getStringProperty("pass", null);
@@ -363,7 +368,7 @@ public class DownaceCom extends PluginForHost {
                 }
                 dl.setProperty("pass", passCode);
             }
-            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
                 dl.setProperty("pass", Property.NULL);
@@ -378,7 +383,7 @@ public class DownaceCom extends PluginForHost {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
-        final String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        final String ttt = br.getRegex("\\$\\('\\.download-timer-seconds'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (ttt != null) {
             wait = Integer.parseInt(ttt) + additional_WAIT_SECONDS;
         }
@@ -408,7 +413,7 @@ public class DownaceCom extends PluginForHost {
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
         }
-        checkResponseCodeErrors(this.br.getHttpConnection());
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -431,11 +436,11 @@ public class DownaceCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            final Browser br2 = this.br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br.createHeadRequest(dllink));
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -458,24 +463,8 @@ public class DownaceCom extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private String getProtocol() {
-        if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
+        if ((br.getURL() != null && br.getURL().contains("https://")) || supportshttps_FORCED) {
             return "https://";
         } else {
             return "http://";
@@ -487,17 +476,6 @@ public class DownaceCom extends PluginForHost {
         return free_MAXDOWNLOADS;
     }
 
-    private Browser prepBrowser(final Browser br) {
-        br.setAllowedResponseCodes(new int[] { 416, 429 });
-        if (enable_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
-        return br;
-    }
-
     private static final Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
@@ -506,7 +484,6 @@ public class DownaceCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -519,16 +496,16 @@ public class DownaceCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(mainpage, key, value);
+                            br.setCookie(mainpage, key, value);
                         }
                         return;
                     }
                 }
-                br.getPage(this.getProtocol() + this.getHost() + "/");
+                getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -537,11 +514,11 @@ public class DownaceCom extends PluginForHost {
                         }
                     }
                 } else {
-                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
                     final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -550,16 +527,10 @@ public class DownaceCom extends PluginForHost {
                         }
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mainpage);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
+                getPage(loginstart + this.getHost() + "/account_home." + type);
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(mainpage));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -571,23 +542,19 @@ public class DownaceCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        MAXPREM.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+        if (!br.containsHTML("class=\"badge badge-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -605,14 +572,10 @@ public class DownaceCom extends PluginForHost {
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                MAXPREM.set(account_FREE_MAXDOWNLOADS);
-                ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
             }
         }
         account.setValid(true);
@@ -627,12 +590,12 @@ public class DownaceCom extends PluginForHost {
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             if (!available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
             String dllink = link.getDownloadURL();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             checkResponseCodeErrors(dl.getConnection());
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
@@ -645,7 +608,7 @@ public class DownaceCom extends PluginForHost {
                     handleErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
                 checkResponseCodeErrors(dl.getConnection());
             }
             if (!dl.getConnection().isContentDisposition()) {
@@ -656,12 +619,6 @@ public class DownaceCom extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return MAXPREM.get();
     }
 
     @Override
@@ -676,4 +633,5 @@ public class DownaceCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
+
 }
