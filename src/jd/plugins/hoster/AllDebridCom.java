@@ -87,7 +87,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 token = PluginJSonUtils.getJson(br, "token");
                 account.setProperty("token", token);
                 final String premiumUntil = PluginJSonUtils.getJson(br, "premiumUntil");
-                ac.setValidUntil(Long.parseLong(premiumUntil));
+                ac.setValidUntil(Long.parseLong(premiumUntil) * 1000l);
             }
         }
         {
