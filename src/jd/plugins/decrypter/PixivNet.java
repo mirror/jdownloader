@@ -79,6 +79,9 @@ public class PixivNet extends PluginForDecrypt {
                     links = br.getRegex("data-src=\"(http[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
                 }
                 if (links.length == 0) {
+                    links = br.getRegex("pixiv\\.context\\.ugokuIllustFullscreenData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
+                }
+                if (links.length == 0) {
                     links = br.getRegex("pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
                 }
                 if (links.length == 0 && isAdultImageLoginRequired() && !loggedIn) {
