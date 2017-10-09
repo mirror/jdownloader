@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -31,8 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 // DEV NOTES: no error handling should work for any language default. no results = no link! clean and efficient
 /**
  *
@@ -41,6 +41,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadid.net", "shortenurl.pw", "888.xirkle.com", "gempixel.com", "susutin.com", "short.awsubs.co" }, urls = { "https?://(?:www\\.)?uploadid\\.net/[a-zA-Z0-9]+", "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+", "https?://(?:www\\.)?susutin\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?short\\.awsubs\\.co/[a-zA-Z0-9]+" })
 public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
+
     public GemPixelPremiumURLShortener(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,11 +76,21 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
                 }
             }
         }
-        // link can also be found within javascript window.location
-        final String link = br.getRegex("window\\.location\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
-        if (!inValidate(link)) {
-            decryptedLinks.add(createDownloadlink(link));
-            return decryptedLinks;
+        {
+            // link can also be found within javascript, other
+            final String link = br.getRegex("<script.*?,(s[a-f0-9]{32})=\"(.*?)\",.*?\\.attr\\(\"href\",\\1.*?</script>").getMatch(1);
+            if (!inValidate(link)) {
+                decryptedLinks.add(createDownloadlink(link));
+                return decryptedLinks;
+            }
+        }
+        {
+            // link can also be found within javascript window.location
+            final String link = br.getRegex("window\\.location\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+            if (!inValidate(link)) {
+                decryptedLinks.add(createDownloadlink(link));
+                return decryptedLinks;
+            }
         }
         // link can be one or they can be a may response!
         String[] hrefs = br.getRegex("<a [^>]*>.*?<\\s*/a\\s*>").getColumn(-1);
@@ -102,11 +113,6 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
                     }
                 }
             }
-        }
-        // TODO: check/fix for multiple links
-        final String hidden = br.getRegex("[a-z0-9]{30,}\\s*=\\s*(\"|')(https?://.*?)\\1").getMatch(1);
-        if (hidden != null) {
-            decryptedLinks.add(createDownloadlink(hidden));
         }
         return decryptedLinks;
     }
