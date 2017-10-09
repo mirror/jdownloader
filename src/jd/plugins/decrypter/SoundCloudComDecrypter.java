@@ -703,13 +703,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final String base = url + "?client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br);
             br.getPage(base);
             final List<Map<String, Object>> collection = parseCollection();
-            if (collection == null || collection.size() != maxPerCall) {
+            if (collection == null || collection.size() == 0) {
                 break;
             }
             this.data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             next_href = (String) this.data.get("next_href");
             offset = new Regex(next_href, "offset=([^&]+)").getMatch(0);
-        } while (next_href != null);
+        } while (next_href != null && offset != null);
     }
 
     private boolean isList() throws DecrypterException {

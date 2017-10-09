@@ -13,13 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,8 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-// DEV NOTES: no error handling should work for any language default. no results = no link! clean and efficient
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+// DEV NOTES: no error handling should work for any language default. no results = no link! clean and efficient
 /**
  *
  * @author raztoki
@@ -43,7 +41,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadid.net", "shortenurl.pw", "888.xirkle.com", "gempixel.com", "susutin.com", "short.awsubs.co" }, urls = { "https?://(?:www\\.)?uploadid\\.net/[a-zA-Z0-9]+", "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+", "https?://(?:www\\.)?susutin\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?short\\.awsubs\\.co/[a-zA-Z0-9]+" })
 public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
-
     public GemPixelPremiumURLShortener(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -97,7 +94,7 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
                         }
                         return decryptedLinks;
                     } else {
-                        final String lnk = new Regex(href, "href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        final String lnk = new Regex(href, "[a-z0-9]+\\s*=\\s*(\"|')(https?://.*?)\\1").getMatch(1);
                         if (lnk != null) {
                             decryptedLinks.add(createDownloadlink(lnk));
                         }
@@ -105,6 +102,11 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
                     }
                 }
             }
+        }
+        // TODO: check/fix for multiple links
+        final String hidden = br.getRegex("[a-z0-9]{30,}\\s*=\\s*(\"|')(https?://.*?)\\1").getMatch(1);
+        if (hidden != null) {
+            decryptedLinks.add(createDownloadlink(hidden));
         }
         return decryptedLinks;
     }
@@ -136,5 +138,4 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
         }
         return super.siteSupportedPath();
     }
-
 }

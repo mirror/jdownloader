@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,17 +27,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camvideos.org" }, urls = { "https?://(?:www\\.)?camvideos\\.org/embed/\\d+" })
 public class CamvideosOrg extends PluginForHost {
-
     public CamvideosOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -69,7 +68,10 @@ public class CamvideosOrg extends PluginForHost {
         }
         final String videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         this.dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
-        String filename = videoid;
+        String filename = br.getRegex("<title>\\s*(.*?)\\s*(/\\s*Embed Player)?\\s*</title>").getMatch(0);
+        if (filename == null) {
+            filename = videoid;
+        }
         final String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
