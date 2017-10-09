@@ -358,7 +358,12 @@ public class DeviantArtCom extends PluginForHost {
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        boolean resume = true;
+        if (HTMLALLOWED) {
+            downloadLink.setVerifiedFileSize(-1);
+            resume = false;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors(downloadLink);
             br.followConnection();
@@ -386,7 +391,12 @@ public class DeviantArtCom extends PluginForHost {
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
         /* Disable chunks as we only download pictures */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        boolean resume = true;
+        if (HTMLALLOWED) {
+            downloadLink.setVerifiedFileSize(-1);
+            resume = false;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors(downloadLink);
             br.followConnection();
