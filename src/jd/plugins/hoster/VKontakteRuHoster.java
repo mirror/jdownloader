@@ -15,6 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
@@ -54,19 +61,14 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
+
     private static final String DOMAIN                                          = "vk.com";
     private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                  = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
-    private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)";
+    private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)";
     private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                                       = 1;
@@ -456,7 +458,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (dl == null) {
             // most if not all components already opened connection via either linkOk or photolinkOk
             br.getHeaders().put("Accept-Encoding", "identity");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalUrl, true, MAXCHUNKS);
         }
         handleServerErrors(downloadLink);
         dl.startDownload();
@@ -582,7 +584,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getHeaders().put("Referer", "https://" + DOMAIN + "/al_photos.php");
     }
 
-    public static void accessVideo(final Browser br, final String oid, final String id, final String listID, final boolean useApi) throws IOException {
+    public static void accessVideo(final Browser br, final String oid, final String id, final String listID, final boolean useApi) throws Exception {
         final String videoids_together = oid + "_" + id;
         if (listID == null && useApi) {
             /*
@@ -723,7 +725,7 @@ public class VKontakteRuHoster extends PluginForHost {
         boolean closeConnection = true;
         try {
             if (isDownload) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
                 con = dl.getConnection();
             } else {
                 con = br2.openGetConnection(finalUrl);
@@ -793,7 +795,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
             // request range fucked
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
