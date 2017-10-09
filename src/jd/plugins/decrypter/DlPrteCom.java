@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -27,18 +29,17 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(protect-lien|dl-protecte)\\.(?:com|org)/\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com)/\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
+
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protecte.com", "dl-protecte.org" };
+        return new String[] { "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {
