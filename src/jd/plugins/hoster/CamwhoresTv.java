@@ -37,6 +37,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores\\.tv/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
     public CamwhoresTv(PluginWrapper wrapper) {
@@ -297,20 +299,24 @@ public class CamwhoresTv extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     if (test) {
                         br.getPage("http://www." + this.getHost() + "/");
-                        if (br.getCookie(this.getHost(), "kt_member") != null) {
+                        final String kt_member = br.getCookie(this.getHost(), "kt_member");
+                        if (kt_member != null && !StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
+                            account.saveCookies(this.br.getCookies(this.getHost()), "");
                             return;
                         }
                     } else {
                         return;
                     }
                 }
+                br.clearCookies(getHost());
                 br.getPage("http://www." + this.getHost() + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
                  * premium accounts available at all.
                  */
                 br.postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww.camwhores.tv%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(this.getHost(), "kt_member") == null) {
+                final String kt_member = br.getCookie(this.getHost(), "kt_member");
+                if (kt_member == null || StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -345,6 +351,11 @@ public class CamwhoresTv extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false, false);
         requestFileInformation(link);
+        final String kt_member = br.getCookie(this.getHost(), "kt_member");
+        if (kt_member == null || StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
+            login(account, false, true);
+            requestFileInformation(link);
+        }
         getDllink(link);
         doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
