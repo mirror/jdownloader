@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.AbortException;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +30,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
+import org.jdownloader.plugins.components.AbortException;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
 public class MirrorCreatorCom extends PluginForDecrypt {
-
     private String                  userAgent      = null;
     private ArrayList<DownloadLink> decryptedLinks = null;
     private FilePackage             fp             = null;
@@ -86,7 +85,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 }
             }
             {
-                final String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
+                final String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32}[^\"]*)\"").getMatch(0);
                 if (continuelink != null) {
                     br.getPage(continuelink);
                 }
