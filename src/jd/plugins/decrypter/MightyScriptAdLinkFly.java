@@ -16,11 +16,11 @@
 
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,12 +39,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.co|brlink\\.in|urle\\.co|mitly\\.us)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.co|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+" })
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "brlink.in", "urle.co", "mitly.us" };
+        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com" };
     }
 
     public MightyScriptAdLinkFly(PluginWrapper wrapper) {
@@ -107,7 +107,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         if (!inValidate(key)) {
                             return key;
                         }
-                        return getSiteKey(br.toString());
+                        return super.getSiteKey(br.toString());
                     }
 
                 }.getToken();
