@@ -15,9 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -33,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/video/\\d+/[^/]+" })
 public class TokyomotionNet extends PluginForHost {
@@ -160,7 +160,7 @@ public class TokyomotionNet extends PluginForHost {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
-                    br.getPage("http://www." + account.getHoster() + "/");
+                    br.getPage("https://www." + account.getHoster() + "/");
                     if (isLoggedinHTML()) {
                         /* Save cookies to save new timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -168,7 +168,7 @@ public class TokyomotionNet extends PluginForHost {
                     }
                     /* Clear cookies */
                 }
-                br.postPage("http://www." + account.getHoster() + "/login", "submit_login=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www." + account.getHoster() + "/login", "submit_login=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedinHTML()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

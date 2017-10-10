@@ -135,7 +135,7 @@ public class MegaConz extends PluginForDecrypt {
                     // check parentNodeID recursive of file
                     MegaFolder checkParent = folder;
                     while (checkParent != null) {
-                        if (parentNodeID.equals(checkParent.parent)) {
+                        if (parentNodeID.equals(checkParent.id)) {
                             break;
                         } else {
                             checkParent = folders.get(checkParent.parent);

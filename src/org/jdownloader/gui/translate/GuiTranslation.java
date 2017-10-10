@@ -1227,6 +1227,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable" })
     String EnabledAction_EnabledAction_enable();
 
+    @Default(lngs = { "en" }, values = { "Mode" })
+    String EnabledAction_EnabledAction_mode();
+
     @Default(lngs = { "en" }, values = { "Disable" })
     String EnabledAction_EnabledAction_disable();
 
