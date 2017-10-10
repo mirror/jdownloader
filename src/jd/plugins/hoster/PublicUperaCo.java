@@ -15,12 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.Locale;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,9 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "public.upera.co" }, urls = { "https?://(?:www\\.)?public\\.upera\\.co/[A-Za-z0-9]+" })
 public class PublicUperaCo extends antiDDoSForHost {
-
     public PublicUperaCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("");
@@ -191,9 +188,13 @@ public class PublicUperaCo extends antiDDoSForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                getPage("http://public.upera.co/");
-                postPage("/", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(this.getHost(), "") == null) {
+                getPage("http://public.upera.co/login");
+                final Form form = br.getFormbyActionRegex(".*verifylogin");
+                form.put("email", Encoding.urlEncode(account.getUser()));
+                form.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(form);
+                br.followRedirect();
+                if (br.getCookie(this.getHost(), "ci_session") == null || br.getCookie(getHost(), "upera_user") == null || StringUtils.equalsIgnoreCase(br.getCookie(getHost(), "upera_user"), "deleted")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -218,30 +219,31 @@ public class PublicUperaCo extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        String space = br.getRegex("").getMatch(0);
-        if (space != null) {
-            ai.setUsedSpace(space.trim());
-        }
         ai.setUnlimitedTraffic();
-        if (false) {
+        if (br.containsHTML("\"btn-premium-validate\"")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
         } else {
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact support@jdownloader.org");
+            // final String expire = br.getRegex("").getMatch(0);
+            // if (expire == null) {
+            // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+            // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // } else {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+            // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // }
+            // } else {
+            // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            // }
+            // account.setType(AccountType.PREMIUM);
+            // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            // account.setConcurrentUsePossible(true);
         }
         account.setValid(true);
         return ai;
