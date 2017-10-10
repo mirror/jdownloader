@@ -74,6 +74,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final String            PREMIUMONLYTEXT                 = "This file can be downloaded by premium only</div>";
     private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
+    private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
     private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM";
     private final String                   apiURL                          = "https://rapidgator.net/api/";
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
@@ -365,7 +366,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                         captcha.put("adcopy_challenge", chid);
                         captcha.put("adcopy_response", Encoding.urlEncode(code));
                     } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
-                        final String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
+                        final String captchaAdress = captcha.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
                         final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
                         if (captchaAdress == null || captchaType == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1046,6 +1047,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                 }
             }
+            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
+                dllink = dllink.replaceFirst("^http://", "https://");
+            }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, maxPremChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -1170,6 +1174,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling to prevent 24-hours IP ban from rapidgator?")).setDefaultValue(false));
         // Some users always get server error 500 via API
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), DISABLE_API_PREMIUM, JDL.L("plugins.hoster.rapidgatornet.disableAPIPremium", "Disable API for premium downloads (use web download)?")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTAL_ENFORCE_SSL, JDL.L("plugins.hoster.rapidgatornet.useExperimentalEnforceSSL", "Activate experimental forced SSL for downloads?")).setDefaultValue(false));
     }
 
     @Override
