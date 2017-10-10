@@ -413,6 +413,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                 handleErrorsBasic();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
+                dllink = dllink.replaceFirst("^http://", "https://");
+            }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 final URLConnectionAdapter con = dl.getConnection();
@@ -967,15 +970,18 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
+            url = url.replaceFirst("^http://", "https://");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, maxPremChunks);
         if (dl.getConnection().getContentType().contains("html")) {
