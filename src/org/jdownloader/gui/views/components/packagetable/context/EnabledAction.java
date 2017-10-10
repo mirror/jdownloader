@@ -5,6 +5,16 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.plugins.DownloadLink;
+import jd.plugins.download.DownloadInterface;
+
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -22,16 +32,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.DownloadLink;
-import jd.plugins.download.DownloadInterface;
-
 public class EnabledAction extends CustomizableTableContextAppAction implements GUIListener, ActionContext {
     /**
      *
@@ -39,28 +39,23 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     private static final long serialVersionUID = -1733286276459073749L;
 
     public static enum EnableActionMode implements LabelInterface {
-
         ENABLE() {
             @Override
             public String getLabel() {
                 return _GUI.T.EnabledAction_EnabledAction_enable();
             }
         },
-
         DISABLE() {
             @Override
             public String getLabel() {
                 return _GUI.T.EnabledAction_EnabledAction_disable();
             }
         },
-
         AUTO();
-
         @Override
         public String getLabel() {
             return this.name();
         }
-
     }
 
     public static enum State {
@@ -68,7 +63,6 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
         ALL_DISABLED(true, getCheckBoxedIcon("select", false, true)),
         MIXED_ENABLE(true, getCheckBoxedIcon("select", true, false)),
         MIXED_DISABLE(false, getCheckBoxedIcon("select", false, false));
-
         private final ImageIcon icon;
         private final boolean   enable;
 
@@ -120,10 +114,13 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     }
 
     private boolean          metaCtrl = false;
-
     private EnableActionMode mode     = EnableActionMode.AUTO;
 
-    @Customizer()
+    public static String getTranslationForMode() {
+        return _GUI.T.EnabledAction_EnabledAction_mode();
+    }
+
+    @Customizer(link = "#getTranslationForMode")
     public EnableActionMode getMode() {
         return mode;
     }
@@ -158,29 +155,37 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     }
 
     private State getState(final SelectionInfo<?, ?> selection) {
-        if (selection.isEmpty()) {
-            return State.ALL_DISABLED;
-        }
-        Boolean first = null;
-        final List<?> children = selection.getChildren();
-        for (Object a : children) {
-            AbstractNode node = (AbstractNode) a;
-            if (first == null) {
-                first = node.isEnabled();
-            } else if (node.isEnabled() != first) {
-                if (selection.getRawContext() != null) {
-                    node = selection.getRawContext();
-                    if (metaCtrl) {
-                        return node.isEnabled() ? State.MIXED_DISABLE : State.MIXED_ENABLE;
+        switch (getMode()) {
+        default:
+        case AUTO:
+            if (selection.isEmpty()) {
+                return State.ALL_DISABLED;
+            }
+            Boolean first = null;
+            final List<?> children = selection.getChildren();
+            for (Object a : children) {
+                AbstractNode node = (AbstractNode) a;
+                if (first == null) {
+                    first = node.isEnabled();
+                } else if (node.isEnabled() != first) {
+                    if (selection.getRawContext() != null) {
+                        node = selection.getRawContext();
+                        if (metaCtrl) {
+                            return node.isEnabled() ? State.MIXED_DISABLE : State.MIXED_ENABLE;
+                        } else {
+                            return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
+                        }
                     } else {
-                        return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
+                        break;
                     }
-                } else {
-                    break;
                 }
             }
+            return first ? State.ALL_ENABLED : State.ALL_DISABLED;
+        case DISABLE:
+            return metaCtrl ? State.ALL_DISABLED : State.ALL_ENABLED;
+        case ENABLE:
+            return metaCtrl ? State.ALL_ENABLED : State.ALL_DISABLED;
         }
-        return first ? State.ALL_ENABLED : State.ALL_DISABLED;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -190,7 +195,6 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
         }
         final State lState = state;
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final boolean enable = lState.enable;
@@ -209,7 +213,6 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
                                         i += slc.getDownloadLink().getView().getBytesLoaded();
                                     }
                                 }
-
                             }
                         }
                     }
@@ -217,23 +220,19 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
                     if (count > 0) {
                         final int finalCount = count;
                         new EDTRunner() {
-
                             @Override
                             protected void runInEDT() {
-
                                 if (bytesToDelete > 0) {
                                     if (JDGui.bugme(WarnLevel.SEVERE)) {
                                         if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                             return;
                                         }
-
                                     }
                                 } else {
                                     if (JDGui.bugme(WarnLevel.LOW)) {
                                         if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                             return;
                                         }
-
                                     }
                                 }
                                 setEnabled(enable, lSelection.getChildren());
@@ -251,7 +250,6 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     private void setEnabled(final boolean b, final List<?> aggregatedLinkList) {
         if (aggregatedLinkList != null && aggregatedLinkList.size() > 0) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     for (Object a : aggregatedLinkList) {
@@ -266,5 +264,4 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     @Override
     public void onGuiMainTabSwitch(View oldView, View newView) {
     }
-
 }
