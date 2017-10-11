@@ -40,7 +40,7 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(www\\.|\\w+\\.)?xvideos\\.com/(video[0-9]+/|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,7 +81,7 @@ public class XvideosCom extends PluginForHost {
 
     private static final String type_normal  = "https?://(www\\.)?xvideos\\.com/video[0-9]+/";
     private static final String type_embed   = "https?://\\w+\\.xvideos\\.com/embedframe/\\d+";
-    private static final String type_special = "https?://(www\\.)?xvideos\\.com/([a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)";
+    private static final String type_special = "https?://(www\\.)?xvideos\\.com/([a-z0-9\\-\\_]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/(upload|pornstar)/[a-z0-9\\-\\_]+/\\d+)";
     private static final String NOCHUNKS     = "NOCHUNKS";
     private String              dllink       = null;
 

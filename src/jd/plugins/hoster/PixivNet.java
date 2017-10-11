@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -36,7 +37,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
 public class PixivNet extends PluginForHost {
-
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.pixiv.net/");
@@ -66,7 +66,6 @@ public class PixivNet extends PluginForHost {
 
     /* Extension which will be used if no correct extension is found */
     public static final String default_extension            = ".jpg";
-
     /* Connection stuff */
     private final boolean      FREE_RESUME                  = true;
     private final int          FREE_MAXCHUNKS               = 1;
@@ -77,14 +76,24 @@ public class PixivNet extends PluginForHost {
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String             dllink                       = null;
     private boolean            server_issues                = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         prepBR(this.br);
+        Account account = AccountController.getInstance().getValidAccount(this);
+        if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+            this.setBrowserExclusive();
+            if (account != null) {
+                try {
+                    login(br, account, false, false);
+                } catch (Exception e) {
+                    account = null;
+                    logger.log(e);
+                }
+            }
+        }
         final String galleryurl = link.getStringProperty("galleryurl", null);
         if (galleryurl == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -93,26 +102,32 @@ public class PixivNet extends PluginForHost {
         if (jd.plugins.decrypter.PixivNet.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // final String filename = link.getFinalFileName();
-        // final String ext;
-        // if (dllink != null) {
-        // ext = getFileNameExtensionFromString(dllink, default_extension);
-        // } else {
-        // ext = default_extension;
-        // }
-        // if (!filename.endsWith(ext)) {
-        // filename += ext;
-        // }
         dllink = link.getDownloadURL();
-        // link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
+        if (account != null) {
+            final String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
+            try {
+                con = br.openHeadConnection(original);
+                if (!con.getContentType().contains("html") && con.isOK()) {
+                    dllink = original;
+                    link.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                try {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                } catch (final Throwable e) {
+                }
+            }
+        }
         try {
             con = br.openHeadConnection(dllink);
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!con.getContentType().contains("html") && con.isOK()) {
                 link.setDownloadSize(con.getLongContentLength());
-                link.setProperty("directlink", dllink);
             } else {
                 server_issues = true;
             }
@@ -160,7 +175,7 @@ public class PixivNet extends PluginForHost {
 
     private static Object LOCK = new Object();
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(final Browser br, final Account account, final boolean force, final boolean check) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setFollowRedirects(true);
@@ -168,11 +183,15 @@ public class PixivNet extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://www." + account.getHoster() + "/");
-                    if (isLoggedinHtml(br)) {
-                        /* Refresh loggedin timestamp */
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                    if (!check) {
                         return;
+                    } else {
+                        br.getPage("http://www." + account.getHoster() + "/");
+                        if (isLoggedinHtml(br)) {
+                            /* Refresh loggedin timestamp */
+                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            return;
+                        }
                     }
                     /* Full login required */
                 }
@@ -208,7 +227,7 @@ public class PixivNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(this.br, account, true, true);
         ai.setUnlimitedTraffic();
         /* 2017-02-06: So far there are only free accounts available for this host. */
         account.setType(AccountType.FREE);
@@ -222,7 +241,7 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this.br, account, false);
+        login(this.br, account, false, true);
         requestFileInformation(link);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
@@ -239,5 +258,4 @@ public class PixivNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

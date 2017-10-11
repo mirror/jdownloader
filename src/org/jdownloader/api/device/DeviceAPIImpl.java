@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IP;
+
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.Base64OutputStream;
@@ -21,9 +24,6 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
-
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IP;
 
 public class DeviceAPIImpl implements DeviceAPI {
     private static final InetAddress[] lookup(final String hostName) throws IOException {
@@ -95,7 +95,7 @@ public class DeviceAPIImpl implements DeviceAPI {
             }
             for (final InetAddress localIP : localIPs) {
                 if (localIP.isLinkLocalAddress() || localIP instanceof Inet6Address) {
-                    // TODO: remove until webinterface is fixed
+                    // TODO: remove IPv6 until webinterface is fixed
                     continue;
                 } else {
                     final DirectConnectionInfo info = new DirectConnectionInfo();
