@@ -3044,7 +3044,7 @@ public class LinkCrawler {
                                 }
                                 /* restart delayer to distribute links */
                                 finalLinkCrawlerDistributerDelayer.run();
-                            } else {
+                            } else if (possibleCryptedLinks.size() > 0) {
                                 /* we do not delay the distribute */
                                 if (checkStartNotify(generation)) {
                                     /* enqueue distributing of the links */
@@ -3391,9 +3391,9 @@ public class LinkCrawler {
                 }
                 final LinkCrawlerRule rule = link.getMatchingRule();
                 if (rule == null) {
-                    final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
-                    if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text") || urlConnection.getCompleteContentLength() > limit)) {
-                        if (!hasContentType) {
+                    final boolean hasContentType = urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE) != null;
+                    if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200 && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text") || urlConnection.getCompleteContentLength() > limit)) {
+                        if (!hasContentType && !urlConnection.isContentDisposition()) {
                             try {
                                 br.followConnection();
                                 if (br.containsHTML("<!DOCTYPE html>") || (br.containsHTML("</html") && br.containsHTML("<html"))) {
@@ -3420,7 +3420,23 @@ public class LinkCrawler {
 
             @Override
             public boolean looksLikeDownloadableContent(URLConnectionAdapter urlConnection) {
-                return urlConnection != null && urlConnection.isContentDisposition();
+                final boolean hasContentType = urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE) != null;
+                if (urlConnection.getResponseCode() == 200) {
+                    if (urlConnection.isContentDisposition()) {
+                        return true;
+                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
+                        return true;
+                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio")) {
+                        return true;
+                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video")) {
+                        return true;
+                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image")) {
+                        return true;
+                    } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && (!hasContentType || !StringUtils.contains(urlConnection.getContentType(), "text"))) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }

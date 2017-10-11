@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:www\\.)?xvideos\\.com/profiles/[A-Za-z0-9\\-_]+" })
 public class XvideosComProfile extends PluginForDecrypt {
-
     public XvideosComProfile(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,6 +39,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> dupeList = new ArrayList<String>();
         final String parameter = param.toString();
+        br.addAllowedResponseCodes(400);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -65,7 +65,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             } else {
                 br.getPage("/profiles/" + username + "/videos/best/" + pageNum);
                 // users don't always have profile... as guardo finds links from google... false positive.
-                if (br.getHttpConnection().getResponseCode() == 403) {
+                if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 400) {
                     return decryptedLinks;
                 } else if (br.toString().matches("<h4 class=\"text-center\">[^<]+  hat keine hochgeladene Videos</h4>\\s*")) {
                     logger.info("This user does not have any videos");

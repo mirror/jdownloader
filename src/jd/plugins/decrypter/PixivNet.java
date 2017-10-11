@@ -51,7 +51,7 @@ public class PixivNet extends PluginForDecrypt {
         boolean loggedIn = false;
         if (aa != null) {
             try {
-                jd.plugins.hoster.PixivNet.login(br, aa, false);
+                jd.plugins.hoster.PixivNet.login(br, aa, false, false);
                 loggedIn = true;
             } catch (PluginException e) {
                 logger.log(e);
@@ -177,6 +177,8 @@ public class PixivNet extends PluginForDecrypt {
         }
         if (fpName == null) {
             fpName = lid;
+        } else {
+            fpName = lid + "_" + fpName;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));

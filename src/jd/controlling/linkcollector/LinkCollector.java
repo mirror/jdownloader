@@ -71,6 +71,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -1320,9 +1321,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2683,11 +2684,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
                                 lc.setDeepInspector(new LinkCrawlerDeepInspector() {
                                     public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-                                        final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
+                                        final boolean hasContentType = urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE) != null;
                                         if (urlConnection.getResponseCode() == 200) {
                                             if (urlConnection.isContentDisposition()) {
                                                 return true;
                                             } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
+                                                return true;
+                                            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio")) {
+                                                return true;
+                                            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video")) {
+                                                return true;
+                                            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image")) {
                                                 return true;
                                             } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && (!hasContentType || !StringUtils.contains(urlConnection.getContentType(), "text"))) {
                                                 return true;
