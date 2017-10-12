@@ -1576,19 +1576,27 @@ public class LinkCrawler {
         } else {
             ret = new CrawledLink(source.getURL());
         }
-        ret.setCollectingInfo(source.getCollectingInfo());
+        ret.setSourceLink(source);
+        if (source.hasCollectingInfo()) {
+            ret.setCollectingInfo(source.getCollectingInfo());
+        }
         ret.setSourceJob(source.getSourceJob());
         ret.setSourceUrls(source.getSourceUrls());
-        ret.setSourceLink(source);
+        ret.setOrigin(source.getOrigin());
+        ret.setCrawlDeep(source.isCrawlDeep());
         if (source.hasArchiveInfo()) {
             ret.setArchiveInfo(source.getArchiveInfo());
         }
         ret.setCustomCrawledLinkModifier(source.getCustomCrawledLinkModifier());
         ret.setBrokenCrawlerHandler(source.getBrokenCrawlerHandler());
+        ret.setUnknownHandler(source.getUnknownHandler());
         ret.setMatchingFilter(source.getMatchingFilter());
         ret.setMatchingRule(source.getMatchingRule());
-        ret.setCreated(source.getCreated());
+        // ret.setCreated(source.getCreated());#set in handleFinalCrawledLink
         ret.setEnabled(source.isEnabled());
+        ret.setForcedAutoStartEnabled(source.isForcedAutoStartEnabled());
+        ret.setAutoConfirmEnabled(source.isAutoConfirmEnabled());
+        ret.setAutoStartEnabled(source.isAutoStartEnabled());
         if (source.isNameSet()) {
             ret.setName(source._getName());
         }

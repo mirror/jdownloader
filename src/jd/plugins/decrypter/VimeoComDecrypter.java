@@ -308,9 +308,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 channelName = getFormattedString(channelName);
             }
             title = getFormattedString(title);
-            final List<VimeoVideoContainer> qualities = getQualities(br, videoID);
+            final List<VimeoVideoContainer> qualities = getQualities(br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD);
             if (qualities == null) {
                 return null;
+            }
+            if (qualities.size() == 0) {
+                return decryptedLinks;
             }
             final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
             for (final VimeoVideoContainer quality : qualities) {
@@ -515,8 +518,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private PluginForHost vimeo_hostPlugin = null;
 
-    private List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID) throws Exception {
-        return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID, true);
+    private List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls) throws Exception {
+        return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID, download, stream, hls);
     }
 
     private String getXsrft(final Browser br) throws Exception {

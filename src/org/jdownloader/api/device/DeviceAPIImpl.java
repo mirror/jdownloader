@@ -94,8 +94,10 @@ public class DeviceAPIImpl implements DeviceAPI {
                 ret.setRebindProtectionDetected(true);
             }
             for (final InetAddress localIP : localIPs) {
-                if (localIP.isLinkLocalAddress() || localIP instanceof Inet6Address) {
-                    // TODO: remove IPv6 until webinterface is fixed
+                if (localIP.isLoopbackAddress() && localIP instanceof Inet6Address) {
+                    // we don't need loopback via IPv4 and IPv6
+                    continue;
+                } else if (localIP.isLinkLocalAddress()) {
                     continue;
                 } else {
                     final DirectConnectionInfo info = new DirectConnectionInfo();
