@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.awt.Dialog.ModalityType;
@@ -44,7 +43,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" })
 public class DropBoxCom extends PluginForDecrypt {
-
     private boolean     pluginloaded;
     private FilePackage currentPackage;
 
@@ -56,7 +54,6 @@ public class DropBoxCom extends PluginForDecrypt {
     private static final String TYPE_S          = "https?://(www\\.)?dropbox\\.com/s/.+";
     private static final String TYPE_REDIRECT   = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
     private static final String TYPE_SHORT      = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
-
     /* Unsupported linktypes which can occur during the decrypt process */
     private static final String TYPE_DIRECTLINK = "https?://dl\\.dropboxusercontent.com/.+";
     private static final String TYPE_REFERRAL   = "https?://(www\\.)?dropbox\\.com/referrals/.+";
@@ -68,11 +65,9 @@ public class DropBoxCom extends PluginForDecrypt {
             decryptedLinks.add(createSingleDownloadLink(parameter));
             return decryptedLinks;
         }
-
         br.setFollowRedirects(false);
         br.setCookie("http://dropbox.com", "locale", "en");
         br.setLoadLimit(br.getLoadLimit() * 4);
-
         CrawledLink current = getCurrentLink();
         String subfolder = "";
         while (current != null) {
@@ -86,14 +81,12 @@ public class DropBoxCom extends PluginForDecrypt {
             current = current.getSourceLink();
         }
         decryptedLinks.addAll(decryptLink(parameter, subfolder));
-
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
             final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
         return decryptedLinks;
     }
 
@@ -110,12 +103,10 @@ public class DropBoxCom extends PluginForDecrypt {
                 return super.add(e);
             }
         };
-
         link = link.replaceAll("\\?dl=\\d", "");
         if (crawl_subfolder_string != null) {
             link = link.replace(crawl_subfolder_string, "");
         }
-
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link);
@@ -171,7 +162,9 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         // Decrypt file- and folderlinks
         String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
-
+        if (fpName == null) {
+            fpName = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        }
         if (fpName != null) {
             if (fpName.contains("\\")) {
                 fpName = Encoding.unicodeDecode(fpName);
@@ -180,7 +173,6 @@ public class DropBoxCom extends PluginForDecrypt {
             currentPackage.setName(Encoding.htmlDecode(fpName.trim()));
             subfolder += "/" + fpName;
         }
-
         /*
          * 2017-01-27: This does not work anymore - also their .zip downloads often fail so rather not do this!Decrypt "Download as zip"
          * link if available and wished by the user
@@ -194,13 +186,10 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
             decryptedLinks.add(dl);
         }
-
         final String json_source = getJsonSource(this.br);
-
         /* 2017-01-27 new */
         boolean isSingleFile = false;
         boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
         final ArrayList<Object> ressourcelist_folders = getFoldersList(entries);
         ArrayList<Object> ressourcelist_files = getFilesList(entries);
@@ -236,13 +225,10 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
                 final String filename = (String) entries.get("filename");
                 final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-
                 if (url == null || url.equals("") || filename == null || filename.equals("")) {
                     return null;
                 }
-
                 final DownloadLink dl = createSingleDownloadLink(url);
-
                 if (filesize > 0) {
                     dl.setDownloadSize(filesize);
                 }
@@ -252,7 +238,6 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         if (decryptSubfolders) {
             for (final Object o : ressourcelist_folders) {
                 entries = (LinkedHashMap<String, Object>) o;
@@ -267,7 +252,6 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptedLinks.add(subFolderDownloadLink);
             }
         }
-
         return decryptedLinks;
     }
 
@@ -321,5 +305,4 @@ public class DropBoxCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
