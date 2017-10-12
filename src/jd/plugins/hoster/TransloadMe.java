@@ -13,17 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,22 +40,22 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "" })
 public class TransloadMe extends PluginForHost {
-
     private static final String          API_BASE                     = "http://transload.me/api/";
     private static final String          WEB_BASE                     = "http://transload.me";
     private static final String          NICE_HOST                    = "transload.me";
     private static final String          NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String          NORESUME                     = NICE_HOSTproperty + "NORESUME";
-
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int             ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-
     private static AtomicBoolean         useApi                       = new AtomicBoolean(true);
-
     private static Object                LOCK                         = new Object();
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("transload.me");
     private Account                      currAcc                      = null;
@@ -326,7 +321,6 @@ public class TransloadMe extends PluginForHost {
                     setDownloadLink(new DownloadLink(this, "Account", getHost(), WEB_BASE, true));
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-
                     {
                         boundToDomain = true;
                     }
@@ -335,7 +329,6 @@ public class TransloadMe extends PluginForHost {
                     public String getSiteKey() {
                         return getSiteKey(login.getHtmlCode());
                     };
-
                 }.getToken();
                 if (dlinkbefore != null) {
                     setDownloadLink(dlinkbefore);
@@ -398,7 +391,7 @@ public class TransloadMe extends PluginForHost {
                 break;
             case 1:
                 // "error": "1" - the File is not found or has been deleted.
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error:1", 60 * 60 * 1000l);
             case 2:
                 // "error": "2" - file Sharing is not supported.
                 // should be mh wide
@@ -458,5 +451,4 @@ public class TransloadMe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
