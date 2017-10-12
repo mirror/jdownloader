@@ -192,7 +192,10 @@ public class VimeoCom extends PluginForHost {
         // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
         final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
         final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
-        final List<VimeoVideoContainer> qualities = getQualities(br, ID, StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS"));
+        final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
+        final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
+        final boolean isStream = !isHLS && !isDownload;
+        final List<VimeoVideoContainer> qualities = getQualities(br, ID, isDownload || !isHLS, isStream, isHLS);
         if (qualities.isEmpty()) {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -459,7 +462,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public static List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID, final boolean hls) throws Exception {
+    public static List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
@@ -471,11 +474,11 @@ public class VimeoCom extends PluginForHost {
             configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
         }
         final ArrayList<VimeoVideoContainer> results = new ArrayList<VimeoVideoContainer>();
-        if (ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
+        if (download && ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
             results.addAll(handleDownloadConfig(ibr, ID));
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
-        if (configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
+        if ((stream || hls) && configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
             // iconify_down_b could fail, revert to the following if statements.
             final Browser gq = ibr.cloneBrowser();
             gq.getHeaders().put("Accept", "*/*");
@@ -495,7 +498,7 @@ public class VimeoCom extends PluginForHost {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "request/files");
                 // progressive = web, hls = hls
-                if (files.containsKey("progressive")) {
+                if (files.containsKey("progressive") && stream) {
                     results.addAll(handleProgessive(files));
                 }
                 if (files.containsKey("hls") && hls) {
@@ -504,6 +507,19 @@ public class VimeoCom extends PluginForHost {
             }
         }
         return results;
+    }
+
+    private static Number getNumber(Map<String, Object> map, String key) {
+        final Object value = map.get(key);
+        if (value instanceof Number) {
+            return (Number) value;
+        } else if (value instanceof String && ((String) value).matches("^\\d+&")) {
+            return Long.parseLong(value.toString());
+        } else if (value instanceof String) {
+            return SizeFormatter.getSize(value.toString());
+        } else {
+            return null;
+        }
     }
 
     private static List<VimeoVideoContainer> handleDownloadConfig(final Browser ibr, final String ID) {
@@ -529,11 +545,9 @@ public class VimeoCom extends PluginForHost {
                         }
                         vvc.setWidth(((Number) info.get("width")).intValue());
                         vvc.setHeight(((Number) info.get("height")).intValue());
-                        try {
-                            vvc.setFilesize(((Number) info.get("size")).longValue());
-                        } catch (final ClassCastException c) {
-                            // older videos its String with MB value
-                            vvc.setFilesize(SizeFormatter.getSize(((String) info.get("size"))));
+                        final Number fileSize = getNumber(info, "size");
+                        if (fileSize != null) {
+                            vvc.setFilesize(fileSize.longValue());
                         }
                         vvc.setSource(Source.DOWNLOAD);
                         final String sd = (String) info.get("public_name");
@@ -561,7 +575,10 @@ public class VimeoCom extends PluginForHost {
                     }
                     vvc.setHeight(((Number) info.get("height")).intValue());
                     vvc.setWidth(((Number) info.get("width")).intValue());
-                    vvc.setFilesize(((Number) info.get("size")).longValue());
+                    final Number fileSize = getNumber(info, "size");
+                    if (fileSize != null) {
+                        vvc.setFilesize(fileSize.longValue());
+                    }
                     vvc.setSource(Source.DOWNLOAD);
                     vvc.setQuality(Quality.ORIGINAL);
                     v.add(vvc);
