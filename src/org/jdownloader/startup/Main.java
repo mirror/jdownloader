@@ -14,13 +14,14 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 package org.jdownloader.startup;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+
+import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
@@ -44,21 +45,18 @@ import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
 public class Main {
-
     public static ParameterHandler PARAMETER_HANDLER = null;
-
     static {
-        // only use ipv4, because debian changed default stack to ipv6
         /*
          * we have to make sure that this property gets set before any network stuff gets loaded!!
          */
-        System.setProperty("java.net.preferIPv4Stack", "true");
+        if (System.getProperty("java.net.preferIPv4Stack") == null) {
+            // TODO: remove once all IPv6 changes are finished @jiaz
+            System.setProperty("java.net.preferIPv4Stack", "true");
+        }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
-
         /**
          * The sorting algorithm used by java.util.Arrays.sort and (indirectly) by java.util.Collections.sort has been replaced. The new
          * sort implementation may throw an IllegalArgumentException if it detects a Comparable that violates the Comparable contract. The
@@ -85,9 +83,7 @@ public class Main {
             e.printStackTrace();
         }
         Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
-
         IO.setErrorHandler(new IOErrorHandler() {
-
             @Override
             public void onWriteException(final Throwable e, final File file, final byte[] data) {
                 final LogSource logger = LogController.getInstance().getLogger("GlobalIOErrors");
@@ -105,7 +101,6 @@ public class Main {
 
             @Override
             public void onCopyException(Throwable e, File in, File out) {
-
             }
         });
     }
@@ -114,14 +109,11 @@ public class Main {
         try {
             final String lng = JSonStorage.restoreFromFile("cfg/language.json", TranslationFactory.getDesiredLanguage());
             TranslationFactory.setDesiredLanguage(lng);
-
             for (int i = 0; i < args.length; i++) {
                 if (args[i].equalsIgnoreCase("-translatortest")) {
                     TranslationFactory.setDesiredLanguage(args[i + 1]);
                 }
-
             }
-
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -130,7 +122,6 @@ public class Main {
     public static void copySVNtoHome() {
         try {
             if (!Application.isJared(null) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null || System.getProperty("copysvn") != null) {
-
                 File workspace = new File(Main.class.getResource("/").toURI()).getParentFile();
                 if (workspace.getName().equals("JDownloaderUpdater")) {
                     workspace = new File(workspace.getParentFile(), "JDownloader");
@@ -141,16 +132,13 @@ public class Main {
                     try {
                         lastMod = Long.parseLong(Regex.getLines(IO.readFileToString(svnEntriesFile))[3].trim());
                     } catch (Throwable e) {
-
                     }
-
                     long lastUpdate = -1;
                     File lastSvnUpdateFile = Application.getResource("dev/lastSvnUpdate");
                     if (lastSvnUpdateFile.exists()) {
                         try {
                             lastUpdate = Long.parseLong(IO.readFileToString(lastSvnUpdateFile));
                         } catch (Throwable e) {
-
                         }
                     }
                     if (lastMod > lastUpdate) {
@@ -173,7 +161,6 @@ public class Main {
                 // IO.copyFile(svnJar, jdjar);
                 //
                 // }
-
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -183,7 +170,6 @@ public class Main {
     public static void copyResource(File workspace, String from, String to) throws IOException {
         System.out.println("Copy SVN Resources " + new File(workspace, from) + " to " + Application.getResource(to));
         IO.copyFolderRecursive(new File(workspace, from), Application.getResource(to), true, new FileFilter() {
-
             @Override
             public boolean accept(File pathname) {
                 if (pathname.getAbsolutePath().contains(".svn")) {
@@ -192,32 +178,24 @@ public class Main {
                     System.out.println("Copy " + pathname);
                     return true;
                 }
-
             }
-
         }, SYNC.NONE);
     }
 
     public static void main(String[] args) {
         loadJXBrowser(Main.class.getClassLoader());
-
         // USe Jacksonmapper in this project
-
         JacksonMapper jm = new JacksonMapper();
         JSonStorage.setMapper(jm);
-
         // add Serializer to Handle JsonFactoryInterface from MyJDownloaderCLient Project
         jm.addSerializer(JsonFactoryInterface.class, new JsonSerializer<JsonFactoryInterface>() {
-
             @Override
             public String toJSonString(JsonFactoryInterface list) {
                 return list.toJsonString();
             }
-
         });
         // set MyJDownloaderCLient JsonHandler
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
-
             @Override
             public String objectToJSon(Object payload) {
                 return JSonStorage.serializeToJson(payload);
@@ -226,11 +204,9 @@ public class Main {
             @Override
             public <T> T jsonToObject(String dec, final Type clazz) {
                 return (T) JSonStorage.restoreFromString(dec, new TypeRef(clazz) {
-
                 });
             }
         };
-
         checkLanguageSwitch(args);
         try {
             /* set D3D Property if not already set by user */
@@ -247,17 +223,13 @@ public class Main {
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
         PARAMETER_HANDLER = new ParameterHandler();
         PARAMETER_HANDLER.onStartup(args);
-
         // Rescan plugincached if required
         ExtensionController.getInstance().invalidateCacheIfRequired();
         HostPluginController.getInstance().invalidateCacheIfRequired();
         CrawlerPluginController.invalidateCacheIfRequired();
-
         jd.SecondLevelLaunch.mainStart(args);
-
     }
 
     public static void loadJXBrowser(ClassLoader cl) {
