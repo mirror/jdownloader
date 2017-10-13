@@ -773,9 +773,10 @@ public class SecondLevelLaunch {
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
-                    InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
+                    final InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
                     Browser.setGlobalReadTimeout(config.getHttpReadTimeout());
                     Browser.setGlobalConnectTimeout(config.getHttpConnectTimeout());
+                    Browser.setGlobalIPVersion(config.getPreferredIPVersion());
                     /* init global proxy stuff */
                     Browser.setGlobalProxy(ProxyController.getInstance());
                     if (CrossSystem.isWindows()) {

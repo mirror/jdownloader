@@ -5,13 +5,14 @@ import java.util.ArrayList;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 
 public interface InternetConnectionSettings extends ConfigInterface {
-
     public static final String PATH = "cfg/org.jdownloader.settings.InternetConnectionSettings";
 
     @AboutConfig
@@ -19,6 +20,14 @@ public interface InternetConnectionSettings extends ConfigInterface {
     void setCustomProxyList(ArrayList<ProxyData> ret);
 
     ArrayList<ProxyData> getCustomProxyList();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Set preferred IP version to use")
+    @DefaultEnumValue("SYSTEM")
+    @RequiresRestart("A JDownloader Restart is Required")
+    IPVERSION getPreferredIPVersion();
+
+    void setPreferredIPVersion(IPVERSION ipVersion);
 
     @AboutConfig
     @DescriptionForConfigEntry("Timeout for connecting to a httpserver")
