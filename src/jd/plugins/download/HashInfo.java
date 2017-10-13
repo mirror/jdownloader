@@ -5,16 +5,16 @@ import java.util.Locale;
 import org.appwork.utils.StringUtils;
 
 public class HashInfo {
-
     public static enum TYPE {
         // order is important! see isStrongerThan/isWeakerThan
         SHA512("SHA-512", 128),
+        SHA384("SHA-384", 96),
         SHA256("SHA-256", 64),
+        SHA224("SHA-224", 56),
         SHA1("SHA1", 40),
         MD5("MD5", 32),
         CRC32("CRC32", 8),
         NONE("NONE", 0);
-
         private final String digest;
         private final int    size;
 

@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -980,28 +981,28 @@ public class MegaConz extends PluginForHost {
                 synchronized (DECRYPTLOCK) {
                     message.set("Decrypting");
                     fis = new FileInputStream(src);
-                    FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
-                    fos = new FileOutputStream(outputFile);
-                    final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
-                    cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-                    final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
-                    int read = 0;
-                    final byte[] buffer = new byte[32767];
-                    while ((read = fis.read(buffer)) != -1) {
-                        if (read > 0) {
-                            progress.updateValues(progress.getCurrent() + read, total);
-                            cos.write(buffer, 0, read);
-                            encryptionDone.addAndGet(-read);
+                    try {
+                        FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
+                        fos = new FileOutputStream(outputFile);
+                        try {
+                            final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
+                            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+                            final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(fos, 1024 * 1024), cipher);
+                            int read = 0;
+                            final byte[] buffer = new byte[512 * 1024];
+                            while ((read = fis.read(buffer)) != -1) {
+                                if (read > 0) {
+                                    progress.updateValues(progress.getCurrent() + read, total);
+                                    cos.write(buffer, 0, read);
+                                    encryptionDone.addAndGet(-read);
+                                }
+                            }
+                            cos.close();
+                        } finally {
+                            fos.close();
                         }
-                    }
-                    cos.close();
-                    try {
-                        fos.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
+                    } finally {
                         fis.close();
-                    } catch (final Throwable e) {
                     }
                     deleteDst = false;
                     link.getLinkStatus().setStatusText("Finished");
@@ -1019,14 +1020,6 @@ public class MegaConz extends PluginForHost {
                     new MegaHashCheck(link, dst).finalHashResult();
                 }
             } finally {
-                try {
-                    fis.close();
-                } catch (final Throwable e) {
-                }
-                try {
-                    fos.close();
-                } catch (final Throwable e) {
-                }
                 link.removePluginProgress(progress);
                 if (deleteDst) {
                     if (tmp != null) {

@@ -1074,38 +1074,23 @@ public class UsersCloudCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
+        final String propery;
         if (account.getType() == AccountType.FREE) {
-            dllink = checkDirectLink(downloadLink, "freelink2");
-            if (dllink == null) {
-                login(account, false);
-                requestFileInformation(downloadLink);
-            }
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+            propery = "freelink2";
         } else {
-            dllink = checkDirectLink(downloadLink, "premiumlink");
-            if (dllink == null) {
-                login(account, false);
-                requestFileInformation(downloadLink);
-            }
-            /* Use the free method with premium parameters */
-            doFree(downloadLink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premiumlink");
-            // The following code doesn't work any more
-            /*
-             * String dllink = checkDirectLink(downloadLink, "premlink"); if (dllink == null) { br.setFollowRedirects(false);
-             * getPage(downloadLink.getDownloadURL()); dllink = getDllink(); if (dllink == null) { Form dlform =
-             * br.getFormbyProperty("name", "F1"); if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) { passCode =
-             * handlePassword(dlform, downloadLink); } checkErrors(downloadLink, true); if (dlform == null) { throw new
-             * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } sendForm(dlform); checkErrors(downloadLink, true); dllink = getDllink(); }
-             * } if (dllink == null) { logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!"); throw new
-             * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } logger.info("Final downloadlink = " + dllink +
-             * " starting the download..."); dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink,
-             * ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS); if (dl.getConnection().getContentType().contains("html")) { if
-             * (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
-             * "Connection limit reached, please contact our support!", 5 * 60 * 1000l); }
-             * logger.warning("The final dllink seems not to be a file!"); br.followConnection(); correctBR(); checkServerErrors();
-             * handlePluginBroken(downloadLink, "dllinknofile", 3); } fixFilename(downloadLink); downloadLink.setProperty("premlink",
-             * dllink); dl.startDownload();
-             */
+            propery = "premiumlink";
+        }
+        dllink = checkDirectLink(downloadLink, propery);
+        if (dllink == null) {
+            login(account, false);
+            requestFileInformation(downloadLink);
+        } else {
+            setFUID(downloadLink);
+        }
+        if (account.getType() == AccountType.FREE) {
+            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, propery);
+        } else {
+            doFree(downloadLink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, propery);
         }
     }
 
@@ -1115,6 +1100,10 @@ public class UsersCloudCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty("freelink2");
+            link.removeProperty("premiumlink");
+        }
     }
 
     @Override

@@ -20,6 +20,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -46,8 +47,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     private static final String PATTERN_NAME_NOEXT       = "{name_noext}";
     private static final String PATTERN_NEWLINE          = "{newline}";
     private static final String PATTERN_COMMENT          = "{comment}";
-    private static final String PATTERN_SHA256           = "{sha256}";
-    private static final String PATTERN_MD5              = "{md5}";
+    private static final String PATTERN_HASH             = "{hash}";
     private static final String PATTERN_FILESIZE         = "{filesize}";
     private static final String PATTERN_FILESIZE_KIB     = "{filesize_kib}";
     private static final String PATTERN_FILESIZE_MIB     = "{filesize_mib}";
@@ -238,7 +238,6 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
-            line = line.replace(PATTERN_MD5, nulltoString(null));
             line = line.replace(PATTERN_HOST, nulltoString(null));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = pkg.getName();
@@ -246,7 +245,10 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
             line = line.replace(PATTERN_EXTENSION, nulltoString(null));
-            line = line.replace(PATTERN_SHA256, nulltoString(null));
+            for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
+                line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(null));
+            }
+            line = line.replace(PATTERN_HASH, nulltoString(null));
             line = line.replace(PATTERN_URL, nulltoString(null));
             line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
             line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
@@ -265,13 +267,22 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
-            line = line.replace(PATTERN_MD5, nulltoString(link.getMD5Hash()));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = link.getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(Files.getFileNameWithoutExtension(name)));
             line = line.replace(PATTERN_EXTENSION, nulltoString(toUpperCase(Files.getExtension(name))));
-            line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));
+            final HashInfo hashInfo = link.getHashInfo();
+            for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
+                final String hashString;
+                if (hashInfo != null && hashInfo.getType() == hashType) {
+                    hashString = hashInfo.getHash();
+                } else {
+                    hashString = null;
+                }
+                line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(hashString));
+            }
+            line = line.replace(PATTERN_HASH, nulltoString(hashInfo != null ? hashInfo.getHash() : null));
             line = line.replace(PATTERN_URL, nulltoString(link.getView().getDisplayUrl()));
             line = line.replace(PATTERN_URL_CONTAINER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link)));
             if (contentPermission) {
@@ -301,12 +312,21 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
-            line = line.replace(PATTERN_MD5, nulltoString(link.getDownloadLink().getMD5Hash()));
             final String name = link.getDownloadLink().getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(Files.getFileNameWithoutExtension(name)));
             line = line.replace(PATTERN_EXTENSION, nulltoString(toUpperCase(Files.getExtension(name))));
-            line = line.replace(PATTERN_SHA256, nulltoString(link.getDownloadLink().getSha1Hash()));
+            final HashInfo hashInfo = link.getDownloadLink().getHashInfo();
+            for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
+                final String hashString;
+                if (hashInfo != null && hashInfo.getType() == hashType) {
+                    hashString = hashInfo.getHash();
+                } else {
+                    hashString = null;
+                }
+                line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(hashString));
+            }
+            line = line.replace(PATTERN_HASH, nulltoString(hashInfo != null ? hashInfo.getHash() : null));
             line = line.replace(PATTERN_URL, nulltoString(link.getDownloadLink().getView().getDisplayUrl()));
             line = line.replace(PATTERN_URL_CONTAINER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link)));
             if (contentPermission) {
@@ -339,13 +359,15 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
                 line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
                 line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
-                line = line.replace(PATTERN_MD5, nulltoString(null));
                 final String name = pkg.getName();
                 line = line.replace(PATTERN_NAME, nulltoString(name));
                 line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
                 line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
                 line = line.replace(PATTERN_EXTENSION, nulltoString(null));
-                line = line.replace(PATTERN_SHA256, nulltoString(null));
+                for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
+                    line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(null));
+                }
+                line = line.replace(PATTERN_HASH, nulltoString(null));
                 line = line.replace(PATTERN_URL, nulltoString(null));
                 line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
                 line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
