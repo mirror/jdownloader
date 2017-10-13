@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -34,6 +35,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
 public class PixivNet extends PluginForHost {
@@ -105,11 +109,26 @@ public class PixivNet extends PluginForHost {
         dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         if (account != null) {
-            final String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
+            String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
             try {
                 con = br.openHeadConnection(original);
+                if (!con.isOK() || con.getContentType().contains("html")) {
+                    con.disconnect();
+                    if (original.matches(".*?\\.jpe?g$")) {
+                        original = original.replaceFirst("\\.jpe?g$", ".png");
+                        con = br.openHeadConnection(original);
+                    } else if (original.matches(".*?\\.png$")) {
+                        original = original.replaceFirst("\\.png$", ".jpg");
+                        con = br.openHeadConnection(original);
+                    }
+                }
                 if (!con.getContentType().contains("html") && con.isOK()) {
                     dllink = original;
+                    final String urlExtension = getFileNameExtensionFromURL(original);
+                    final String nameExtension = Files.getExtension(link.getName());
+                    if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
+                        link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+                    }
                     link.setDownloadSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
                 }
@@ -127,6 +146,11 @@ public class PixivNet extends PluginForHost {
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!con.getContentType().contains("html") && con.isOK()) {
+                final String urlExtension = getFileNameExtensionFromURL(dllink);
+                final String nameExtension = Files.getExtension(link.getName());
+                if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
+                    link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+                }
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 server_issues = true;
