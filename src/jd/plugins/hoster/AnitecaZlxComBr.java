@@ -20,12 +20,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +39,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "aniteca.zlx.com.br" }, urls = { "https?://(?:www\\.)?aniteca\\.zlx\\.com\\.br/[A-Za-z0-9]+" })
 public class AnitecaZlxComBr extends antiDDoSForHost {
@@ -258,7 +258,8 @@ public class AnitecaZlxComBr extends antiDDoSForHost {
                     logger.info("No continue_link available, stepping out of pre-download loop");
                     break;
                 } else {
-                    logger.info("Found continue_link, continuing...");
+                    logger.info("continue_link: " + continue_link);
+                    continue_link = Encoding.htmlDecode(continue_link);
                 }
                 final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                 if (isDownloadlink(continue_link)) {
@@ -338,6 +339,9 @@ public class AnitecaZlxComBr extends antiDDoSForHost {
 
     private String getContinueLink() {
         String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (continue_link == null) {
+            continue_link = br.getRegex("class='btn btn-default' href='(https?://[^<>']*?)'>").getMatch(0);
+        }
         if (continue_link == null) {
             continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
         }
