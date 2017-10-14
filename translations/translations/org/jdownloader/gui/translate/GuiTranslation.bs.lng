@@ -412,6 +412,7 @@ EnableAction_run_msg_=Želite li da onemogućite i zaustavite pokrenute download
 EnabledAction_EnabledAction_disable=Onemogući
 EnabledAction_EnabledAction_empty=Omogući/Onemogući Link
 EnabledAction_EnabledAction_enable=Omogući
+EnabledAction_EnabledAction_mode=Modus
 EnabledDisabledColumn_EnabledDisabledColumn=Omogućeno / Onemogućeno
 EndCaptchaSolver_gettypeName_=EndCaptcha.com
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Pravilo za Izuzetak od Filtera
