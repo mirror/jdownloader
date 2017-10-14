@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -40,9 +41,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "https?://www\\.hentai-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+|http://www\\.hentai-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf" })
 public class HentaiFoundryCom extends PluginForHost {
-
     public HentaiFoundryCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("https://www.hentai-foundry.com/users/create");
     }
 
@@ -50,16 +51,18 @@ public class HentaiFoundryCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other: connections & downloads limites cause we re downloading small files
-
     private static final String type_direct_pdf = "https?://www\\.hentai\\-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf";
     private static final String type_picture    = "https?://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+";
-
     private String              dllink          = null;
     private boolean             server_issues   = false;
 
     @Override
     public String getAGBLink() {
         return "https://www.hentai-foundry.com/";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Choose file name + id?").setDefaultValue(false));
     }
 
     public static String getFID(final String url) {
@@ -92,7 +95,11 @@ public class HentaiFoundryCom extends PluginForHost {
             if (dllink != null) {
                 dllink = Request.getLocation(Encoding.htmlDecode(dllink), br.getRequest());
             }
-            filename = fid + "_" + Encoding.htmlDecode(filename);
+            if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
+                filename = Encoding.htmlDecode(filename) + "_" + fid;
+            } else {
+                filename = fid + "_" + Encoding.htmlDecode(filename);
+            }
             filename = filename.trim();
             filename = encodeUnicode(filename);
         }
@@ -112,7 +119,6 @@ public class HentaiFoundryCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
