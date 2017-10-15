@@ -277,6 +277,7 @@ ConfirmSelectionBarAction_sub_button_add_and_start_selection=... pokretanje preu
 ConfirmSelectionBarAction_sub_button_add_selection=... dodavanje u popis preuzimanja
 ConnectedDevicesTableModel_connection=Veza
 ConnectedDevicesTableModel_device=Uređaj
+ConnectedDevicesTableModel_frontend=Frontend
 ConnectedDevicesTableModel_kill=Završi sesiju
 ConnectionColumn_ConnectionColumn=Veza
 ConnectionColumn_DownloadIsForced=Preuzimanje čeka na prioritetno pokretanje
