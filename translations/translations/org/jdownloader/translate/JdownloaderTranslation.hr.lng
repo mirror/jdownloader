@@ -300,6 +300,7 @@ jd_controlling_reconnect_Reconnector_progress_failed2=Rekonekcija prečesto neus
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Rekonekcija nije odabrana</u></b><br/><p>Rekonekcija je napredni pristup za preskakanje dugog čekanja kod nekih hostova za slobodne korisnike. <br>Nije od pomoći ako koristite premium račun.</p><p>Pročitajte o rekonekciji više <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>ovdje</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Bez rekonekcije
 jd_plugins_PluginUtils_askPassword=Molimo unesite lozinku za %s1
+lit_add_audio=Dodaj Audio
 lit_add_only_the_best_video_quality=Dodaj samo najbolju kvalitetu
 lit_add_subtitles=Dodaj podnatpise
 lit_audio_bitrate=Audio Bitrate
