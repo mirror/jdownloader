@@ -9,11 +9,28 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 
 public class DownloadlistSelectionSandbox {
-
     private final SelectionInfo<FilePackage, DownloadLink> selectionInfo;
 
     public DownloadlistSelectionSandbox(SelectionInfo<FilePackage, DownloadLink> selectionInfo) {
         this.selectionInfo = selectionInfo;
+    }
+
+    @Override
+    public int hashCode() {
+        if (selectionInfo != null) {
+            return selectionInfo.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DownloadlistSelectionSandbox) {
+            return ((DownloadlistSelectionSandbox) obj).selectionInfo == selectionInfo;
+        } else {
+            return super.equals(obj);
+        }
     }
 
     public DownloadlistSelectionSandbox() {

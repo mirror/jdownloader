@@ -9,7 +9,6 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 
 public class LinkgrabberSelectionSandbox {
-
     private final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
 
     public LinkgrabberSelectionSandbox(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
@@ -18,6 +17,24 @@ public class LinkgrabberSelectionSandbox {
 
     public LinkgrabberSelectionSandbox() {
         this(null);
+    }
+
+    @Override
+    public int hashCode() {
+        if (selectionInfo != null) {
+            return selectionInfo.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof LinkgrabberSelectionSandbox) {
+            return ((LinkgrabberSelectionSandbox) obj).selectionInfo == selectionInfo;
+        } else {
+            return super.equals(obj);
+        }
     }
 
     public CrawledLinkSandbox[] getLinks() {
@@ -81,5 +98,4 @@ public class LinkgrabberSelectionSandbox {
             return null;
         }
     }
-
 }

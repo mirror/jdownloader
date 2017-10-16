@@ -7,7 +7,6 @@ import jd.http.Browser;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
 
 public class BrowserSandBox {
-
     private final Browser br;
 
     public BrowserSandBox() {
@@ -19,6 +18,24 @@ public class BrowserSandBox {
             this.br = br;
         } else {
             this.br = new Browser();
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        if (br != null) {
+            return br.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BrowserSandBox) {
+            return ((BrowserSandBox) obj).br == br;
+        } else {
+            return super.equals(obj);
         }
     }
 

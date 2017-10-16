@@ -19,7 +19,6 @@ import org.jdownloader.plugins.FinalLinkState;
 
 @ScriptAPI(description = "The context download list package")
 public class FilePackageSandBox {
-
     private final FilePackage filePackage;
 
     public FilePackageSandBox(FilePackage parentNode) {
@@ -64,13 +63,11 @@ public class FilePackageSandBox {
         } else {
             final ArrayList<DownloadLinkSandBox> ret = new ArrayList<DownloadLinkSandBox>();
             filePackage.getModifyLock().runReadLock(new Runnable() {
-
                 @Override
                 public void run() {
                     for (DownloadLink link : filePackage.getChildren()) {
                         ret.add(new DownloadLinkSandBox(link));
                     }
-
                 }
             });
             return ret.toArray(new DownloadLinkSandBox[] {});
@@ -105,13 +102,30 @@ public class FilePackageSandBox {
         }
     }
 
+    @Override
+    public int hashCode() {
+        if (filePackage != null) {
+            return filePackage.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FilePackageSandBox) {
+            return ((FilePackageSandBox) obj).filePackage == filePackage;
+        } else {
+            return super.equals(obj);
+        }
+    }
+
     public boolean isFinished() {
         if (filePackage == null) {
             return false;
         } else {
             final AtomicBoolean finished = new AtomicBoolean(true);
             filePackage.getModifyLock().runReadLock(new Runnable() {
-
                 @Override
                 public void run() {
                     for (DownloadLink link : filePackage.getChildren()) {
@@ -121,7 +135,6 @@ public class FilePackageSandBox {
                             break;
                         }
                     }
-
                 }
             });
             return finished.get();
@@ -204,5 +217,4 @@ public class FilePackageSandBox {
             return filePackage.getName();
         }
     }
-
 }

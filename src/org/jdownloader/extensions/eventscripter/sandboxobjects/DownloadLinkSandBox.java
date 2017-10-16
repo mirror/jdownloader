@@ -35,9 +35,7 @@ import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
-
     private final DownloadLink                                              downloadLink;
-
     private final static WeakHashMap<DownloadLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<DownloadLink, HashMap<String, Object>>();
 
     public DownloadLinkSandBox(DownloadLink downloadLink) {
@@ -343,7 +341,6 @@ public class DownloadLinkSandBox {
             return new FilePackageSandBox();
         }
         return new FilePackageSandBox(downloadLink.getParentNode());
-
     }
 
     public long getSpeed() {
@@ -430,6 +427,24 @@ public class DownloadLinkSandBox {
         }
     }
 
+    @Override
+    public int hashCode() {
+        if (downloadLink != null) {
+            return downloadLink.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DownloadLinkSandBox) {
+            return ((DownloadLinkSandBox) obj).downloadLink == downloadLink;
+        } else {
+            return super.equals(obj);
+        }
+    }
+
     public boolean isResumeable() {
         if (downloadLink != null) {
             return downloadLink.isResumeable();
@@ -458,5 +473,4 @@ public class DownloadLinkSandBox {
         final ExtractionStatus ret = downloadLink.getExtractionStatus();
         return ret == null ? null : ret.name();
     }
-
 }

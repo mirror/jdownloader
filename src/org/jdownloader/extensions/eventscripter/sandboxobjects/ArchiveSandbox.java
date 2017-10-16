@@ -27,6 +27,24 @@ public class ArchiveSandbox {
         this(null);
     }
 
+    @Override
+    public int hashCode() {
+        if (archive != null) {
+            return archive.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ArchiveSandbox) {
+            return ((ArchiveSandbox) obj).archive == archive;
+        } else {
+            return super.equals(obj);
+        }
+    }
+
     public String getExtractionLog() {
         if (archive != null) {
             final File file = archive.getExtractLogFile();

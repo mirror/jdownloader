@@ -8,11 +8,28 @@ import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
 
 public class FilePathSandbox {
-
     protected final File file;
 
     public FilePathSandbox(String fileOrUrl) {
         file = new File(fileOrUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        if (file != null) {
+            return file.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FilePathSandbox) {
+            return ((FilePathSandbox) obj).file == file;
+        } else {
+            return super.equals(obj);
+        }
     }
 
     public boolean isFile() throws EnvironmentException {

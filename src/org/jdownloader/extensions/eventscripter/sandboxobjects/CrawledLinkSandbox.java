@@ -69,6 +69,24 @@ public class CrawledLinkSandbox {
         link = null;
     }
 
+    @Override
+    public int hashCode() {
+        if (link != null) {
+            return link.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CrawledLinkSandbox) {
+            return ((CrawledLinkSandbox) obj).link == link;
+        } else {
+            return super.equals(obj);
+        }
+    }
+
     public Object getProperty(String key) {
         if (link != null) {
             return link.getDownloadLink().getProperty(key);
