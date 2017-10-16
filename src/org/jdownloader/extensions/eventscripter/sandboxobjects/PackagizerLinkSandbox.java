@@ -7,11 +7,28 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 
 public class PackagizerLinkSandbox {
-
     private final CrawledLink link;
 
     public PackagizerLinkSandbox(CrawledLink link) {
         this.link = link;
+    }
+
+    @Override
+    public int hashCode() {
+        if (link != null) {
+            return link.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof PackagizerLinkSandbox) {
+            return ((PackagizerLinkSandbox) obj).link == link;
+        } else {
+            return super.equals(obj);
+        }
     }
 
     public PackagizerLinkSandbox() {

@@ -16,7 +16,6 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveVal
 
 @ScriptAPI(description = "The context linkgabber list package")
 public class CrawledPackageSandbox {
-
     private final CrawledPackage filePackage;
 
     public CrawledPackageSandbox(CrawledPackage parentNode) {
@@ -32,6 +31,24 @@ public class CrawledPackageSandbox {
             return filePackage.getCreated();
         }
         return -1;
+    }
+
+    @Override
+    public int hashCode() {
+        if (filePackage != null) {
+            return filePackage.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CrawledPackageSandbox) {
+            return ((CrawledPackageSandbox) obj).filePackage == filePackage;
+        } else {
+            return super.equals(obj);
+        }
     }
 
     public String getPriority() {
@@ -89,13 +106,11 @@ public class CrawledPackageSandbox {
         } else {
             final ArrayList<CrawledLinkSandbox> ret = new ArrayList<CrawledLinkSandbox>();
             filePackage.getModifyLock().runReadLock(new Runnable() {
-
                 @Override
                 public void run() {
                     for (CrawledLink link : filePackage.getChildren()) {
                         ret.add(new CrawledLinkSandbox(link));
                     }
-
                 }
             });
             return ret.toArray(new CrawledLinkSandbox[] {});
@@ -163,5 +178,4 @@ public class CrawledPackageSandbox {
             return filePackage.getName();
         }
     }
-
 }

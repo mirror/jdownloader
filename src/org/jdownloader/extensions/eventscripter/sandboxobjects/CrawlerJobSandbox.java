@@ -5,11 +5,28 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 
 public class CrawlerJobSandbox {
-
-    private LinkCollectingJob job;
+    protected final LinkCollectingJob job;
 
     public CrawlerJobSandbox(LinkCollectingJob job) {
         this.job = job;
+    }
+
+    @Override
+    public int hashCode() {
+        if (job != null) {
+            return job.hashCode();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CrawlerJobSandbox) {
+            return ((CrawlerJobSandbox) obj).job == job;
+        } else {
+            return super.equals(obj);
+        }
     }
 
     public CrawlerJobSandbox() {
@@ -20,7 +37,6 @@ public class CrawlerJobSandbox {
 
     public String getOrigin() {
         return job.getOrigin() == null ? null : job.getOrigin().getOrigin().name();
-
     }
 
     public String getPassword() {
