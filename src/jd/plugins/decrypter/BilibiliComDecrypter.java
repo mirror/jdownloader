@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/|https?://(?:www\\.)?bilibilijj\\.com/video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/?|https?://(?:www\\.)?bilibilijj\\.com/video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" })
 public class BilibiliComDecrypter extends PluginForDecrypt {
-
     public BilibiliComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,13 +45,11 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         /* Find packagename */
         String fpName = jd.plugins.hoster.BilibiliCom.getTitle(this.br);
         if (fpName == null) {
             fpName = vid;
         }
-
         /* Find video-parts */
         String[] links = br.getRegex("<option value=\\'(/video/av" + vid + "/index_\\d+\\.html)\\'>").getColumn(0);
         if (links == null || links.length == 0) {
@@ -68,7 +64,6 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             dl.setContentUrl(contenturl);
             decryptedLinks.add(dl);
         }
-
         try {
             /* Now let's decrypt the (ctdisk.com) downloadurls. */
             br.getPage(url_download_overview);
@@ -138,11 +133,9 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
         } catch (final Throwable e) {
             logger.warning("Failed to grab downloadurls");
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -153,5 +146,4 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
         }
         return new Regex(url_source, "/av(\\d+)").getMatch(0);
     }
-
 }
