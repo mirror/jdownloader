@@ -39,12 +39,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.co|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.(?:co|me)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+$" })
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com" };
+        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "adshort.me", "brlink.in", "urle.co", "mitly.us", "cutwin.com" };
     }
 
     public MightyScriptAdLinkFly(PluginWrapper wrapper) {
