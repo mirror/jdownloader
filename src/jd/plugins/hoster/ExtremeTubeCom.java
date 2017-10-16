@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "https?://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" })
 public class ExtremeTubeCom extends PluginForHost {
     private String dllink = null;
 
