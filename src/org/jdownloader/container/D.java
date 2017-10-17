@@ -537,7 +537,6 @@ public class D extends PluginsC {
                             nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
                         }
                         final PackageInfo dpi = new PackageInfo();
-                        dpi.setComment(comment);
                         nl.setDesiredPackageInfo(dpi);
                         cls.add(nl);
                         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(""+links.get(linkCounter));
@@ -607,7 +606,6 @@ public class D extends PluginsC {
                             nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
                         }
                         final PackageInfo dpi = new PackageInfo();
-                        dpi.setComment(comment);
                         nl.setDesiredPackageInfo(dpi);
                         cls.add(nl);
                         c++;
@@ -657,9 +655,9 @@ public class D extends PluginsC {
                 dpi.setName(LinknameCleaner.cleanFileName(pn, false, true, LinknameCleaner.EXTENSION_SETTINGS.KEEP, false));
             }
             if (ca3 != null && ca3.trim().length() > 0) {
-                dpi.setComment("[" + ca3 + "] " + cs2);
+                // dpi.setComment("[" + ca3 + "] " + cs2);
             } else {
-                dpi.setComment(cs2);
+                // dpi.setComment(cs2);
             }
             NodeList urls = ps.item(pgs).getChildNodes();
             for (int fileCounter = 0; fileCounter < urls.getLength(); fileCounter++) {

@@ -39,7 +39,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class JD1Import extends PluginsC {
-
     public JD1Import() {
         super("JD1 Import", "file:/.+(\\.jdc|database\\.script)$", "$Revision: 21176 $");
     }
@@ -123,7 +122,6 @@ public class JD1Import extends PluginsC {
                 }
                 for (final FilePackage p : packages) {
                     final PackageInfo packageInfo = new PackageInfo();
-                    packageInfo.setComment(p.getComment());
                     packageInfo.setName(p.getName());
                     if (new File(p.getDownloadDirectory()).exists()) {
                         packageInfo.setDestinationFolder(p.getDownloadDirectory());
@@ -159,5 +157,4 @@ public class JD1Import extends PluginsC {
     public String[] encrypt(String plain) {
         return null;
     }
-
 }
