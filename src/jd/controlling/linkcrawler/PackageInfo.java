@@ -6,7 +6,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class PackageInfo {
     private UniqueAlltimeID uniqueId              = null;
-
     private boolean         packagizerRuleMatched = false;
     private Boolean         ignoreVarious         = null;
     private Boolean         allowInheritance      = null;
@@ -35,7 +34,6 @@ public class PackageInfo {
         final PackageInfo ret = new PackageInfo();
         ret.setName(getName());
         ret.setDestinationFolder(getDestinationFolder());
-        ret.setComment(getComment());
         ret.setIgnoreVarious(isIgnoreVarious());
         ret.setPackagizerRuleMatched(isPackagizerRuleMatched());
         ret.setUniqueId(getUniqueId());
@@ -61,20 +59,8 @@ public class PackageInfo {
         this.destinationFolder = destinationFolder;
     }
 
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        if (StringUtils.isEmpty(comment)) {
-            comment = null;
-        }
-        this.comment = comment;
-    }
-
     private String name              = null;
     private String destinationFolder = null;
-    private String comment           = null;
 
     /**
      * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package,
@@ -138,7 +124,6 @@ public class PackageInfo {
     }
 
     public boolean isNotEmpty() {
-        return ignoreVarious != null || uniqueId != null || comment != null || destinationFolder != null || name != null || packagizerRuleMatched;
+        return ignoreVarious != null || uniqueId != null || destinationFolder != null || name != null || packagizerRuleMatched;
     }
-
 }

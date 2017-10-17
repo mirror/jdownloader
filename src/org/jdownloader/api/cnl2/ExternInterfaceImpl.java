@@ -23,7 +23,6 @@ import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.controlling.linkcrawler.modifier.CommentModifier;
 import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
@@ -302,12 +301,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         final String finalPackageName = packageName;
         final String finalComment = linkComment;
-        final String finalPackageComment;
-        if (linkComment != null) {
-            finalPackageComment = linkComment;
-        } else {
-            finalPackageComment = packageComment;
-        }
         final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
         if (StringUtils.isNotEmpty(finalDestination)) {
             modifiers.add(new DownloadFolderModifier(finalDestination, true));
@@ -317,21 +310,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         if (StringUtils.isNotEmpty(finalComment)) {
             modifiers.add(new CommentModifier(finalComment));
-        }
-        if (StringUtils.isNotEmpty(finalPackageComment)) {
-            modifiers.add(new CrawledLinkModifier() {
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo == null) {
-                        packageInfo = new PackageInfo();
-                    }
-                    packageInfo.setComment(finalPackageComment);
-                    packageInfo.setIgnoreVarious(true);
-                    packageInfo.setUniqueId(null);
-                    link.setDesiredPackageInfo(packageInfo);
-                }
-            });
         }
         if (StringUtils.isNotEmpty(finalPasswords)) {
             final HashSet<String> pws = new HashSet<String>();
