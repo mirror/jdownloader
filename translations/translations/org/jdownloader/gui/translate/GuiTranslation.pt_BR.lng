@@ -412,6 +412,7 @@ EnableAction_run_msg_=Deseja desativar e parar os downloads em andamento?\r\nVoc
 EnabledAction_EnabledAction_disable=Desativar
 EnabledAction_EnabledAction_empty=Ativar/Desativar Link
 EnabledAction_EnabledAction_enable=Ativar
+EnabledAction_EnabledAction_mode=Modo
 EnabledDisabledColumn_EnabledDisabledColumn=Ativado / Desativado
 EndCaptchaSolver_gettypeName_=EndCaptcha.com
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Regra de Exceção de Filtro
