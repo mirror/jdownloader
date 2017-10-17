@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,9 +34,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/(ajax/downloadfile\\?id=\\d+|download/\\d+/)" })
 public class NexusmodsCom extends PluginForHost {
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,8 +80,16 @@ public class NexusmodsCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String loadBox = br.getRegex("loadBox\\('(https?://.*?)'").getMatch(0);
+        if (loadBox != null) {
+            br.getPage(loadBox);
+            loadBox = br.getRegex("loadBox\\('(https?://.*?skipdonate)'").getMatch(0);
+            if (loadBox != null) {
+                br.getPage(loadBox);
+            }
+        }
         isAccountOnly = this.br.containsHTML("You need to be a member and logged in to download files larger");
-        dllink = br.getRegex("window\\.location\\.href = \"(http[^<>\"]+)\";").getMatch(0);
+        dllink = br.getRegex("window\\.location\\.href = \"(https?[^<>\"]+)\";").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://filedelivery\\.nexusmods\\.com/[^<>\"]+)\"").getMatch(0);
         }
@@ -155,6 +162,11 @@ public class NexusmodsCom extends PluginForHost {
 
     private static Object LOCK = new Object();
 
+    private static boolean isCookieSet(Browser br, Account account, String key) {
+        final String value = br.getCookie(account.getHoster(), key);
+        return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
+    }
+
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -165,9 +177,9 @@ public class NexusmodsCom extends PluginForHost {
                     br.setCookies(account.getHoster(), cookies);
                     return;
                 }
-                // br.getPage("");
-                br.postPage("http://www.nexusmods.com/games/sessions/?Login&uri=%2F%2Fwww.nexusmods.com%2Fgames%2F", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(account.getHoster(), "member_id") == null) {
+                br.getPage("https://www.nexusmods.com");
+                br.postPage("https://www.nexusmods.com/games/sessions/?Login&uri=%2F%2Fwww.nexusmods.com%2Fgames%2F", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!isCookieSet(br, account, "member_id") || !isCookieSet(br, account, "sid") || !isCookieSet(br, account, "pass_hash")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -193,24 +205,15 @@ public class NexusmodsCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        if (this.br.containsHTML(">Go premium<")) {
+        br.getPage("https://www.nexusmods.com/games/users/userarea/");
+        final boolean isPremium = StringUtils.equalsIgnoreCase(br.getRegex(">Premium Member:\\s*</div>.*?>\\s*(.*?)\\s*<").getMatch(0), "yes");
+        if (!isPremium) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            /* 2017-03-08: Premium not yet supported */
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);

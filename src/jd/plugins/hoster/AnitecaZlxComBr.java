@@ -96,13 +96,13 @@ public class AnitecaZlxComBr extends antiDDoSForHost {
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = 0;
+    private static final int               free_MAXCHUNKS                               = -5;
     private static final int               free_MAXDOWNLOADS                            = 1;
     private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = 0;
+    private static final int               account_FREE_MAXCHUNKS                       = -5;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = -5;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
