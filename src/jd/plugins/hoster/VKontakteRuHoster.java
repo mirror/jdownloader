@@ -69,7 +69,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
     private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
-    private int                 MAXCHUNKS                                       = 1;
     public static final long    trust_cookie_age                                = 300000l;
     private static final String TEMPORARILYBLOCKED                              = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
@@ -185,7 +184,6 @@ public class VKontakteRuHoster extends PluginForHost {
             if (link.getLinkID() == null || !link.getLinkID().matches("")) {
                 link.setLinkID(new Regex(link.getDownloadURL(), "/doc((?:\\-)?\\d+_\\d+)").getMatch(0));
             }
-            MAXCHUNKS = 1;
             br.getPage(link.getDownloadURL());
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
@@ -296,7 +294,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -334,7 +332,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     link.setProperty("directlink", finalUrl);
                 }
             } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
-                MAXCHUNKS = 0;
                 br.setFollowRedirects(true);
                 finalUrl = link.getStringProperty("directlink", null);
                 /* Check if directlink is expired */
@@ -456,7 +453,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (dl == null) {
             // most if not all components already opened connection via either linkOk or photolinkOk
             br.getHeaders().put("Accept-Encoding", "identity");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalUrl, true, MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalUrl, true, getMaxChunks(downloadLink, finalUrl));
         }
         handleServerErrors(downloadLink);
         dl.startDownload();
@@ -723,7 +720,7 @@ public class VKontakteRuHoster extends PluginForHost {
         boolean closeConnection = true;
         try {
             if (isDownload) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, getMaxChunks(downloadLink, finalUrl));
                 con = dl.getConnection();
             } else {
                 con = br2.openGetConnection(finalUrl);
@@ -776,6 +773,16 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    private int getMaxChunks(final DownloadLink downloadLink, final String url) {
+        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
+            return 0;
+        } else if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getDownloadURL(), ".mp4")) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+
     /**
      * Checks a given photo directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server
      * filename as final filename.
@@ -793,7 +800,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, getMaxChunks(downloadLink, finalUrl));
             // request range fucked
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
