@@ -341,18 +341,22 @@ public class DownloadLinkDownloadable implements Downloadable {
             }
             for (final File checkSumFile : checkSumFiles) {
                 try {
-                    final String content = IO.readFileToString(checkSumFile);
-                    if (StringUtils.isNotEmpty(content)) {
-                        final String lines[] = Regex.getLines(content);
-                        for (final String line : lines) {
-                            if (line.startsWith(";") || !line.contains(name)) {
-                                continue;
-                            }
-                            for (final HashInfo.TYPE type : HashInfo.TYPE.values()) {
-                                if (!HashInfo.TYPE.NONE.equals(type)) {
-                                    final String hash = new Regex(line, "(?:^|\\s+)([A-Fa-f0-9]{" + type.getSize() + "})(\\s+|$)").getMatch(0);
-                                    if (hash != null) {
-                                        hashInfos.add(new HashInfo(hash, type));
+                    if (checkSumFile.length() < 1024 * 512) {
+                        // Avoid OOM
+                        // TODO: instead of checking file size, better use line reader with limited inputstream and check line by line
+                        final String content = IO.readFileToString(checkSumFile);
+                        if (StringUtils.isNotEmpty(content)) {
+                            final String lines[] = Regex.getLines(content);
+                            for (final String line : lines) {
+                                if (line.startsWith(";") || !line.contains(name)) {
+                                    continue;
+                                }
+                                for (final HashInfo.TYPE type : HashInfo.TYPE.values()) {
+                                    if (!HashInfo.TYPE.NONE.equals(type)) {
+                                        final String hash = new Regex(line, "(?:^|\\s+)([A-Fa-f0-9]{" + type.getSize() + "})(\\s+|$)").getMatch(0);
+                                        if (hash != null) {
+                                            hashInfos.add(new HashInfo(hash, type));
+                                        }
                                     }
                                 }
                             }
