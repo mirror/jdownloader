@@ -3,6 +3,7 @@ package org.jdownloader.gui.dialog;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
+import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
@@ -61,7 +62,9 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
                     return true;
                 }
             };
+            final Font font = textField.getFont();
             textField.setContentType("text/plain");
+            textField.setFont(font);
             textField.setText(message);
             textField.setEditable(false);
             textField.setBackground(null);

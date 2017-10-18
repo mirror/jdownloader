@@ -13,8 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.chat;
+
+import java.awt.Font;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -30,7 +31,9 @@ public class JDChatPMS {
         Username = username;
         TextArea = new JTextPane();
         TextArea.setEditable(false);
+        final Font font = TextArea.getFont();
         TextArea.setContentType("text/html");
+        TextArea.setFont(font);
         scrollPane = new JScrollPane(TextArea);
         scrollPane.setBorder(null);
         sb = new StringBuilder();
@@ -55,5 +58,4 @@ public class JDChatPMS {
     public JScrollPane getScrollPane() {
         return scrollPane;
     }
-
 }

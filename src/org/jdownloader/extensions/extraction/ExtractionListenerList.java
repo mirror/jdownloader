@@ -18,6 +18,7 @@ package org.jdownloader.extensions.extraction;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
+import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.io.File;
@@ -97,7 +98,9 @@ public class ExtractionListenerList implements ExtractionListener {
                         return true;
                     }
                 };
+                final Font font = textField.getFont();
                 textField.setContentType("text/plain");
+                textField.setFont(font);
                 textField.setText(message);
                 textField.setEditable(false);
                 textField.setBackground(null);

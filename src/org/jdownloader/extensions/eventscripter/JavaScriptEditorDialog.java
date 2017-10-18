@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.eventscripter;
 
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,10 +104,11 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             }
         });
         defaults.setEditable(false);
+        final Font font = defaults.getFont();
         defaults.setContentType("text/javascript; charset=UTF-8");
+        defaults.setFont(font);// setContentType changes Font
         defaults.setText(ScriptEnvironment.getAPIDescription(entry.getEventTrigger().getAPIClasses()) + "\r\n" + entry.getEventTrigger().getAPIDescription());
         editor = new JEditorPane();
-        // editor.setContentType("text/html");
         p.add(scrollpane = new JScrollPane(editor) {
             @Override
             public Dimension getPreferredSize() {
@@ -124,7 +126,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             }
         };
         editor.setContentType("text/javascript; charset=UTF-8");
-        // editor.setFont(Font.getFont("Dialog"));
+        editor.setFont(font);// setContentType changes Font
         String txt = entry.getScript();
         if (StringUtils.isEmpty(txt)) {
             txt = T.T.emptyScript();
