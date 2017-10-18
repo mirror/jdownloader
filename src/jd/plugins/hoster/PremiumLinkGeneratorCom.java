@@ -12,6 +12,8 @@ import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -207,6 +209,10 @@ public class PremiumLinkGeneratorCom extends antiDDoSForHost {
             }
             final AccountInfo ai = account.getAccountInfo();
             switch (code.intValue()) {
+            case 401:
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Your request was made with invalid credentials");
+            case 503:
+                throw new AccountInvalidException("No active plan or plan is expired");
             case 504: // Currently there are no avaliable services to handle request
                 if (ai != null) {
                     ai.removeMultiHostSupport(downloadLink.getHost());
@@ -214,6 +220,8 @@ public class PremiumLinkGeneratorCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
             case 505: // Failed to create download ticket
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 30 * 60 * 1000l);
+            case 506:
+                throw new AccountUnavailableException("Plan limitations are exceeded", 60 * 60 * 1000l);
             case 507:// Failed to get download link
                 if (ai != null) {
                     ai.removeMultiHostSupport(downloadLink.getHost());
