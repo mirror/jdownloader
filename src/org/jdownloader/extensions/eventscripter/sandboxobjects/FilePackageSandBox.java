@@ -132,9 +132,12 @@ public class FilePackageSandBox {
             if (controller != null) {
                 controller.removePackage(filePackage);
                 return true;
+            } else {
+                return false;
             }
+        } else {
+            return false;
         }
-        return false;
     }
 
     public String getUUID() {
