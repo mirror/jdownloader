@@ -715,7 +715,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private boolean isList() throws DecrypterException {
         if (parameter == null) {
             throw new DecrypterException("parameter == null");
-        } else if (parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?") || parameter.contains("/groups/") || parameter.contains("/sets")) {
+        } else if (parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?") || parameter.matches("[^?]+/groups/.*") || parameter.matches("[^?]+/sets.*")) {
             return true;
         } else if (TYPE_USER_LIKES.matcher(parameter).find() || new Regex(parameter, TYPE_USER_REPOST).matches()) {
             return true;
