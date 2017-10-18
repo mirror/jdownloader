@@ -2,6 +2,7 @@ package org.jdownloader.gui.dialog;
 
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
+import java.awt.Font;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -44,7 +45,6 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
 
                 @Override
                 public boolean getScrollableTracksViewportWidth() {
-
                     return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
                 }
 
@@ -52,40 +52,33 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
                     return true;
                 }
             };
-
+            final Font font = textField.getFont();
             textField.setContentType("text/plain");
-
+            textField.setFont(font);
             textField.setText(message);
             textField.setEditable(false);
             textField.setBackground(null);
             textField.setOpaque(false);
             textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
             textField.setCaretPosition(0);
-
             p.add(textField, "pushx, growx");
-
             // inout dialog can become too large(height) if we do not limit the
             // prefered textFIled size here.
             textField.setPreferredSize(textField.getPreferredSize());
         }
-
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_url())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(link.getCryptedUrl()));
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_plugin())), "split 2,sizegroup left,alignx left");
-
         DomainInfo di = DomainInfo.getInstance(plugin.getHost());
-
         JLabel ret = new JLabel(di.getTld());
         ret.setHorizontalAlignment(SwingConstants.LEFT);
         ret.setIcon(di.getFavIcon());
         p.add(ret);
-
         input = getSmallInputComponent();
         // this.input.setBorder(BorderFactory.createEtchedBorder());
         input.setText(defaultMessage);
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
-
         return p;
     }
 

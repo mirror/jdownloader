@@ -17,6 +17,7 @@ package org.jdownloader.extensions.chat;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -422,7 +423,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             }
         };
         this.right = new JTextPane();
+        final Font font = right.getFont();
         this.right.setContentType("text/html");
+        right.setFont(font);
         this.right.setEditable(false);
         this.textArea.addHyperlinkListener(hyp);
         this.right.addHyperlinkListener(hyp);
@@ -535,6 +538,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             }
         });
         this.textArea.setContentType("text/html");
+        textArea.setFont(font);
         this.textArea.setEditable(false);
         SwitchPanel frame = new SwitchPanel() {
             private static final long serialVersionUID = 2138710083573682339L;

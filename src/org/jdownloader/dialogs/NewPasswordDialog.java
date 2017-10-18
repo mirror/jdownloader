@@ -1,6 +1,7 @@
 package org.jdownloader.dialogs;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
@@ -26,11 +27,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.translate._JDT;
 
 public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPasswordDialogInterface, CaretListener, MouseListener {
-
     public NewPasswordDialog(int flag, String title, String message, Icon icon, String ok, String cancel) {
         super(flag, title, icon, ok, cancel);
         this.message = message;
-
     }
 
     @Override
@@ -39,18 +38,14 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
     }
 
     public static void main(final String[] args) {
-
         final NewPasswordDialog d = new NewPasswordDialog(0, "titla", "msg", null, null, null);
         NewPasswordDialogInterface handler = UIOManager.I().show(null, d);
-
         System.out.println("Password: " + handler.getPassword() + " (" + (handler.getPasswordVerification().equals(handler.getPassword())) + ")");
-
     }
 
     private JPasswordField password;
     private JPasswordField passVerify;
     private Color          titleColor;
-
     private String         message;
 
     public void setMessage(final String message) {
@@ -68,37 +63,33 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
      */
     protected void modifyTextPane(JTextPane textField) {
         // TODO Auto-generated method stub
-
     }
 
     protected void addMessageComponent(final MigPanel p) {
-
         JTextPane textField = new JTextPane() {
             private static final long serialVersionUID = 1L;
 
             @Override
             public boolean getScrollableTracksViewportWidth() {
-
                 return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
             }
         };
         modifyTextPane(textField);
+        final Font font = textField.getFont();
         if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_HTML)) {
             textField.setContentType("text/html");
             textField.addHyperlinkListener(new HyperlinkListener() {
-
                 public void hyperlinkUpdate(final HyperlinkEvent e) {
                     if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                         CrossSystem.openURL(e.getURL());
                     }
                 }
-
             });
         } else {
             textField.setContentType("text/plain");
             // this.textField.setMaximumSize(new Dimension(450, 600));
         }
-
+        textField.setFont(font);
         textField.setText(getMessage());
         textField.setEditable(false);
         textField.setBackground(null);
@@ -106,17 +97,11 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
         textField.setFocusable(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         textField.setCaretPosition(0);
-
         if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE)) {
-
             p.add(new JScrollPane(textField), "pushx,growx,spanx");
-
         } else {
-
             p.add(textField, "spanx");
-
         }
-
     }
 
     public String getMessage() {
@@ -134,7 +119,6 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
         } else {
             okButton.setEnabled(true);
         }
-
     }
 
     @Override
@@ -147,7 +131,6 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
 
     @Override
     public JComponent layoutDialogContent() {
-
         final MigPanel contentpane = new MigPanel("ins 5, wrap 2", "[]10[grow,fill]", "[][]");
         titleColor = Color.DARK_GRAY;
         password = new JPasswordField(10);
@@ -156,7 +139,6 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
         passVerify.addCaretListener(this);
         password.addMouseListener(this);
         passVerify.addMouseListener(this);
-
         addMessageComponent(contentpane);
         contentpane.add(addSettingName(_JDT.T.newpassworddialog_password()));
         contentpane.add(password, "sizegroup g1");
@@ -170,19 +152,17 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
     protected void packed() {
         super.packed();
         setResizable(false);
-
     }
 
     @Override
     protected void initFocus(final JComponent focus) {
         password.selectAll();
-
         password.requestFocusInWindow();
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.utils.swing.dialog.LoginDialogInterface#getPassword()
      */
     @Override
@@ -191,14 +171,11 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
             return null;
         }
         return new EDTHelper<String>() {
-
             @Override
             public String edtRun() {
-
                 return new String(password.getPassword());
             }
         }.getReturnValue();
-
     }
 
     @Override
@@ -207,14 +184,11 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
             return null;
         }
         return new EDTHelper<String>() {
-
             @Override
             public String edtRun() {
-
                 return new String(passVerify.getPassword());
             }
         }.getReturnValue();
-
     }
 
     @Override

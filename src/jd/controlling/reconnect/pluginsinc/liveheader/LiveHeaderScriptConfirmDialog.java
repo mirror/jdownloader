@@ -2,6 +2,7 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.URL;
@@ -67,7 +68,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
-
     protected RouterData routerData;
     private String       gateway;
     private String       name;
@@ -75,13 +75,11 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     private LogSource    logger;
 
     public static void main(String[] args) {
-
         Application.setApplication(".jd_home");
         LookAndFeelController.getInstance().init();
         RouterData rd = new RouterData();
         rd.setScript(UIOManager.I().show(InputDialogInterface.class, new InputDialog(Dialog.STYLE_LARGE, "", "", "")).getText());
         UIOManager.I().show(null, new LiveHeaderScriptConfirmDialog(rd, "myip.ne", "My Router"));
-
     }
 
     @Override
@@ -104,7 +102,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
     public LiveHeaderScriptConfirmDialog(RouterData test, String gatewayAdressHost, String name) {
         this(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.STYLE_HIDE_ICON, _GUI.T.runDetectionWizard_confirm_title(), new AbstractIcon("reconnect", 32), _GUI.T.lit_continue(), _GUI.T.lit_skip(), test, gatewayAdressHost, name);
-
     }
 
     public LiveHeaderScriptConfirmDialog(final int flag, final String title, final Icon icon, final String okOption, final String cancelOption, RouterData test, String gatewayAdressHost, String name) {
@@ -130,18 +127,14 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, T.T.script(routerData.getRouterName()), T.T.script_check_modify(), routerData.getScript(), new AbstractIcon("edit", 32), T.T.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null) {
-
                     @Override
                     public boolean isRemoteAPIEnabled() {
                         return super.isRemoteAPIEnabled();
                     }
                 };
-
                 dialog.setPreferredSize(new Dimension(700, 400));
                 InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, dialog);
-
                 try {
                     d.throwCloseExceptions();
                     routerData.setScript(d.getText());
@@ -155,23 +148,18 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                     return;
                                 }
                                 if (StringUtils.isEmpty(settings.getPassword())) {
-
                                     settings.setPassword(lPassword);
                                 }
-
                                 if (StringUtils.isEmpty(settings.getUserName())) {
                                     settings.setUserName(lPassword);
-
                                 }
                                 if (StringUtils.isNotEmpty(settings.getPassword()) && !StringUtils.equals(settings.getPassword(), lPassword)) {
-
                                     if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change(authorization, lPassword), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                         settings.setPassword(lPassword);
                                     } else {
                                         return;
                                     }
                                 }
-
                                 if (StringUtils.isNotEmpty(settings.getUserName()) && !StringUtils.equals(settings.getUserName(), lUsername)) {
                                     if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change(authorization, lUsername), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                         settings.setUserName(lUsername);
@@ -179,7 +167,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                         return;
                                     }
                                 }
-
                                 throw new RetryWithReplacedScript(this.rd.getScript(), authorization.substring("Basic ".length()), "%%%basicauth%%%");
                             };
 
@@ -199,7 +186,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                     if (StringUtils.isEmpty(settings.getPassword())) {
                                         settings.setPassword(value);
                                     }
-
                                     super.replacePasswordParameter(key, value);
                                 } else {
                                     confirmed.add(key + "=" + value);
@@ -214,7 +200,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                     return;
                                 }
                                 if (StringUtils.equals(value, settings.getUserName())) {
-
                                     super.replaceUsernameParameter(key, value);
                                 } else if (confirm(key, value)) {
                                     if (StringUtils.isNotEmpty(settings.getUserName()) && !StringUtils.equals(settings.getUserName(), value)) {
@@ -232,7 +217,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                             protected boolean confirm(String key, String value) {
                                 ConfirmDialog d = new ConfirmDialog(0, T.T.please_check(), T.T.please_check_sensitive_data_after_edit(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T.T.yes_replace(), T.T.no_keep());
                                 d.setPreferredWidth(500);
-
                                 try {
                                     UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                                     return true;
@@ -242,17 +226,13 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                     e.printStackTrace();
                                 }
                                 return false;
-
                             };
                         }.run();
                     } catch (Exception e1) {
                         e1.printStackTrace();
                         UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.lit_warning(), _GUI.T.LiveHeaderReconnect_validateAndSet_object_(), null, null, null));
-
                     }
-
                     updateScriptInfo();
-
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {
@@ -270,7 +250,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         MigPanel p = new MigPanel("ins 0,wrap 2", "[align right][grow,fill]", "[]");
-
         addMessage(p);
         p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_routername()));
         p.add(new JLabel(StringUtils.isEmpty(name) ? T.T.unknown() : name));
@@ -288,9 +267,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         }
         p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_script_overview()));
         p.add(Box.createHorizontalGlue());
-
         textpane = addMessageComponent();
-
         p.add(new JScrollPane(textpane), "pushx,growx,spanx,pushy,growy");
         updateScriptInfo();
         if (StringUtils.isEmpty(textpane.toString())) {
@@ -305,7 +282,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
             @Override
             public boolean getScrollableTracksViewportWidth() {
-
                 return true;
             }
 
@@ -314,18 +290,16 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                 return true;
             }
         };
-
-        textField.setContentType("text");
-
+        final Font font = textField.getFont();
+        textField.setContentType("text/plain");
+        textField.setFont(font);
         textField.setText(getMessage());
         textField.setEditable(false);
         textField.setBackground(null);
         textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         textField.setCaretPosition(0);
-
         p.add(textField, "spanx,alignx left");
-
     }
 
     /**
@@ -343,7 +317,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
             textpane.setText(toOverView(routerData.getScript()));
         } catch (Throwable e) {
             textpane.setText(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_invalidscript());
-
             UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_OK, e.getMessage(), e.getMessage(), e, null, _GUI.T.lit_close()));
         }
     }
@@ -372,7 +345,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
             map.put("routerip", gateway);
             map.put("host", gateway);
         }
-
         this.internalVariables = Collections.unmodifiableMap(map);
         logger.info("Internal Variables: " + internalVariables);
         this.parsedVariables = new HashMap<String, String>();
@@ -384,9 +356,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
             script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
             script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
         }
-
         StringBuilder sb = new StringBuilder();
-
         final Document xmlScript = JDUtilities.parseXmlString(script, false);
         if (xmlScript == null) {
             logger.severe("Error while parsing the xml string: " + script);
@@ -399,7 +369,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         }
         final NodeList steps = root.getChildNodes();
         for (int step = 0; step < steps.getLength(); step++) {
-
             final Node current = steps.item(step);
             if (current.getNodeType() == 3) {
                 continue;
@@ -412,7 +381,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
             final int toDosLength = toDos.getLength();
             for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
                 final Node toDo = toDos.item(toDoStep);
-
                 if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
                     final NamedNodeMap attributes = toDo.getAttributes();
                     for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
@@ -422,9 +390,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(0);
                         if (params.length > 0) {
                             final StringBuilder newValue;
-
                             newValue = new StringBuilder(tmp[0]);
-
                             final int tmpLength = tmp.length;
                             for (int i = 1; i <= tmpLength; i++) {
                                 if (i > params.length) {
@@ -442,7 +408,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         append(sb, "Define Variable " + key + "\t=\t" + value);
                         putVariable(key, value);
                     }
-
                 }
                 if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
                     // logger.info("Parse response: \r\n" + br.getRequest());
@@ -455,7 +420,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                             pattern = pattern.trim();
                             putVariable(varname, URLEncode.encodeRFC2396("<Variable " + varname + ">"));
                             append(sb, "\t-> Search in HTML Response:  " + varname + " = Regex:" + pattern);
-
                         }
                     }
                 }
@@ -466,7 +430,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     }
                     final NamedNodeMap attributes = toDo.getAttributes();
                     Browser retbr = null;
-
                     try {
                         this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), sb, attributes.getNamedItem("https") != null, attributes.getNamedItem("raw") != null);
                     } catch (final Exception e) {
@@ -476,7 +439,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         retbr = null;
                     }
                     /* DDoS Schutz */
-
                 }
                 if (StringUtils.equalsIgnoreCase(toDo.getNodeName(), "RESPONSE")) {
                     logger.finer("get Response");
@@ -490,10 +452,8 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         throw new ReconnectException("A RESPONSE Node needs a Keys Attribute: " + toDo);
                     }
                     final String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
-
                     for (String s : keys) {
                         append(sb, "\t-> Search Variable in HTML Response:  " + s);
-
                     }
                     // this.parseVariables(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
                 }
@@ -507,7 +467,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     final int seconds = Formatter.filterInt(item.getNodeValue());
                     if (seconds > 0) {
                         append(sb, "Wait " + TimeFormatter.formatMilliSeconds(seconds * 1000, 0));
-
                     }
                 }
                 if (StringUtils.equalsIgnoreCase(toDo.getNodeName(), "TIMEOUT")) {
@@ -521,7 +480,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     if (seconds > 0) {
                         logger.finer("Timeout set to " + seconds + " seconds");
                         append(sb, "Set HTTP Timeout to " + TimeFormatter.formatMilliSeconds(seconds * 1000, 0));
-
                     }
                 }
             }
@@ -530,7 +488,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     private void doRequest(String request, StringBuilder sb, boolean ishttps, boolean israw) throws ReconnectException, IOException {
-
         final String requestType;
         final String path;
         final StringBuilder post = new StringBuilder();
@@ -577,13 +534,11 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         final String[] requestLines = splitLines(request);
         if (requestLines.length == 0) {
             throw new ReconnectException("Parse Fehler:" + request);
-
         }
         // RequestType
         tmp = requestLines[0].split(" ");
         if (tmp.length < 2) {
             throw new ReconnectException("Konnte Requesttyp nicht finden: " + requestLines[0]);
-
         }
         requestType = tmp[0];
         path = tmp[1];
@@ -616,7 +571,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         if (host == null) {
             throw new ReconnectException("Host not available: " + request);
         } else {
-
             // verifyHost(host);
             if (requestProperties != null) {
                 // sb.getHeaders().putAll(requestProperties);
@@ -626,9 +580,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                 logger.finer("Convert AUTH->GET");
             }
             if (StringUtils.equalsIgnoreCase(requestType, "GET") || StringUtils.equalsIgnoreCase(requestType, "AUTH")) {
-
                 URL url = new URL(protocoll + host + path);
-
                 append(sb, "\r\nHTTP Request " + requestType + " " + protocoll + host + url.getPath());
                 String cookie = requestProperties.get("cookie");
                 if (StringUtils.isNotEmpty(cookie)) {
@@ -645,9 +597,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                 // sb.getPage(protocoll + host + path);
             } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
                 final String poster = post.toString().trim();
-
                 URL url = new URL(protocoll + host + path);
-
                 append(sb, "\r\nHTTP Request " + requestType + " " + protocoll + host + path);
                 String cookie = requestProperties.get("cookie");
                 if (StringUtils.isNotEmpty(cookie)) {
@@ -669,9 +619,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                 logger.severe("Unknown/Unsupported requestType: " + requestType);
                 throw new ReconnectException("Host not available: " + request);
             }
-
         }
-
     }
 
     private String decode(String key) {
@@ -694,7 +642,6 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         if (sb.length() > 0) {
             sb.append("\r\n");
         }
-
         sb.append(string);
     }
 
@@ -710,10 +657,8 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     parsedVariables.put(lowerKey, value);
                     logger.info("Set Variable:" + lowerKey + "->" + value);
                 }
-
             }
         }
-
     }
 
     private Map<String, String> internalVariables = null;
@@ -784,12 +729,10 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     // required by a huwai router that uses base64(sha256(pass))
                 } else if (StringUtils.equalsIgnoreCase(method, "BASE64_SHA256")) {
                     value = "<Variable: " + "Base64(SHA256(\"" + key + "\"))" + ">";
-
                 } else if (StringUtils.equalsIgnoreCase(method, "BASE64")) {
                     value = "<Variable: " + "Base64(\"" + key + "\")" + ">";
                 } else {
                     throw new ReconnectException("Unsupported Type: " + method);
-
                 }
             }
             return value;
@@ -797,19 +740,17 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     protected JTextPane addMessageComponent() {
-
         JTextPane textField = new JTextPane() {
             private static final long serialVersionUID = 1L;
 
             @Override
             public boolean getScrollableTracksViewportWidth() {
-
                 return false;
             }
         };
-
-        textField.setContentType("text");
-
+        final Font font = textField.getFont();
+        textField.setContentType("text/plain");
+        textField.setFont(font);
         textField.setText(getMessage());
         textField.setEditable(false);
         textField.setBackground(null);
@@ -822,12 +763,10 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         tabs[2] = new TabStop(300, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
         tabs[3] = new TabStop(320, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
         TabSet tabset = new TabSet(tabs);
-
         StyleContext sc = StyleContext.getDefaultStyleContext();
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.TabSet, tabset);
         textField.setParagraphAttributes(aset, false);
         return textField;
-
     }
 
     private Component getLabel(String str) {
