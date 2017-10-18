@@ -2,7 +2,6 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.PackageController;
@@ -15,7 +14,6 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
-import org.jdownloader.plugins.FinalLinkState;
 
 @ScriptAPI(description = "The context download list package")
 public class FilePackageSandBox {
@@ -124,20 +122,7 @@ public class FilePackageSandBox {
         if (filePackage == null) {
             return false;
         } else {
-            final AtomicBoolean finished = new AtomicBoolean(true);
-            filePackage.getModifyLock().runReadLock(new Runnable() {
-                @Override
-                public void run() {
-                    for (DownloadLink link : filePackage.getChildren()) {
-                        // only enabled links count. this is the same in the jd gui, so let's use the same logic here
-                        if (link.isEnabled() && !FinalLinkState.CheckFinished(link.getFinalLinkState())) {
-                            finished.set(false);
-                            break;
-                        }
-                    }
-                }
-            });
-            return finished.get();
+            return new FilePackageView(filePackage).aggregate().isFinished();
         }
     }
 
@@ -155,22 +140,25 @@ public class FilePackageSandBox {
     public String getUUID() {
         if (filePackage != null) {
             return filePackage.getUniqueID().toString();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public long getAddedDate() {
         if (filePackage != null) {
             return filePackage.getCreated();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public long getFinishedDate() {
         if (filePackage != null) {
-            return filePackage.getFinishedDate();
+            return new FilePackageView(filePackage).aggregate().getFinishedDate();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public String getDownloadFolder() {
