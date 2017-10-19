@@ -91,29 +91,47 @@ public class Srnnks extends antiDDoSForDecrypt {
     private static ArrayList<String> PASSWORDS          = new ArrayList<String>(Arrays.asList(new String[] { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" }));
     private final int                CAPTCHA_MAXRETRIES = 8;
 
-    private synchronized boolean limitsReached(final Browser br) throws Exception {
-        final long timeStamp = System.currentTimeMillis();
-        final long maxTimeout = 2 * 60 * 1000l;
+    private boolean limitsReached(final Browser br) throws Exception {
+        if (br.containsHTML("Error 503")) {
+            logger.info("Limit reached(1)!");
+            return true;
+        }
+        long maxTimeout = 2 * 60 * 1000l;
         int loopIndex = 0;
-        while (!isAbort() || System.currentTimeMillis() - timeStamp > maxTimeout) {
+        while (!isAbort() || maxTimeout > 0) {
             loopIndex++;
             if (br.containsHTML("Error 503")) {
-                logger.info("Limit reached!");
+                logger.info("Limit reached(2)(" + loopIndex + ")!");
                 return true;
             } else if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
-                Thread.sleep(15000 + loopIndex * 500);
-                br.loadConnection(br.openRequestConnection(null));
+                final int sleep = 15000 + loopIndex * 500;
+                GLOBAL_LOCK.lock();
+                try {
+                    Thread.sleep(sleep);
+                    br.getPage(br.getRequest().cloneRequest());
+                } finally {
+                    GLOBAL_LOCK.unlock();
+                    maxTimeout -= sleep;
+                }
             } else if (br.containsHTML("Download-Limit")) {
-                Thread.sleep(30000);
-                br.loadConnection(br.openRequestConnection(null));
+                final int sleep = 30000;
+                GLOBAL_LOCK.lock();
+                try {
+                    Thread.sleep(sleep);
+                    br.getPage(br.getRequest().cloneRequest());
+                } finally {
+                    GLOBAL_LOCK.unlock();
+                    maxTimeout -= sleep;
+                }
             } else {
+                logger.info("Limit bypassed(" + loopIndex + "," + maxTimeout + ")");
                 return false;
             }
         }
         if (isAbort()) {
             throw abortException;
         } else {
-            logger.info("Limit reached!");
+            logger.info("Limit reached(3)(" + loopIndex + ")!");
             return true;
         }
     }
