@@ -146,7 +146,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("NEVER")
+    @DefaultEnumValue("ON_STARTUP")
     CLIPBOARD_SKIP_MODE getClipboardSkipMode();
 
     void setClipboardSkipMode(CLIPBOARD_SKIP_MODE mode);
