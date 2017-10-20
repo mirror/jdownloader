@@ -89,6 +89,21 @@ public class BentBoxCo extends PluginForDecrypt {
             downloadLink.setFinalFileName(df.format(index++) + "_web_" + fileName);
             ret.add(downloadLink);
         }
+        final String transcodedFiles[][] = br.getRegex("data-transcodedvideourl=\"(https?://.*?)\".*?<span style.*?>(.*?)</").getMatches();
+        for (final String transcodedFile[] : transcodedFiles) {
+            // TODO: links do expire! add support for dedicated plugin
+            final DownloadLink downloadLink = createDownloadlink("directhttp://" + transcodedFile[0]);
+            downloadLink.setAvailable(true);
+            String fileName = transcodedFile[1];
+            if (!StringUtils.endsWithCaseInsensitive(fileName, ".mp4") && !StringUtils.endsWithCaseInsensitive(fileName, ".jpg")) {
+                final String urlExtension = getFileNameExtensionFromURL(transcodedFile[0]);
+                if (urlExtension != null) {
+                    fileName = fileName + urlExtension;
+                }
+            }
+            downloadLink.setFinalFileName(df.format(index++) + "_transcoded_" + fileName);
+            ret.add(downloadLink);
+        }
         if (title != null || author != null) {
             final FilePackage fp = FilePackage.getInstance();
             if (title != null && author != null) {
