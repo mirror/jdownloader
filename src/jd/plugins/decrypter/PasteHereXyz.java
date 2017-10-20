@@ -13,21 +13,25 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-
-import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  *
@@ -36,7 +40,6 @@ import jd.plugins.PluginForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pastehere.xyz" }, urls = { "https?://(?:www\\.)?pastehere\\.xyz/\\d+/?" })
 public class PasteHereXyz extends PluginForDecrypt {
-
     public PasteHereXyz(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,10 +49,31 @@ public class PasteHereXyz extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        final String id = new Regex(parameter, "/(\\d+)").getMatch(0);
         /* Error handling */
         if (br.containsHTML("<strong>Alert!</strong>\\s*Paste not found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        if (br.containsHTML("Password protected")) {
+            while (!isAbort()) {
+                final List<String> passwords = getPreSetPasswords();
+                final String passCode;
+                if (passwords.size() > 0) {
+                    passCode = passwords.remove(0);
+                } else {
+                    passCode = Plugin.getUserInput(null, param);
+                }
+                final Form form = br.getFormbyAction("/" + id);
+                form.put("mypass", Encoding.urlEncode(passCode));
+                br.submitForm(form);
+                if (br.containsHTML("Password is Wrong")) {
+                    br.getPage(parameter);
+                }
+                if (!br.containsHTML("Password protected")) {
+                    break;
+                }
+            }
         }
         String plaintxt = br.getRegex("<div[^>]+id=\"p_data\"[^>]*>(.*?)\\s*</div>\\s*</div>").getMatch(0);
         if (plaintxt == null) {
@@ -80,5 +104,4 @@ public class PasteHereXyz extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
