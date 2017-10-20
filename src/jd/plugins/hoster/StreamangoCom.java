@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamango.com", "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/embed/[a-z0-9]+(?:/[^/]+)?", "https?://(?:www\\.)?streamcherry\\.com/embed/[a-z0-9]+(?:/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamango.com", "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/(?:f|embed)/[a-z0-9]+(?:/[^/]+)?", "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/[a-z0-9]+(?:/[^/]+)?" })
 public class StreamangoCom extends PluginForHost {
     public StreamangoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,11 +59,12 @@ public class StreamangoCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        final String url = link.getDownloadURL();
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">We are unable to find the video") || br.containsHTML("Converting")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
+        final String url_filename = new Regex(url, "/([^/]+)$").getMatch(0);
         String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
