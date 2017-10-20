@@ -59,7 +59,7 @@ public class Srnnks extends antiDDoSForDecrypt {
                 if (isAbort()) {
                     return;
                 }
-                br.submitForm(downloadForm);
+                submitForm(br, downloadForm);
                 if (br.getRedirectLocation() != null) {
                     this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
                 } else {
@@ -70,7 +70,7 @@ public class Srnnks extends antiDDoSForDecrypt {
                         if (isAbort()) {
                             return;
                         }
-                        br.getPage(link);
+                        getPage(br, link);
                         final String loc = br.getRedirectLocation();
                         if (loc != null) {
                             this.results.add(Srnnks.this.createDownloadlink(loc));
@@ -400,8 +400,8 @@ public class Srnnks extends antiDDoSForDecrypt {
                             }
                         }
                     }
-                logger.info("Max retries reached!");
-                return ret;
+                    logger.info("Max retries reached!");
+                    return ret;
                 } catch (final Exception e) {
                     logger.log(e);
                     if (e == abortException) {
