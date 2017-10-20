@@ -49,7 +49,7 @@ public class StreamangoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://streamango.com/tos";
+        return "https://streamango.com/tos";
     }
 
     @SuppressWarnings("deprecation")
@@ -77,8 +77,8 @@ public class StreamangoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = decode(match[0], Integer.parseInt(match[1]));
-        if (dllink.startsWith("//")) {
-            dllink = "http:" + dllink;
+        if (dllink != null) {
+            dllink = br.getURL(dllink).toString();
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
