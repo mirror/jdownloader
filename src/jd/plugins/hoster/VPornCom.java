@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "https?://(www\\.)?vporn\\.com/(embed|(?!submitted|user)[a-z0-9\\-_]+/[a-z0-9\\-_]+)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "https?://(www\\.)?vporn\\.com/(embed|(?!favorite|submitted|(all)?subscriptions|user)[a-z0-9\\-_]+/[a-z0-9\\-_]+)/\\d+" })
 public class VPornCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public VPornCom(PluginWrapper wrapper) {
