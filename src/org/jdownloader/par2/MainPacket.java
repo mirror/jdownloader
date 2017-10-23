@@ -38,8 +38,8 @@ public class MainPacket extends Packet {
         return ByteBuffer.wrap(getRawPacket().getBody(), 0, 8).order(ByteOrder.LITTLE_ENDIAN).getLong();
     }
 
-    public Enumeration<byte[]> getRecoveryFileIDs() {
-        return new Enumeration<byte[]>() {
+    public Enumeration<ByteBuffer> getRecoveryFileIDs() {
+        return new Enumeration<ByteBuffer>() {
             private int       index = 0;
             private final int max   = getNumberOfRecoveryFiles();
 
@@ -49,11 +49,9 @@ public class MainPacket extends Packet {
             }
 
             @Override
-            public byte[] nextElement() {
+            public ByteBuffer nextElement() {
                 if (hasMoreElements()) {
-                    final byte[] ret = new byte[16];
-                    System.arraycopy(getRawPacket().getBody(), 12 + (index++ * 16), ret, 0, 16);
-                    return ret;
+                    return ByteBuffer.wrap(getRawPacket().getBody(), 12 + (index++ * 16), 16);
                 } else {
                     return null;
                 }

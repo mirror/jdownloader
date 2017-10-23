@@ -25,22 +25,16 @@ public class FileDescriptionPacket extends Packet {
      *
      * @param rawPacket
      */
-    public byte[] getFileID() {
-        final byte[] ret = new byte[16];
-        System.arraycopy(getRawPacket().getBody(), 0, ret, 0, 16);
-        return ret;
+    public ByteBuffer getFileID() {
+        return ByteBuffer.wrap(getRawPacket().getBody(), 0, 16);
     }
 
-    public byte[] getMD5() {
-        final byte[] ret = new byte[16];
-        System.arraycopy(getRawPacket().getBody(), 16, ret, 0, 16);
-        return ret;
+    public ByteBuffer getMD5() {
+        return ByteBuffer.wrap(getRawPacket().getBody(), 16, 16);
     }
 
-    public byte[] get16kMD5() {
-        final byte[] ret = new byte[16];
-        System.arraycopy(getRawPacket().getBody(), 32, ret, 0, 16);
-        return ret;
+    public ByteBuffer get16kMD5() {
+        return ByteBuffer.wrap(getRawPacket().getBody(), 32, 16);
     }
 
     public long getLength() {
@@ -49,30 +43,15 @@ public class FileDescriptionPacket extends Packet {
 
     @Override
     public String toString() {
-        return "FileDescriptionPacket|Name:" + getName() + "|Length:" + getLength() + "|MD5:" + HexFormatter.byteArrayToHex(getMD5()) + "|FileID:" + HexFormatter.byteArrayToHex(getFileID());
+        return "FileDescriptionPacket|Name:" + getName() + "|Length:" + getLength() + "|MD5:" + HexFormatter.byteBufferToHex(getMD5()) + "|FileID:" + HexFormatter.byteBufferToHex(getFileID());
     }
 
-    public byte[] getNameAsBytes(final boolean ignoreNullTermination) {
-        final RawPacket rawPacket = getRawPacket();
-        final byte[] ret;
-        if (ignoreNullTermination) {
-            ret = new byte[rawPacket.getBody().length - 56];
-        } else {
-            int length = rawPacket.getBody().length;
-            for (int index = 56; index < rawPacket.getBody().length; index++) {
-                if (rawPacket.getBody()[index] == 0) {
-                    length = index;
-                    break;
-                }
-            }
-            ret = new byte[length - 56];
-        }
-        System.arraycopy(rawPacket.getBody(), 56, ret, 0, ret.length);
-        return ret;
+    public ByteBuffer getNameAsByteBuffer(final boolean ignoreNullTermination) {
+        return getByteBuffer(56, rawPacket.getBody().length - 56, ignoreNullTermination);
     }
 
     public String getName() {
-        return new String(getNameAsBytes(false), ASCII);
+        return ASCII.decode(getNameAsByteBuffer(false)).toString();
     }
 
     public FileDescriptionPacket(RawPacket rawPacket) {

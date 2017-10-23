@@ -1,5 +1,6 @@
 package org.jdownloader.par2;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class AsciiCommentPacket extends Packet {
@@ -21,26 +22,12 @@ public class AsciiCommentPacket extends Packet {
         return "AsciiCommentPacket|Comment:" + getComment();
     }
 
-    public byte[] getCommentAsBytes(final boolean ignoreNullTermination) {
-        final RawPacket rawPacket = getRawPacket();
-        if (ignoreNullTermination) {
-            return rawPacket.getBody();
-        } else {
-            int length = rawPacket.getBody().length;
-            for (int index = 0; index < rawPacket.getBody().length; index++) {
-                if (rawPacket.getBody()[index] == 0) {
-                    length = index;
-                    break;
-                }
-            }
-            final byte[] ret = new byte[length];
-            System.arraycopy(rawPacket.getBody(), 0, ret, 0, ret.length);
-            return ret;
-        }
+    public ByteBuffer getCommentAsByteBuffer(final boolean ignoreNullTermination) {
+        return getByteBuffer(0, getRawPacket().getBody().length, ignoreNullTermination);
     }
 
     public String getComment() {
-        return new String(getCommentAsBytes(false), ASCII);
+        return ASCII.decode(getCommentAsByteBuffer(false)).toString();
     }
 
     @Override
