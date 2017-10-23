@@ -730,20 +730,26 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     private long guessTotalSize(String base, String[] segs) throws IOException {
-        long videoSize = 0;
-        int max = Math.min(11, segs.length);
-        for (int i = 1; i < max; i++) {
-            String url = segs[i].toLowerCase(Locale.ENGLISH).startsWith("http") ? segs[i] : (base + segs[i]);
+        final int jump = Math.max(1, segs.length / 10);
+        int segments = 0;
+        long size = 0;
+        for (int i = 1; i < segs.length; i += jump) {
+            final String url = segs[i].toLowerCase(Locale.ENGLISH).startsWith("http") ? segs[i] : (base + segs[i]);
             br.openRequestConnection(new HeadRequest(url)).disconnect();
-            URLConnectionAdapter con = br.getHttpConnection();
+            final URLConnectionAdapter con = br.getHttpConnection();
             if (con.getResponseCode() == 200) {
-                videoSize += con.getLongContentLength();
+                segments++;
+                size += con.getLongContentLength();
             } else {
                 return -1;
             }
         }
-        // first segment is a init segment and has only ~802 bytes
-        return (segs.length - 1) * (videoSize / (max - 1)) + 802;
+        if (segments > 0) {
+            // first segment is a init segment and has only ~802 bytes
+            return (segs.length - 1) * (size / segments) + 802;
+        } else {
+            return -1;
+        }
     }
 
     private VariantInfo getAndUpdateVariantInfo(DownloadLink downloadLink) throws Exception {

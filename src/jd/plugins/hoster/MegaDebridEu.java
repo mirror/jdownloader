@@ -63,6 +63,7 @@ public class MegaDebridEu extends PluginForHost {
 
     private void prepBrowser(final Browser br) {
         br.setFollowRedirects(true);
+        br.setCustomCharset("UTF-8");
         br.getHeaders().put("User-Agent", "JDownloader-" + Math.max(super.getVersion(), 0));
     }
 
@@ -207,10 +208,13 @@ public class MegaDebridEu extends PluginForHost {
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
         if (dllink == null) {
-            if (br.containsHTML("Limite de trafic dépassée pour cet hébergeur")) {
+            if (br.containsHTML("Limite de lien dépassée pour cet hébergeur")) {
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            } else if (br.containsHTML("Limite de trafic dépassée pour cet hébergeur")) {
                 tempUnavailableHoster(account, link, 10 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "").replace("\"", "");
         showMessage(link, "Phase 2/2: Download");

@@ -473,6 +473,16 @@ public class ScriptEnvironment {
         return new BrowserSandBox();
     }
 
+    @ScriptAPI(description = "Open a website or path in your default browser/file explorer", parameters = { "URL" }, example = "openURL(\"http://jdownloader.org\");")
+    public static void openURL(String url) throws EnvironmentException {
+        askForPermission("open resource in your default browser/file explorer");
+        try {
+            CrossSystem.openURL(url);
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
     @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
         askForPermission("load resources from the internet");
