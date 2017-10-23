@@ -1,5 +1,6 @@
 package org.jdownloader.par2;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class UnicodeCommentPacket extends Packet {
@@ -24,32 +25,16 @@ public class UnicodeCommentPacket extends Packet {
         return "UnicodeCommentPacket|Comment:" + getComment();
     }
 
-    public byte[] getAsciiCommentMD5() {
-        final byte[] ret = new byte[16];
-        System.arraycopy(getRawPacket().getBody(), 0, ret, 0, 16);
-        return ret;
+    public ByteBuffer getAsciiCommentMD5() {
+        return ByteBuffer.wrap(getRawPacket().getBody(), 0, 16);
     }
 
-    public byte[] getCommentAsBytes(final boolean ignoreNullTermination) {
-        final RawPacket rawPacket = getRawPacket();
-        if (ignoreNullTermination) {
-            return rawPacket.getBody();
-        } else {
-            int length = rawPacket.getBody().length;
-            for (int index = 16; index < rawPacket.getBody().length; index++) {
-                if (rawPacket.getBody()[index] == 0) {
-                    length = index;
-                    break;
-                }
-            }
-            final byte[] ret = new byte[length - 16];
-            System.arraycopy(rawPacket.getBody(), 16, ret, 0, ret.length);
-            return ret;
-        }
+    public ByteBuffer getCommentAsByteBuffer(final boolean ignoreNullTermination) {
+        return getByteBuffer(16, rawPacket.getBody().length - 16, ignoreNullTermination);
     }
 
     public String getComment() {
-        return new String(getCommentAsBytes(false), UTF16);
+        return UTF16.decode(getCommentAsByteBuffer(false)).toString();
     }
 
     @Override

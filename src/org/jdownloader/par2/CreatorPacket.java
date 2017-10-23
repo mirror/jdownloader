@@ -1,5 +1,6 @@
 package org.jdownloader.par2;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class CreatorPacket extends Packet {
@@ -22,26 +23,12 @@ public class CreatorPacket extends Packet {
         return "CreatorPacket|Creator:" + getCreator();
     }
 
-    public byte[] getCreatorAsBytes(final boolean ignoreNullTermination) {
-        final RawPacket rawPacket = getRawPacket();
-        if (ignoreNullTermination) {
-            return rawPacket.getBody();
-        } else {
-            int length = rawPacket.getBody().length;
-            for (int index = 0; index < rawPacket.getBody().length; index++) {
-                if (rawPacket.getBody()[index] == 0) {
-                    length = index;
-                    break;
-                }
-            }
-            final byte[] ret = new byte[length];
-            System.arraycopy(rawPacket.getBody(), 0, ret, 0, ret.length);
-            return ret;
-        }
+    public ByteBuffer getCreatorAsByteBuffer(final boolean ignoreNullTermination) {
+        return getByteBuffer(0, rawPacket.getBody().length, ignoreNullTermination);
     }
 
     public String getCreator() {
-        return new String(getCreatorAsBytes(false), ASCII);
+        return ASCII.decode(getCreatorAsByteBuffer(false)).toString();
     }
 
     @Override

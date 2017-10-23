@@ -1,5 +1,6 @@
 package org.jdownloader.par2;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import org.appwork.utils.formatter.HexFormatter;
@@ -17,38 +18,21 @@ public class UnicodeFilenamePacket extends Packet {
      *
      * @param rawPacket
      */
-    public byte[] getFileID() {
-        final byte[] ret = new byte[16];
-        System.arraycopy(getRawPacket().getBody(), 0, ret, 0, 16);
-        return ret;
+    public ByteBuffer getFileID() {
+        return ByteBuffer.wrap(getRawPacket().getBody(), 0, 16);
     }
 
     @Override
     public String toString() {
-        return "UnicodeFilenamePacket|Name:" + getName() + "|FileID:" + HexFormatter.byteArrayToHex(getFileID());
+        return "UnicodeFilenamePacket|Name:" + getName() + "|FileID:" + HexFormatter.byteBufferToHex(getFileID());
     }
 
-    public byte[] getNameAsBytes(final boolean ignoreNullTermination) {
-        final RawPacket rawPacket = getRawPacket();
-        final byte[] ret;
-        if (ignoreNullTermination) {
-            ret = new byte[rawPacket.getBody().length - 16];
-        } else {
-            int length = rawPacket.getBody().length;
-            for (int index = 16; index < rawPacket.getBody().length; index++) {
-                if (rawPacket.getBody()[index] == 0) {
-                    length = index;
-                    break;
-                }
-            }
-            ret = new byte[length - 16];
-        }
-        System.arraycopy(rawPacket.getBody(), 16, ret, 0, ret.length);
-        return ret;
+    public ByteBuffer getNameAsByteBuffer(final boolean ignoreNullTermination) {
+        return getByteBuffer(16, getRawPacket().getBody().length - 16, ignoreNullTermination);
     }
 
     public String getName() {
-        return new String(getNameAsBytes(false), UTF16);
+        return UTF16.decode(getNameAsByteBuffer(false)).toString();
     }
 
     public UnicodeFilenamePacket(RawPacket rawPacket) {
