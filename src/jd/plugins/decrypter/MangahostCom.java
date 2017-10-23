@@ -15,11 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost\\.(com|net|me|org)|yesmangas\\.net|mangashost\\.net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost\\.(com|net|me|org)|yesmangas\\.net|mangashost\\.net|mangashost\\.com)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
 public class MangahostCom extends antiDDoSForDecrypt {
 
     public MangahostCom(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class MangahostCom extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "yesmangas.net", "mangashost.net" };
+        return new String[] { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "yesmangas.net", "mangashost.net", "mangashost.com" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
