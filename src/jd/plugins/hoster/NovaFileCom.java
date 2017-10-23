@@ -23,12 +23,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.captcha.SkipException;
@@ -54,9 +48,14 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" })
 public class NovaFileCom extends antiDDoSForHost {
-
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "https://novafile.com";
@@ -80,7 +79,6 @@ public class NovaFileCom extends antiDDoSForHost {
     // protocol: redirects to https
     // captchatype: recaptcha
     // other: OLD standard-JD User-Agent is blocked!
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
@@ -497,7 +495,6 @@ public class NovaFileCom extends antiDDoSForHost {
                 } else {
                     throw e;
                 }
-
             }
         }
     }
@@ -806,7 +803,6 @@ public class NovaFileCom extends antiDDoSForHost {
     }
 
     private final String regexRecaptcha = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
-
     private AccountType  accountType    = null;
 
     @Override
@@ -817,7 +813,7 @@ public class NovaFileCom extends antiDDoSForHost {
         accountType = account.getType();
         br.setFollowRedirects(false);
         String dllink = null;
-        if (account.getBooleanProperty("nopremium")) {
+        if (AccountType.FREE.equals(account.getType())) {
             getPage(link.getDownloadURL());
             doFree(link, account, false, 1, "freelink2");
         } else {
