@@ -3,9 +3,7 @@ package org.jdownloader.par2.test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
-import java.util.Enumeration;
 
-import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.par2.AsciiCommentPacket;
 import org.jdownloader.par2.CreatorPacket;
 import org.jdownloader.par2.FileDescriptionPacket;
@@ -37,10 +35,6 @@ public class Test {
                 } else if (Arrays.equals(next.getType(), MainPacket.MAGIC)) {
                     MainPacket mainPacket = new MainPacket(next);
                     System.out.println(mainPacket);
-                    Enumeration<byte[]> it = mainPacket.getRecoveryFileIDs();
-                    while (it.hasMoreElements()) {
-                        System.out.println("RecoveryFileID:" + HexFormatter.byteArrayToHex(it.nextElement()));
-                    }
                 } else {
                     System.out.println("Unsupported:" + new String(next.getType()));
                 }
