@@ -37,6 +37,9 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -125,6 +128,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
     private final String getRouterIP() {
         return internalVariables.get("ip");
+    }
+
+    private boolean isAttributeSet(NamedNodeMap attributes, String key) {
+        final Node node = attributes.getNamedItem(key);
+        return node != null && StringUtils.equalsIgnoreCase(node.getNodeValue(), "true") || StringUtils.equalsIgnoreCase(node.getTextContent(), "true");
     }
 
     @Override
@@ -277,7 +285,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         final NamedNodeMap attributes = toDo.getAttributes();
                         Browser retbr = null;
                         try {
-                            retbr = this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, attributes.getNamedItem("https") != null, attributes.getNamedItem("raw") != null);
+                            retbr = this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, isAttributeSet(attributes, "https"), isAttributeSet(attributes, "raw"), isAttributeSet(attributes, "postraw"));
                         } catch (final Exception e) {
                             if (e instanceof ReconnectException) {
                                 throw e;
@@ -457,11 +465,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         logger.finer("Parsed Variables: " + this.parsedVariables);
     }
 
-    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) throws ReconnectException {
+    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw, final boolean ispostraw) throws ReconnectException {
         try {
             final String requestType;
             final String path;
-            final StringBuilder post = new StringBuilder();
+            final StringBuilder postContent = new StringBuilder();
             final HashMap<String, String> requestProperties = new HashMap<String, String>();
             if (israw) {
                 br.setHeaders(new RequestHeader());
@@ -521,8 +529,12 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             final int requestLinesLength = requestLines.length;
             for (int li = 1; li < requestLinesLength; li++) {
                 if (headersEnd) {
-                    post.append(requestLines[li]);
-                    post.append(new char[] { '\r', '\n' });
+                    if (ispostraw) {
+                        postContent.append(requestLines[li].trim());
+                    } else {
+                        postContent.append(requestLines[li]);
+                        postContent.append(new char[] { '\r', '\n' });
+                    }
                     continue;
                 }
                 if (requestLines[li].trim().length() == 0) {
@@ -556,8 +568,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     if (StringUtils.equalsIgnoreCase(requestType, "GET") || StringUtils.equalsIgnoreCase(requestType, "AUTH")) {
                         br.getPage(protocoll + host + path);
                     } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
-                        final String poster = post.toString().trim();
-                        br.postPageRaw(protocoll + host + path, poster);
+                        if (ispostraw) {
+                            br.postPageRaw(protocoll + host + path, HexFormatter.hexToByteArray(postContent.toString()));
+                        } else {
+                            br.postPageRaw(protocoll + host + path, postContent.toString().trim());
+                        }
                     } else {
                         logger.severe("Unknown/Unsupported requestType: " + requestType);
                         return null;
@@ -599,7 +614,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     }
                     return;
                 }
-                final String verifyIP = InetAddress.getByName(verify).getHostAddress();
+                final String verifyIP = HTTPConnectionUtils.resolvHostIP(verify, IPVERSION.IPV4_ONLY)[0].getHostAddress();
+                // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
                 if (whiteList.contains(verifyIP)) {
                     if (verifiedIPs != null) {
                         verifiedIPs.add(verify);

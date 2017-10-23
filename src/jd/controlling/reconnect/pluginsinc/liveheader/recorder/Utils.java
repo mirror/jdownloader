@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.reconnect.pluginsinc.liveheader.recorder;
 
 import java.io.BufferedInputStream;
@@ -30,6 +29,7 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.logging.LogController;
 
 public final class Utils {
@@ -44,15 +44,17 @@ public final class Utils {
         int c;
         try {
             in.mark(1);
-            if (in.read() == -1)
+            if (in.read() == -1) {
                 return null;
-            else
+            } else {
                 in.reset();
+            }
             while ((c = in.read()) >= 0) {
-                if ((c == 0) || (c == 10) || (c == 13))
+                if ((c == 0) || (c == 10) || (c == 13)) {
                     break;
-                else
+                } else {
                     data.append((char) c);
+                }
             }
             if (c == 13) {
                 in.mark(1);
@@ -79,14 +81,18 @@ public final class Utils {
                     newbuffer.put(bigbuffer);
                     bigbuffer = newbuffer;
                 }
-                if (c > 0) bigbuffer.put(minibuffer);
+                if (c > 0) {
+                    bigbuffer.put(minibuffer);
+                }
                 if (bigbuffer.position() >= 4) {
                     position = bigbuffer.position();
                     complete = bigbuffer.get(position - 4) == (byte) 13;
                     complete &= bigbuffer.get(position - 3) == (byte) 10;
                     complete &= bigbuffer.get(position - 2) == (byte) 13;
                     complete &= bigbuffer.get(position - 1) == (byte) 10;
-                    if (complete) break;
+                    if (complete) {
+                        break;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -99,13 +105,17 @@ public final class Utils {
     public static InputStream newInputStream(final ByteBuffer buf) {
         return new InputStream() {
             public synchronized int read() throws IOException {
-                if (!buf.hasRemaining()) { return -1; }
+                if (!buf.hasRemaining()) {
+                    return -1;
+                }
                 return buf.get();
             }
 
             public synchronized int read(final byte[] bytes, final int off, int len) throws IOException {
                 // Read only what's left
-                if (!buf.hasRemaining()) { return -1; }
+                if (!buf.hasRemaining()) {
+                    return -1;
+                }
                 len = Math.min(len, buf.remaining());
                 buf.get(bytes, off, len);
                 return len;
@@ -113,19 +123,15 @@ public final class Utils {
         };
     }
 
-    public static void createStep(LinkedHashMap<String, String> headers, String postdata, Vector<String> steps, boolean ishttps, boolean rawmode) {
+    public static void createStep(LinkedHashMap<String, String> headers, byte[] postdata, Vector<String> steps, boolean ishttps, boolean rawmode) {
         if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css).*?").matches()) {
-            String httpstrue = "";
-            String rawtrue = "";
-            if (ishttps) {
-                httpstrue = " https=\"true\"";
-            }
-            if (rawmode) {
-                rawtrue = " raw=\"true\"";
-            }
+            final String rawFlag = rawmode ? " raw=\"true\"" : "";
+            final String httpsFlag = ishttps ? " https=\"true\"" : "";
+            final boolean isPost = headers.get(null).contains("POST") && postdata != null;
+            final String postFlag = isPost ? " postraw=\"true\"" : "";
             final StringBuilder hlh = new StringBuilder();
             hlh.append("    [[[STEP]]]" + "\r\n");
-            hlh.append("        [[[REQUEST" + httpstrue + rawtrue + "]]]" + "\r\n");
+            hlh.append("        [[[REQUEST" + httpsFlag + rawFlag + postFlag + "]]]" + "\r\n");
             if (rawmode == true) {
                 for (final Entry<String, String> entry : headers.entrySet()) {
                     final String key = entry.getKey();
@@ -142,7 +148,6 @@ public final class Utils {
                             hlh.append("        Host: %%%routerip%%%" + "\r\n");
                             continue;
                         }
-
                         hlh.append("        " + key + ": " + entry.getValue() + "\r\n");
                     }
                 }
@@ -151,13 +156,15 @@ public final class Utils {
                 hlh.append("        Host: %%%routerip%%%" + "\r\n");
                 if (headers.containsKey("authorization")) {
                     String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
-                    if (auth != null) ReconnectRecorder.AUTH = Encoding.Base64Decode(auth.trim());
+                    if (auth != null) {
+                        ReconnectRecorder.AUTH = Encoding.Base64Decode(auth.trim());
+                    }
                     hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
                 }
             }
-            if (headers.get(null).contains("POST") && postdata != null) {
+            if (isPost) {
                 hlh.append("\r\n");
-                hlh.append(postdata.trim());
+                hlh.append(HexFormatter.byteArrayToHex(postdata));
                 hlh.append("\r\n");
             }
             hlh.append("        [[[/REQUEST]]]" + "\r\n");

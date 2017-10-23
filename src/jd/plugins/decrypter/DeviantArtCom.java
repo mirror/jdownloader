@@ -417,10 +417,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                     grab = this.br.toString().replace("\\", "");
                 }
                 final String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
-                if ((links == null || links.length == 0) && request_counter == 1) {
-                    logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + parameter);
-                    throw new DecrypterException("Decrypter broken for link: " + parameter);
-                } else if (links == null || links.length == 0) {
+                if (links == null || links.length == 0) {
                     /* "deviation in storage" links are no links - that are empty items so there is no reason to stop. */
                     final String[] empty_links = br.getRegex("class=\"(instorage)\"").getColumn(0);
                     if (empty_links != null && empty_links.length > 0) {

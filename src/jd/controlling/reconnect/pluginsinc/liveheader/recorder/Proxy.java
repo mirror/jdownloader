@@ -130,8 +130,7 @@ class ProxyThread extends Thread {
     public void run() {
         byte[] minibuffer = new byte[2048];
         ByteBuffer headerbuffer = null;
-        ByteBuffer postdatabuffer = null;
-        int numberRead = 0;
+        byte[] postData = null;
         OutputStream toClient = null;
         InputStream fromClient;
         try {
@@ -158,7 +157,6 @@ class ProxyThread extends Thread {
                         }
                         headers.put(key, value);
                     }
-                    String postdata = null;
                     if (headers.containsKey("content-type")) {
                         final String contentType = headers.get("content-type");
                         if (StringUtils.containsIgnoreCase(contentType, "x-www-form-urlencoded") || StringUtils.containsIgnoreCase(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "json")) {
@@ -166,21 +164,19 @@ class ProxyThread extends Thread {
                                 final int post_len = new Integer(headers.get("content-length"));
                                 int post_len_toread = post_len;
                                 int post_len_read = 0;
-                                final byte[] cbuf = new byte[post_len];
+                                postData = new byte[post_len];
                                 int indexstart = 0;
                                 while (post_len_toread > 0) {
-                                    if ((post_len_read = fromClient.read(cbuf, indexstart, post_len_toread)) == -1) {
+                                    if ((post_len_read = fromClient.read(postData, indexstart, post_len_toread)) == -1) {
                                         break;
                                     }
                                     indexstart = indexstart + post_len_read;
                                     post_len_toread = post_len_toread - post_len_read;
                                 }
-                                postdatabuffer = ByteBuffer.wrap(cbuf);
-                                postdata = new String(cbuf, "UTF-8").trim();
                             }
                         }
                     }
-                    Utils.createStep(headers, postdata, steps, ishttps, israw);
+                    Utils.createStep(headers, postData, steps, ishttps, israw);
                 } catch (Exception e) {
                 }
             }
@@ -220,32 +216,27 @@ class ProxyThread extends Thread {
                     }
                 } catch (Exception e) {
                 }
-                InputStream fromClient2 = Utils.newInputStream(headerbuffer);
+                final InputStream fromClient2 = Utils.newInputStream(headerbuffer);
                 while (true) {
-                    numberRead = fromClient2.read(minibuffer, 0, 2000);
+                    final int numberRead = fromClient2.read(minibuffer);
                     if (numberRead == -1) {
                         break;
-                    }
-                    toClient.write(minibuffer, 0, numberRead);
-                }
-                if (postdatabuffer != null) {
-                    fromClient2 = Utils.newInputStream(postdatabuffer);
-                    while (true) {
-                        numberRead = fromClient2.read(minibuffer, 0, 2000);
-                        if (numberRead == -1) {
-                            break;
-                        }
+                    } else {
                         toClient.write(minibuffer, 0, numberRead);
                     }
+                }
+                if (postData != null) {
+                    toClient.write(postData);
                 }
             }
             try {
                 while (true) {
-                    numberRead = fromClient.read(minibuffer, 0, 2000);
+                    final int numberRead = fromClient.read(minibuffer);
                     if (numberRead == -1) {
                         break;
+                    } else {
+                        toClient.write(minibuffer, 0, numberRead);
                     }
-                    toClient.write(minibuffer, 0, numberRead);
                 }
             } catch (Exception e) {
             }
