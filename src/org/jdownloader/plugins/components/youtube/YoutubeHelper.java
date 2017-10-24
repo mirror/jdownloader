@@ -482,14 +482,15 @@ public class YoutubeHelper {
         REPLACER.add(new YoutubeReplacer("DURATION") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                int ms = link.getIntegerProperty(YoutubeHelper.YT_DURATION, -1);
-                if (ms <= 0) {
+                final int secs = link.getIntegerProperty(YoutubeHelper.YT_DURATION, -1);
+                if (secs <= 0) {
                     return "";
-                }
-                if (StringUtils.isEmpty(mod)) {
-                    return TimeFormatter.formatMilliSeconds(ms, 0);
                 } else {
-                    return (ms / 1000) + "s";
+                    if (StringUtils.isEmpty(mod)) {
+                        return TimeFormatter.formatSeconds(secs, 0);
+                    } else {
+                        return secs + "s";
+                    }
                 }
             }
 
