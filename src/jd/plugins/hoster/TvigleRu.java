@@ -13,14 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,9 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvigle.ru" }, urls = { "http://cloud\\.tvigle\\.ru/video/\\d+|http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/" })
 public class TvigleRu extends PluginForHost {
-
     public TvigleRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,9 +43,7 @@ public class TvigleRu extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
-
     private static final String  type_embedded     = "http://cloud\\.tvigle\\.ru/video/\\d+";
     private static final String  type_normal       = "http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/";
 
@@ -65,7 +61,6 @@ public class TvigleRu extends PluginForHost {
         LinkedHashMap<String, Object> api_data;
         String videoID = downloadLink.getStringProperty("videoID", null);
         dllink = null;
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (videoID == null) {
@@ -104,7 +99,7 @@ public class TvigleRu extends PluginForHost {
         final Object error_object = api_data.get("errorType");
         if (error_object != null) {
             final long error_code = ((Number) error_object).longValue();
-            if (error_code == 1) {
+            if (error_code == (1 | 7)) { // "errorType": 7, "isGeoBlocked": true
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
