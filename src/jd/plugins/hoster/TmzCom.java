@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tmz.com" }, urls = { "http://(www\\.|m\\.)?tmz\\.com/videos/[A-Za-z0-9\\-_]+" })
 public class TmzCom extends PluginForHost {
-
     public TmzCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,7 +60,7 @@ public class TmzCom extends PluginForHost {
         if (filename.equals("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("name=\"VideoURL\" content=\"(http://[^<<\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("name=\"VideoURL\" content=\"(https?://[^<<\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

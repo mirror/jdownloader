@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -50,7 +49,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daclips.in" }, urls = { "https?://(?:www\\.)?daclips\\.(?:in|com)/[a-z0-9]{12}" })
 public class DaClipsIn extends antiDDoSForHost {
-
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://daclips.in";
@@ -74,7 +72,6 @@ public class DaClipsIn extends antiDDoSForHost {
     // protocol: no https
     // captchatype: null
     // other: sister sites, movpod.in && gorillavid.in
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("daclips.com/", "daclips.in/"));
@@ -148,6 +145,34 @@ public class DaClipsIn extends antiDDoSForHost {
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
+        Form download1 = getFormByKey("op", "download1");
+        if (download1 != null) {
+            download1.remove("method_premium");
+            // this.waitTime(System.currentTimeMillis(), downloadLink);
+            sendForm(download1);
+            // checkErrors(downloadLink, false, passCode);
+        }
+        String dllink = getDllink(br);
+        if (dllink != null) {
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("freelink", dllink);
+                } else {
+                    logger.info("dllink error");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -210,7 +235,6 @@ public class DaClipsIn extends antiDDoSForHost {
             super.getPage(brv, COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = getDllink(brv);
         }
-
         // Third, continue like normal.
         if (dllink == null) {
             getPage(downloadLink.getDownloadURL());
@@ -224,7 +248,6 @@ public class DaClipsIn extends antiDDoSForHost {
             }
             dllink = getDllink(br);
         }
-
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
@@ -315,18 +338,14 @@ public class DaClipsIn extends antiDDoSForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
-
                 if (password) {
                     passCode = handlePassword(passCode, dlForm, downloadLink);
                 }
-
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-
                 dllink = getDllink(br);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     checkErrors(downloadLink, true, passCode);
@@ -420,9 +439,9 @@ public class DaClipsIn extends antiDDoSForHost {
         }
         String dllink = brg.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(brg, "file:([ ]+)?\"(http://[^<>\"]*?)\"").getMatch(1);
+            dllink = new Regex(brg, "(?:file|src):\\s*(?:'|\")([^<>'\"]*?)(?:'|\")").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]{15,}/[^<>\"]*?)\"").getMatch(0);
+                dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]{15,}/[^<>\"]*?)('|\")").getMatch(0);
             }
         }
         return dllink;
@@ -662,5 +681,4 @@ public class DaClipsIn extends antiDDoSForHost {
     public String[] siteSupportedNames() {
         return new String[] { "daclips.in", "daclips.com" };
     }
-
 }
