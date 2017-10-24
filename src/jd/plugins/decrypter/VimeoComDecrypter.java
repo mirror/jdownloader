@@ -354,7 +354,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 link.setAvailable(true);
                 final DownloadLink best = dedupeMap.get(quality.bestString());
                 // we wont use size as its not always shown for different qualities. use quality preference
-                if (best == null || quality.getSource().ordinal() > ((VimeoVideoContainer) best.getProperty(jd.plugins.hoster.VimeoCom.VVC)).getSource().ordinal()) {
+                if (best == null || quality.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best)).getSource().ordinal()) {
                     dedupeMap.put(quality.bestString(), link);
                 }
             }
@@ -398,12 +398,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink determineBest(HashMap<String, DownloadLink> bestMap) {
+    private DownloadLink determineBest(HashMap<String, DownloadLink> bestMap) throws Exception {
         DownloadLink bestLink = null;
         int bestHeight = -1;
         for (final Map.Entry<String, DownloadLink> best : bestMap.entrySet()) {
             final DownloadLink link = best.getValue();
-            final int height = ((VimeoVideoContainer) link.getProperty(jd.plugins.hoster.VimeoCom.VVC)).getHeight();
+            final int height = jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(link).getHeight();
             if (height > bestHeight) {
                 bestLink = link;
                 bestHeight = height;

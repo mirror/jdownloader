@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components.containers;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 /**
@@ -10,10 +11,15 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
  *
  */
 public class VimeoVideoContainer extends VideoContainer {
-    private Quality quality;
-    private Source  source;
-    private String  codec;
-    private Long    estimatedSize = null;
+    public static final TypeRef<VimeoVideoContainer> TYPE_REF      = new TypeRef<VimeoVideoContainer>() {
+    };
+    private Quality                                  quality;
+    private Source                                   source;
+    private String                                   codec;
+    private Long                                     estimatedSize = null;
+
+    public VimeoVideoContainer() {
+    }
 
     public Long getEstimatedSize() {
         return estimatedSize;
@@ -138,7 +144,6 @@ public class VimeoVideoContainer extends VideoContainer {
         vvm.setSource(Source.HLS);
         vvm.setQuality(getQuality(container.getHeight()));
         vvm.setDownloadurlAndExtension(container.getDownloadurl(), ".mp4");
-        vvm.setContainer(container);
         return vvm;
     }
 
