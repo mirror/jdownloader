@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.usenet;
 import java.awt.Color;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -34,7 +35,6 @@ import jd.plugins.download.SparseFile;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
@@ -55,11 +55,9 @@ import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
 public class SimpleUseNetDownloadInterface extends DownloadInterface {
-
     private final Downloadable                      downloadable;
     private final ManagedThrottledConnectionHandler connectionHandler;
     private final LogInterface                      logger;
-
     private final AtomicBoolean                     abort                = new AtomicBoolean(false);
     private final AtomicBoolean                     terminated           = new AtomicBoolean(false);
     private File                                    outputCompleteFile;
@@ -126,7 +124,22 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                             final HashInfo fileHashInfo;
                             switch (type) {
                             case CRC32:
-                                final long checksum = Hash.getCRC32(outputPartFile);
+                                final FileInputStream fis = new FileInputStream(outputPartFile);
+                                final long checksum;
+                                try {
+                                    final byte[] b = new byte[128 * 1024];
+                                    int read = 0;
+                                    long cur = 0;
+                                    final CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
+                                    while ((read = cis.read(b)) >= 0) {
+                                        cur += read;
+                                        hashProgress.setCurrent(cur);
+                                    }
+                                    checksum = cis.getChecksum().getValue();
+                                    cis.close();
+                                } finally {
+                                    fis.close();
+                                }
                                 fileHashInfo = new HashInfo(HexFormatter.byteArrayToHex(new byte[] { (byte) (checksum >>> 24), (byte) (checksum >>> 16), (byte) (checksum >>> 8), (byte) checksum }), TYPE.CRC32);
                                 break;
                             default:
@@ -326,7 +339,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
             DownloadPluginProgress downloadPluginProgress = null;
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
@@ -491,5 +503,4 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     public boolean isResumedDownload() {
         return resumed;
     }
-
 }

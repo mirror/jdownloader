@@ -234,7 +234,7 @@ public class DownloadLinkDownloadable implements Downloadable {
         hashProgress.setProgressSource(this);
         try {
             addPluginProgress(hashProgress);
-            final byte[] b = new byte[32767];
+            final byte[] b = new byte[128 * 1024];
             String hashFile = null;
             FileInputStream fis = null;
             int n = 0;
