@@ -28,30 +28,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.Property;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -72,6 +48,29 @@ import org.jdownloader.plugins.config.AccountJsonConfig;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/(torrentdl|dl)/.+" })
 public class PremiumizeMe extends UseNet {
@@ -166,22 +165,21 @@ public class PremiumizeMe extends UseNet {
             br = newBrowser();
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openHeadConnection(link.getDownloadURL());
-                } catch (final BrowserException e) {
-                    return AvailableStatus.UNCHECKABLE;
-                }
+                con = br.openHeadConnection(link.getDownloadURL());
                 if (!con.getContentType().contains("html") && con.isOK()) {
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(con), false));
                     }
                     link.setVerifiedFileSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
-                } else {
+                } else if (con.getResponseCode() == 404) {
+                    /* Usually 404 when offline */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    /* E.g. 403 because of bad fair use status */
+                    logger.warning("Abnormal AvailableStatus state");
+                    return AvailableStatus.UNCHECKABLE;
                 }
-            } catch (final Throwable e) {
-                return AvailableStatus.UNCHECKABLE;
             } finally {
                 try {
                     /* make sure we close connection */
@@ -480,7 +478,7 @@ public class PremiumizeMe extends UseNet {
         } else {
             ai.setUnlimitedTraffic();
         }
-        String hostsSup = br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
+        br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
         HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
         if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) {
@@ -509,7 +507,7 @@ public class PremiumizeMe extends UseNet {
         }
     }
 
-    private void login(Account account) throws Exception {
+    private void login(final Account account) throws Exception {
         br = newBrowser();
         final String username = Encoding.urlEncode(account.getUser());
         if (username == null || !username.trim().matches("^\\d{9}$")) {
