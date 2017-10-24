@@ -830,6 +830,7 @@ public class HighWayMe extends UseNet {
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.high-way.me", false, 119));
+        ret.addAll(UsenetServer.createServerList("reader.high-way.me", true, 563));
         return ret;
     }
 

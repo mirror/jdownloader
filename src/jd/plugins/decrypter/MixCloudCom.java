@@ -13,23 +13,23 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -40,7 +40,6 @@ import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
 public class MixCloudCom extends antiDDoSForDecrypt {
-
     public MixCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -73,7 +72,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-
         final String url_thumbnail = br.getRegex("class=\"album-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
         String theName = br.getRegex("class=\"cloudcast-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) {
@@ -93,7 +91,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         String comment = "";
         final String playInfo;
         final String url_mp3_preview;
-        String json = br.getRegex("<div id=\"relay-data\"[^>]*>(.*?)</div>").getMatch(0);
+        String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
         if (json == null) {
             /* 2017-05-02: Set useful information as comment (user request) */
             final String textinfo_playing_tracks_by = br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
@@ -110,19 +108,38 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             }
             playInfo = br.getRegex("m-play-info=\"([^\"]+)\"").getMatch(0);
             url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
-
         } else {
-            // total json ?
-            json = HTMLEntities.unhtmlentities(json);
+            json = Encoding.htmlDecode(json);
+            Object cloudcastStreamInfo = null;
+            LinkedHashMap<String, Object> entries = null;
+            /* Find correct json object inside ArrayList */
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            for (final Object audioO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) audioO;
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
+                if (entries == null) {
+                    continue;
+                }
+                cloudcastStreamInfo = entries.get("streamInfo");
+                if (cloudcastStreamInfo != null) {
+                    /* We should have found the correct object here! */
+                    break;
+                }
+            }
+            if (cloudcastStreamInfo == null) {
+                return null;
+            }
+            url_mp3_preview = (String) entries.get("previewUrl");
+            entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
+            /* TODO: 2017-10-24: Check hlsUrl, dashUrl, url --> Check where we can find the BEST quality (preferably via http protocol!) */
             playInfo = PluginJSonUtils.getJson(json, "dashUrl");
-            url_mp3_preview = PluginJSonUtils.getJson(json, "previewUrl");
         }
         if (playInfo == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         if (url_mp3_preview != null && attemptToDownloadOriginal) {
-            /* 2016-10-24: Original-file download not possible anymore(?!) */
+            /* 2016-10-24: Original-file download not possible anymore[via this way](?!) */
             final Regex originalinfo = new Regex(url_mp3_preview, "(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]+\\.mp3)");
             final String previewLinkpart = originalinfo.getMatch(1);
             if (previewLinkpart != null) {
@@ -133,9 +150,9 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             }
             tempLinks.add(url_mp3_preview);
         }
-
         tempLinks.addAll(siht(playInfo, null));
         if (tempLinks.isEmpty()) {
+            /* 2017-10-24: TODO: Maybe remove this old code?? */
             final String[] temp = br.getRegex(" src=\"([^\"]+/js\\d*/[^\"]+\\.js)\"").getColumn(0);
             if (temp != null) {
                 final ArrayList<String> jss = new ArrayList<String>(Arrays.asList(temp));
@@ -199,7 +216,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 }
             }
         }
-
         /* Add thumbnail if possible. */
         if (!StringUtils.isEmpty(url_thumbnail)) {
             final DownloadLink dlink = createDownloadlink(url_thumbnail);
@@ -209,7 +225,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             dlink.setFinalFileName(theName + ".jpeg");
             decryptedLinks.add(dlink);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(theName));
         fp.addLinks(decryptedLinks);
@@ -233,7 +248,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 result = decrypt(playInfo, key);
             } catch (final Throwable e) {
             }
-
             final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
             if (links != null && links.length != 0) {
                 for (final String temp : links) {
@@ -266,5 +280,4 @@ public class MixCloudCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
