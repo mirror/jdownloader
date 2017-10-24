@@ -946,21 +946,21 @@ public class ScriptEnvironment {
     private static final HashMap<File, AtomicInteger> LOCKS = new HashMap<File, AtomicInteger>();
 
     private static synchronized Object requestLock(File name) {
-        AtomicInteger lock = LOCKS.get(name);
-        if (lock == null) {
-            lock = new AtomicInteger(0);
-            LOCKS.put(name, lock);
+        final AtomicInteger existingLock = LOCKS.get(name);
+        if (existingLock == null) {
+            final AtomicInteger newLock = new AtomicInteger(1);
+            LOCKS.put(name, newLock);
+            return newLock;
+        } else {
+            existingLock.incrementAndGet();
+            return existingLock;
         }
-        lock.incrementAndGet();
-        return lock;
     }
 
     private static synchronized void unLock(File name) {
-        AtomicInteger lock = LOCKS.get(name);
-        if (lock != null) {
-            if (lock.decrementAndGet() == 0) {
-                LOCKS.remove(name);
-            }
+        final AtomicInteger existingLock = LOCKS.get(name);
+        if (existingLock != null && existingLock.decrementAndGet() == 0) {
+            LOCKS.remove(name);
         }
     }
 

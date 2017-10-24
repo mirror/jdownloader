@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,6 +50,7 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -657,9 +657,28 @@ public class VimeoCom extends PluginForHost {
         return v;
     }
 
+    public static VimeoVideoContainer getVimeoVideoContainer(final DownloadLink downloadLink) throws Exception {
+        synchronized (downloadLink) {
+            final Object value = downloadLink.getProperty(VVC, null);
+            if (value instanceof VimeoVideoContainer) {
+                return (VimeoVideoContainer) value;
+            } else if (value instanceof String) {
+                final VimeoVideoContainer ret = JSonStorage.restoreFromString(value.toString(), VimeoVideoContainer.TYPE_REF);
+                downloadLink.setProperty(VVC, ret);
+                return ret;
+            } else if (value instanceof Map) {
+                final VimeoVideoContainer ret = JSonStorage.restoreFromString(JSonStorage.toString(value), VimeoVideoContainer.TYPE_REF);
+                downloadLink.setProperty(VVC, ret);
+                return ret;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
-    public String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final VimeoVideoContainer vvc = (VimeoVideoContainer) downloadLink.getProperty(VVC, null);
+    public String getFormattedFilename(final DownloadLink downloadLink) throws Exception {
+        final VimeoVideoContainer vvc = getVimeoVideoContainer(downloadLink);
         String videoTitle = downloadLink.getStringProperty("videoTitle", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);

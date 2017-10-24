@@ -4,14 +4,15 @@ import java.util.Locale;
 
 import jd.plugins.Plugin;
 
+import org.appwork.storage.Storable;
+
 /**
  * Base container for all video information. Extend when you want further features.
  *
  * @author raztoki
  *
  */
-public class VideoContainer {
-
+public class VideoContainer implements Storable {
     private String downloadurl = null;
     private String extension   = null;
     private int    width       = -1;
@@ -19,8 +20,9 @@ public class VideoContainer {
     private int    framerate   = -1;
     private int    bitrate     = -1;
     private long   filesize    = -1;
-    // used for storing the HLSContiner/Other as historic reference
-    private Object container;
+
+    public VideoContainer() {
+    }
 
     /**
      * @return the downloadurl
@@ -150,24 +152,8 @@ public class VideoContainer {
         this.filesize = filesize;
     }
 
-    /**
-     * @return the container
-     */
-    public Object getContainer() {
-        return container;
-    }
-
-    /**
-     * @param container
-     *            the container to set
-     */
-    public void setContainer(Object container) {
-        this.container = container;
-    }
-
     @Override
     public String toString() {
         return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight()).concat("@" + String.valueOf(getFramerate())));
     }
-
 }
