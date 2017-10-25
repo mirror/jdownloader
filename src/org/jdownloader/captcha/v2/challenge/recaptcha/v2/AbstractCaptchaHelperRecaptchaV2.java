@@ -15,7 +15,6 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected String       siteKey;
     protected String       secureToken;
     protected boolean      boundToDomain;
-    protected Boolean      sameOrigin = null;
 
     public String getSecureToken() {
         return getSecureToken(br != null ? br.toString() : null);
@@ -35,6 +34,22 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     public void setSecureToken(String secureToken) {
         this.secureToken = secureToken;
+    }
+
+    protected boolean isBoundToDomain() {
+        if (true) {
+            return true;
+        } else {
+            return boundToDomain;
+        }
+    }
+
+    protected Boolean isSameOrigin() {
+        if (true) {
+            return Boolean.TRUE;
+        } else {
+            return null;
+        }
     }
 
     public String getSiteDomain() {

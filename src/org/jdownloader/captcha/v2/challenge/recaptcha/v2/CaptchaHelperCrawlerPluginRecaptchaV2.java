@@ -168,6 +168,6 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
     }
 
     protected RecaptchaV2Challenge createChallenge(final PluginForDecrypt plugin) {
-        return new RecaptchaV2Challenge(siteKey, secureToken, boundToDomain, sameOrigin, plugin, br, getSiteDomain());
+        return new RecaptchaV2Challenge(siteKey, secureToken, isBoundToDomain(), isSameOrigin(), plugin, br, getSiteDomain());
     }
 }

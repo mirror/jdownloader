@@ -74,7 +74,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 link.addPluginProgress(progress);
             }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, boundToDomain, sameOrigin, plugin, br, getSiteDomain());
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, isBoundToDomain(), isSameOrigin(), plugin, br, getSiteDomain());
             try {
                 c.setTimeout(plugin.getCaptchaTimeout());
                 if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
