@@ -639,14 +639,14 @@ public class FileflaresCom extends PluginForHost {
                     dlForm.remove("adblock_detected");
                     dlForm.put("adblock_detected", "0");
                 }
-                if (!skipWaittime) {
-                    waitTime(downloadLink, timeBefore);
-                }
                 String randValue = br.getRegex("input\\[.+\"([^\"]+)\"\\);document").getMatch(0);
                 if (randValue == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dlForm.put("rand", randValue);
+                if (!skipWaittime) {
+                    waitTime(downloadLink, timeBefore);
+                }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
