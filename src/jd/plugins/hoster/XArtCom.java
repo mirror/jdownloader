@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.URL;
@@ -27,11 +26,9 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -48,9 +45,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(?:www\\.)?(x\\-art(decrypted)?\\.com/(members/)?(videos|galleries)/.+|([a-z0-9]+\\.)?x-art(decrypted)?\\.com/.+\\.(mov|mp4|wmv|zip).*)" })
 public class XArtCom extends PluginForHost {
-
     public static interface XArtConfigInterface extends PluginConfigInterface {
-
         @DefaultBooleanValue(false)
         @Order(10)
         boolean isGrabBestVideoVersionEnabled();
@@ -110,10 +105,10 @@ public class XArtCom extends PluginForHost {
         boolean isGrab4000pImagesVersionEnabled();
 
         void setGrab4000pImagesVersionEnabled(boolean b);
-
     }
 
-    private static Object LOCK = new Object();
+    private static Object LOCK        = new Object();
+    private String        downloadURL = null;
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
@@ -137,6 +132,7 @@ public class XArtCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        downloadURL = null;
         if (parameter.getFinalFileName() == null) {
             String name = getFileNameFromURL(new URL(parameter.getPluginPatternMatcher()));
             if (name == null) {
@@ -166,6 +162,7 @@ public class XArtCom extends PluginForHost {
             urlcon = br.openHeadConnection(parameter.getPluginPatternMatcher());
             final int responseCode = urlcon.getResponseCode();
             if (urlcon.isOK() && !StringUtils.containsIgnoreCase(urlcon.getContentType(), "text")) {
+                downloadURL = parameter.getPluginPatternMatcher();
                 if (urlcon.getLongContentLength() > 0) {
                     parameter.setVerifiedFileSize(urlcon.getLongContentLength());
                 }
@@ -173,7 +170,6 @@ public class XArtCom extends PluginForHost {
             }
             if (account != null) {
                 final String pageURL = parameter.getStringProperty("pageURL", null);
-                String newURL = null;
                 if (pageURL != null) {
                     final String videoID = parameter.getStringProperty("videoID", null);
                     final String imageID = parameter.getStringProperty("imageID", null);
@@ -185,7 +181,7 @@ public class XArtCom extends PluginForHost {
                         for (final DownloadLink result : results) {
                             if (StringUtils.equals(imageID, result.getStringProperty("imageID", null)) && StringUtils.equals(quality, result.getStringProperty("quality", null))) {
                                 correctDownloadLink(result);
-                                newURL = result.getPluginPatternMatcher();
+                                downloadURL = result.getPluginPatternMatcher();
                                 break;
                             }
                         }
@@ -193,14 +189,14 @@ public class XArtCom extends PluginForHost {
                         for (final DownloadLink result : results) {
                             if (StringUtils.equals(videoID, result.getStringProperty("videoID", null)) && StringUtils.equals(quality, result.getStringProperty("quality", null)) && StringUtils.equals(ext, result.getStringProperty("ext", null))) {
                                 correctDownloadLink(result);
-                                newURL = result.getPluginPatternMatcher();
+                                downloadURL = result.getPluginPatternMatcher();
                                 break;
                             }
                         }
                     }
                 }
-                if (newURL == null) {
-                    parameter.setPluginPatternMatcher(newURL);
+                if (downloadURL != null) {
+                    parameter.setPluginPatternMatcher(downloadURL);
                     return AvailableStatus.TRUE;
                 }
             }
@@ -259,40 +255,26 @@ public class XArtCom extends PluginForHost {
                     lbr.setCookies(this.getHost(), cookies);
                     prepBrowser(lbr);
                     lbr.setFollowRedirects(true);
-                    lbr.getPage("http://www.x-art.com/members/");
+                    lbr.getPage("https://www.x-art.com/members/");
                     if (lbr.containsHTML(">Logout</a>")) {
                         return;
                     }
                 }
                 prepBrowser(lbr);
                 lbr.setFollowRedirects(true);
-                lbr.getPage("http://www.x-art.com/members/");
-                final Form loginform = lbr.getForm(0);
-                if (loginform == null) {
-                    String lang = System.getProperty("user.language");
+                lbr.getPage("https://www.x-art.com/members/");
+                final Form login = br.getFormbyActionRegex(".*auth.form");
+                if (login == null) {
+                    final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                doThis(lbr);
-                final Form rememberLogin = new Form();
-                rememberLogin.setMethod(MethodType.POST);
-                rememberLogin.setAction(lbr.getURL("/includes/ajax_process.php").toString());
-                rememberLogin.put("action", "remember_login");
-                final PostRequest loginRequest = new PostRequest(rememberLogin.getAction());
-                loginRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                loginRequest.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                loginRequest.getHeaders().put("Accept-Charset", null);
-                loginRequest.getHeaders().put("Cache-Control", null);
-                loginRequest.getHeaders().put("Pragma", null);
-                final Browser br2 = lbr.cloneBrowser();
-                br2.submitForm(rememberLogin);
-
-                loginform.put("uid", Encoding.urlEncode(account.getUser()));
-                loginform.put("pwd", Encoding.urlEncode(account.getPass()));
-                lbr.submitForm(loginform);
+                login.put("uid", Encoding.urlEncode(account.getUser()));
+                login.put("pwd", Encoding.urlEncode(account.getPass()));
+                lbr.submitForm(login);
                 if (!lbr.containsHTML(">Logout</a>")) {
                     String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
@@ -330,9 +312,11 @@ public class XArtCom extends PluginForHost {
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        login(account, br, false);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -5);
+        requestFileInformation(link);
+        if (downloadURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -5);
         if (dl.getConnection().getResponseCode() == 401) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -342,26 +326,6 @@ public class XArtCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private void doThis(Browser dbr) {
-        final ArrayList<String> grabThis = new ArrayList<String>();
-        grabThis.add("/css/zurb/common?v=2.1 ");
-        grabThis.add("/js/zurb/common-login?v=2.1");
-        grabThis.add("/cptcha.jpg");
-        for (final String url : grabThis) {
-            final Browser br2 = dbr.cloneBrowser();
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openGetConnection(url);
-            } catch (final Throwable e) {
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Exception e) {
-                }
-            }
-        }
     }
 
     @Override
@@ -378,5 +342,4 @@ public class XArtCom extends PluginForHost {
     public String getDescription() {
         return "Download videos- and pictures with the x-art.com plugin.";
     }
-
 }
