@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystore.to" }, urls = { "http://(www\\.)?mystore\\.to/dl/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystore.to" }, urls = { "http://(www\\.)?mystore\\.to/dl/[A-Za-z0-9]+" })
 public class MyStoreTo extends PluginForHost {
-
     public MyStoreTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,6 +54,9 @@ public class MyStoreTo extends PluginForHost {
         final String filename = br.getRegex("class=\"download\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex(">FILESIZE: ([^<>\"]*?)<br /><br").getMatch(0);
         if (filename == null || filesize == null) {
+            if (br.containsHTML("THE FILE IS NOT READY. PLEASE TRY AGAIN LATER")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "THE FILE IS NOT READY. PLEASE TRY AGAIN LATER", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -75,12 +76,10 @@ public class MyStoreTo extends PluginForHost {
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
@@ -147,5 +146,4 @@ public class MyStoreTo extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
