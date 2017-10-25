@@ -150,7 +150,8 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             }
             tempLinks.add(url_mp3_preview);
         }
-        tempLinks.addAll(siht(playInfo, null));
+        // tempLinks.addAll(siht(playInfo, null));
+        tempLinks.add(decode(playInfo));
         if (tempLinks.isEmpty()) {
             /* 2017-10-24: TODO: Maybe remove this old code?? */
             final String[] temp = br.getRegex(" src=\"([^\"]+/js\\d*/[^\"]+\\.js)\"").getColumn(0);
@@ -237,6 +238,17 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    private String decode(String playInfo) {
+        final byte[] key = JDHexUtils.getByteArray(JDHexUtils.getHexString("IFYOUWANTTHEARTISTSTOGETPAIDDONOTDOWNLOADFROMMIXCLOUD"));
+        final byte[] enc = jd.nutils.encoding.Base64.decode(playInfo);
+        byte[] plain = new byte[enc.length];
+        int keyLen = key.length;
+        for (int i = 0; i < enc.length; i++) {
+            plain[i] = (byte) (enc[i] ^ key[i % keyLen]);
+        }
+        return new String(plain);
     }
 
     private ArrayList<String> siht(String playInfo, String... object) {
