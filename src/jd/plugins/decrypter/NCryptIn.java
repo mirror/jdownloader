@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -47,9 +46,8 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "https?://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" })
 public class NCryptIn extends antiDDoSForDecrypt {
-
     private final String reCaptcha              = "recaptcha/api/challenge";
     private final String aniCaptcha             = "/temp/anicaptcha/\\d+\\.gif";
     private final String circleCaptcha          = "\"/classes/captcha/circlecaptcha\\.php\"";
@@ -253,7 +251,6 @@ public class NCryptIn extends antiDDoSForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
             }
-
             // Container handling
             final String regexContainer = "/container/(?:dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf)";
             final HashSet<String> dupeContainers = new HashSet<String>();
@@ -394,7 +391,6 @@ public class NCryptIn extends antiDDoSForDecrypt {
                 }
             }
         } catch (Throwable e) {
-
         } finally {
             try {
                 con.disconnect();
@@ -403,7 +399,6 @@ public class NCryptIn extends antiDDoSForDecrypt {
             if (file.exists()) {
                 file.delete();
             }
-
         }
         return links;
     }
@@ -412,11 +407,9 @@ public class NCryptIn extends antiDDoSForDecrypt {
 
     private void simulateBrowser(final Browser br) throws InterruptedException {
         // dupe.clear();
-
         final AtomicInteger requestQ = new AtomicInteger(0);
         final AtomicInteger requestS = new AtomicInteger(0);
         final ArrayList<String> links = new ArrayList<String>();
-
         String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
@@ -430,9 +423,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
             final String correctedLink = Request.getLocation(link, br.getRequest());
             if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("captcha/") && !correctedLink.contains("'")) {
                 if (dupe.add(correctedLink)) {
-
                     final Thread simulate = new Thread("SimulateBrowser") {
-
                         public void run() {
                             final Browser rb = br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
@@ -458,11 +449,9 @@ public class NCryptIn extends antiDDoSForDecrypt {
                             }
                             return;
                         }
-
                     };
                     simulate.start();
                     Thread.sleep(100);
-
                 }
             }
         }
@@ -475,5 +464,4 @@ public class NCryptIn extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }
