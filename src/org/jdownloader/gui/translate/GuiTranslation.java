@@ -6561,9 +6561,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(PAID) Fully automated remote Captcha Solving" })
     String AntiCaptchaCom_getName_();
 
-    @Default(lngs = { "en" }, values = { "<b><p style='color:#ff0000'>To solve this kind of captcha, you have to use either the <a href='https://my.jdownloader.org/apps' target='_blank'>Android app via 'my.jdownloader'</a>, or our <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader browser extension.</a></p></b>" })
+    @Default(lngs = { "en" }, values = { "<b><p style='color:#ff0000'>To solve this kind of captcha, you have to use either the <a href='https://my.jdownloader.org/apps' target='_blank'>Android app via 'my.jdownloader'</a>, or our <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader browser extension. (Please note: a My.JDownloader is NOT required!)</a></p></b>" })
     String extension_required();
 
-    @Default(lngs = { "en" }, values = { "<p>To get more readable and better solvable captchas, we strongly recommend to install the official <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader Browser extension.</a></p>" })
+    @Default(lngs = { "en" }, values = { "<p>To get more readable and better solvable captchas, we strongly recommend to install the official <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader Browser extension. (Please note: a My.JDownloader is NOT required!)</a></p>" })
     String extension_recommended();
 }
