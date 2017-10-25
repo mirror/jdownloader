@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-videos.se" }, urls = { "https?://(?:www\\.)?share\\-videos\\.se/auto/video/\\d+\\?uid=\\d+" })
 public class ShareVideosSe extends PluginForHost {
-
     public ShareVideosSe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,14 +38,12 @@ public class ShareVideosSe extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -70,26 +66,24 @@ public class ShareVideosSe extends PluginForHost {
         final Regex urlinfo = new Regex(link.getDownloadURL(), "video/(\\d+)\\?uid=(\\d+)");
         final String fid = urlinfo.getMatch(0);
         final String uid = urlinfo.getMatch(1);
-
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null || filename.equals("")) {
-            /* Fallback */
-            filename = fid;
-        }
-
         this.br.getPage("http://embed." + this.getHost() + "/auto/embed/" + fid + "?uid=" + uid);
+        if (filename == null || filename.equals("")) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         /* First try this source, it is more reliable! */
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?file1\\.mp4)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?\\.mp4)\"").getMatch(0);
         }
-
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filename.equals("")) {
+            /* Fallback */
+            filename = fid;
+        } else {
+            filename += "_" + fid;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
