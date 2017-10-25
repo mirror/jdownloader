@@ -16,8 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-videos.se" }, urls = { "https?://(?:www\\.)?share\\-videos\\.se/auto/video/\\d+\\?uid=\\d+" })
 public class ShareVideosSe extends PluginForHost {
@@ -67,6 +72,20 @@ public class ShareVideosSe extends PluginForHost {
         final String fid = urlinfo.getMatch(0);
         final String uid = urlinfo.getMatch(1);
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null || filename.equals("")) {
+            final Browser brc = br.cloneBrowser();
+            brc.getPage("//search.share-videos.se/json/movie_tag?svid=" + fid + "&site=sv");
+            try {
+                final List<Object> tags = JSonStorage.restoreFromString(brc.toString(), TypeRef.LIST);
+                final StringBuilder sb = new StringBuilder();
+                for (Object tag : tags) {
+                    sb.append(Encoding.unicodeDecode(tag.toString()));
+                }
+                filename = sb.toString();
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
         this.br.getPage("http://embed." + this.getHost() + "/auto/embed/" + fid + "?uid=" + uid);
         if (filename == null || filename.equals("")) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
