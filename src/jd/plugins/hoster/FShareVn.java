@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -56,12 +55,10 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
-
     private final String         SERVERERROR                  = "Tài nguyên bạn yêu cầu không tìm thấy";
     private final String         IPBLOCKED                    = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
     private static Object        LOCK                         = new Object();
     private String               dllink                       = null;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -476,33 +473,50 @@ public class FShareVn extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.getURL().endsWith("/home")) {
-            br.getPage("/home");
-        }
+        br.getPage("/account/infoaccount");
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil == null) {
             validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
             if (validUntil == null) {
                 validUntil = br.getRegex("<dt>Hạn dùng</dt>[\t\n\r ]+<dd><b>([^<>\"]*?)</b></dd>").getMatch(0);
                 if (validUntil == null) {
-                    validUntil = br.getRegex("Hạn dùng: ([^<>\"]*?)</p></li>").getMatch(0);
+                    validUntil = br.getRegex("Hạn dùng:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
                     if (validUntil == null) {
-                        validUntil = br.getRegex("Expire: ([^<>\"]*?)</p></li>").getMatch(0);
+                        validUntil = br.getRegex("Expire:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
                     }
                 }
             }
         }
-        if (br.containsHTML("title=\"Platium\">VIP </span>")) {
+        String accountType = br.getRegex("<dt>Account type</dt>.*?member\">\\s*(.*?)\\s*<").getMatch(0);
+        if (accountType != null) {
+            accountType = br.getRegex("<dt>>Loại tài khoản</dt>.*?member\">\\s*(.*?)\\s*<").getMatch(0);
+        }
+        if (StringUtils.equalsIgnoreCase(accountType, "VIP")) {
             ai.setStatus("VIP Account");
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
+            if (validUntil != null) {
+                long validuntil = 0;
+                if (validUntil.contains("-")) {
+                    validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH);
+                } else {
+                    validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
+                }
+                if (validuntil > 0) {
+                    validuntil += 24 * 60 * 60 * 1000l;
+                }
+                ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
+            }
         } else if (validUntil != null) {
             long validuntil = 0;
             if (validUntil.contains("-")) {
                 validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH);
             } else {
                 validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
+            }
+            if (validuntil > 0) {
+                validuntil += 24 * 60 * 60 * 1000l;
             }
             ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -574,7 +588,6 @@ public class FShareVn extends PluginForHost {
             }
             if (dupe.add(correctedLink)) {
                 final Thread simulate = new Thread("SimulateBrowser") {
-
                     public void run() {
                         final Browser rb = br.cloneBrowser();
                         rb.getHeaders().put("Cache-Control", null);
@@ -600,7 +613,6 @@ public class FShareVn extends PluginForHost {
                             requestS.getAndIncrement();
                         }
                     }
-
                 };
                 simulate.start();
                 Thread.sleep(100);
@@ -609,7 +621,6 @@ public class FShareVn extends PluginForHost {
         while (requestQ.get() != requestS.get()) {
             Thread.sleep(1000);
         }
-
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -635,5 +646,4 @@ public class FShareVn extends PluginForHost {
         }
         return dllink;
     }
-
 }
