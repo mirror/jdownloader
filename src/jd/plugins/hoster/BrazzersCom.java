@@ -390,14 +390,14 @@ public class BrazzersCom extends antiDDoSForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://ma." + account.getHoster() + "/home/");
+                    br.getPage("https://ma." + account.getHoster() + "/home/");
                     if (br.containsHTML(html_loggedin)) {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
                     br = pornportalPrepBR(new Browser(), "ma.brazzers.com");
                 }
-                br.getPage("http://ma." + account.getHoster() + "/access/login/");
+                br.getPage("https://ma." + account.getHoster() + "/access/login/");
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("div class=\"g-recaptcha\"")) {

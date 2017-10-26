@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpserver.HttpConnection;
+import org.appwork.utils.net.httpserver.RawHttpConnectionInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
@@ -178,7 +178,7 @@ public class ConnectedDevice {
         } else {
             num = list.size();
         }
-        final HttpConnection con = latestRequest.getHttpRequest().getConnection();
+        final RawHttpConnectionInterface con = latestRequest.getHttpRequest().getConnection();
         if (con instanceof MyJDownloaderDirectHttpConnection) {
             if (num == 0) {
                 return "0 Direct Connections via my.jdownloader";
