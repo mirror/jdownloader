@@ -9,9 +9,9 @@ import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.HttpConnection.ConnectionHook;
 import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
+import org.appwork.utils.net.httpserver.RawHttpConnectionInterface;
 import org.appwork.utils.net.httpserver.handler.ExtendedHttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HTTPBridge;
@@ -51,7 +51,7 @@ public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteA
     }
 
     protected void checkDirectConnectionToken(HttpRequest request) throws BasicRemoteAPIException {
-        final HttpConnection connection = request.getConnection();
+        final RawHttpConnectionInterface connection = request.getConnection();
         if (connection instanceof MyJDownloaderDirectHttpConnection && request.getHttpConnectionType() != HttpConnectionType.OPTIONS) {
             final MyJDownloaderDirectHttpConnection myConnection = (MyJDownloaderDirectHttpConnection) connection;
             final String sessionToken = myConnection.getRequestConnectToken();

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -26,11 +25,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,11 +44,14 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
-
     private final String                   MAINPAGE                   = "http://mountfile.net";
-
     /* For reconnect special handling */
     private static Object                  CTRLLOCK                   = new Object();
     private final String                   EXPERIMENTALHANDLING       = "EXPERIMENTALHANDLING";
@@ -65,7 +62,6 @@ public class MountFileNet extends antiDDoSForHost {
     private static AtomicReference<String> lastIP                     = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                  = new AtomicReference<String>();
     private final Pattern                  IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-
     private static final long              FREE_RECONNECTWAIT_GENERAL = 1 * 60 * 60 * 1000L;
 
     public MountFileNet(PluginWrapper wrapper) {
@@ -125,7 +121,6 @@ public class MountFileNet extends antiDDoSForHost {
         final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
         long lastdownload = 0;
         long passedTimeSinceLastDl = 0;
-
         synchronized (CTRLLOCK) {
             /* Load list of saved IPs + timestamp of last download */
             final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
@@ -133,7 +128,6 @@ public class MountFileNet extends antiDDoSForHost {
                 blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
             }
         }
-
         if (useExperimentalHandling) {
             /*
              * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
@@ -347,6 +341,9 @@ public class MountFileNet extends antiDDoSForHost {
             logger.info("Daily downloadlimit reached");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
+        if (br.containsHTML("File was deleted by owner or due to a violation of service rules")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -360,7 +357,6 @@ public class MountFileNet extends antiDDoSForHost {
     }
 
     /* Stuff for special reconnect errorhandling */
-
     private String getIP() throws PluginException {
         final Browser ip = new Browser();
         String currentIP = null;
@@ -454,5 +450,4 @@ public class MountFileNet extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
