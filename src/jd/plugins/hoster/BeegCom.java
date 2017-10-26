@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -64,18 +65,19 @@ public class BeegCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getPluginPatternMatcher());
-        String[][] match = br.getRegex("script src=\"([^\"]+/(\\d+)\\.js)").getMatches();
+        String[] match = br.getRegex("script src=\"([^\"]+/(\\d+)\\.js)").getRow(0);
         if (match == null || match.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String beegVersion = match[0][1];
-        String jsurl = match[0][0];
-        br.getPage(jsurl);
-        String salt = br.getRegex("beeg_salt=\"([^\"]+)").getMatch(0);
+        String jsurl = match[0];
+        String beegVersion = match[1];
+        Browser cbr = br.cloneBrowser();
+        cbr.getPage(jsurl);
+        String salt = cbr.getRegex("beeg_salt=\"([^\"]+)").getMatch(0);
         if (salt == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("//api.beeg.com/api/v6/" + beegVersion + "/video/" + fid);
+        br.getPage("//beeg.com/api/v6/" + beegVersion + "/video/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
