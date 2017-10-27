@@ -351,7 +351,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         } else {
             /** Use APIv2 */
-            br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id + "?representation=full&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTIDv2 + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+            br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id + "?representation=full&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br) + "&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
             data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             tracks = (List<Map<String, Object>>) data.get("tracks");
             if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
