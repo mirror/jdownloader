@@ -6,7 +6,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class GenericDeleteFromDownloadlistContextAction extends GenericDeleteFromDownloadlistAction {
@@ -18,7 +18,7 @@ public class GenericDeleteFromDownloadlistContextAction extends GenericDeleteFro
     }
 
     protected void initIncludeSelectionSupport() {
-        addContextSetup(includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this) {
+        addContextSetup(includedSelection = new IncludedSelectionSetup(DownloadsTable.getInstance(), this, this) {
             @Override
             public void updateListeners() {
             }
