@@ -13,14 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,9 +30,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
 public class BoxCom extends antiDDoSForDecrypt {
-
     private static final String TYPE_APP = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
 
     public BoxCom(PluginWrapper wrapper) {
@@ -51,6 +49,10 @@ public class BoxCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         // our default is german, this returns german!!
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        if (cryptedlink.matches(".+/folder/\\d+")) {
+            final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
+            br.getPage(rootFolder);
+        }
         br.getPage(cryptedlink);
         if (br._getURL().getPath().equals("/freeshare")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
@@ -171,5 +173,4 @@ public class BoxCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
