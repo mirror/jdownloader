@@ -217,12 +217,15 @@ public class WindowsShutdownInterface extends ShutdownInterface {
                 return false;
             }
             try {
-                // https://msdn.microsoft.com/en-us/library/windows/desktop/aa372691%28v=vs.85%29.aspx
-                final PowrProfDll lib2 = PowrProfDll.INSTANCE;
-                final PowrProfDll.SYSTEM_POWER_CAPABILITIES systemPOWERCAPABILITIES = new PowrProfDll.SYSTEM_POWER_CAPABILITIES();
-                lib2.GetPwrCapabilities(systemPOWERCAPABILITIES);
-                logger.info("GetPwrCapabilities:" + systemPOWERCAPABILITIES);
-                return systemPOWERCAPABILITIES.SystemS3 || systemPOWERCAPABILITIES.SystemS4;
+                if (CrossSystem.getOS().isMinimum(CrossSystem.OperatingSystem.WINDOWS_XP)) {
+                    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa372691%28v=vs.85%29.aspx
+                    final PowrProfDll lib2 = PowrProfDll.INSTANCE;
+                    final PowrProfDll.SYSTEM_POWER_CAPABILITIES systemPOWERCAPABILITIES = new PowrProfDll.SYSTEM_POWER_CAPABILITIES();
+                    if (lib2.GetPwrCapabilities(systemPOWERCAPABILITIES)) {
+                        logger.info("GetPwrCapabilities:" + systemPOWERCAPABILITIES);
+                        return systemPOWERCAPABILITIES.SystemS3 || systemPOWERCAPABILITIES.SystemS4;
+                    }
+                }
             } catch (final Throwable e) {
                 logger.log(e);
             }
