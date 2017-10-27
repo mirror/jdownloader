@@ -216,6 +216,16 @@ public class WindowsShutdownInterface extends ShutdownInterface {
             if (std.contains("La mise en veille") && std.contains("n'a pas")) {
                 return false;
             }
+            try {
+                // https://msdn.microsoft.com/en-us/library/windows/desktop/aa372691%28v=vs.85%29.aspx
+                final PowrProfDll lib2 = PowrProfDll.INSTANCE;
+                final PowrProfDll.SYSTEM_POWER_CAPABILITIES systemPOWERCAPABILITIES = new PowrProfDll.SYSTEM_POWER_CAPABILITIES();
+                lib2.GetPwrCapabilities(systemPOWERCAPABILITIES);
+                logger.info("GetPwrCapabilities:" + systemPOWERCAPABILITIES);
+                return systemPOWERCAPABILITIES.SystemS3 || systemPOWERCAPABILITIES.SystemS4;
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
             if (std.contains("Hibernation")) {
                 return false;
             }

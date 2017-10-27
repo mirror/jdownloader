@@ -2,14 +2,14 @@ package org.jdownloader.extensions.shutdown;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.sun.jna.Structure;
 import com.sun.jna.win32.StdCallLibrary;
 
+//https://stackoverflow.com/questions/2413973/jna-with-complicated-struct
 public interface PowrProfDll extends StdCallLibrary {
-    PowrProfDll INSTANCE = (PowrProfDll) com.sun.jna.Native.loadLibrary("PowrProf", PowrProfDll.class);
+    public static final PowrProfDll INSTANCE = (PowrProfDll) com.sun.jna.Native.loadLibrary("PowrProf", PowrProfDll.class);
 
     public static class BATTERY_REPORTING_SCALE extends Structure {
         public long Granularity;
@@ -17,7 +17,11 @@ public interface PowrProfDll extends StdCallLibrary {
 
         @Override
         protected List getFieldOrder() {
-            return Arrays.asList(new String[] { "Granularity", "Capacity" });
+            final List<String> ret = new ArrayList<String>();
+            for (final Field f : SYSTEM_POWER_CAPABILITIES.class.getDeclaredFields()) {
+                ret.add(f.getName());
+            }
+            return ret;
         }
     }
 
@@ -54,8 +58,8 @@ public interface PowrProfDll extends StdCallLibrary {
 
         @Override
         protected List getFieldOrder() {
-            ArrayList<String> ret = new ArrayList<String>();
-            for (Field f : SYSTEM_POWER_CAPABILITIES.class.getDeclaredFields()) {
+            final List<String> ret = new ArrayList<String>();
+            for (final Field f : SYSTEM_POWER_CAPABILITIES.class.getDeclaredFields()) {
                 ret.add(f.getName());
             }
             return ret;
@@ -63,12 +67,4 @@ public interface PowrProfDll extends StdCallLibrary {
     }
 
     void GetPwrCapabilities(SYSTEM_POWER_CAPABILITIES result);
-
-    public static void main(String[] args) {
-        PowrProfDll lib2 = PowrProfDll.INSTANCE;
-        PowrProfDll.SYSTEM_POWER_CAPABILITIES systemPOWERCAPABILITIES = new PowrProfDll.SYSTEM_POWER_CAPABILITIES();
-        lib2.GetPwrCapabilities(systemPOWERCAPABILITIES);
-        System.out.println("HibernateFile:" + systemPOWERCAPABILITIES.HiberFilePresent);
-        System.out.println("Hibernate:" + systemPOWERCAPABILITIES.SystemS4);
-    }
 }
