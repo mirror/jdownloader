@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,18 +48,24 @@ public class ImgSrcRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String                  password         = null;
-    private String                  parameter        = null;
-    private String                  username         = null;
-    private String                  uid              = null;
-    private String                  id               = null;
-    private String                  aid              = null;
-    private String                  pwd              = null;
-    private boolean                 exaustedPassword = false;
-    private boolean                 offline          = false;
-    private PluginForHost           plugin           = null;
-    private ArrayList<DownloadLink> decryptedLinks   = null;
-    private List<String>            passwords        = null;
+    private enum Reason {
+        OFFLINE,
+        PASSWORD,
+        LOGIN;
+    }
+
+    private String                  password       = null;
+    private String                  parameter      = null;
+    private String                  username       = null;
+    private String                  uid            = null;
+    private String                  id             = null;
+    private String                  aid            = null;
+    private String                  pwd            = null;
+    private Reason                  reason         = null;
+    private PluginForHost           plugin         = null;
+    private ArrayList<DownloadLink> decryptedLinks = null;
+    private List<String>            passwords      = null;
+    private long                    startTime;
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -83,8 +89,11 @@ public class ImgSrcRu extends PluginForDecrypt {
         return ((jd.plugins.hoster.ImgSrcRu) plugin).prepBrowser(prepBr, neu);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    private void setInitConstants(final CryptedLink param) {
+        this.startTime = System.currentTimeMillis();
         this.decryptedLinks = new ArrayList<DownloadLink>();
+        this.reason = null;
+        parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
         final List<String> passwords = getPreSetPasswords();
         if (param.getDecrypterPassword() != null && !passwords.contains(param.getDecrypterPassword())) {
             passwords.add(param.getDecrypterPassword());
@@ -95,20 +104,22 @@ public class ImgSrcRu extends PluginForDecrypt {
             passwords.add(lastPass);
         }
         this.passwords = passwords;
-        long startTime = System.currentTimeMillis();
-        parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
+    }
+
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        setInitConstants(param);
         prepBrowser(br, false);
         try {
             // best to get the original parameter, as the page could contain blocks due to forward or password
             if (!getPage(parameter, param)) {
-                if (offline || exaustedPassword) {
+                if (reason != null) {
                     decryptedLinks.add(createOfflinelink(parameter));
                     return decryptedLinks;
                 } else {
                     return null;
                 }
             }
-            if (br.getURL().contains("http://imgsrc.ru/main/search.php")) {
+            if (br._getURL().getPath().equalsIgnoreCase("/main/search.php")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -148,7 +159,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
             if (!br.getURL().matches(Pattern.quote(parameter) + ".*?")) {
                 if (!getPage(parameter, param)) {
-                    if (offline || exaustedPassword) {
+                    if (reason != null) {
                         return decryptedLinks;
                     } else {
                         return null;
@@ -176,7 +187,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 return null;
             }
         } catch (Exception e) {
-            if (!offline) {
+            if (reason != null && reason != Reason.OFFLINE) {
                 throw e;
             } else {
                 logger.info("Link offline: " + parameter);
@@ -278,6 +289,12 @@ public class ImgSrcRu extends PluginForDecrypt {
                         br.getPage(br.getURL() + "?warned=yeah");
                     }
                 }
+                // login required
+                if (br._getURL().getPath().equalsIgnoreCase("/main/login.php")) {
+                    logger.warning("You need to login! Currently not supported, ask for support to be added");
+                    reason = Reason.LOGIN;
+                    return false;
+                }
                 // needs to be before password
                 if (br.containsHTML("Continue to album >>")) {
                     String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(http://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
@@ -303,7 +320,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
                         if (password == null || password.equals("")) {
                             logger.info("User aborted/entered blank password");
-                            exaustedPassword = true;
+                            reason = Reason.PASSWORD;
                             return false;
                         }
                     }
@@ -317,7 +334,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         if (i == repeat) {
                             // using 'i' is probably not a good idea, as we could have had connection errors!
                             logger.warning("Exausted Password try : " + parameter);
-                            exaustedPassword = true;
+                            reason = Reason.PASSWORD;
                             return false;
                         } else {
                             continue;
@@ -327,7 +344,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
                 }
                 if (br.getURL().equals("http://imgsrc.ru/")) {
-                    offline = true;
+                    reason = Reason.OFFLINE;
                     return false;
                 }
                 if (br.getURL().contains(url) || !failed) {
@@ -336,7 +353,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
             } catch (final BrowserException e) {
                 if (br.getHttpConnection().getResponseCode() == 410) {
-                    offline = true;
+                    reason = Reason.OFFLINE;
                     return false;
                 }
                 failed = true;
