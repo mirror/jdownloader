@@ -29,6 +29,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.EmptySelectionInfo;
 import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -403,92 +404,79 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     protected void update() {
         if (lastLink != null) {
-            final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
-            switch (includedSelection.getSelectionType()) {
-            case SELECTED:
-                selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo());
-                break;
-            case UNSELECTED:
-                selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo());
-                final CrawledLink lastCrawledLink = lastLink.get();
-                if (lastCrawledLink != null && !selectionInfo.contains(lastCrawledLink)) {
-                    if (checkLink(lastCrawledLink)) {
-                        setEnabled(true);
-                        return;
-                    }
-                }
-                if (selectionInfo.getUnselectedChildren() != null) {
-                    for (final CrawledLink child : selectionInfo.getUnselectedChildren()) {
-                        if (checkLink(child)) {
-                            setEnabled(true);
-                            lastLink = new WeakReference<CrawledLink>(child);
-                            return;
-                        }
-                    }
-                }
-                setEnabled(false);
-                return;
-            default:
-                if (isIgnoreFiltered()) {
-                    selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
-                } else {
-                    selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
-                }
-                selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo);
-                break;
-            }
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    setVisible(true);
+                    final LinkGrabberTable table = LinkGrabberTable.getInstance();
+                    final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
+                    switch (includedSelection.getSelectionType()) {
+                    case SELECTED:
+                        selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo = table.getSelectionInfo());
+                        break;
+                    case UNSELECTED:
+                        selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo = table.getSelectionInfo());
+                        final CrawledLink lastCrawledLink = lastLink.get();
+                        if (lastCrawledLink != null && !selectionInfo.contains(lastCrawledLink)) {
+                            if (checkLink(lastCrawledLink)) {
+                                setEnabled(true);
+                                return;
+                            }
+                        }
+                        if (selectionInfo.getUnselectedChildren() != null) {
+                            for (final CrawledLink child : selectionInfo.getUnselectedChildren()) {
+                                if (checkLink(child)) {
+                                    setEnabled(true);
+                                    lastLink = new WeakReference<CrawledLink>(child);
+                                    return;
+                                }
+                            }
+                        }
+                        setEnabled(false);
+                        return;
+                    case ALL:
+                        if (isIgnoreFiltered()) {
+                            selectionInfo = table.getSelectionInfo(false, true);
+                        } else {
+                            selectionInfo = table.getSelectionInfo(false, false);
+                        }
+                        selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo);
+                        break;
+                    case NONE:
+                    default:
+                        selectionInfo = new EmptySelectionInfo<CrawledPackage, CrawledLink>(table.getController());
+                        selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo);
+                        break;
+                    }
                     if (isCancelLinkcrawlerJobs()) {
                         setEnabled(true);
-                        return;
-                    }
-                    if (isClearFilteredLinks()) {
+                    } else if (isClearFilteredLinks()) {
                         setEnabled(true);
-                        return;
-                    }
-                    if (isClearSearchFilter()) {
+                    } else if (isClearSearchFilter()) {
                         setEnabled(true);
-                        return;
-                    }
-                    if (isResetTableSorter()) {
+                    } else if (isResetTableSorter()) {
                         setEnabled(true);
-                        return;
-                    }
-                    if (isClearSearchFilter()) {
+                    } else if (isClearSearchFilter()) {
                         setEnabled(true);
-                        return;
-                    }
-                    final CrawledLink lastCrawledLink = lastLink.get();
-                    if (lastCrawledLink != null && !selectionInfo.contains(lastCrawledLink)) {
-                        if (checkLink(lastCrawledLink)) {
-                            setEnabled(true);
-                            return;
+                    } else {
+                        final CrawledLink lastCrawledLink = lastLink.get();
+                        if (lastCrawledLink != null && !selectionInfo.contains(lastCrawledLink)) {
+                            if (checkLink(lastCrawledLink)) {
+                                setEnabled(true);
+                                return;
+                            }
                         }
-                    }
-                    for (final CrawledLink child : selectionInfo.getChildren()) {
-                        if (checkLink(child)) {
-                            setEnabled(true);
-                            lastLink = new WeakReference<CrawledLink>(child);
-                            return;
+                        for (final CrawledLink child : selectionInfo.getChildren()) {
+                            if (checkLink(child)) {
+                                setEnabled(true);
+                                lastLink = new WeakReference<CrawledLink>(child);
+                                return;
+                            }
                         }
+                        setEnabled(false);
                     }
-                    setEnabled(false);
                 }
             };
         }
-        updateName();
-    }
-
-    private void updateName() {
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                setName(createName());
-            }
-        }.getReturnValue();
     }
 
     @Override

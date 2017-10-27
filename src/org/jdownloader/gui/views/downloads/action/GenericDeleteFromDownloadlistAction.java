@@ -550,25 +550,26 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                         selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo);
                         break;
                     }
-                    final DownloadLink lastDownloadLink = lastLink.get();
-                    if (lastDownloadLink != null && !selectionInfo.contains(lastDownloadLink)) {
-                        if (checkLink(lastDownloadLink)) {
-                            setEnabled(true);
-                            return;
-                        }
-                    }
                     if (isDeleteAll() && !selectionInfo.isEmpty()) {
                         setEnabled(true);
                         return;
-                    }
-                    for (final DownloadLink child : selectionInfo.getChildren()) {
-                        if (checkLink(child)) {
-                            lastLink = new WeakReference<DownloadLink>(child);
-                            setEnabled(true);
-                            return;
+                    } else {
+                        final DownloadLink lastDownloadLink = lastLink.get();
+                        if (lastDownloadLink != null && !selectionInfo.contains(lastDownloadLink)) {
+                            if (checkLink(lastDownloadLink)) {
+                                setEnabled(true);
+                                return;
+                            }
                         }
+                        for (final DownloadLink child : selectionInfo.getChildren()) {
+                            if (checkLink(child)) {
+                                lastLink = new WeakReference<DownloadLink>(child);
+                                setEnabled(true);
+                                return;
+                            }
+                        }
+                        setEnabled(false);
                     }
-                    setEnabled(false);
                 }
             };
         }

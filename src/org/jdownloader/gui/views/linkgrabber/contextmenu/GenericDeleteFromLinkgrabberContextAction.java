@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -10,7 +11,7 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.GenericDeleteFromLinkgrab
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFromLinkgrabberAction {
-    private TableContext tableContext;
+    private final TableContext tableContext;
 
     public GenericDeleteFromLinkgrabberContextAction() {
         super();
@@ -28,11 +29,12 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        if (tableContext != null) {
-            SelectionInfo<CrawledPackage, CrawledLink> actualSelection = LinkGrabberTable.getInstance().getSelectionInfo();
-            boolean has = actualSelection != null && !actualSelection.isEmpty();
-            if (tableContext != null) {
-                if (has) {
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                SelectionInfo<CrawledPackage, CrawledLink> selection = GenericDeleteFromLinkgrabberContextAction.this.selection.get();
+                final boolean hasSelection = selection != null && !selection.isEmpty();
+                if (hasSelection) {
                     if (tableContext.isItemVisibleForSelections()) {
                         setVisible(true);
                     } else {
@@ -40,40 +42,15 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                         setEnabled(false);
                     }
                 } else {
-                    switch (includedSelection.getSelectionType()) {
-                    case SELECTED:
-                        if (tableContext.isItemVisibleForEmptySelection()) {
-                            setVisible(true);
-                            setEnabled(true);
-                        } else {
-                            setVisible(false);
-                            setEnabled(false);
-                        }
-                        break;
-                    case ALL:
-                        if (tableContext.isItemVisibleForEmptySelection()) {
-                            setVisible(true);
-                            setEnabled(true);
-                        } else {
-                            setVisible(false);
-                            setEnabled(false);
-                        }
-                    case UNSELECTED:
-                        setVisible(false);
-                        setEnabled(false);
-                        break;
-                    default:
+                    if (tableContext.isItemVisibleForEmptySelection()) {
+                        setVisible(true);
+                    } else {
                         setVisible(false);
                         setEnabled(false);
                     }
                 }
-            } else if (!has) {
-                setVisible(false);
-                setEnabled(false);
-            } else if (has) {
-                setVisible(true);
             }
-        }
+        };
     }
 
     @Override
