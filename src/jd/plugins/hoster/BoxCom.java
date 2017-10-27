@@ -13,11 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,13 +25,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:com|net)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})/file/\\d+" })
 public class BoxCom extends antiDDoSForHost {
-
     private static final String TOS_LINK                = "https://www.box.net/static/html/terms.html";
-
     private static final String fileLink                = "https?://(?:\\w+\\.)*box\\.com/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})/file/\\d+";
-
     private String              dllink                  = null;
     private boolean             error_message_bandwidth = false;
 
@@ -85,6 +81,8 @@ public class BoxCom extends antiDDoSForHost {
             final Regex dlIds = new Regex(parameter.getPluginPatternMatcher(), "box\\.com/s/([a-z0-9]+)/file/(\\d+)");
             final String sharedname = dlIds.getMatch(0);
             final String fileid = dlIds.getMatch(1);
+            final String rootFolder = new Regex(parameter.getPluginPatternMatcher(), "(.+)/file/\\d+").getMatch(0);
+            br.getPage(rootFolder);
             br.getPage(parameter.getPluginPatternMatcher());
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,5 +135,4 @@ public class BoxCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
