@@ -96,15 +96,16 @@ public class Srnnks extends antiDDoSForDecrypt {
             logger.info("Limit reached(1)!");
             return true;
         }
-        long maxTimeout = 2 * 60 * 1000l;
+        long maxTimeout = 5 * 60 * 1000l;
         int loopIndex = 0;
-        while (!isAbort() || maxTimeout > 0) {
+        while (!isAbort() && maxTimeout > 0) {
             loopIndex++;
             if (br.containsHTML("Error 503")) {
                 logger.info("Limit reached(2)(" + loopIndex + ")!");
                 return true;
             } else if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
-                final int sleep = 15000 + loopIndex * 500;
+                logger.info("Limit detected(1)(" + loopIndex + ")!");
+                final int sleep = (loopIndex + 1) * 15000 + (loopIndex * 500);
                 GLOBAL_LOCK.lock();
                 try {
                     Thread.sleep(sleep);
@@ -114,7 +115,8 @@ public class Srnnks extends antiDDoSForDecrypt {
                     maxTimeout -= sleep;
                 }
             } else if (br.containsHTML("Download-Limit")) {
-                final int sleep = 30000;
+                logger.info("Limit detected(2)(" + loopIndex + ")!");
+                final int sleep = (loopIndex + 1) * 20000 + (loopIndex * 500);
                 GLOBAL_LOCK.lock();
                 try {
                     Thread.sleep(sleep);
