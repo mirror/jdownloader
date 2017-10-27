@@ -1,5 +1,8 @@
 package org.jdownloader.extensions.shutdown;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.sun.jna.Structure;
@@ -14,7 +17,7 @@ public interface PowrProfDll extends StdCallLibrary {
 
         @Override
         protected List getFieldOrder() {
-            return null;
+            return Arrays.asList(new String[] { "Granularity", "Capacity" });
         }
     }
 
@@ -51,7 +54,11 @@ public interface PowrProfDll extends StdCallLibrary {
 
         @Override
         protected List getFieldOrder() {
-            return null;
+            ArrayList<String> ret = new ArrayList<String>();
+            for (Field f : SYSTEM_POWER_CAPABILITIES.class.getDeclaredFields()) {
+                ret.add(f.getName());
+            }
+            return ret;
         }
     }
 
