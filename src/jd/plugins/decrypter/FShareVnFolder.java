@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,9 +30,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" })
 public class FShareVnFolder extends PluginForDecrypt {
-
     public FShareVnFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -94,9 +92,10 @@ public class FShareVnFolder extends PluginForDecrypt {
                         continue;
                     }
                     final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
-                    final String filesize = new Regex(data, "file_size align-right\">(.*?)</div>").getMatch(0);
+                    final String fileSizeBytes = new Regex(data, "file_size align-right\"\\s*data-size=\"(\\d+)\"").getMatch(0);
+                    final String filesizeString = new Regex(data, "file_size align-right\"\\s*(?:data-size=\"\\d+\")?>(.*?)</div>").getMatch(0);
                     final String dlink = new Regex(data, "(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
-                    if (filename == null && filesize == null && dlink == null) {
+                    if (filename == null && dlink == null) {
                         continue;
                     }
                     if (dlink == null) {
@@ -113,9 +112,11 @@ public class FShareVnFolder extends PluginForDecrypt {
                         aLink.setName(filename.trim());
                         aLink.setAvailable(true);
                     }
-                    if (filesize != null) {
-                        aLink.setDownloadSize(SizeFormatter.getSize(filesize));
-                    }
+                    if (fileSizeBytes != null) {
+                        aLink.setVerifiedFileSize(Long.parseLong(fileSizeBytes));
+                    } else if (filesizeString != null) {
+                            aLink.setDownloadSize(SizeFormatter.getSize(filesizeString));
+                        }
                     decryptedLinks.add(aLink);
                 }
             }
@@ -132,5 +133,4 @@ public class FShareVnFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
