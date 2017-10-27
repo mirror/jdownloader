@@ -66,5 +66,5 @@ public interface PowrProfDll extends StdCallLibrary {
         }
     }
 
-    void GetPwrCapabilities(SYSTEM_POWER_CAPABILITIES result);
+    boolean GetPwrCapabilities(SYSTEM_POWER_CAPABILITIES result);
 }
