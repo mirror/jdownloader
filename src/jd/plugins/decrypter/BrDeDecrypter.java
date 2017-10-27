@@ -39,9 +39,9 @@ import jd.plugins.hoster.BrDe.BrDeConfigInterface;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "https?://(www\\.)?br\\.de/mediathek/video/[^<>\"]+(\\.html)?" })
 public class BrDeDecrypter extends PluginForDecrypt {
-    private static final String   TYPE_INVALID           = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";
+    private static final String   TYPE_INVALID           = "https?://(www\\.)?br\\.de/mediathek/video/index\\.html";
     /* only keep best quality , do not change the ORDER */
     private static final String[] all_possible_qualities = { "X", "C", "E", "B", "A", "0" };
 

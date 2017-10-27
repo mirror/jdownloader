@@ -56,7 +56,7 @@ public class BrDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.br.de/unternehmen/service/kontakt/index.html";
+        return "https://www.br.de/unternehmen/service/kontakt/index.html";
     }
 
     @Override
