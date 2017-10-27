@@ -18,8 +18,7 @@ import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 import de.javasoft.util.OS;
 
 public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
-
-    private static final long serialVersionUID = -6728461590292436336L;
+    private static final long serialVersionUID = -6828461590292436336L;
     private boolean           initDone         = false;
 
     // Construtor
@@ -28,7 +27,6 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
         super("/org/jdownloader/gui/laf/jddefault/synth.xml");
         OS.getCurrentOS();
         initDone = true;
-
     }
 
     // return an unique LAF id
@@ -46,7 +44,6 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
                 File custom = Application.getResource("cfg/laf/" + JDDefaultLookAndFeel.class.getSimpleName() + ".xml");
                 LoggerFactory.getDefaultLogger().info("Custom LAF XML: " + custom);
                 if (custom.exists()) {
-
                     super.load(new BufferedInputStream(fis = new FileInputStream(custom)), resourceBase);
                     input.close();
                     return;
@@ -88,5 +85,4 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
     public String getName() {
         return "SyntheticaJDVisionLookAndFeel Custom Look and Feel";
     }
-
 }
