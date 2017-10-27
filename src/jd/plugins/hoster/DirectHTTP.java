@@ -331,6 +331,12 @@ public class DirectHTTP extends antiDDoSForHost {
                 throw e;
             }
         }
+        if (this.dl.getConnection().getResponseCode() == 403 && dl.getConnection().getRequestProperty("Range") != null) {
+            // requestFileInformation is successful but connection with range request fails with 403, retry without range
+            dl.getConnection().disconnect();
+            downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         if (this.dl.getConnection().getResponseCode() == 503) {
             try {
                 br.followConnection();
