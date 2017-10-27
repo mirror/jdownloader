@@ -321,14 +321,14 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gzip_aes"));
                         response.getResponseHeaders().add(new HTTPHeader("X-" + HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gzip_aes"));
                     }
-                    this.sendResponseHeaders();
+                    this.openOutputStream();
                     if (useDeChunkingOutputStream) {
                         this.os = new DeChunkingOutputStream(new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(getRawOutputStream(), 16384), cipher)));
                     } else {
                         this.os = new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(getRawOutputStream(), 16384), cipher));
                     }
                 } else {
-                    this.sendResponseHeaders();
+                    this.openOutputStream();
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
@@ -369,7 +369,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             }
         } else {
             if (sendHeaders) {
-                this.sendResponseHeaders();
+                this.openOutputStream();
             }
             this.os = getRawOutputStream();
         }
