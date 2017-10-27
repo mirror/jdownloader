@@ -2,8 +2,11 @@ package org.jdownloader.par2.test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Enumeration;
 
+import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.par2.AsciiCommentPacket;
 import org.jdownloader.par2.CreatorPacket;
 import org.jdownloader.par2.FileDescriptionPacket;
@@ -35,11 +38,27 @@ public class Test {
                 } else if (Arrays.equals(next.getType(), MainPacket.MAGIC)) {
                     MainPacket mainPacket = new MainPacket(next);
                     System.out.println(mainPacket);
+                    Enumeration<ByteBuffer> it = mainPacket.getRecoveryFileIDs();
+                    while (it.hasMoreElements()) {
+                        final ByteBuffer fileID = it.nextElement();
+                        System.out.println("RecoveryFileID:" + HexFormatter.byteBufferToHex(fileID));
+                    }
                 } else {
-                    System.out.println("Unsupported:" + new String(next.getType()));
+                    System.out.println("Unsupported:" + getType(next));
                 }
             }
         }
         fis.close();
+    }
+
+    private static final String getType(RawPacket rawPacket) {
+        final byte[] ret = new byte[rawPacket.getType().length];
+        System.arraycopy(rawPacket.getType(), 0, ret, 0, ret.length);
+        for (int index = 0; index < ret.length; index++) {
+            if (ret[index] == 0) {
+                ret[index] = ' ';
+            }
+        }
+        return new String(ret);
     }
 }
