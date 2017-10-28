@@ -16,9 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -66,11 +68,13 @@ public class VscoCo extends PluginForDecrypt {
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             ajax.getPage("/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-            if (page == 1) {
+            if (page == 1 || page > 1) {
                 amount_total = JavaScriptEngineFactory.toLong(entries.get("total"), 0);
-                if (amount_total == 0) {
+                if (page == 1 && amount_total == 0) {
                     logger.info("User has zero content!");
                     decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (page > 1 && amount_total == 0) {
                     return decryptedLinks;
                 }
             }
