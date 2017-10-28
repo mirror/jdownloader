@@ -15,7 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,12 +34,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+" })
+public class NexusmodsCom extends antiDDoSForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/(ajax/downloadfile\\?id=\\d+|download/\\d+/)" })
-public class NexusmodsCom extends PluginForHost {
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.nexusmods.com/skyrim/users/register/");
@@ -58,38 +58,44 @@ public class NexusmodsCom extends PluginForHost {
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String               dllink                       = null;
-    private boolean              isAccountOnly                = false;
+    private String               dllink;
+    private boolean              loginRequired;
 
-    public static boolean isOffline(final Browser br) {
+    public boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet|>File not found<|/noimage-1.png");
     }
 
-    public static Browser prepBR(final Browser br) {
-        /* For future usage so that hoster- and decrypterplugin got the same Browsers. */
-        return br;
+    public boolean isLoginRequired(final Browser br) {
+        if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<h2>Adult-only content</h2>")) {
+            // adult only content.
+            return true;
+        } else if (br.containsHTML("You need to be a member and logged in to download files larger")) {
+            // large files
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
-        isAccountOnly = false;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String fid = getFID(link.getDownloadURL());
-        prepBR(this.br);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String loadBox = br.getRegex("loadBox\\('(https?://.*?)'").getMatch(0);
-        if (loadBox != null) {
-            br.getPage(loadBox);
-            loadBox = br.getRegex("loadBox\\('(https?://.*?skipdonate)'").getMatch(0);
+        {
+            String loadBox = br.getRegex("loadBox\\('(https?://.*?)'").getMatch(0);
             if (loadBox != null) {
-                br.getPage(loadBox);
+                getPage(loadBox);
+                loadBox = br.getRegex("loadBox\\('(https?://.*?skipdonate)'").getMatch(0);
+                if (loadBox != null) {
+                    getPage(loadBox);
+                }
             }
         }
-        isAccountOnly = this.br.containsHTML("You need to be a member and logged in to download files larger");
-        dllink = br.getRegex("window\\.location\\.href = \"(https?[^<>\"]+)\";").getMatch(0);
+        loginRequired = isLoginRequired(br);
+        dllink = br.getRegex("window\\.location\\.href\\s*=\\s*\"(http[^<>\"]+)\";").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://filedelivery\\.nexusmods\\.com/[^<>\"]+)\"").getMatch(0);
         }
@@ -111,13 +117,13 @@ public class NexusmodsCom extends PluginForHost {
         if (dllink == null) {
             dllink = checkDirectLink(downloadLink, directlinkproperty);
         }
-        if (dllink == null && isAccountOnly) {
+        if (dllink == null && loginRequired) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -126,7 +132,7 @@ public class NexusmodsCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public static String getFID(final String dlurl) {
+    public String getFID(final String dlurl) {
         return new Regex(dlurl, "(\\d+)/?$").getMatch(0);
     }
 
@@ -162,12 +168,12 @@ public class NexusmodsCom extends PluginForHost {
 
     private static Object LOCK = new Object();
 
-    private static boolean isCookieSet(Browser br, Account account, String key) {
+    private boolean isCookieSet(Account account, String key) {
         final String value = br.getCookie(account.getHoster(), key);
         return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setFollowRedirects(true);
@@ -177,9 +183,9 @@ public class NexusmodsCom extends PluginForHost {
                     br.setCookies(account.getHoster(), cookies);
                     return;
                 }
-                br.getPage("https://www.nexusmods.com");
-                br.postPage("https://www.nexusmods.com/games/sessions/?Login&uri=%2F%2Fwww.nexusmods.com%2Fgames%2F", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!isCookieSet(br, account, "member_id") || !isCookieSet(br, account, "sid") || !isCookieSet(br, account, "pass_hash")) {
+                getPage("https://www.nexusmods.com");
+                postPage("/games/sessions/?Login&uri=%2F%2Fwww.nexusmods.com%2Fgames%2F", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!isCookieSet(account, "member_id") || !isCookieSet(account, "sid") || !isCookieSet(account, "pass_hash")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -198,26 +204,17 @@ public class NexusmodsCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
-        br.getPage("https://www.nexusmods.com/games/users/userarea/");
-        final boolean isPremium = StringUtils.equalsIgnoreCase(br.getRegex(">Premium Member:\\s*</div>.*?>\\s*(.*?)\\s*<").getMatch(0), "yes");
-        if (!isPremium) {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
-        } else {
+        getPage("/games/users/userarea/");
+        if (StringUtils.equalsIgnoreCase(br.getRegex(">Premium Member:\\s*</div>.*?>\\s*(.*?)\\s*<").getMatch(0), "yes")) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
         }
         account.setValid(true);
         return ai;
@@ -225,10 +222,14 @@ public class NexusmodsCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this.br, account, false);
+        login(account, false);
         requestFileInformation(link);
         /* Free- and premium download is the same. */
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+    }
+
+    public void getPage(Browser ibr, String page) throws Exception {
+        super.getPage(ibr, page);
     }
 
     @Override

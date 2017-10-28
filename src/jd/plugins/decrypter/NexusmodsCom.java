@@ -23,31 +23,39 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/" })
 public class NexusmodsCom extends PluginForDecrypt {
+
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http:", "https:");
-        final String fid = jd.plugins.hoster.NexusmodsCom.getFID(parameter);
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        final String parameter = param.toString().replaceFirst("^http://", "https://");
+        final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
+        ((jd.plugins.hoster.NexusmodsCom) plugin).setBrowser(br);
+        final String fid = ((jd.plugins.hoster.NexusmodsCom) plugin).getFID(parameter);
+        final Account aa = AccountController.getInstance().getValidAccount(plugin);
         if (aa != null) {
-            jd.plugins.hoster.NexusmodsCom.login(this.br, aa, false);
+            ((jd.plugins.hoster.NexusmodsCom) plugin).login(aa, false);
         }
-        br.getPage(parameter);
-        if (jd.plugins.hoster.NexusmodsCom.isOffline(this.br)) {
+        ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br, parameter);
+        if (((jd.plugins.hoster.NexusmodsCom) plugin).isOffline(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (((jd.plugins.hoster.NexusmodsCom) plugin).isLoginRequired(br)) {
+            throw new AccountRequiredException();
         }
         String fpName = br.getRegex("<title>([^>]+)</title>").getMatch(0);
         if (fpName == null) {
@@ -55,14 +63,13 @@ public class NexusmodsCom extends PluginForDecrypt {
             fpName = fid;
         }
         final Browser br2 = br.cloneBrowser();
-        br2.getPage(String.format("/skyrim/ajax/modfiles/?id=%s&gid=110", fid));
+        ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "../../ajax/modfiles/?id=" + fid + "&gid=110");
         String[] links = br2.getRegex("(https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+)").getColumn(0);
-        if (jd.plugins.hoster.NexusmodsCom.isOffline(br2)) {
+        if (((jd.plugins.hoster.NexusmodsCom) plugin).isOffline(br2)) {
             links = br.getRegex("href=\"([^\"]+)\" onclick=").getColumn(0);
         }
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
@@ -72,4 +79,5 @@ public class NexusmodsCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
+
 }
