@@ -62,7 +62,6 @@ import org.bouncycastle.crypto.tls.HashAlgorithm;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.SignatureAlgorithm;
 import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.crypto.tls.TlsFatalAlert;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
@@ -322,24 +321,6 @@ public class DeprecatedAPIServer extends HttpServer {
             } else {
                 // https
                 final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom()) {
-                    @Override
-                    protected void failWithError(short arg0, short arg1, String arg2, Throwable arg3) throws IOException {
-                        if (true) {
-                            super.failWithError(arg0, arg1, arg2, arg3);
-                        } else {
-                            // see modified getInputStream
-                            if (arg3 instanceof TlsFatalAlert || !(arg3 instanceof IOException)) {
-                                super.failWithError(arg0, arg1, arg2, arg3);
-                            } else if (arg3 instanceof IOException) {
-                                if ("Failed to read record".equals(arg2)) {
-                                    // ignore
-                                } else {
-                                    super.failWithError(arg0, arg1, arg2, arg3);
-                                }
-                            }
-                        }
-                    }
-
                     InputStream modifiedTlsInputStream = null;
 
                     @Override
