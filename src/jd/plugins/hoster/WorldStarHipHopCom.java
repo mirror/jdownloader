@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "https?://(?:www\\.)?worldstarhiphopdecrypted\\.com/videos/video(\\d+)?.php\\?v=[a-zA-Z0-9]+" })
 public class WorldStarHipHopCom extends PluginForHost {
-
     private String dllink = null;
 
     public WorldStarHipHopCom(PluginWrapper wrapper) {
@@ -107,11 +105,11 @@ public class WorldStarHipHopCom extends PluginForHost {
                 downloadLink.setName(filename + ".mp4");
                 return AvailableStatus.TRUE;
             }
-            dllink = br.getRegex("v=playFLV\\.php\\?loc=(http://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
+            dllink = br.getRegex("v=playFLV\\.php\\?loc=(https?://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(http://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
+                dllink = br.getRegex("(https?://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("v=(http://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
+                    dllink = br.getRegex("v=(https?://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
                     if (dllink == null) {
                         getURLUniversal();
                     }
@@ -171,9 +169,9 @@ public class WorldStarHipHopCom extends PluginForHost {
     }
 
     private void getURLUniversal() {
-        dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\"file\",\"(https?://.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
         }
     }
 
