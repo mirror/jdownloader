@@ -444,6 +444,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         if (jobModifier != null && currentLink != null && (job = currentLink.getSourceJob()) != null) {
                             if (crawlJob.isOverwritePackagizerEnabled()) {
                                 job.addPostPackagizerModifier(jobModifier);
+                                if (crawlJob.isSetBeforePackagizerEnabled()) {
+                                    job.addPrePackagizerModifier(jobModifier);
+                                }
                             } else {
                                 job.addPrePackagizerModifier(jobModifier);
                             }

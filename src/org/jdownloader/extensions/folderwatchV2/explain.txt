@@ -17,6 +17,7 @@
 #use only if text contains one single link
    filename=null
    overwritePackagizerEnabled=false
+   setBeforePackagizerEnabled=true
    comment=null
    autoConfirm=UNSET
    deepAnalyseEnabled=false
