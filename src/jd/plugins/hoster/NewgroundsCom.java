@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -28,9 +27,8 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
 public class NewgroundsCom extends antiDDoSForHost {
-
     public NewgroundsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,13 +38,11 @@ public class NewgroundsCom extends antiDDoSForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. */
     private static final int     free_maxdownloads = 1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
     private boolean              accountneeded     = false;
@@ -68,7 +64,6 @@ public class NewgroundsCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This entry was")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         String filename = null;
         String ext = null;
         final boolean checkForFilesize;
@@ -203,7 +198,6 @@ public class NewgroundsCom extends antiDDoSForHost {
     // }
     // return dllink;
     // }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
