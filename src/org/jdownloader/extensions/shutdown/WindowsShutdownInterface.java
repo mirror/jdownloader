@@ -216,6 +216,9 @@ public class WindowsShutdownInterface extends ShutdownInterface {
             if (std.contains("La mise en veille") && std.contains("n'a pas")) {
                 return false;
             }
+            if (std.contains("Ibernazione non abilitata")) {
+                return false;
+            }
             try {
                 if (CrossSystem.getOS().isMinimum(CrossSystem.OperatingSystem.WINDOWS_XP)) {
                     // https://msdn.microsoft.com/en-us/library/windows/desktop/aa372691%28v=vs.85%29.aspx
@@ -228,9 +231,6 @@ public class WindowsShutdownInterface extends ShutdownInterface {
                 }
             } catch (final Throwable e) {
                 logger.log(e);
-            }
-            if (std.contains("Hibernation")) {
-                return false;
             }
         }
         return true;
