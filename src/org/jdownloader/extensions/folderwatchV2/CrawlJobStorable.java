@@ -150,6 +150,15 @@ public class CrawlJobStorable implements Storable {
     private String[] extractPasswords;
     private String   downloadPassword;
     private boolean  overwritePackagizerEnabled = true;
+    private boolean  setBeforePackagizerEnabled = false;
+
+    public boolean isSetBeforePackagizerEnabled() {
+        return setBeforePackagizerEnabled;
+    }
+
+    public void setSetBeforePackagizerEnabled(boolean setBeforePackagizerEnabled) {
+        this.setBeforePackagizerEnabled = setBeforePackagizerEnabled;
+    }
 
     public Boolean isDeepAnalyseEnabled() {
         return deepAnalyseEnabled;
