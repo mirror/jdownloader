@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import javax.swing.Icon;
 import javax.swing.JColorChooser;
@@ -68,97 +70,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     }
 
     private void initColumns() {
-        // actionColumn = new ExtComponentColumn<AdvancedConfigEntry>(getName()) {
-        // private JButton editorBtn;
-        // private JButton rendererBtn;
-        // private AdvancedConfigEntry editing;
-        // protected MigPanel editor;
-        // protected RendererMigPanel renderer;
-        // private RenderLabel label;
-        //
-        // {
-        // editorBtn = new JButton("");
-        //
-        // editorBtn.setFocusable(false);
-        // editorBtn.addActionListener(new ActionListener() {
-        //
-        // @Override
-        // public void actionPerformed(ActionEvent e) {
-        // if (editing != null) {
-        // try {
-        // editing.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().actionPerformed();
-        // } catch (Exception e1) {
-        // Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
-        // }
-        // }
-        // }
-        // });
-        // label = new RenderLabel();
-        // rendererBtn = new JButton("");
-        // this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
-        //
-        // @Override
-        // public void requestFocus() {
-        //
-        // }
-        //
-        // };
-        // editor.add(editorBtn);
-        // this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
-        // renderer.add(rendererBtn);
-        // setClickcount(1);
-        //
-        // }
-        //
-        // @Override
-        // protected JComponent getInternalEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-        // return editor;
-        // }
-        //
-        // @Override
-        // public boolean onSingleClick(MouseEvent e, AdvancedConfigEntry obj) {
-        // return super.onSingleClick(e, obj);
-        // }
-        //
-        // @Override
-        // protected JComponent getInternalRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int
-        // column) {
-        // return renderer;
-        // }
-        //
-        // @Override
-        // public void configureEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-        //
-        // try {
-        // editing = value;
-        // editorBtn.setText(value.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().getName());
-        // } catch (Exception e) {
-        // editorBtn.setText("Invoke");
-        //
-        // }
-        // }
-        //
-        // @Override
-        // public void configureRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-        // try {
-        // rendererBtn.setText(value.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().getName());
-        // } catch (Exception e) {
-        // rendererBtn.setText("Invoke");
-        //
-        // }
-        // }
-        //
-        // @Override
-        // public void resetEditor() {
-        // }
-        //
-        // @Override
-        // public void resetRenderer() {
-        //
-        // }
-        //
-        // };
-        // register(actionColumn);
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
             {
@@ -294,15 +205,21 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             protected void setStringValue(String value, AdvancedConfigEntry object) {
-                Object newV = JSonStorage.restoreFromString(value, new TypeRef<Object>(object.getType()) {
-                }, null);
-                if (newV != null) {
-                    object.setValue(newV);
-                    AdvancedValueColumn.this.getModel().getTable().repaint();
-                } else {
-                    if (!"null".equalsIgnoreCase(value.trim())) {
-                        Dialog.getInstance().showErrorDialog("'" + value + "' is not a valid '" + object.getTypeString() + "'");
+                if (object.getType() instanceof Class) {
+                    final Class<?> clazz = (Class<?>) object.getType();
+                    if (clazz.isArray() || clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class)) {
+                        if (value != null && !"null".equalsIgnoreCase(value.trim()) && !value.matches("^\\s*\\[.+\\]\\s*$")) {
+                            value = "[" + value + "]";
+                        }
                     }
+                }
+                try {
+                    final Object newValue = JSonStorage.restoreFromString(value, new TypeRef<Object>(object.getType()) {
+                    });
+                    object.setValue(newValue);
+                    AdvancedValueColumn.this.getModel().getTable().repaint();
+                } catch (Throwable e) {
+                    Dialog.getInstance().showErrorDialog("'" + value + "' is not a valid '" + object.getTypeString() + "'");
                 }
             }
         };
