@@ -15,12 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,12 +35,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.RazStringBuilder;
 
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
-
     private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com", "casualient.com", "battleate.com", "mmoity.com", "simizer.com", "dataurbia.com", "viahold.com", "coginator.com", "cogismith.com", "kaitect.com", "yoalizer.com", "kibuilder.com", "kimechanic.com", "quainator.com", "tinyium.com", "pintient.com", "quamiller.com", "yobuilder.com", "skamason.com", "twineer.com",
-            /** <-- full domains & subdomains --> */
-            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
+                                          /** <-- full domains & subdomains --> */
+                                          "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
     @Override
     public String[] siteSupportedNames() {
@@ -140,9 +137,10 @@ public class AdfLy extends antiDDoSForDecrypt {
                 // re: https://board.jdownloader.org/showthread.php?p=363462#post363462
                 InetAddress[] inetAddress = null;
                 try {
-                    inetAddress = HTTPConnectionUtils.resolvHostIP(Browser.getHost(linkInsideLink, true), br.getIPVersion());
+                    final String host = Browser.getHost(linkInsideLink, true);
+                    inetAddress = HTTPConnectionUtils.resolvHostIP(host, br.getIPVersion());
                     // TODO: this will fail in full proxied environment
-                } catch (final UnknownHostException u) {
+                } catch (final Throwable u) {
                 }
                 if (inetAddress != null && inetAddress.length > 0) {
                     decryptedLinks.add(createDownloadlink(linkInsideLink));
