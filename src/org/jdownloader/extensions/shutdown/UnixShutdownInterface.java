@@ -1,8 +1,5 @@
 package org.jdownloader.extensions.shutdown;
 
-import java.io.File;
-
-import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.utils.JDUtilities;
@@ -46,10 +43,6 @@ public class UnixShutdownInterface extends ShutdownInterface {
 
                 @Override
                 public void onShutdown(ShutdownRequest shutdownRequest) {
-                    final File file = SecondLevelLaunch.FILE;
-                    if (file != null) {
-                        file.delete();
-                    }
                     try {
                         dbusPowerState("Shutdown");
                     } catch (Throwable e) {
