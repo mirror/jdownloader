@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio|movies|games)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio|movies|games)/" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
-
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -80,14 +78,11 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
