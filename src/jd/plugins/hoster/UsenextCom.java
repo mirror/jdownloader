@@ -127,6 +127,10 @@ public class UsenextCom extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("news.usenext.de", false, 119, 443));
         ret.addAll(UsenetServer.createServerList("news.usenext.de", true, 563));
+        ret.addAll(UsenetServer.createServerList("high.usenext.de", false, 119, 443));
+        ret.addAll(UsenetServer.createServerList("high.usenext.de", true, 563));
+        ret.addAll(UsenetServer.createServerList("flat.usenext.de", false, 119, 443));
+        ret.addAll(UsenetServer.createServerList("flat.usenext.de", true, 563));
         return ret;
     }
 }

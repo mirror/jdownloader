@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,9 +34,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldclips.ru" }, urls = { "http://(www\\.)?(dev\\.)?worldclips\\.ru/clips/[^<>\"/]*?/[^<>\"/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldclips.ru" }, urls = { "http://(www\\.)?(dev\\.)?worldclips\\.ru/clips/[^<>\"/]*?/[^<>\"/]+" })
 public class WorldClipsRu extends PluginForHost {
-
     public WorldClipsRu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -163,7 +161,7 @@ public class WorldClipsRu extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         final String clipID = getClipID();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getURL(), "download_clip_id=" + clipID + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100), true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getURL(), "download_clip_id=" + clipID + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -200,5 +198,4 @@ public class WorldClipsRu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
