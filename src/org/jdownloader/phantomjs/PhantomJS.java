@@ -71,7 +71,7 @@ public class PhantomJS implements HttpRequestHandler {
     private WebCache              webCache;
 
     public boolean isEnabled() {
-        return JsonConfig.create(PhantomJSConfig.class).isEnabled();
+        return false && JsonConfig.create(PhantomJSConfig.class).isEnabled();
     }
 
     public boolean isAvailable() {
