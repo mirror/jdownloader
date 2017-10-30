@@ -27,9 +27,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -61,10 +59,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
-import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -108,7 +103,6 @@ import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.cnl2.ExternInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
@@ -154,7 +148,6 @@ public class SecondLevelLaunch {
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
-    public static File                       FILE;
     public final static long                 startup               = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
@@ -585,102 +578,12 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.javaCheck();
     }
 
-    private static void exitCheck() {
-        if (CrossSystem.isMac()) {
-            // we need to check this on mac. use complain that it does not work. warning even if the exit via quit
-            return;
-        }
-        FILE = Application.getTempResource("exitcheck");
-        try {
-            if (FILE.exists()) {
-                final String error = IO.readFileToString(FILE);
-                // we need an extra thread. else this blocking dialog would block the startup process and cause the update launcher to think
-                // that starting jd failed.
-                new Thread("ShowBadExit") {
-                    public void run() {
-                        String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
-                        LoggerFactory.getDefaultLogger().warning("BAD EXIT Detected!: " + txt);
-                        if (!Application.isHeadless()) {
-                            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
-                        }
-                    };
-                }.start();
-            }
-            FileCreationManager.getInstance().delete(FILE, null);
-            FileCreationManager.getInstance().mkdir(FILE.getParentFile());
-            IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
-        } catch (Exception e) {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-        }
-        FILE.deleteOnExit();
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-            @Override
-            public String toString() {
-                return "ShutdownEvent: Delete " + FILE;
-            }
-
-            @Override
-            public void setHookPriority(int priority) {
-                // try to call as last hook
-                super.setHookPriority(Integer.MIN_VALUE);
-            }
-
-            @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
-                FileCreationManager.getInstance().delete(FILE, null);
-            }
-        });
-    }
-
     private static void start(final String args[]) {
-        exitCheck();
         go();
     }
 
     private static void go() {
         LoggerFactory.getDefaultLogger().info("Initialize JDownloader2");
-        // try {
-        // Log.closeLogfile();
-        // } catch (final Throwable e) {
-        // LoggerFactory.getDefaultLogger().log(e);
-        // }
-        // try {
-        // for (Handler handler : org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().getHandlers()) {
-        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().removeHandler(handler);
-        // }
-        // } catch (final Throwable e) {
-        // }
-        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().setUseParentHandlers(true);
-        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().setLevel(Level.ALL);
-        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().addHandler(new Handler() {
-        // LogSource oldLogger = LogController.getInstance().getLogger("OldLogL");
-        //
-        // @Override
-        // public void publish(LogRecord record) {
-        //
-        // LogSource ret = LogController.getInstance().getPreviousThreadLogSource();
-        //
-        // if (ret != null) {
-        //
-        // record.setMessage("Utils>" + ret.getName() + ">" + record.getMessage());
-        // ret.log(record);
-        // return;
-        // }
-        // LogSource logger = LogController.getRebirthLogger();
-        // if (logger == null) {
-        // logger = oldLogger;
-        // }
-        // logger.log(record);
-        // }
-        //
-        // @Override
-        // public void flush() {
-        // }
-        //
-        // @Override
-        // public void close() throws SecurityException {
-        // }
-        // });
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
