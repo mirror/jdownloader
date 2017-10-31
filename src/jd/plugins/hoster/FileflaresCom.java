@@ -639,9 +639,12 @@ public class FileflaresCom extends PluginForHost {
                     dlForm.remove("adblock_detected");
                     dlForm.put("adblock_detected", "0");
                 }
-                String randValue = br.getRegex("input\\[.+\"([^\"]+)\"\\);document").getMatch(0);
+                String randValue = br.getRegex("input\\[.+'([^']+)'\\);document").getMatch(0);
                 if (randValue == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    randValue = br.getRegex("input\\[.+\"([^\"]+)\"\\);document").getMatch(0);
+                    if (randValue == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 dlForm.put("rand", randValue);
                 if (!skipWaittime) {
