@@ -10,6 +10,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -40,6 +41,14 @@ public class UsenextCom extends UseNet {
 
     public static interface UsenextConfigInterface extends UsenetAccountConfigInterface {
     };
+
+    @Override
+    public void update(final DownloadLink downloadLink, final Account account, long bytesTransfered) throws PluginException {
+        final UsenetServer server = getLastUsedUsenetServer();
+        if (server == null || !StringUtils.equalsIgnoreCase("flat.usenext.de", server.getHost())) {
+            super.update(downloadLink, account, bytesTransfered);
+        }
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
