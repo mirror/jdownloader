@@ -99,7 +99,7 @@ public class TvigleRu extends PluginForHost {
         final Object error_object = api_data.get("errorType");
         if (error_object != null) {
             final long error_code = ((Number) error_object).longValue();
-            if (error_code == (1 | 7)) { // "errorType": 7, "isGeoBlocked": true
+            if (error_code == 1 || error_code == 7) { // "errorType": 7, "isGeoBlocked": true
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
