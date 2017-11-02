@@ -173,8 +173,13 @@ public class UseNet extends PluginForHost {
         return new ArrayList<UsenetServer>();
     }
 
-    private final AtomicReference<SimpleUseNet> client        = new AtomicReference<SimpleUseNet>(null);
-    private final String                        PRECHECK_DONE = "PRECHECK_DONE";
+    private final AtomicReference<SimpleUseNet> client               = new AtomicReference<SimpleUseNet>(null);
+    private final String                        PRECHECK_DONE        = "PRECHECK_DONE";
+    private UsenetServer                        lastUsedUsenetServer = null;
+
+    protected UsenetServer getLastUsedUsenetServer() {
+        return lastUsedUsenetServer;
+    }
 
     protected UsenetServer getUsenetServer(Account account) throws Exception {
         final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
@@ -222,6 +227,7 @@ public class UseNet extends PluginForHost {
             }
         };
         try {
+            lastUsedUsenetServer = server;
             this.client.set(client);
             client.connect(server.getHost(), server.getPort(), server.isSSL(), username, password);
             if (downloadLink.getBooleanProperty(PRECHECK_DONE, false) == false) {
