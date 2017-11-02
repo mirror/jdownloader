@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
@@ -36,16 +35,14 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html" })
 public class MdrDeDecrypter extends PluginForDecrypt {
-
     public MdrDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private final String[]                      QUALITIES            = { "720x576", "960x544", "640x360", "512x288", "480x272x384000", "480x272x240000", "256x144" };
     private static final String                 DOMAIN               = "mdr.de";
-
     private LinkedHashMap<String, DownloadLink> FOUNDQUALITIES       = new LinkedHashMap<String, DownloadLink>();
     /** Settings stuff */
     private static final String                 ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
@@ -69,14 +66,11 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         final String full_Host = url_hostername + ".de";
         final String url_clipname = clipinfo.getMatch(0);
         String clip_id = clipinfo.getMatch(1);
-
         final SubConfiguration cfg = SubConfiguration.getConfig(full_Host);
         final boolean grab_subtitles = cfg.getBooleanProperty(ALLOW_SUBTITLES, false);
-
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         String player_xml_url;
-
         if (url_clipname != null && clip_id != null) {
             /* Short and safe way --> We can build our XML url */
             player_xml_url = "http://www." + url_hostername + ".de/" + url_clipname + "/video" + clip_id + "-avCustom.xml";
@@ -108,7 +102,6 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             date = getXML("webTime");
         }
         final String subtitle_url = br.getRegex("<videoSubtitleUrl>(http://[^<>\"]*?\\.xml)</videoSubtitleUrl>").getMatch(0);
-
         /* Decrypt start */
         String title = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         if (title == null || date == null) {
@@ -120,7 +113,6 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(date_formatted + "_mdr_" + title);
-
         /** Decrypt qualities START */
         final String[] qualities = br.getRegex("<asset>(.*?)</asset>").getColumn(0);
         if (qualities == null || qualities.length == 0) {
@@ -173,7 +165,6 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             fina.setLinkID(linkdupeid);
             FOUNDQUALITIES.put(qualityString, fina);
         }
-
         if (FOUNDQUALITIES == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -210,7 +201,6 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                 q480x272_lower = true;
                 q256x144 = true;
             }
-
             if (audio_256) {
                 selectedQualities.add("audio_256000");
             }
@@ -253,7 +243,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                     stitle_dl.setProperty("LINKDUPEID", video_linkdupeid);
                     stitle_dl.setProperty("plain_qualityString", "subtitle");
                     stitle_dl.setProperty("plain_filename", subtitle_filename);
-                    stitle_dl.setProperty("plain_filesize", "0");
+                    stitle_dl.setProperty("plain_filesize", "-1");
                     stitle_dl.setContentUrl(parameter);
                     stitle_dl.setLinkID(linkdupeid);
                     fp.add(stitle_dl);
@@ -304,5 +294,4 @@ public class MdrDeDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
