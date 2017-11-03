@@ -1,5 +1,6 @@
 package org.jdownloader.gui.packagehistorycontroller;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,7 +46,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
 
     @Override
     protected boolean isValid(String input) {
-        return !StringUtils.isEmpty(input);
+        return !StringUtils.isEmpty(input) && new File(input).isAbsolute();
     }
 
     public synchronized boolean setLastIfExists(String packageName) {
@@ -66,7 +67,6 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
     protected void save(List<DownloadPath> list) {
         final Thread thread = Thread.currentThread();
         final EventSuppressor<ConfigEvent> eventSuppressor = new EventSuppressor<ConfigEvent>() {
-
             @Override
             public boolean suppressEvent(ConfigEvent eventType) {
                 return Thread.currentThread() == thread;

@@ -372,6 +372,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
              */
             private static final long serialVersionUID = 1L;
 
+            @Override
+            public String getPath() {
+                return this.txt.getText();
+            }
+
             public File doFileChooser() {
                 try {
                     return DownloadFolderChooserDialog.open(getFile(), true, getDialogTitle());
