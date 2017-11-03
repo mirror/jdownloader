@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,9 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.cloud" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.(?:net|cloud)/\\d+" })
 public class FayloobmennikNet extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "fayloobmennik.cloud", "fayloobmennik.net" };
@@ -75,14 +73,18 @@ public class FayloobmennikNet extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Загрузка файла<|>Файл не найден\\!<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Файл не найден\\!<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("file_user_password")) {
+            // password not yet supported
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = br.getRegex("<title>Скачать ([^<>\"]+)</title>").getMatch(0);
         if (filename == null) {
@@ -91,7 +93,7 @@ public class FayloobmennikNet extends PluginForHost {
         }
         String filesize = br.getRegex("class=\"note\">(\\d+[^<>\",]+), ").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("(\\d+(?:\\.\\d{1,2)? (?:MB|GB))").getMatch(0);
+            filesize = br.getRegex("(\\d+(?:\\.\\d{1,2}? (?:MB|GB)))").getMatch(0);
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -167,5 +169,4 @@ public class FayloobmennikNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
