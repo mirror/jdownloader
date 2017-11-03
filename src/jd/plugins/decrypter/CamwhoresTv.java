@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,16 +23,16 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Regex;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores\\.tv/videos/\\d+/[a-z0-9\\-]+/" })
 public class CamwhoresTv extends PornEmbedParser {
-
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
@@ -48,6 +47,8 @@ public class CamwhoresTv extends PornEmbedParser {
         if (decryptedLinks.size() == 0) {
             /* Probably a selfhosted video. */
             final DownloadLink dl = createDownloadlink(createDownloadUrlForHostPlugin(parameter));
+            final String id = new Regex(parameter, "/videos/(\\d+)").getMatch(0);
+            dl.setLinkID(getHost() + "://" + id);
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
@@ -56,5 +57,4 @@ public class CamwhoresTv extends PornEmbedParser {
     public static String createDownloadUrlForHostPlugin(final String dl) {
         return dl.replace("camwhores.tv/", "camwhoresdecrypted.tv/");
     }
-
 }

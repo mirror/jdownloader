@@ -1773,21 +1773,20 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             // rename subtitles to match the videos.
             // this code
             if (CFG_YOUTUBE.CFG.isSubtitleCopyforEachVideoVariant()) {
-                FilePackage pkg = downloadLink.getParentNode();
+                final FilePackage pkg = downloadLink.getParentNode();
                 boolean readL2 = pkg.getModifyLock().readLock();
-                File finalFile = new File(downloadLink.getFileOutput(false, false));
-                boolean copied = false;
+                final File source = new File(downloadLink.getFileOutput(false, false));
                 try {
-                    String myID = downloadLink.getStringProperty(YoutubeHelper.YT_ID, null);
+                    final String myID = downloadLink.getStringProperty(YoutubeHelper.YT_ID, null);
                     for (DownloadLink child : pkg.getChildren()) {
                         try {
                             if (myID.equals(child.getStringProperty(YoutubeHelper.YT_ID, null))) {
-                                AbstractVariant v = getVariant(child);
+                                final AbstractVariant v = getVariant(child);
                                 switch (v.getGroup()) {
                                 case VIDEO:
-                                    String ext = Files.getExtension(child.getFinalFileName());
+                                    final String ext = Files.getExtension(child.getFinalFileName());
                                     if (StringUtils.isNotEmpty(ext)) {
-                                        String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
+                                        final String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
                                         final String displayLanguage;
                                         if (variant instanceof SubtitleVariant) {
                                             displayLanguage = ((SubtitleVariant) variant).getDisplayLanguage();
@@ -1795,22 +1794,20 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                             final Locale locale = new SubtitleVariantOld(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, ""))._getLocale();
                                             displayLanguage = locale.getDisplayLanguage();
                                         }
-                                        final File newFile;
+                                        final File dest;
                                         if (StringUtils.isEmpty(displayLanguage)) {
-                                            newFile = new File(finalFile.getParentFile(), base + ".srt");
+                                            dest = new File(source.getParentFile(), base + ".srt");
                                         } else {
-                                            newFile = new File(finalFile.getParentFile(), base + "." + displayLanguage + ".srt");
+                                            dest = new File(source.getParentFile(), base + "." + displayLanguage + ".srt");
                                         }
-                                        IO.copyFile(finalFile, newFile);
+                                        IO.copyFile(source, dest);
                                         try {
                                             if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                                                newFile.setLastModified(finalFile.lastModified());
+                                                dest.setLastModified(source.lastModified());
                                             }
                                         } catch (final Throwable e) {
                                             getLogger().log(e);
                                         }
-                                        downloadLink.setFinalFileName(newFile.getName());
-                                        copied = true;
                                     }
                                     break;
                                 default:
@@ -1820,9 +1817,6 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         } catch (Exception e) {
                             getLogger().log(e);
                         }
-                    }
-                    if (copied) {
-                        finalFile.delete();
                     }
                 } finally {
                     pkg.getModifyLock().readUnlock(readL2);
