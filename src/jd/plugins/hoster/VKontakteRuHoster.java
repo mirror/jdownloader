@@ -295,7 +295,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -1067,6 +1067,7 @@ public class VKontakteRuHoster extends PluginForHost {
         final Object photoo = findPictureObject(JavaScriptEngineFactory.jsonToJavaObject(json), thisid);
         final Map<String, Object> sourcemap = (Map<String, Object>) photoo;
         if (sourcemap == null) {
+            logger.info(json);
             logger.warning("Failed to find specified source json of picturelink:" + thisid);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

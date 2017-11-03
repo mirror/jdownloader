@@ -68,6 +68,19 @@ public class CamwhoresTv extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", "camwhores.tv/"));
+        final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
+        link.setLinkID(getHost() + "://" + id);
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        if (link != null) {
+            final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
+            if (id != null) {
+                return getHost() + "://" + id;
+            }
+        }
+        return super.getMirrorID(link);
     }
 
     @Override
