@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -1066,7 +1067,7 @@ public class VKontakteRuHoster extends PluginForHost {
         final Object photoo = findPictureObject(JavaScriptEngineFactory.jsonToJavaObject(json), thisid);
         final Map<String, Object> sourcemap = (Map<String, Object>) photoo;
         if (sourcemap == null) {
-            logger.warning("Failed to find specified source json of picturelink");
+            logger.warning("Failed to find specified source json of picturelink:" + thisid);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         boolean success = false;
@@ -1112,15 +1113,18 @@ public class VKontakteRuHoster extends PluginForHost {
                     } else {
                         continue;
                     }
-                } else if (value instanceof ArrayList || value instanceof Map) {
-                    findPictureObject(value, picid);
+                } else if (value instanceof List || value instanceof Map) {
+                    final Object pico = findPictureObject(value, picid);
+                    if (pico != null) {
+                        return pico;
+                    }
                 }
             }
             return null;
-        } else if (o instanceof ArrayList) {
-            final ArrayList<Object> array = (ArrayList) o;
+        } else if (o instanceof List) {
+            final List<Object> array = (ArrayList) o;
             for (final Object arrayo : array) {
-                if (arrayo instanceof ArrayList || arrayo instanceof Map) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
                     final Object pico = findPictureObject(arrayo, picid);
                     if (pico != null) {
                         return pico;
