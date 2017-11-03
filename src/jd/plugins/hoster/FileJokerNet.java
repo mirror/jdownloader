@@ -337,7 +337,6 @@ public class FileJokerNet extends antiDDoSForHost {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
-                boolean skipWaittime = false;
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
@@ -349,6 +348,7 @@ public class FileJokerNet extends antiDDoSForHost {
                         downloadLink.setMD5Hash(md5hash.trim());
                     }
                 }
+                waitTime(timeBefore, downloadLink);
                 /* Captcha START */
                 if (correctedBR.contains("g-recaptcha")) {
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
@@ -402,9 +402,16 @@ public class FileJokerNet extends antiDDoSForHost {
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = false;
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it."); /*
+                                                                                                                                      * wait
+                                                                                                                                      * time
+                                                                                                                                      * is
+                                                                                                                                      * usually
+                                                                                                                                      * skippable
+                                                                                                                                      * for
+                                                                                                                                      * reCaptcha
+                                                                                                                                      * handling
+                                                                                                                                      */
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
@@ -431,14 +438,10 @@ public class FileJokerNet extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
                     dlForm.put("capcode", result);
-                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) {
                     passCode = handlePassword(dlForm, downloadLink);
-                }
-                if (!skipWaittime) {
-                    waitTime(timeBefore, downloadLink);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
