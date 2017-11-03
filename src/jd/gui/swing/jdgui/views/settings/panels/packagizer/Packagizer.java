@@ -13,10 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import javax.swing.Icon;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -29,13 +31,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-
 public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
-
-    private static final long serialVersionUID = 1L;
-
+    private static final long serialVersionUID = 2L;
     private PackagizerFilter  packagizer;
 
     public String getTitle() {
@@ -57,19 +54,16 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
 
     @Override
     public void save() {
-
     }
 
     @Override
     public void updateContents() {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 packagizer.getTable().getModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
                 return null;
             }
-
         });
     }
 
