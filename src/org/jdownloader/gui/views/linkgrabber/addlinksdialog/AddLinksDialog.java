@@ -4,8 +4,6 @@ import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.WindowEvent;
@@ -31,7 +29,6 @@ import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.TransferHandler.TransferSupport;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
@@ -64,7 +61,6 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -384,16 +380,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 delayedValidate.run();
             }
         };
-        input.addFocusListener(new FocusListener() {
-            @Override
-            public void focusLost(FocusEvent e) {
-            }
-
-            @Override
-            public void focusGained(FocusEvent e) {
-                input.selectAll();
-            }
-        });
         // input.setLineWrap(true);
         input.setWrapStyleWord(true);
         input.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_input_help());
@@ -441,13 +427,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(createIconLabel(new BadgeIcon(IconKey.ICON_PASSWORD, IconKey.ICON_DOWNLOAD, 24), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
         p.add(downloadPassword);
         p.add(priority, "sg right");
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(this, input);
-            input.setTransferHandler(dnd);
-        } else {
-            DragAndDropDelegater dnd = new DragAndDropDelegater(this, input);
-            input.setTransferHandler(dnd);
-        }
         this.getDialog().addWindowListener(new WindowListener() {
             public void windowOpened(WindowEvent e) {
                 new Thread() {
@@ -690,7 +669,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             public void run() {
                 try {
                     thisThread = Thread.currentThread();
-                    final String resultText;
                     if (toAnalyse != null) {
                         final HashSet<String> passwords = PasswordUtils.getPasswords(toAnalyse);
                         if (passwords != null && passwords.size() > 0) {
@@ -741,15 +719,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 }
                             });
                         }
-                        resultText = list(result);
-                    } else {
-                        resultText = "";
                     }
                     new EDTRunner() {
                         @Override
                         protected void runInEDT() {
                             if (thisThread == asyncImportThread.get()) {
-                                input.setText(resultText);
                                 input.setEditable(true);
                             }
                         }
@@ -765,37 +739,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         };
         asyncImportThread.set(thread);
         thread.start();
-    }
-
-    protected void asyncImportData(TransferSupport support) {
-        try {
-            final String base = ClipboardMonitoring.getCurrentBrowserURL(support.getTransferable());
-            final String old = input.getText();
-            final int start = input.getSelectionStart();
-            final int end = input.getSelectionEnd();
-            final StringBuilder sb = new StringBuilder();
-            sb.append(old.substring(0, Math.min(old.length(), start)));
-            if (ClipboardMonitoring.isHtmlFlavorAllowed()) {
-                final String html = ClipboardMonitoring.getHTMLTransferData(support.getTransferable());
-                if (StringUtils.isNotEmpty(html)) {
-                    sb.append(html);
-                }
-            }
-            final String text = ClipboardMonitoring.getStringTransferData(support.getTransferable(), null);
-            if (!StringUtils.isEmpty(text)) {
-                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) {
-                    sb.append("\r\n");
-                }
-                sb.append(text);
-            }
-            if (old.length() > end) {
-                sb.append(old.substring(end));
-            }
-            final String toAnalyse = sb.toString();
-            asyncAnalyse(toAnalyse, base);
-        } catch (Throwable e) {
-            LogController.CL().log(e);
-        }
     }
 
     private Component createIconLabel(String iconKey, String tooltip) {
