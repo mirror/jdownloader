@@ -283,13 +283,13 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
             }
         }
-        String chomikID = br.getRegex("name=\"(?:chomikId|ChomikName)\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        String chomikID = br.getRegex("name=\"(?:chomikId|ChomikName)\" type=\"hidden\" value=\"(.+?)\"").getMatch(0);
         if (chomikID == null) {
-            chomikID = br.getRegex("id=\"__(?:accno|accname)\" name=\"__(?:accno|accname)\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+            chomikID = br.getRegex("id=\"__(?:accno|accname)\" name=\"__(?:accno|accname)\" type=\"hidden\" value=\"(.+?)\"").getMatch(0);
             if (chomikID == null) {
-                chomikID = br.getRegex("name=\"friendId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+                chomikID = br.getRegex("name=\"friendId\" type=\"hidden\" value=\"(.+?)\"").getMatch(0);
                 if (chomikID == null) {
-                    chomikID = br.getRegex("\\&amp;(?:chomikId|ChomikName)=(\\d+)\"").getMatch(0);
+                    chomikID = br.getRegex("\\&amp;(?:chomikId|ChomikName)=(.+?)\"").getMatch(0);
                 }
             }
         }
@@ -308,7 +308,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         fpName = fpName.trim();
         // All Main-POSTdata
-        String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(REQUESTVERIFICATIONTOKEN);
+        String postdata = "ChomikName=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(REQUESTVERIFICATIONTOKEN);
         final FilePackage fp = FilePackage.getInstance();
         // Make only one package
         fp.setProperty("ALLOW_MERGE", true);
@@ -417,13 +417,9 @@ public class ChoMikujPl extends PluginForDecrypt {
         } else {
             /* Decrypt all pages, start with 1 (not 0 as it was before) */
             pageCount = 1;
-            if (param.toString().matches(PAGEDECRYPTLINK)) {
-                pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
-            } else {
-                String pn = new Regex(param.toString(), "(,\\d{1,3})$").getMatch(0);
-                if (pn != null) {
-                    pageCount = Integer.parseInt(new Regex(param.toString(), ",(\\d+)$").getMatch(0));
-                }
+            final String pn = new Regex(param.toString(), "(,\\d{1,3})$").getMatch(0);
+            if (pn != null) {
+                pageCount = Integer.parseInt(new Regex(param.toString(), ",(\\d+)$").getMatch(0));
             }
             logger.info("Decrypting page " + pageCount + " of link: " + parameter);
             final Browser tempBr = br.cloneBrowser();
