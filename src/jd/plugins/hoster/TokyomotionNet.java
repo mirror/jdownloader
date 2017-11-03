@@ -15,9 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -33,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/video/\\d+(?:/[^/]+)?" })
 public class TokyomotionNet extends PluginForHost {
@@ -67,22 +67,8 @@ public class TokyomotionNet extends PluginForHost {
         if (aa != null) {
             login(aa);
         }
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL().replace("http://", "https://"));
-        String redirect = br.getRedirectLocation();
-        /* Follow future redirects */
         br.setFollowRedirects(true);
-        if (redirect != null) {
-            /* Workarounds for possible browser redirect bug, see ticket #84545 */
-            if (redirect.contains("%")) {
-                /* Browser will return wrong, lowercase characters again and again which then eventually leads to infinite redirect loop! */
-                /* Seems like only chinese chars need to be uppercase so this will not work e.g. for: video/26561/ */
-                String redirectpart = redirect.substring(redirect.indexOf("%"));
-                redirectpart = redirectpart.toUpperCase();
-                redirect = redirect.substring(0, redirect.indexOf("%")) + redirectpart;
-            }
-            br.getPage(redirect);
-        }
+        br.getPage(link.getDownloadURL().replace("http://", "https://"));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(">This is a private video")) {
