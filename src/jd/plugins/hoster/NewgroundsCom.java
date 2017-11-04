@@ -77,8 +77,8 @@ public class NewgroundsCom extends antiDDoSForHost {
             checkForFilesize = false;
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             url_filename = fid;
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename).trim() + "_" + fid;
                 }
