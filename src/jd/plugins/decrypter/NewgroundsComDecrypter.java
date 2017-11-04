@@ -45,10 +45,9 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String fpName = null;
+        final String fpName = new Regex(parameter, "https?://([^/]+)\\.newgrounds\\.com/").getMatch(0);
         if (parameter.matches(TYPE_AUDIO)) {
-            fpName = new Regex(parameter, "http://([^/]+)\\.newgrounds\\.com/").getMatch(0);
-            final String[][] urlinfo = this.br.getRegex("href=\"https?://(?:www\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
+            final String[][] urlinfo = br.getRegex("href=\"https?://(?:www\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
             for (final String[] urlinfosingle : urlinfo) {
                 final String fid = urlinfosingle[0];
                 final String title = urlinfosingle[1];
@@ -59,30 +58,35 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else if (parameter.matches(TYPE_ART)) {
-            final String[] art_urls = this.br.getRegex("\"(https?://(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
-            if (art_urls == null || art_urls.length == 0) {
+            final String[] view_urls = br.getRegex("\"((https?:)?//(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
+            if (view_urls == null || view_urls.length == 0) {
                 return null;
             }
-            for (final String art_url : art_urls) {
-                final DownloadLink dl = createDownloadlink(art_url);
+            for (String view_url : view_urls) {
+                if (view_url.startsWith("//")) {
+                    view_url = "https:" + view_url;
+                }
+                final DownloadLink dl = createDownloadlink(view_url);
+                dl.setAvailable(true); // <---
                 decryptedLinks.add(dl);
             }
         } else {
             /* movies & games */
-            final String[] portal_view_urls = this.br.getRegex("\"(https?://(?:www\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
-            if (portal_view_urls == null || portal_view_urls.length == 0) {
+            final String[] view_urls = br.getRegex("\"((https?:)?//(?:www\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
+            if (view_urls == null || view_urls.length == 0) {
                 return null;
             }
-            for (final String art_url : portal_view_urls) {
-                final DownloadLink dl = createDownloadlink(art_url);
+            for (String view_url : view_urls) {
+                if (view_url.startsWith("//")) {
+                    view_url = "https:" + view_url;
+                }
+                final DownloadLink dl = createDownloadlink(view_url);
                 decryptedLinks.add(dl);
             }
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
