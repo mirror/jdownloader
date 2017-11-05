@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
  * @author Rua4da
  *
  */
-@DecrypterPlugin(revision = "$Revision: 36548 $", interfaceVersion = 3, names = { "pietsmiet.de" }, urls = { "https?://(?:www\\.)?pietsmiet\\.de/gallery/(?:playlists|categories)(?:/\\d+[a-z0-9\\-_]+){2}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pietsmiet.de" }, urls = { "https?://(?:www\\.)?pietsmiet\\.de/gallery/(?:playlists|categories)(?:/\\d+[a-z0-9\\-_]+){2}" })
 public class PietSmietDe extends PluginForDecrypt {
     public PietSmietDe(PluginWrapper wrapper) {
         super(wrapper);

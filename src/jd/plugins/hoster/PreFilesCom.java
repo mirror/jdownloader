@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -59,7 +58,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prefiles.com" }, urls = { "https?://(www\\.)?prefiles\\.com/[a-z0-9]{12}(?:/\\S+)?" })
 public class PreFilesCom extends antiDDoSForHost {
-
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://prefiles.com";
@@ -83,7 +81,6 @@ public class PreFilesCom extends antiDDoSForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects, no www.
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("://www.", "://"));
@@ -554,26 +551,21 @@ public class PreFilesCom extends antiDDoSForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -657,7 +649,6 @@ public class PreFilesCom extends antiDDoSForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
                 account.setMaxSimultanDownloads(20);
                 account.setConcurrentUsePossible(true);
-
             }
             ai.setStatus("Premium Account");
         }
@@ -669,7 +660,6 @@ public class PreFilesCom extends antiDDoSForHost {
         synchronized (LOCK) {
             try {
                 br = new Browser();
-
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -698,7 +688,6 @@ public class PreFilesCom extends antiDDoSForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-
                 if (correctedBR.contains("/captchas/")) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
                     String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -720,7 +709,6 @@ public class PreFilesCom extends antiDDoSForHost {
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, dummyLink);
                     loginform.put("code", code);
                 }
-
                 submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -772,6 +760,9 @@ public class PreFilesCom extends antiDDoSForHost {
                 if (dllink == null) {
                     checkErrors(link, true, passCode);
                     Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) {
+                        dlform = br.getFormByInputFieldKeyValue("op", "download2");
+                    }
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -912,11 +903,9 @@ public class PreFilesCom extends antiDDoSForHost {
      */
     private void simulateBrowser() throws InterruptedException {
         // dupe.clear();
-
         final AtomicInteger requestQ = new AtomicInteger(0);
         final AtomicInteger requestS = new AtomicInteger(0);
         final ArrayList<String> links = new ArrayList<String>();
-
         String[] l1 = new Regex(correctedBR, "\\s+(?:src)=(\"|')((?!'.*?\\').*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
@@ -930,9 +919,7 @@ public class PreFilesCom extends antiDDoSForHost {
             final String correctedLink = Request.getLocation(link, br.getRequest());
             if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.matches(".+" + Pattern.quote(this.getHost()) + "/?$") && !correctedLink.contains(".html") && !correctedLink.contains("?op=") && !correctedLink.equals(br.getURL())) {
                 if (dupe.add(correctedLink)) {
-
                     final Thread simulate = new Thread("SimulateBrowser") {
-
                         public void run() {
                             final Browser rb = br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
@@ -958,11 +945,9 @@ public class PreFilesCom extends antiDDoSForHost {
                             }
                             return;
                         }
-
                     };
                     simulate.start();
                     Thread.sleep(100);
-
                 }
             }
         }
@@ -975,5 +960,4 @@ public class PreFilesCom extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
