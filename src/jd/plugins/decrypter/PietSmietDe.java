@@ -16,38 +16,30 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+
+import org.jdownloader.plugins.components.config.PietsmietDeConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.PietsmietDeConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import jd.plugins.PluginForDecrypt;
 
 /**
  *
  * @author raztoki
  * @author TheCrap
+ * @author Rua4da
  *
  */
 @DecrypterPlugin(revision = "$Revision: 36548 $", interfaceVersion = 3, names = { "pietsmiet.de" }, urls = { "https?://(?:www\\.)?pietsmiet\\.de/gallery/(?:playlists|categories)(?:/\\d+[a-z0-9\\-_]+){2}" })
-public class PietSmietDe extends antiDDoSForDecrypt {
+public class PietSmietDe extends PluginForDecrypt {
     public PietSmietDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,7 +53,7 @@ public class PietSmietDe extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -71,98 +63,38 @@ public class PietSmietDe extends antiDDoSForDecrypt {
         final boolean grab1080p = pluginConfig.isGrab1080pVideoEnabled();
         final boolean grab720p = pluginConfig.isGrab720pVideoEnabled();
         final boolean grab480p = pluginConfig.isGrab480pVideoEnabled();
-        final boolean grab360p = pluginConfig.isGrab360pVideoEnabled();
-        final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
-        String fpName = br.getRegex("<title>(.*?)\\s*-\\s*PietSmiet\\s*-\\s*Videos, News und Spiele</title>").getMatch(0);
-        String player = br.getRegex("jwplayer\\(\"media-jwplayer-\\d+\"\\)\\.setup\\(\\{(.*?)\\}\\);").getMatch(0);
-        if (player == null) {
-            player = br.getRegex("var config=(\\{sources:(.*?)\\}]),").getMatch(0);
-            if (player != null) {
-                player += "}";
-            }
-        }
-        if (player == null || fpName == null) {
+        String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^\"]*)\"\\/>").getMatch(0);
+        String baseURL = "https://e1." + br.getRegex("\\{ 'file': '\\/\\/(pietcdn\\.de\\/media\\/com_hwdmediashare\\/files\\/\\w{2}\\/\\w{2}\\/\\w{2}\\/)\\w{32}\\.mp4', type: 'mp4', label: '720p', \"default\": \"true\" \\}").getMatch(0);
+        String[] sources = br.getRegex("\\{ 'file': '\\/\\/pietcdn\\.de\\/hls\\/\\w{2}\\/\\w{2}\\/\\w{2}\\/,(\\w{32}),(\\w{32}),(\\w{32}),\\.mp4\\.us\\/hmt\\.m3u8' \\},").getRow(0);
+        if (fpName == null || baseURL == null || sources == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
         fpName = Encoding.htmlOnlyDecode(fpName).trim();
-        final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(player, "sources"));
-        for (final String source : sources) {
-            // for file they 'file'
-            final String directurl = PluginJSonUtils.getJson(source, "file");
-            // for label they do not use quotation mark it, then we have to use regex =[
-            if (StringUtils.endsWithCaseInsensitive(directurl, ".m3u8")) {
-                final Browser hlsBR = br.cloneBrowser();
-                hlsBR.getPage(directurl);
-                final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
-                for (final HlsContainer hlscontainer : allHlsContainers) {
-                    final String final_download_url = hlscontainer.getDownloadurl();
-                    final DownloadLink dl = createDownloadlink(final_download_url);
-                    dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-                    final String quality;
-                    if (hlscontainer.getHeight() >= 1080) {
-                        quality = "1080p";
-                    } else if (hlscontainer.getHeight() >= 720) {
-                        quality = "720p";
-                    } else if (hlscontainer.getHeight() >= 480) {
-                        quality = "480p";
-                    } else if (hlscontainer.getHeight() >= 360) {
-                        quality = "360p";
-                    } else {
-                        quality = null;
-                    }
-                    dl.setName(fpName);
-                    dl.setProperty("hlsBandwidth", hlscontainer.getBandwidth());
-                    qualities.put(quality, dl);
-                }
-                continue;
+        if (grabBEST) {
+            final DownloadLink dl = this.createDownloadlink(baseURL + sources[2] + ".mp4");
+            dl.setFinalFileName(fpName + "_1080p.mp4");
+            decryptedLinks.add(dl);
+        } else {
+            if (grab1080p) {
+                final DownloadLink dl = this.createDownloadlink(baseURL + sources[2] + ".mp4");
+                dl.setFinalFileName(fpName + "_1080p.mp4");
+                decryptedLinks.add(dl);
             }
-            final String quality = new Regex(source, "label:\\s*'(.*?)'").getMatch(0);
-            if (directurl == null || quality == null) {
-                continue;
+            if (grab720p) {
+                final DownloadLink dl = this.createDownloadlink(baseURL + sources[1] + ".mp4");
+                dl.setFinalFileName(fpName + "_720p.mp4");
+                decryptedLinks.add(dl);
             }
-            final DownloadLink dl = createDownloadlink(Request.getLocation(directurl, br.getRequest()));
-            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-            dl.setFinalFileName(fpName + "_" + quality + ".mp4");
-            qualities.put(quality, dl);
-        }
-        String q = "1080p";
-        if ((decryptedLinks.isEmpty() || !grabBEST) && grab1080p && (qualities.containsKey(q) || qualities.containsKey(null))) {
-            if (qualities.containsKey(q)) {
-                decryptedLinks.add(qualities.remove(q));
-            } else {
-                decryptedLinks.add(qualities.remove(null));
+            if (grab480p) {
+                final DownloadLink dl = this.createDownloadlink(baseURL + sources[0] + ".mp4");
+                dl.setFinalFileName(fpName + "_480p.mp4");
+                decryptedLinks.add(dl);
             }
         }
-        q = "720p";
-        if ((decryptedLinks.isEmpty() || !grabBEST) && grab720p && (qualities.containsKey(q) || qualities.containsKey(null))) {
-            if (qualities.containsKey(q)) {
-                decryptedLinks.add(qualities.remove(q));
-            } else {
-                decryptedLinks.add(qualities.remove(null));
-            }
-        }
-        q = "480p";
-        if ((decryptedLinks.isEmpty() || !grabBEST) && grab480p && (qualities.containsKey(q) || qualities.containsKey(null))) {
-            if (qualities.containsKey(q)) {
-                decryptedLinks.add(qualities.remove(q));
-            } else {
-                decryptedLinks.add(qualities.remove(null));
-            }
-        }
-        q = "360p";
-        if ((decryptedLinks.isEmpty() || !grabBEST) && grab360p && (qualities.containsKey(q) || qualities.containsKey(null))) {
-            if (qualities.containsKey(q)) {
-                decryptedLinks.add(qualities.remove(q));
-            } else {
-                decryptedLinks.add(qualities.remove(null));
-            }
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName));
-            fp.addLinks(decryptedLinks);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

@@ -8,7 +8,6 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "pietsmiet.de", type = Type.CRAWLER)
 public interface PietsmietDeConfig extends PluginConfigInterface {
-
     @DefaultBooleanValue(false)
     @Order(10)
     boolean isGrabBestVideoVersionEnabled();
@@ -32,11 +31,11 @@ public interface PietsmietDeConfig extends PluginConfigInterface {
     boolean isGrab480pVideoEnabled();
 
     void setGrab480pVideoEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @Order(50)
-    boolean isGrab360pVideoEnabled();
-
-    void setGrab360pVideoEnabled(boolean b);
-
+    /*
+     * @DefaultBooleanValue(true)
+     * 
+     * @Order(50) boolean isGrab360pVideoEnabled();
+     * 
+     * void setGrab360pVideoEnabled(boolean b);
+     */
 }
