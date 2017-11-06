@@ -3,17 +3,16 @@ package org.jdownloader.plugins;
 import java.awt.Color;
 import java.io.File;
 
+import jd.plugins.PluginProgress;
+import jd.plugins.download.HashInfo.TYPE;
+
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 
-import jd.plugins.PluginProgress;
-import jd.plugins.download.HashInfo.TYPE;
-
 public class HashCheckPluginProgress extends PluginProgress {
-
     private final String message;
     private long         lastCurrent    = -1;
     private long         startTimeStamp = -1;
@@ -39,10 +38,12 @@ public class HashCheckPluginProgress extends PluginProgress {
     public String getMessage(Object requestor) {
         if (requestor instanceof ETAColumn) {
             if (type != null) {
-                return TimeFormatter.formatMilliSeconds(getETA(), 0);
-            } else {
-                return "";
+                final long eta = getETA();
+                if (eta >= 0) {
+                    return TimeFormatter.formatMilliSeconds(eta, 0);
+                }
             }
+            return "";
         }
         return message;
     }
@@ -50,24 +51,21 @@ public class HashCheckPluginProgress extends PluginProgress {
     @Override
     public void setCurrent(long current) {
         super.setCurrent(current);
-
         if (lastCurrent == -1 || lastCurrent > current) {
             lastCurrent = current;
             startTimeStamp = System.currentTimeMillis();
             this.setETA(-1);
             return;
         }
-        long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+        final long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
         if (currentTimeDifference <= 0) {
             return;
         }
-        long speed = (current * 10000) / currentTimeDifference;
+        final long speed = (current * 10000) / currentTimeDifference;
         if (speed == 0) {
             return;
         }
-        long eta = ((total - current) * 10000) / speed;
+        final long eta = ((total - current) * 10000) / speed;
         this.setETA(eta);
-
     }
-
 }
