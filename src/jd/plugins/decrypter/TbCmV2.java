@@ -305,9 +305,11 @@ public class TbCmV2 extends PluginForDecrypt {
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
                 // you can convert channelid UC[STATICHASH] (UserChanel) ? to UU[STATICHASH] (UsersUpload) which is covered below
                 getChannelID();
-                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
-                playlistID = "UU" + channelID.substring(2);
-                userWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
+                if (channelID != null) {
+                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
+                    playlistID = "UU" + channelID.substring(2);
+                    userWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
+                }
             }
             if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
                 /*
@@ -680,7 +682,10 @@ public class TbCmV2 extends PluginForDecrypt {
         if (channelID == null) {
             channelID = br.getRegex("<meta itemprop=\"channelId\" content=\"(UC[A-Za-z0-9\\-_]+)\"").getMatch(0);
             if (channelID == null) {
-                channelID = br.getRegex("yt\\.setConfig\\(\\s*'CHANNEL_ID'\\s*,\\s*\"(UC[A-Za-z0-9\\-_]+)\"\\);").getMatch(0);
+                channelID = br.getRegex("yt\\.setConfig\\(\\s*'CHANNEL_ID'\\s*,\\s*\"(UC[A-Za-z0-9\\-_]+)\"").getMatch(0);
+                if (channelID == null) {
+                    channelID = br.getRegex("rssURL\"\\s*:\\s*\"https?://[^\"]*channel_ID=(UC[A-Za-z0-9\\-_]+)\"").getMatch(0);
+                }
             }
         }
     }
