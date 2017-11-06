@@ -228,7 +228,7 @@ public class NovaFileCom extends antiDDoSForHost {
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, account, false, passCode);
-            Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
+            Form download1 = br.getFormByInputFieldKeyValue("op", "download2");
             if (download1 != null) {
                 download1.remove("method_premium");
                 submitForm(download1);
@@ -247,6 +247,7 @@ public class NovaFileCom extends antiDDoSForHost {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
+                boolean skipWaittime = false;
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
@@ -258,9 +259,9 @@ public class NovaFileCom extends antiDDoSForHost {
                         downloadLink.setMD5Hash(md5hash.trim());
                     }
                 }
-                waitTime(timeBefore, downloadLink);
+                //waitTime(timeBefore, downloadLink);
                 /* Captcha START */
-                if (correctedBR.contains("g-recaptcha")) {
+                if (br.containsHTML("g-recaptcha")) {
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -318,10 +319,14 @@ public class NovaFileCom extends antiDDoSForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     dlForm = rc.getForm();
                     /* 2017-04-26: Not skippable anymore */
+                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) {
                     passCode = handlePassword(passCode, dlForm, downloadLink);
+                }
+                if (!skipWaittime) {
+                    waitTime(timeBefore, downloadLink);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
