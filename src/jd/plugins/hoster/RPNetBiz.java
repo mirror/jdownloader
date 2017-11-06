@@ -51,8 +51,8 @@ public class RPNetBiz extends PluginForHost {
     private static final String                            mPremium           = "https://premium.rpnet.biz/";
     private static final String                            FAIL_STRING        = "rpnetbiz";
     private static final int                               HDD_WAIT_THRESHOLD = 10 * 60000;                                   // 10 mins in
-                                                                                                                               // ms
 
+    // ms
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
@@ -254,12 +254,14 @@ public class RPNetBiz extends PluginForHost {
                     int prevProgress = 0;
                     long prevTimestamp = System.currentTimeMillis();
                     while (System.currentTimeMillis() - prevTimestamp < HDD_WAIT_THRESHOLD) {
+                        if (isAbort()) {
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
                         br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
-                        JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-                        JSonObject downloadNode = (JSonObject) node2.get("download");
-                        String tmp = downloadNode.get("status").toString();
-                        Integer progress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
-                        showMessage(link, "Waiting for upload to rpnet HDD - " + progress + "%");
+                        final JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
+                        final JSonObject downloadNode = (JSonObject) node2.get("download");
+                        final String tmp = downloadNode.get("status").toString();
+                        final Integer progress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
                         // download complete?
                         if (progress == 100) {
                             String tmp2 = downloadNode.get("rpnet_link").toString();
@@ -273,7 +275,7 @@ public class RPNetBiz extends PluginForHost {
                             generatedLink = tmp2.substring(1, tmp2.length() - 1);
                             break;
                         }
-                        Thread.sleep(10000);
+                        sleep(10000, link, "Waiting for upload to rpnet HDD - " + progress + "%");
                         if (progress != prevProgress) {
                             prevTimestamp = System.currentTimeMillis();
                             prevProgress = progress;
