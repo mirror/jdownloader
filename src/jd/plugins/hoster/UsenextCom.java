@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -48,6 +49,17 @@ public class UsenextCom extends UseNet {
         if (server == null || !StringUtils.equalsIgnoreCase("flat.usenext.de", server.getHost())) {
             super.update(downloadLink, account, bytesTransfered);
         }
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
+        if (account != null) {
+            final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
+            if (config != null && StringUtils.equalsIgnoreCase("flat.usenext.de", config.getHost())) {
+                return 4;
+            }
+        }
+        return super.getMaxSimultanDownload(link, account, proxy);
     }
 
     @Override
