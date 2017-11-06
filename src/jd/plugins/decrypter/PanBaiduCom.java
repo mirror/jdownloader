@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -245,7 +245,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 }
                 ressourcelist = (ArrayList) entries.get("list");
             } else {
-                final String json = this.br.getRegex("setData\\((\\{.+?);").getMatch(0);
+                final String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
                 if (json == null) {
                     logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
                     throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
