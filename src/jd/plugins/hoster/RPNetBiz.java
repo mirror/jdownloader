@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -46,12 +45,13 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" })
 public class RPNetBiz extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            mName              = "rpnet.biz";
     private static final String                            mProt              = "http://";
     private static final String                            mPremium           = "https://premium.rpnet.biz/";
     private static final String                            FAIL_STRING        = "rpnetbiz";
+    private static final int                               HDD_WAIT_THRESHOLD = 10 * 60000;                                   // 10 mins in
+                                                                                                                               // ms
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -159,7 +159,6 @@ public class RPNetBiz extends PluginForHost {
         JSonObject accountInfo = (JSonObject) node.get("accountInfo");
         long expiryDate = Long.parseLong(accountInfo.get("premiumExpiry").toString().replaceAll("\"", ""));
         ai.setValidUntil(expiryDate * 1000);
-
         // get the supported hosts
         String hosts = br.getPage(mPremium + "hostlist.php");
         if (hosts != null) {
@@ -209,7 +208,6 @@ public class RPNetBiz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -239,7 +237,6 @@ public class RPNetBiz extends PluginForHost {
             br.getPage(apiDownloadLink);
             JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
             JSonArray links = (JSonArray) node.get("links");
-
             // for now there is only one generated link per api call, could be changed in the future, therefore iterate anyway
             for (JSonNode linkNode : links) {
                 JSonObject linkObj = (JSonObject) linkNode;
@@ -249,25 +246,20 @@ public class RPNetBiz extends PluginForHost {
                     String msg = errorNode.toString();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
                 }
-
                 // Only ID given? => request the download from rpnet hdd
                 JSonNode idNode = linkObj.get("id");
                 generatedLink = null;
                 if (idNode != null) {
                     String id = idNode.toString();
-
-                    int progress = 0;
-                    int tryNumber = 0;
-
-                    while (tryNumber <= 30) {
+                    int prevProgress = 0;
+                    long prevTimestamp = System.currentTimeMillis();
+                    while (System.currentTimeMillis() - prevTimestamp < HDD_WAIT_THRESHOLD) {
                         br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
                         JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
                         JSonObject downloadNode = (JSonObject) node2.get("download");
                         String tmp = downloadNode.get("status").toString();
-                        progress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
-
+                        Integer progress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
                         showMessage(link, "Waiting for upload to rpnet HDD - " + progress + "%");
-
                         // download complete?
                         if (progress == 100) {
                             String tmp2 = downloadNode.get("rpnet_link").toString();
@@ -281,9 +273,11 @@ public class RPNetBiz extends PluginForHost {
                             generatedLink = tmp2.substring(1, tmp2.length() - 1);
                             break;
                         }
-
                         Thread.sleep(10000);
-                        tryNumber++;
+                        if (progress != prevProgress) {
+                            prevTimestamp = System.currentTimeMillis();
+                            prevProgress = progress;
+                        }
                     }
                 } else {
                     String tmp = ((JSonObject) linkNode).get("generated").toString();
@@ -343,7 +337,6 @@ public class RPNetBiz extends PluginForHost {
              */
             br.followConnection();
         }
-
         /* temp disabled the host */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
