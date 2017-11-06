@@ -75,7 +75,7 @@ public class UsersCloudCom extends PluginForHost {
     private static final boolean           VIDEOHOSTER                  = true;
     private static final boolean           VIDEOHOSTER_2                = true;
     private static final boolean           SUPPORTSHTTPS                = true;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = true;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
