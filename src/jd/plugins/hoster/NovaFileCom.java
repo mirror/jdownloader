@@ -247,7 +247,6 @@ public class NovaFileCom extends antiDDoSForHost {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
-                boolean skipWaittime = false;
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
@@ -259,7 +258,7 @@ public class NovaFileCom extends antiDDoSForHost {
                         downloadLink.setMD5Hash(md5hash.trim());
                     }
                 }
-                //waitTime(timeBefore, downloadLink);
+                waitTime(timeBefore, downloadLink);
                 /* Captcha START */
                 if (br.containsHTML("g-recaptcha")) {
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
@@ -317,16 +316,11 @@ public class NovaFileCom extends antiDDoSForHost {
                     rcform.put("recaptcha_challenge_field", rc.getChallenge());
                     rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    dlForm = rc.getForm();
-                    /* 2017-04-26: Not skippable anymore */
-                    skipWaittime = false;
+                    dlForm = rc.getForm(); /* 2017-04-26: Not skippable anymore */
                 }
                 /* Captcha END */
                 if (password) {
                     passCode = handlePassword(passCode, dlForm, downloadLink);
-                }
-                if (!skipWaittime) {
-                    waitTime(timeBefore, downloadLink);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
