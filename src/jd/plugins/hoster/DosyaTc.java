@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dosya.tc" }, urls = { "http://[\\w\\.]*?dosya\\.tc/(?!index).+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dosya.tc" }, urls = { "http://[\\w\\.]*?dosya\\.tc/(?!index).+\\.html" })
 public class DosyaTc extends PluginForHost {
-
     public DosyaTc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -84,11 +82,12 @@ public class DosyaTc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("value=\"Download\" onClick=\"window\\.location=.*?(http.*?).'\">").getMatch(0);
+        // String dllink = br.getRegex("value=\"Download\" onClick=\"window\\.location=.*?(http.*?).'\">").getMatch(0);
+        String dllink = br.getRegex("<a href=\"([^\"]+)\" id=\"download\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("This link seems not to be a file...");
             br.followConnection();
