@@ -2154,8 +2154,10 @@ public class LinkCrawler {
                 cryptedLink.setLazyC(lazyC);
                 final CrawledLink link = crawledLinkFactorybyCryptedLink(cryptedLink);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
-                if (source.getUrlLink() == null || StringUtils.equals(source.getUrlLink(), link.getURL())) {
+                if ((source.getUrlLink() == null || StringUtils.equals(source.getUrlLink(), link.getURL())) && (source.getDownloadLink() == null || source.getDownloadLink().getProperties().isEmpty())) {
                     // modify sourceLink because link arise from source(getMatchingLinks)
+                    //
+                    // keep DownloadLinks with non empty properties
                     link.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
                         link.setMatchingRule(source.getMatchingRule());
@@ -2197,8 +2199,10 @@ public class LinkCrawler {
             for (final String match : matches) {
                 final CrawledLink link = crawledLinkFactorybyURL(match);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
-                if (source.getUrlLink() == null || StringUtils.equals(source.getUrlLink(), link.getURL())) {
+                if ((source.getUrlLink() == null || StringUtils.equals(source.getUrlLink(), link.getURL())) && (source.getDownloadLink() == null || source.getDownloadLink().getProperties().isEmpty())) {
                     // modify sourceLink because link arise from source(getMatchingLinks)
+                    //
+                    // keep DownloadLinks with non empty properties
                     link.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
                         link.setMatchingRule(source.getMatchingRule());

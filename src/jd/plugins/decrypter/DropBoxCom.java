@@ -35,6 +35,7 @@ import jd.plugins.hoster.DropboxCom.DropboxConfig;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -57,8 +58,21 @@ public class DropBoxCom extends PluginForDecrypt {
     /* Unsupported linktypes which can occur during the decrypt process */
     private static final String TYPE_DIRECTLINK = "https?://dl\\.dropboxusercontent.com/.+";
     private static final String TYPE_REFERRAL   = "https?://(www\\.)?dropbox\\.com/referrals/.+";
+    private String              subFolder       = "";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        CrawledLink current = getCurrentLink();
+        subFolder = "";
+        while (current != null) {
+            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
+                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+                if (path != null) {
+                    subFolder = path;
+                }
+                break;
+            }
+            current = current.getSourceLink();
+        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("?dl=1", "");
         if (parameter.matches(TYPE_S)) {
@@ -68,19 +82,7 @@ public class DropBoxCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setCookie("http://dropbox.com", "locale", "en");
         br.setLoadLimit(br.getLoadLimit() * 4);
-        CrawledLink current = getCurrentLink();
-        String subfolder = "";
-        while (current != null) {
-            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-                if (path != null) {
-                    subfolder = path;
-                }
-                break;
-            }
-            current = current.getSourceLink();
-        }
-        decryptedLinks.addAll(decryptLink(parameter, subfolder));
+        decryptedLinks.addAll(decryptLink(parameter));
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -90,7 +92,7 @@ public class DropBoxCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptLink(String link, String subfolder) throws Exception {
+    private ArrayList<DownloadLink> decryptLink(String link) throws Exception {
         final String crawl_subfolder_string = new Regex(link, "(\\&crawl_subfolders=(?:true|false))").getMatch(0);
         currentPackage = null;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
@@ -171,7 +173,6 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             currentPackage = FilePackage.getInstance();
             currentPackage.setName(Encoding.htmlDecode(fpName.trim()));
-            subfolder += "/" + fpName;
         }
         /*
          * 2017-01-27: This does not work anymore - also their .zip downloads often fail so rather not do this!Decrypt "Download as zip"
@@ -183,7 +184,7 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setProperty("decrypted", true);
             dl.setProperty("type", "zip");
             dl.setProperty("directlink", link.replaceAll("\\?dl=\\d", "") + "?dl=1");
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
             decryptedLinks.add(dl);
         }
         final String json_source = getJsonSource(this.br);
@@ -234,11 +235,12 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
                 dl.setName(filename);
                 dl.setAvailable(true);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
                 decryptedLinks.add(dl);
             }
         }
         if (decryptSubfolders) {
+            final String subFolderBase = subFolder;
             for (final Object o : ressourcelist_folders) {
                 entries = (LinkedHashMap<String, Object>) o;
                 final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
@@ -247,8 +249,13 @@ public class DropBoxCom extends PluginForDecrypt {
                     continue;
                 }
                 url += "&crawl_subfolders=true";
+                final String name = (String) entries.get("filename");
+                if (StringUtils.isNotEmpty(name)) {
+                    subFolder = subFolderBase + "/" + name;
+                } else {
+                    subFolder = subFolderBase;
+                }
                 final DownloadLink subFolderDownloadLink = this.createDownloadlink(url);
-                subFolderDownloadLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
                 decryptedLinks.add(subFolderDownloadLink);
             }
         }
@@ -279,6 +286,9 @@ public class DropBoxCom extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(final String link) {
         final DownloadLink ret = super.createDownloadlink(link);
+        if (StringUtils.isNotEmpty(subFolder)) {
+            ret.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+        }
         return ret;
     }
 
@@ -298,6 +308,9 @@ public class DropBoxCom extends PluginForDecrypt {
         parameter = parameter.replace("dropbox.com/", "dropboxdecrypted.com/");
         final DownloadLink dl = createDownloadlink(parameter);
         dl.setProperty("decrypted", true);
+        if (StringUtils.isNotEmpty(subFolder)) {
+            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+        }
         return dl;
     }
 
