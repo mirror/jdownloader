@@ -226,9 +226,10 @@ public class NovaFileCom extends antiDDoSForHost {
             dllink = getDllink();
         }
         // Third, continue like normal.
+        Form download1 = null;
         if (dllink == null) {
             checkErrors(downloadLink, account, false, passCode);
-            Form download1 = br.getFormByInputFieldKeyValue("op", "download2");
+            download1 = br.getFormByInputFieldKeyValue("op", "download2");
             if (download1 != null) {
                 download1.remove("method_premium");
                 submitForm(download1);
@@ -239,7 +240,10 @@ public class NovaFileCom extends antiDDoSForHost {
         if (dllink == null) {
             Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
             if (dlForm == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dlForm = download1;
+                if (dlForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             // how many forms deep do you want to try.
             int repeat = 3;
