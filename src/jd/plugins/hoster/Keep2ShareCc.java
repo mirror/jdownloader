@@ -133,7 +133,7 @@ public class Keep2ShareCc extends K2SApi {
                 directlinkproperty = "freelink2";
             } else {
                 // premium account
-                chunks = 0;
+                chunks = -10;
                 resumes = true;
                 isFree = false;
                 directlinkproperty = "premlink";
