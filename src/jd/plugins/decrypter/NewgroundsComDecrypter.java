@@ -47,18 +47,18 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
         }
         final String fpName = new Regex(parameter, "https?://([^/]+)\\.newgrounds\\.com/").getMatch(0);
         if (parameter.matches(TYPE_AUDIO)) {
-            final String[][] urlinfo = br.getRegex("href=\"https?://(?:www\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
+            final String[][] urlinfo = br.getRegex("\"(?:https?:)?//(?:www\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
             for (final String[] urlinfosingle : urlinfo) {
                 final String fid = urlinfosingle[0];
                 final String title = urlinfosingle[1];
-                final DownloadLink dl = this.createDownloadlink("http://www.newgrounds.com/audio/listen/" + fid);
+                final DownloadLink dl = createDownloadlink("https://www.newgrounds.com/audio/listen/" + fid);
                 dl.setAvailable(true);
                 dl.setName(Encoding.htmlDecode(title) + "_" + fid + ".mp3");
                 dl.setLinkID(fid);
                 decryptedLinks.add(dl);
             }
         } else if (parameter.matches(TYPE_ART)) {
-            final String[] view_urls = br.getRegex("\"((https?:)?//(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
+            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
             if (view_urls == null || view_urls.length == 0) {
                 return null;
             }
@@ -72,7 +72,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             }
         } else {
             /* movies & games */
-            final String[] view_urls = br.getRegex("\"((https?:)?//(?:www\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
+            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:www\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
             if (view_urls == null || view_urls.length == 0) {
                 return null;
             }
