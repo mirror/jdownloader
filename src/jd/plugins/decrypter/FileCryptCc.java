@@ -84,6 +84,7 @@ public class FileCryptCc extends PluginForDecrypt {
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
         br.getHeaders().put("Accept-Language", "en");
         br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
         final String containsMirror = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
