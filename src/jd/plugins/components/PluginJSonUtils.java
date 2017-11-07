@@ -1,13 +1,16 @@
 package jd.plugins.components;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.parser.Regex;
 
-public class PluginJSonUtils {
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
+public class PluginJSonUtils {
     public static String escape(final String s) {
         final StringBuilder sb = new StringBuilder();
         char ch;
@@ -36,9 +39,7 @@ public class PluginJSonUtils {
             case '\t':
                 sb.append("\\t");
                 continue;
-
             }
-
             if (ch >= '\u0000' && ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F' || ch >= '\u2000' && ch <= '\u20FF') {
                 ss = Integer.toHexString(ch);
                 sb.append("\\u");
@@ -48,9 +49,7 @@ public class PluginJSonUtils {
                 sb.append(ss.toUpperCase(Locale.ENGLISH));
                 continue;
             }
-
             sb.append(ch);
-
         }
         return sb.toString();
     }
@@ -93,10 +92,8 @@ public class PluginJSonUtils {
                     case 'b':
                         sb.append('\b');
                         continue;
-
                     case 'u':
                         sb2.delete(0, sb2.length());
-
                         i++;
                         ii = i + 4;
                         for (; i < ii; i++) {
@@ -120,7 +117,6 @@ public class PluginJSonUtils {
             }
             sb.append(ch);
         }
-
         return sb.toString();
     }
 
@@ -215,7 +211,6 @@ public class PluginJSonUtils {
                 }
             }
         }
-
         result = validateResultForArrays(source, result);
         if (result != null) {
             result = unescape(result);
@@ -293,7 +288,19 @@ public class PluginJSonUtils {
         if (source == null) {
             return null;
         }
-        String[] result = null;
+        try {
+            // use json parser, because regex can easily fail, see commit message
+            final List<Object> jsonParsed = JSonStorage.restoreFromString(source, TypeRef.LIST);
+            if (jsonParsed != null) {
+                final String ret[] = new String[jsonParsed.size()];
+                for (int i = 0; i < ret.length; i++) {
+                    ret[0] = JSonStorage.toString(jsonParsed.get(i));
+                }
+                return ret;
+            }
+        } catch (final Throwable e) {
+        }
+        final String[] result;
         // two types of actions can happen here. it could be series of [{"blah":"blah1"},{"blah":"blah2"}] or series of ["blah","blah2"]
         if (new Regex(source, "^\\s*\\[\\s*\\{.+$").matches()) {
             result = new Regex(source, "\\s*(?:\\[|,)\\s*(\\{.*?\\})\\s*").getColumn(0);
@@ -355,7 +362,6 @@ public class PluginJSonUtils {
         if (key == null || value == null) {
             return null;
         }
-
         String result = source;
         if (result == null) {
             result = "{";
@@ -398,7 +404,6 @@ public class PluginJSonUtils {
             }
             break;
         }
-
         while (true) {
             final String[] bracketC = new Regex(i, "(?!\\\\\\[)\\[").getColumn(-1);
             final String[] bracketD = new Regex(i, "(?!\\\\\\])\\]").getColumn(-1);
@@ -447,5 +452,4 @@ public class PluginJSonUtils {
         }
         return false;
     }
-
 }
