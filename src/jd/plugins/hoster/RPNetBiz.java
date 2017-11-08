@@ -35,12 +35,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 
 import org.appwork.storage.simplejson.JSonArray;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonNode;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" })
@@ -250,36 +256,95 @@ public class RPNetBiz extends PluginForHost {
                 JSonNode idNode = linkObj.get("id");
                 generatedLink = null;
                 if (idNode != null) {
-                    String id = idNode.toString();
-                    int prevProgress = 0;
-                    long prevTimestamp = System.currentTimeMillis();
-                    while (System.currentTimeMillis() - prevTimestamp < HDD_WAIT_THRESHOLD) {
-                        if (isAbort()) {
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                    final String id = idNode.toString();
+                    final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+                        protected long lastCurrent    = -1;
+                        protected long lastTotal      = -1;
+                        protected long startTimeStamp = -1;
+
+                        @Override
+                        public PluginTaskID getID() {
+                            return PluginTaskID.WAIT;
                         }
-                        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
-                        final JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-                        final JSonObject downloadNode = (JSonObject) node2.get("download");
-                        final String tmp = downloadNode.get("status").toString();
-                        final Integer progress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
-                        // download complete?
-                        if (progress == 100) {
-                            String tmp2 = downloadNode.get("rpnet_link").toString();
-                            final Object max_connections = downloadNode.get("max_connections");
-                            if (max_connections != null) {
-                                final int chunks = Integer.valueOf(max_connections.toString());
-                                if (chunks > 0) {
-                                    maxChunks = -chunks;
+
+                        @Override
+                        public String getMessage(Object requestor) {
+                            if (requestor instanceof ETAColumn) {
+                                final long eta = getETA();
+                                if (eta >= 0) {
+                                    return TimeFormatter.formatMilliSeconds(eta, 0);
+                                }
+                                return "";
+                            }
+                            return "Waiting for upload to rpnet HDD";
+                        }
+
+                        @Override
+                        public void updateValues(long current, long total) {
+                            super.updateValues(current, total);
+                            if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                                lastTotal = total;
+                                lastCurrent = current;
+                                startTimeStamp = System.currentTimeMillis();
+                                // this.setETA(-1);
+                                return;
+                            }
+                            long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                            if (currentTimeDifference <= 0) {
+                                return;
+                            }
+                            long speed = (current * 10000) / currentTimeDifference;
+                            if (speed == 0) {
+                                return;
+                            }
+                            long eta = ((total - current) * 10000) / speed;
+                            this.setETA(eta);
+                        }
+                    };
+                    waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+                    waitProgress.setProgressSource(this);
+                    try {
+                        long lastProgressChange = System.currentTimeMillis();
+                        int lastProgress = -1;
+                        while (System.currentTimeMillis() - lastProgressChange < HDD_WAIT_THRESHOLD) {
+                            if (isAbort()) {
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            }
+                            br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
+                            final JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
+                            final JSonObject downloadNode = (JSonObject) node2.get("download");
+                            final String tmp = downloadNode.get("status").toString();
+                            final Integer currentProgress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
+                            // download complete?
+                            if (currentProgress.intValue() == 100) {
+                                String tmp2 = downloadNode.get("rpnet_link").toString();
+                                final Object max_connections = downloadNode.get("max_connections");
+                                if (max_connections != null) {
+                                    final int chunks = Integer.valueOf(max_connections.toString());
+                                    if (chunks > 0) {
+                                        maxChunks = -chunks;
+                                    }
+                                }
+                                generatedLink = tmp2.substring(1, tmp2.length() - 1);
+                                break;
+                            } else {
+                                link.addPluginProgress(waitProgress);
+                                waitProgress.updateValues(currentProgress.intValue(), 100);
+                                for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                                    if (isAbort()) {
+                                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                                    } else {
+                                        Thread.sleep(1000);
+                                    }
+                                }
+                                if (currentProgress.intValue() != lastProgress) {
+                                    lastProgressChange = System.currentTimeMillis();
+                                    lastProgress = currentProgress.intValue();
                                 }
                             }
-                            generatedLink = tmp2.substring(1, tmp2.length() - 1);
-                            break;
                         }
-                        sleep(10000, link, "Waiting for upload to rpnet HDD - " + progress + "%");
-                        if (progress != prevProgress) {
-                            prevTimestamp = System.currentTimeMillis();
-                            prevProgress = progress;
-                        }
+                    } finally {
+                        link.removePluginProgress(waitProgress);
                     }
                 } else {
                     String tmp = ((JSonObject) linkNode).get("generated").toString();
