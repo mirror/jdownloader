@@ -15,14 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -30,9 +29,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "public.upera.co" }, urls = { "https?://(?:www\\.)?public\\.upera\\.co/f/[A-Za-z0-9]+" })
 public class PublicUperaCo extends PluginForDecrypt {
-
     public PublicUperaCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,8 +51,7 @@ public class PublicUperaCo extends PluginForDecrypt {
         final String fpName = br.getRegex(".+<li class=\"active\">(.*?)</li>\\s*<li class=\"active\">Files").getMatch(0);
         final String[][] links = br.getRegex("<td><a href=\"(https://(?:www\\.)?public\\.upera\\.co/[A-Za-z0-9]+)\"[^>]*>.*?>[\r\n]+(.*?)\\s*</a>.*?([0-9\\.]+ [KMGT]{0,1}B)<").getMatches();
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         for (final String singleLink[] : links) {
             final DownloadLink dl = createDownloadlink(singleLink[0]);
