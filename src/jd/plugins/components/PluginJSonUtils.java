@@ -294,7 +294,7 @@ public class PluginJSonUtils {
             if (jsonParsed != null) {
                 final String ret[] = new String[jsonParsed.size()];
                 for (int i = 0; i < ret.length; i++) {
-                    ret[0] = JSonStorage.toString(jsonParsed.get(i));
+                    ret[i] = JSonStorage.toString(jsonParsed.get(i));
                 }
                 return ret;
             }
