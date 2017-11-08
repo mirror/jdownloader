@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -59,7 +58,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadrocket.net" }, urls = { "https?://(www\\.)?uploadrocket\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 public class UploadRocketNet extends PluginForHost {
-
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -75,7 +73,7 @@ public class UploadRocketNet extends PluginForHost {
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
     private final boolean                  ENABLE_RANDOM_UA             = true;
@@ -105,7 +103,6 @@ public class UploadRocketNet extends PluginForHost {
     // captchatype: 4dignum
     // other:
     // note: sister site kingfiles.net, 2016-10-19: kingfiles.net == RIP, 2016-11-28: kingfiles.net back online [XFS]
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -433,7 +430,6 @@ public class UploadRocketNet extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -611,7 +607,6 @@ public class UploadRocketNet extends PluginForHost {
     private String correctBR(final Browser br) {
         String correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         {
             String results[] = new Regex(correctedBR, "(<!--\\s*XFSCUSTOM.COM: gunggo pops Start.*?)<\\s*/BODY\\s*>").getColumn(0);
             for (String result : results) {
@@ -660,26 +655,21 @@ public class UploadRocketNet extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -1157,5 +1147,4 @@ public class UploadRocketNet extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
