@@ -225,22 +225,9 @@ public class NovaFileCom extends antiDDoSForHost {
         if (dllink == null) {
             dllink = getDllink();
         }
-        // Third, continue like normal.
-        Form download1 = null;
-        if (dllink == null) {
-            checkErrors(downloadLink, account, false, passCode);
-            download1 = br.getFormByInputFieldKeyValue("op", "download2");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                submitForm(download1);
-                checkErrors(downloadLink, account, false, passCode);
-            }
-            dllink = getDllink();
-        }
         if (dllink == null) {
             Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
             if (dlForm == null) {
-                dlForm = download1;
                 if (dlForm == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
