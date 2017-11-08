@@ -34,7 +34,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "http://(?:www\\.)?bibeltv\\.de/mediathek/video/[a-z0-9\\-]+/\\?no_cache=1\\&cHash=[a-f0-9]{32}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/video/[a-z0-9\\-]+/\\?no_cache=1\\&cHash=[a-f0-9]{32}" })
 public class BibeltvDe extends PluginForHost {
     public BibeltvDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +53,7 @@ public class BibeltvDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.bibeltv.de/impressum/";
+        return "https://www.bibeltv.de/impressum/";
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -110,7 +110,7 @@ public class BibeltvDe extends PluginForHost {
         if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.br.getPage("http://api.medianac.com/html5/html5lib/v2.39/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&cache_st=0&entry_id=" + entry_id + "&flashvars[streamerType]=auto&playerId=kaltura_player_664&ServiceUrl=http%3A%2F%2Fapi.medianac.com&CdnUrl=http%3A%2F%2Fapi.medianac.com&ServiceBase=%2Fapi_v3%2Findex.php%3Fservice%3D&UseManifestUrls=false&forceMobileHTML5=true&urid=2.39&callback=mwi_kalturaplayer6640");
+        this.br.getPage("https://api.medianac.com/html5/html5lib/v2.39/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&cache_st=0&entry_id=" + entry_id + "&flashvars[streamerType]=auto&playerId=kaltura_player_664&ServiceUrl=http%3A%2F%2Fapi.medianac.com&CdnUrl=http%3A%2F%2Fapi.medianac.com&ServiceBase=%2Fapi_v3%2Findex.php%3Fservice%3D&UseManifestUrls=false&forceMobileHTML5=true&urid=2.39&callback=mwi_kalturaplayer6640");
         String js = this.br.getRegex("kalturaIframePackageData = (\\{.*?\\}\\}\\});").getMatch(0);
         if (js == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -133,7 +133,7 @@ public class BibeltvDe extends PluginForHost {
             }
             max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
             if (max_bitrate_temp > max_bitrate) {
-                dllink = "http://api.medianac.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
+                dllink = "https://api.medianac.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
                 max_bitrate = max_bitrate_temp;
                 filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             }
@@ -184,7 +184,9 @@ public class BibeltvDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (tempunavailable) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video not available at the moment", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video not available at the moment", 24 * 60 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
