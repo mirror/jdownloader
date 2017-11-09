@@ -43,8 +43,18 @@ public class PublicUperaCo extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final Plugin plugin = JDUtilities.getPluginForHost("public.upera.co");
         ((jd.plugins.hoster.PublicUperaCo) plugin).setBrowser(br);
-        ((jd.plugins.hoster.PublicUperaCo) plugin).getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/f/") || br.containsHTML(">Invalid or Deleted File\\.<")) {
+        // ((jd.plugins.hoster.PublicUperaCo) plugin).getPage(parameter);
+        for (int i = 1; i <= 3; i++) {
+            ((jd.plugins.hoster.PublicUperaCo) plugin).getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() != 503) {
+                break;
+            }
+        }
+        if (br.getHttpConnection().getResponseCode() == 503) {
+            logger.info("antiDDoSForHost from jd.plugins.hoster.PublicUperaCo getPage failed");
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/f/") || br.containsHTML(">Invalid or Deleted File\\.<|>\\s*No items")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
