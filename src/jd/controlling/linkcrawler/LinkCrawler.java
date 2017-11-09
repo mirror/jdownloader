@@ -582,7 +582,13 @@ public class LinkCrawler {
         }
     }
 
-    public List<CrawledLink> find(final LinkCrawlerGeneration generation, String text, String url, final boolean allowDeep, final boolean allowInstantCrawl) {
+    public List<CrawledLink> find(final LinkCrawlerGeneration generation, String text, String baseURL, final boolean allowDeep, final boolean allowInstantCrawl) {
+        final CrawledLink baseLink;
+        if (StringUtils.isNotEmpty(baseURL)) {
+            baseLink = crawledLinkFactorybyURL(baseURL);
+        } else {
+            baseLink = null;
+        }
         final HtmlParserResultSet resultSet;
         if (allowInstantCrawl && getCurrentLinkCrawlerThread() != null && generation != null) {
             resultSet = new HtmlParserResultSet() {
@@ -600,6 +606,9 @@ public class LinkCrawler {
                             crawledLink = crawledLinkFactorybyURL(e.toCharSequenceURL());
                         }
                         crawledLink.setCrawlDeep(allowDeep);
+                        if (crawledLink.getSourceLink() == null) {
+                            crawledLink.setSourceLink(baseLink);
+                        }
                         final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
                         crawledLinks.add(crawledLink);
                         crawl(generation, crawledLinks);
@@ -650,13 +659,16 @@ public class LinkCrawler {
                 }
             };
         }
-        final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, url, allowDeep), url, resultSet);
+        final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, baseURL, allowDeep), baseURL, resultSet);
         if (possibleLinks != null && possibleLinks.length > 0) {
             final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
             for (final String possibleLink : possibleLinks) {
-                final CrawledLink link = crawledLinkFactorybyURL(possibleLink);
-                link.setCrawlDeep(allowDeep);
-                possibleCryptedLinks.add(link);
+                final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
+                crawledLink.setCrawlDeep(allowDeep);
+                if (crawledLink.getSourceLink() == null) {
+                    crawledLink.setSourceLink(baseLink);
+                }
+                possibleCryptedLinks.add(crawledLink);
             }
             return possibleCryptedLinks;
         }
