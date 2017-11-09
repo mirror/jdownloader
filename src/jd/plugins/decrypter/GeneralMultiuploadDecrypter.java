@@ -78,6 +78,7 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
 
     // This decrypter should handle nearly all sites using the qooy.com script!
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        br = new Browser();
         this.param = param;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashSet<String> dupeList = new LinkedHashSet<String>();
@@ -127,7 +128,7 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
             brc = br.cloneBrowser();
             // this is required!
-            br.setCookie(this.getHost(), "__unam", determineHash());
+            // br.setCookie(this.getHost(), "__unam", determineHash());
             getPage(brc, "/download/gethosts/" + id + "/" + customFileName);
             final String urls[] = brc.getRegex("\"link\":\"(.*?)\",\"button\"").getColumn(0);
             final String urls_broken[] = brc.getRegex("\"link\":\"(File currently in queue\\.|Error occured)\"").getColumn(0);
@@ -245,7 +246,7 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             for (final Object jsonObject : jsonArray) {
                 final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jsonObject;
                 final String status = (String) json.get("status");
-                if (!"ok".equalsIgnoreCase(status)) {
+                if (!"ok".equalsIgnoreCase(status) && !"checking".equalsIgnoreCase(status)) {
                     continue;
                 }
                 final String link = (String) json.get("link");
