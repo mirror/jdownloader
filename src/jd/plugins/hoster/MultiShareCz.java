@@ -13,17 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,9 +35,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" })
 public class MultiShareCz extends antiDDoSForHost {
-
     public MultiShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.multishare.cz/cenik/");
@@ -53,7 +51,6 @@ public class MultiShareCz extends antiDDoSForHost {
     private static final String                            MAINPAGE           = "http://multishare.cz";
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
-
     private Account                                        currentAcc         = null;
 
     private Browser prepBrowser(Browser prepBr) {
@@ -107,18 +104,16 @@ public class MultiShareCz extends antiDDoSForHost {
             }
         }
         ai.setStatus("Premium User");
-        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-            try {
-                getPage("https://www.multishare.cz/api/?sub=supported-hosters");
-                final String[] hosts = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "server"));
-                final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-                /*
-                 * set ArrayList<String> with all supported multiHosts of this service
-                 */
-                ai.setMultiHostSupport(this, supportedHosts);
-            } catch (Throwable e) {
-                logger.info("Could not fetch ServerList from Multishare: " + e.toString());
-            }
+        try {
+            getPage("https://www.multishare.cz/api/?sub=supported-hosters");
+            final String[] hosts = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "server"));
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            /*
+             * set ArrayList<String> with all supported multiHosts of this service
+             */
+            ai.setMultiHostSupport(this, supportedHosts);
+        } catch (Throwable e) {
+            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
         }
         return ai;
     }
@@ -236,7 +231,6 @@ public class MultiShareCz extends antiDDoSForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -252,7 +246,6 @@ public class MultiShareCz extends antiDDoSForHost {
                 }
             }
         }
-
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(false);
@@ -411,7 +404,6 @@ public class MultiShareCz extends antiDDoSForHost {
                 // multihoster link
                 return true;
             }
-
             /* without account its not possible to download the link */
             return false;
         }
@@ -425,5 +417,4 @@ public class MultiShareCz extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

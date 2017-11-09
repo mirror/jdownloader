@@ -294,7 +294,11 @@ public class PluginJSonUtils {
             if (jsonParsed != null) {
                 final String ret[] = new String[jsonParsed.size()];
                 for (int i = 0; i < ret.length; i++) {
-                    ret[i] = JSonStorage.toString(jsonParsed.get(i));
+                    if (!(jsonParsed.get(i) instanceof String)) {
+                        ret[i] = JSonStorage.toString(jsonParsed.get(i));
+                    } else {
+                        ret[i] = String.valueOf(jsonParsed.get(i));
+                    }
                 }
                 return ret;
             }
