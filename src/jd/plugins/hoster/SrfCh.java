@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,9 +33,8 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+.*$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" })
 public class SrfCh extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public SrfCh(PluginWrapper wrapper) {
         super(wrapper);
@@ -88,7 +86,6 @@ public class SrfCh extends PluginForHost {
         entries = (LinkedHashMap<String, Object>) entries.get("Video");
         LinkedHashMap<String, Object> temp = null;
         ArrayList<Object> ressourcelist = null;
-
         /* Try to find http downloadurl (not always available) */
         try {
             ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
@@ -105,7 +102,6 @@ public class SrfCh extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-
         /* Try to find hls master (usually available) */
         try {
             ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
@@ -122,7 +118,6 @@ public class SrfCh extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-
         /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
         try {
             ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
@@ -139,11 +134,9 @@ public class SrfCh extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-
         if (url_http_download == null && url_hls_master == null && url_rtmp == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         if (url_http_download != null) {
             /* Prefer http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http_download, true, 0);
@@ -241,5 +234,4 @@ public class SrfCh extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
