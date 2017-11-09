@@ -27,15 +27,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "http://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "https?://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" })
 public class ImgBoxCom extends PluginForDecrypt {
     public ImgBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String GALLERYLINK    = "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
+    private static final String GALLERYLINK    = "https?://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
     private static final String PICTUREOFFLINE = "The image in question does not exist|The image has been deleted due to a DMCA complaint";
-    private static final String INVALIDLINKS   = "http://(www\\.)?imgbox\\.com/(help|login|privacy|register|tos|images|dmca|gallery|assets)";
+    private static final String INVALIDLINKS   = "https?://(www\\.)?imgbox\\.com/(help|login|privacy|register|tos|images|dmca|gallery|assets)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
