@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,14 +29,12 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "http://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" })
 public class ImgBoxCom extends PluginForDecrypt {
-
     public ImgBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String GALLERYLINK    = "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
     private static final String PICTUREOFFLINE = "The image in question does not exist|The image has been deleted due to a DMCA complaint";
-
     private static final String INVALIDLINKS   = "http://(www\\.)?imgbox\\.com/(help|login|privacy|register|tos|images|dmca|gallery|assets)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -68,7 +65,7 @@ public class ImgBoxCom extends PluginForDecrypt {
             if (fpName == null) {
                 fpName = "imgbox.com gallery " + new Regex(parameter, "imgbox\\.com/g/(.+)").getMatch(0);
             }
-            final String[] uids = br.getRegex("<a href=(\"|')/([a-zA-Z0-9]+)\\1><img alt=(\"|')\\2\\3").getColumn(1);
+            final String[] uids = br.getRegex("(?i)<a href=(\"|')/([a-zA-Z0-9]+)\\1><img alt=(\"|')\\2[^'\"]*\\3").getColumn(1);
             if (uids == null || uids.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -87,16 +84,9 @@ public class ImgBoxCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                final String finallink = "directhttp://http://i.imgbox.com/" + uid;
-                final DownloadLink dl = createDownloadlink(finallink);
-                dl.setAvailable(true);
+                final DownloadLink dl = createDownloadlink("http://imgbox.com/" + uid);
                 if (fp != null) {
                     fp.add(dl);
-                }
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
                 }
                 decryptedLinks.add(dl);
             }
@@ -127,5 +117,4 @@ public class ImgBoxCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
