@@ -26,12 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -56,18 +50,23 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.eu" }, urls = { "https?://(www\\.)?rockfile\\.eu/(embed\\-)?[a-z0-9]{12}\\.html" })
-public class RockFileEu extends antiDDoSForHost {
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.co" }, urls = { "https?://(www\\.)?rockfile\\.(co|eu)/(embed\\-)?[a-z0-9]{12}\\.html" })
+public class RockFileEu extends antiDDoSForHost {
     private String               correctedBR                   = "";
     private String               passCode                      = null;
     private static final String  PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                   = "https://rockfile.eu";
+    private static final String  COOKIE_HOST                   = "https://rockfile.co";
     private static final String  NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                       = "(rockfile\\.eu|rockfileserver\\.eu|rfservers\\.eu)";
+    private static final String  DOMAINS                       = "(rockfile\\.co|rockfile\\.eu|rockfileserver\\.eu|rfservers\\.eu)";
     private static final String  MAINTENANCE                   = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT           = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String  ALLWAIT_SHORT                 = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -79,7 +78,6 @@ public class RockFileEu extends antiDDoSForHost {
     private static final boolean SUPPORTSHTTPS_FORCED          = true;
     private static final boolean SUPPORTS_ALT_AVAILABLECHECK   = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE = false;
-
     /* Waittime stuff */
     private static final boolean WAITFORCED                    = true;
     private static final int     WAITSECONDSMIN                = 40;
@@ -113,7 +111,7 @@ public class RockFileEu extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/").replaceFirst("\\.eu/", "\\.co/"));
         /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
@@ -207,7 +205,6 @@ public class RockFileEu extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
-
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
         if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
@@ -217,7 +214,6 @@ public class RockFileEu extends antiDDoSForHost {
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
-
         if (inValidate(fileInfo[0])) {
             if (correctedBR.contains("You have reached the download(-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
