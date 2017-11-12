@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -41,12 +40,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f\\-\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "https?://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f\\-\\d+" })
 public class FreeDiscPl extends PluginForHost {
-
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://freedisc.pl/");
+        this.enablePremium("https://freedisc.pl/");
         this.setStartIntervall(1000);
         try {
             Browser.setRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
@@ -56,7 +54,7 @@ public class FreeDiscPl extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://freedisc.pl/regulations";
+        return "https://freedisc.pl/regulations";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -74,18 +72,15 @@ public class FreeDiscPl extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String  KNOWN_EXTENSIONS             = "asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm";
-
     protected static Cookies     botSafeCookies               = new Cookies();
 
     private Browser prepBR(final Browser br) {
         prepBRStatic(br);
-
         synchronized (botSafeCookies) {
             if (!botSafeCookies.isEmpty()) {
                 br.setCookies(this.getHost(), botSafeCookies);
             }
         }
-
         return br;
     }
 
@@ -170,11 +165,11 @@ public class FreeDiscPl extends PluginForHost {
             }
         } else {
             final boolean videostreamIsAvailable = br.containsHTML("rel=\"video_src\"");
-            final String videoEmbedUrl = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
+            final String videoEmbedUrl = br.getRegex("<iframe src=\"(https?://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
             resumable = true;
             maxchunks = 0;
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-            postPageRaw("http://freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
+            postPageRaw("https://freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
             br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             if (br.containsHTML("Pobranie plików większych jak [0-9\\.]+ (MB|GB|TB), wymaga opłacenia kosztów transferu")) {
                 logger.info("File is premiumonly --> Maybe stream download is possible!");
@@ -185,9 +180,9 @@ public class FreeDiscPl extends PluginForHost {
                     resumable = true;
                     maxchunks = 0;
                     getPage(videoEmbedUrl);
-                    dllink = br.getRegex("data\\-video\\-url=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    dllink = br.getRegex("data\\-video\\-url=\"(https?://[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("player\\.swf\\?file=(http://[^<>\"]*?)\"").getMatch(0);
+                        dllink = br.getRegex("player\\.swf\\?file=(https?://[^<>\"]*?)\"").getMatch(0);
                     }
                     if (dllink != null) {
                         logger.info("Stream download handling seems to have worked successfully");
@@ -286,7 +281,6 @@ public class FreeDiscPl extends PluginForHost {
                     this.setDownloadLink(originalDownloadLink);
                 }
             }
-
             // save the session!
             synchronized (botSafeCookies) {
                 botSafeCookies = br.getCookies(this.getHost());
@@ -319,7 +313,7 @@ public class FreeDiscPl extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://freedisc.pl";
+    private static final String MAINPAGE = "https://freedisc.pl";
     private static Object       LOCK     = new Object();
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -333,14 +327,13 @@ public class FreeDiscPl extends PluginForHost {
                 if (cookies != null) {
                     /* Always try to re-use cookies. */
                     br.setCookies(this.getHost(), cookies);
-                    br.getPage("http://" + this.getHost() + "/");
+                    br.getPage("https://" + this.getHost() + "/");
                     if (br.containsHTML("id=\"btnLogout\"")) {
                         return;
                     }
-
                 }
                 Browser br = prepBR(new Browser());
-                br.getPage("http://" + this.getHost() + "/");
+                br.getPage("https://" + this.getHost() + "/");
                 // this is done via ajax!
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -447,5 +440,4 @@ public class FreeDiscPl extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
