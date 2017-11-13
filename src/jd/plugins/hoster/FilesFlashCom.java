@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -40,7 +39,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:8001)?/[a-z0-9]+" })
 public class FilesFlashCom extends PluginForHost {
-
     private final String html_ipBlocked       = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
     private final String html_tempunavailable = ">The server which has this file is currently not available";
     private final String mainDomain           = "http://filesflash.com/";
@@ -88,9 +86,7 @@ public class FilesFlashCom extends PluginForHost {
         // record userPreference link!
         final String userEndURL = "http://" + userDomain + "/" + fuid;
         link.setProperty("userEndURL", userEndURL);
-
         link.setContentUrl(userEndURL);
-
         link.setUrlDownload(mainDomain + fuid);
     }
 
@@ -112,12 +108,12 @@ public class FilesFlashCom extends PluginForHost {
             link.getLinkStatus().setStatusText("The server on which this file is is currently unavailable");
             return AvailableStatus.TRUE;
         }
-        final String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
-        final String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
+        final String filename = br.getRegex(">Filename:\\s*(.*?)\\s*<br").getMatch(0);
+        final String filesize = br.getRegex("Size:\\s*(.*?)\\s*</td>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -282,7 +278,6 @@ public class FilesFlashCom extends PluginForHost {
     }
 
     private final String   domain     = "domain";
-
     /** The list of server values displayed to the user */
     private final String[] allDomains = new String[] { "filesflash.com", "filesflash.net", "173.231.61.130" };
 
@@ -297,5 +292,4 @@ public class FilesFlashCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
