@@ -211,7 +211,7 @@ public class XSUseNetCom extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", false, 80, 119));
         ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", true, 563, 443));
-        ret.addAll(UsenetServer.createServerList("free.xsusenet.com ", false, 119, 443, 23, 80, 81, 8080, 2323, 8181));
+        ret.addAll(UsenetServer.createServerList("free.xsusenet.com", false, 119, 443, 23, 80, 81, 8080, 2323, 8181));
         return ret;
     }
 }
