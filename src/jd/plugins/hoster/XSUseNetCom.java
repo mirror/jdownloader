@@ -2,8 +2,8 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -45,7 +45,6 @@ public class XSUseNetCom extends UseNet {
     };
 
     private final String USENET_USERNAME = "USENET_USERNAME";
-
     private final String USENET_PASSWORD = "USENET_PASSWORD";
 
     @Override
@@ -75,7 +74,7 @@ public class XSUseNetCom extends UseNet {
     private boolean containsSessionCookie(Browser br) {
         final Cookies cookies = br.getCookies(getHost());
         for (final Cookie cookie : cookies.getCookies()) {
-            if (cookie.getKey().startsWith("WHMCS") && !"deleted".equals(cookie.getValue())) {
+            if (cookie.getKey().startsWith("laravel_session") && !"deleted".equals(cookie.getValue())) {
                 return true;
             }
         }
@@ -92,14 +91,12 @@ public class XSUseNetCom extends UseNet {
             Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://portal.xsusenet.com/clientarea.php");
-                login = br.getFormbyActionRegex("dologin");
-                if (login != null && login.containsHTML("name=\"username\"") && login.containsHTML("name=\"password\"")) {
+                br.getPage("https://my.xsusenet.com");
+                login = br.getFormbyActionRegex(".*login");
+                if (login != null && login.containsHTML("name=\"password\"")) {
                     br.getCookies(getHost()).clear();
                 } else if (!containsSessionCookie(br)) {
                     br.getCookies(getHost()).clear();
-                } else {
-                    br.getPage("https://portal.xsusenet.com/clientarea.php?action=services");
                 }
             }
             if (!containsSessionCookie(br)) {
@@ -108,95 +105,92 @@ public class XSUseNetCom extends UseNet {
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for xsusenet.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getPage("https://portal.xsusenet.com/clientarea.php");
-                login = br.getFormbyActionRegex("dologin");
-                login.put("username", Encoding.urlEncode(userName));
+                br.getPage("https://my.xsusenet.com/login");
+                login = br.getFormbyActionRegex(".*login");
+                login.put("email", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                login = br.getFormbyActionRegex("dologin");
-                if (login != null && login.containsHTML("name=\"username\"") && login.containsHTML("name=\"password\"")) {
+                login = br.getFormbyActionRegex(".*login");
+                if (login != null && login.containsHTML("name=\"password\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (!containsSessionCookie(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://portal.xsusenet.com/clientarea.php?action=services")) {
-                br.getPage("https://portal.xsusenet.com/clientarea.php?action=services");
+            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://my.xsusenet.com/")) {
+                br.getPage("https://my.xsusenet.com/");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final HashSet<String> idMap = new HashSet<String>();
-            final String[] ids = br.getRegex("clientarea\\.php\\?action=productdetails&amp;id=(\\d+)").getColumn(0);
-            for (final String id : ids) {
-                if (idMap.add(id)) {
-                    br.getPage("https://portal.xsusenet.com/clientarea.php?action=productdetails&id=" + id);
-                    final boolean isActive = br.containsHTML("product-status-text\">\\s*Active");
-                    if (isActive) {
-                        final boolean isFree = br.containsHTML("<h4>FREE</h4>") || br.containsHTML("free\\.xsusenet\\.com");
-                        final String userName = br.getRegex("<strong>Your Username</strong>.*?>\\s*(\\d+)\\s*<").getMatch(0);
-                        if (userName == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else {
-                            account.setProperty(USENET_USERNAME, userName.trim());
-                        }
-                        final String packageType = br.getRegex("<li>Package</li>.*?<li>(.*?)</li>").getMatch(0);
-                        if (packageType != null && !isFree) {
-                            account.setType(Account.AccountType.PREMIUM);
-                            ai.setStatus(packageType);
-                            if (packageType.contains("200")) {
-                                // 200 Mbit package: 50 connection
-                                account.setMaxSimultanDownloads(50);
-                            } else if (packageType.contains("150")) {
-                                // 150 Mbit package: 50 connection
-                                account.setMaxSimultanDownloads(50);
-                            } else if (packageType.contains("100")) {
-                                // 100 Mbit package: 50 connections
-                                account.setMaxSimultanDownloads(50);
-                            } else if (packageType.contains("50")) {
-                                // 50 Mbit package: 40 connection
-                                account.setMaxSimultanDownloads(40);
-                            } else if (packageType.contains("25")) {
-                                // 25 Mbit package: 30 connections
-                                account.setMaxSimultanDownloads(30);
-                            } else if (packageType.contains("10")) {
-                                // 10 Mbit package: 20 connections
-                                account.setMaxSimultanDownloads(20);
-                            } else {
-                                // Free account: 5 connections(fallback)
-                                account.setMaxSimultanDownloads(5);
-                            }
-                        } else {
-                            // Free account: 5 connections
-                            account.setType(Account.AccountType.FREE);
-                            account.setMaxSimultanDownloads(5);
-                        }
-                        final String endDate = br.getRegex("<li>End date</li>.*?<li>(\\d+-\\d+-\\d+)</li>").getMatch(0);
-                        if (endDate != null && !isFree) {
-                            final long date = TimeFormatter.getMilliSeconds(endDate, "yyyy'-'MM'-'dd", null);
-                            if (date > 0) {
-                                ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
-                            }
-                        }
-                        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-                        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+            final String currentSubscription = br.getRegex("Your current subscription</span>\\s*<p>\\s*<strong>(.*?)<").getMatch(0);
+            final String validUntil = br.getRegex("End date:\\s*(.*?)\\(").getMatch(0);
+            final String autoRenewal = br.getRegex("Automatic renewal:\\s*(.*?)\\s*<").getMatch(0);
+            final String username = br.getRegex("Username:\\s*(\\d+)\\s*<").getMatch(0);
+            String password = br.getRegex("Password:\\s*(.*?)\\s*<").getMatch(0);
+            if (username == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                account.setProperty(USENET_USERNAME, username.trim());
+            }
+            account.setProperty(USENET_PASSWORD, password);
+            final String packageType = currentSubscription;
+            final boolean isFree;
+            if (packageType != null && !StringUtils.containsIgnoreCase(currentSubscription, "free")) {
+                isFree = false;
+                account.setType(Account.AccountType.PREMIUM);
+                ai.setStatus(packageType);
+                if (packageType.contains("200")) {
+                    // 200 Mbit package: 50 connection
+                    account.setMaxSimultanDownloads(50);
+                } else if (packageType.contains("150")) {
+                    // 150 Mbit package: 50 connection
+                    account.setMaxSimultanDownloads(50);
+                } else if (packageType.contains("100")) {
+                    // 100 Mbit package: 50 connections
+                    account.setMaxSimultanDownloads(50);
+                } else if (packageType.contains("50")) {
+                    // 50 Mbit package: 40 connection
+                    account.setMaxSimultanDownloads(40);
+                } else if (packageType.contains("25")) {
+                    // 25 Mbit package: 30 connections
+                    account.setMaxSimultanDownloads(30);
+                } else if (packageType.contains("10")) {
+                    // 10 Mbit package: 20 connections
+                    account.setMaxSimultanDownloads(20);
+                } else {
+                    // Free account: 5 connections(fallback)
+                    account.setMaxSimultanDownloads(5);
+                }
+            } else {
+                // Free account: 5 connections
+                isFree = true;
+                account.setType(Account.AccountType.FREE);
+                account.setMaxSimultanDownloads(5);
+                ai.setStatus(packageType);
+            }
+            if (validUntil != null) {
+                final long date = TimeFormatter.getMilliSeconds(validUntil, "MMM' 'dd', 'yyyy", Locale.ENGLISH);
+                if (date > 0) {
+                    ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
+                }
+            }
+            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+            try {
+                verifyUseNetLogins(account);
+                return ai;
+            } catch (InvalidAuthException e) {
+                logger.log(e);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.xsusenet.com/", true);
+                final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog("Please enter your XSUsenet Usenet Password", dummyLink));
+                if (handle.getCloseReason() == CloseReason.OK) {
+                    password = handle.getText();
+                    if (StringUtils.isNotEmpty(password)) {
+                        account.setProperty(USENET_PASSWORD, password);
                         try {
                             verifyUseNetLogins(account);
                             return ai;
-                        } catch (InvalidAuthException e) {
-                            logger.log(e);
-                            final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.xsusenet.com/", true);
-                            final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog("Please enter your XSUsenet Usenet Password", dummyLink));
-                            if (handle.getCloseReason() == CloseReason.OK) {
-                                final String password = handle.getText();
-                                if (StringUtils.isNotEmpty(password)) {
-                                    account.setProperty(USENET_PASSWORD, password);
-                                    try {
-                                        verifyUseNetLogins(account);
-                                        return ai;
-                                    } catch (InvalidAuthException e2) {
-                                        logger.log(e2);
-                                    }
-                                }
-                            }
+                        } catch (InvalidAuthException e2) {
+                            logger.log(e2);
                         }
                     }
                 }
@@ -205,6 +199,7 @@ public class XSUseNetCom extends UseNet {
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
+                account.removeProperty(USENET_PASSWORD);
                 account.removeProperty(USENET_PASSWORD);
             }
             throw e;
