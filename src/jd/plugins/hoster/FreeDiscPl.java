@@ -109,10 +109,12 @@ public class FreeDiscPl extends PluginForHost {
         if (br.containsHTML("Ten plik nie jest publicznie dostępny")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+        // String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         // itemprop="name" style=" font-size: 17px; margin-top: 6px;">Alternatywne Metody Analizy technicznej .pdf</h1>
         if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
+            // filename = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
+            filename = br.getRegex("itemprop=\"name\">\\s*([^<>\"]*?)</h1>").getMatch(0);
         }
         String filesize = br.getRegex("class=\\'frameFilesSize\\'>Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
         if (filesize == null) {
@@ -125,7 +127,9 @@ public class FreeDiscPl extends PluginForHost {
             filesize = br.getRegex("class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div><div class=\\'frameFilesViews\\'><i class=").getMatch(0);
         }
         if (filesize == null) {
-            filesize = br.getRegex("<i class=\"icon-hdd\"></i>Rozmiar </div><div class=\\'value\\'>([^<>\"]*?)</div><div class=\\'key\\'>").getMatch(0);
+            // filesize =
+            // br.getRegex("<i class=\"icon-hdd\"></i>Rozmiar </div><div class=\\'value\\'>([^<>\"]*?)</div><div class=\\'key\\'>").getMatch(0);
+            filesize = br.getRegex("<i class=\"icon-hdd\"></i>\\s*Rozmiar\\s*</div>\\s*<div class=\\'value\\'>([^<>\"]*?)</div>").getMatch(0);
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
