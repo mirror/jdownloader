@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropmefiles.com" }, urls = { "http://(www\\.)?dropmefiles\\.com/[A-Za-z0-9]+" })
 public class DropmefilesCom extends PluginForHost {
-
     public DropmefilesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,7 +44,6 @@ public class DropmefilesCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = -1;
-
     private String               dllink            = null;
 
     @SuppressWarnings("deprecation")
@@ -55,6 +52,7 @@ public class DropmefilesCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie(getHost(), "language", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("due to ending of the share period|due to exceeding the limit|class=\"fileCount\">0</div>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,5 +116,4 @@ public class DropmefilesCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
