@@ -23,7 +23,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextActi
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncompleteArchiveAction;
 
 public interface LinkgrabberSettings extends ConfigInterface {
-
     @AboutConfig
     @DefaultBooleanValue(false)
     boolean isVariantsColumnAlwaysVisible();
@@ -143,6 +142,15 @@ public interface LinkgrabberSettings extends ConfigInterface {
     int getAutoConfirmDelay();
 
     void setAutoConfirmDelay(int delay);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("AutoConfirm waits max delay before confirming the links. Default is -1 = wait for min delay")
+    @DefaultIntValue(-1)
+    @SpinnerValidator(min = -1, max = Integer.MAX_VALUE)
+    int getAutoConfirmMaxDelay();
+
+    void setAutoConfirmMaxDelay(int delay);
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -300,5 +308,4 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setSubfolderCount(SubFolderByPackageRule.COUNT count);
 
     SubFolderByPackageRule.COUNT getSubfolderCount();
-
 }

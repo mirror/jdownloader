@@ -28,7 +28,6 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class AutoStartManager implements GenericConfigEventListener<Boolean> {
-
     private final DelayedRunnable             delayer;
     private volatile boolean                  globalAutoStart;
     private volatile boolean                  globalAutoConfirm;
@@ -44,8 +43,14 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
         CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getEventSender().addListener(this, true);
         globalAutoStart = CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
         globalAutoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
-        delayer = new DelayedRunnable(Math.max(1, CFG_LINKGRABBER.CFG.getAutoConfirmDelay()), -1) {
-
+        final int minDelay = Math.max(1, CFG_LINKGRABBER.CFG.getAutoConfirmDelay());
+        int maxDelay = CFG_LINKGRABBER.CFG.getAutoConfirmMaxDelay();
+        if (maxDelay <= 0) {
+            maxDelay = -1;
+        } else if (maxDelay < minDelay) {
+            maxDelay = minDelay;
+        }
+        delayer = new DelayedRunnable(minDelay, maxDelay) {
             @Override
             public String getID() {
                 return "AutoConfirmButton";
@@ -53,6 +58,19 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
 
             @Override
             public void delayedrun() {
+                final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
+                if (!Application.isHeadless() && CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled()) {
+                    /* dirty workaround */
+                    selectionInfo = new EDTHelper<SelectionInfo<CrawledPackage, CrawledLink>>() {
+                        @Override
+                        public SelectionInfo<CrawledPackage, CrawledLink> edtRun() {
+                            LinkGrabberTable.getInstance().getModel().fireStructureChange(true);
+                            return LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+                        }
+                    }.getReturnValue();
+                } else {
+                    selectionInfo = LinkCollector.getInstance().getSelectionInfo();
+                }
                 LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
                     @Override
                     protected Void run() throws RuntimeException {
@@ -72,20 +90,6 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                         default:
                             autoStart = globalAutoStart;
                             break;
-                        }
-                        final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
-                        if (!Application.isHeadless() && CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled()) {
-                            /* dirty workaround */
-                            selectionInfo = new EDTHelper<SelectionInfo<CrawledPackage, CrawledLink>>() {
-
-                                @Override
-                                public SelectionInfo<CrawledPackage, CrawledLink> edtRun() {
-                                    LinkGrabberTable.getInstance().getModel().fireStructureChange(true);
-                                    return LinkGrabberTable.getInstance().getSelectionInfo(false, true);
-                                }
-                            }.getReturnValue();
-                        } else {
-                            selectionInfo = LinkCollector.getInstance().getSelectionInfo();
                         }
                         final List<AbstractNode> list = new ArrayList<AbstractNode>(selectionInfo.getChildren().size());
                         boolean createNewSelection = false;
@@ -131,7 +135,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     public void onLinkAdded(CrawledLink link) {
         if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled() || link.isForcedAutoStartEnabled()) {
             final LinkCollectingInformation collectingInfo = link.getCollectingInfo();
-            if (collectingInfo != null && collectingInfo.getLinkCrawler().isCollecting()) {
+            if (collectingInfo != null && collectingInfo.getLinkCrawler().isCollecting() && delayer.getMaximumDelay() == -1) {
                 return;
             }
             delayer.resetAndStart();
