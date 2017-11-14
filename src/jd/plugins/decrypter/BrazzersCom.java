@@ -19,6 +19,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,11 +40,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.BrazzersCom.BrazzersConfigInterface;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/(?:scene/view/\\d+/[a-z0-9\\-]+(?:/[a-z0-9\\-]+/?)|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+(?:/[a-z0-9\\-]+)?/?|embed/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/(?:scene/view/\\d+/[a-z0-9\\-]+/?|series/\\d+/[a-z0-9\\-]+/episode/\\d+/?|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+(?:/[a-z0-9\\-]+)?/?|embed/\\d+)" })
 public class BrazzersCom extends PluginForDecrypt {
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,7 +59,8 @@ public class BrazzersCom extends PluginForDecrypt {
         final String parameter = param.toString();
         final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(plg);
-        final String fid = new Regex(parameter, "^.+/(\\d+)/?").getMatch(0);
+        final String fid = new Regex(parameter, "(?:view|hqpics|id|embed|episode)/(\\d+)/?").getMatch(0);
+        final boolean grabBEST = cfg.isGrabBESTEnabled();
         final boolean grab1080p = cfg.isGrabHTTPMp4_1080pEnabled();
         final boolean grab720p = cfg.isGrabHTTPMp4_720pHDEnabled();
         final boolean grab480pSD = cfg.isGrabHTTPMp4_480pSDEnabled();
@@ -106,7 +107,7 @@ public class BrazzersCom extends PluginForDecrypt {
             }
         }
         if (isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(parameter, fid, null));
             return decryptedLinks;
         }
         String title = this.br.getRegex(">([^<>\"]+)<span class=\"icon\\-new").getMatch(0);
@@ -118,34 +119,7 @@ public class BrazzersCom extends PluginForDecrypt {
             title = fid;
         }
         title = Encoding.htmlDecode(title).trim();
-        if (parameter.matches(type_video_premium) || parameter.matches(type_video_free) || parameter.matches(type_video_embed)) {
-            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
-            final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
-            final String[] dlinfo = htmldownload.split("</li>");
-            for (final String video : dlinfo) {
-                final String dlurl = new Regex(video, "(/download/[^<>\"]+/)\"").getMatch(0);
-                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
-                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
-                final String quality_url = dlurl != null ? new Regex(dlurl, "/([^/]+)/?$").getMatch(0) : null;
-                if (dlurl == null || quality == null || filesize == null || quality_url == null) {
-                    continue;
-                } else if (!all_selected_qualities.contains(quality_url) && !grabAll) {
-                    /* Skip unwanted qualities - only add what the user wants to have. */
-                    continue;
-                }
-                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
-                final String decrypter_filename = title + "_" + quality + ".mp4";
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                dl.setName(decrypter_filename);
-                if (fastLinkcheck) {
-                    dl.setAvailable(true);
-                }
-                dl.setProperty("fid", fid);
-                dl.setProperty("quality", quality);
-                dl.setProperty("decrypter_filename", decrypter_filename);
-                decryptedLinks.add(dl);
-            }
-        } else {
+        if (parameter.matches(type_pics)) {
             final String json_pictures = getPictureJson(this.br);
             if (json_pictures == null) {
                 return null;
@@ -171,6 +145,48 @@ public class BrazzersCom extends PluginForDecrypt {
                 dl.setProperty("fid", fid);
                 dl.setProperty("picnumber_formatted", number_formatted);
                 decryptedLinks.add(dl);
+            }
+        } else {
+            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
+            final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
+            final String[] dlinfo = htmldownload.split("</li>");
+            DownloadLink bestQualityDownloadlink = null;
+            long filesizeMax = 0;
+            long filesizeTemp = 0;
+            for (final String video : dlinfo) {
+                final String dlurl = new Regex(video, "(/download/[^<>\"]+/)\"").getMatch(0);
+                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
+                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
+                final String quality_url = dlurl != null ? new Regex(dlurl, "/([^/]+)/?$").getMatch(0) : null;
+                if (dlurl == null || quality == null || filesize == null || quality_url == null) {
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
+                final String decrypter_filename = title + "_" + quality + ".mp4";
+                filesizeTemp = SizeFormatter.getSize(filesize);
+                dl.setDownloadSize(filesizeTemp);
+                dl.setName(decrypter_filename);
+                if (fastLinkcheck) {
+                    dl.setAvailable(true);
+                }
+                dl.setProperty("fid", fid);
+                dl.setProperty("quality", quality);
+                dl.setProperty("decrypter_filename", decrypter_filename);
+                if (filesizeTemp > filesizeMax) {
+                    /* Set (new) best DownloadLink */
+                    filesizeMax = filesizeTemp;
+                    bestQualityDownloadlink = dl;
+                }
+                if (!all_selected_qualities.contains(quality_url) && !grabAll) {
+                    /* Skip unwanted qualities - only add what the user wants to have. */
+                    continue;
+                }
+                decryptedLinks.add(dl);
+            }
+            if (grabBEST && bestQualityDownloadlink != null) {
+                /* Remove all previously added items and only add best quality. */
+                decryptedLinks.clear();
+                decryptedLinks.add(bestQualityDownloadlink);
             }
         }
         final FilePackage fp = FilePackage.getInstance();

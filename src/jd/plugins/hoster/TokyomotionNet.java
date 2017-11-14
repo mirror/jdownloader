@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/video/\\d+(?:/[^/]+)?" })
 public class TokyomotionNet extends PluginForHost {
@@ -91,7 +91,7 @@ public class TokyomotionNet extends PluginForHost {
                     link.setDownloadSize(con.getLongContentLength());
                     /*
                      * Special: First URL is only accessible once but it redirects to the final URL which we can access multiple times which
-                     * is why we need to get that!
+                     * is why we need to get that! 2017-11-14: Seems as if this was a serverside issue - it does not happen anymore!
                      */
                     this.dllink = con.getURL().toString();
                 } else {

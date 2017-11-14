@@ -132,7 +132,7 @@ public class SaveTv extends PluginForHost {
     /* Crawler settings */
     private static final String   CRAWLER_ONLY_ADD_NEW_IDS                     = "CRAWLER_ONLY_ADD_NEW_IDS";
     private static final String   ACTIVATE_BETA_FEATURES                       = "ACTIVATE_BETA_FEATURES";
-    private static final String   USEAPI                                       = "USEAPI_2017_10_02";
+    private static final String   USEAPI                                       = "USEAPI_2017_11_14";
     private static final String   CRAWLER_ACTIVATE                             = "CRAWLER_ACTIVATE";
     public static final String    CRAWLER_ENABLE_FAST_LINKCHECK                = "CRAWLER_ENABLE_FASTER_2";
     public static final String    CRAWLER_ENABLE_DIALOGS                       = "CRAWLER_ENABLE_DIALOGS";
@@ -1862,8 +1862,13 @@ public class SaveTv extends PluginForHost {
         return url;
     }
 
+    /*
+     * 2017-11-14: Permanently enabled API usage and disabled website as it is not required anymore in the future. Please leave the old code
+     * so that we can easily switch in case of major API issues.
+     */
     public static boolean is_API_enabled(final String host) {
-        return SubConfiguration.getConfig(host).getBooleanProperty(USEAPI, defaultUSEAPI);
+        // return SubConfiguration.getConfig(host).getBooleanProperty(USEAPI, defaultUSEAPI);
+        return true;
     }
 
     /** Corrects all kinds of Strings which Stv provides, also makes filenames look nicer. */
@@ -2435,7 +2440,7 @@ public class SaveTv extends PluginForHost {
         // JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell
         // welche gibt steht im Support Forum.")).setEnabled(defaultACTIVATE_BETA_FEATURES));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, "<html><p>APIv3 verwenden?</p></html>").setDefaultValue(defaultUSEAPI);
+        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, "<html><p>APIv3 verwenden?<br />Dauerhaft aktiviert seit dem 14.11.2017, da die Webseite nicht mehr unterstützt wird.</p></html>").setDefaultValue(defaultUSEAPI).setEnabled(false);
         getConfig().addEntry(api);
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY,
         // JDL.L("plugins.hoster.SaveTv.apikey", "Benutzerdefinierten API-Key eingeben:\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b>
