@@ -261,7 +261,7 @@ public class PremiumizeMe extends UseNet {
                  * message may also means that the users' fair use limit has been reached but in this download mode (directurl) it is
                  * unlikely that the message is caused by the fair use limit.
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Most likely you have reached your bandwidth limit, or you don't have this file in your cloud!");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Most likely you have reached your fair-use limit, or you don't have this file in your cloud!");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
