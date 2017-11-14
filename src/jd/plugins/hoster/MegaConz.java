@@ -160,16 +160,17 @@ public class MegaConz extends PluginForHost {
                 }
                 if (isPro) {
                     if (uq.containsKey("mxfer") && uq.containsKey("csxfer")) {
-                        final long max = (getNumber(uq, "mxfer")).longValue();
-                        final long used = (getNumber(uq, "caxfer")).longValue();
+                        final Number max = (getNumber(uq, "mxfer")).longValue();
+                        final Number used = (getNumber(uq, "caxfer")).longValue();
                         final long reserved;
                         if (getPluginConfig().getBooleanProperty(CHECK_RESERVED, true)) {
-                            reserved = (getNumber(uq, "rua")).longValue();
+                            final Number rua = getNumber(uq, "rua");
+                            reserved = rua != null ? rua.longValue() : 0;
                         } else {
                             reserved = 0;
                         }
-                        ai.setTrafficMax(max);
-                        ai.setTrafficLeft(max - (used + reserved));
+                        ai.setTrafficMax(max.longValue());
+                        ai.setTrafficLeft(max.longValue() - (used.longValue() + reserved));
                     }
                     ai.setStatus(status);
                     account.setType(AccountType.PREMIUM);
