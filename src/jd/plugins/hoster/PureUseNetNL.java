@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -21,7 +23,6 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pureusenet.nl" }, urls = { "" })
 public class PureUseNetNL extends UseNet {
-
     public PureUseNetNL(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.pureusenet.nl/en/packages");
@@ -35,6 +36,16 @@ public class PureUseNetNL extends UseNet {
         return "https://www.pureusenet.nl/en/terms-and-conditions";
     }
 
+    private boolean containsSessionCookie(Browser br) {
+        final Cookies cookies = br.getCookies(getHost());
+        for (final Cookie cookie : cookies.getCookies()) {
+            if (cookie.getKey().startsWith("auth-token") && !"deleted".equals(cookie.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
@@ -45,37 +56,37 @@ public class PureUseNetNL extends UseNet {
             Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://members.pureusenet.nl/en/index");
-                login = br.getFormbyKey("username");
-                if (login != null && login.containsHTML("name=\"username\"") && login.containsHTML("name=\"password\"")) {
+                br.getPage("https://www.pureusenet.nl/en/member");
+                login = br.getFormbyActionRegex(".*/login");
+                if (login != null && login.containsHTML("name=\"password\"")) {
                     br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "PUR-SESS") == null) {
+                } else if (!containsSessionCookie(br)) {
                     br.getCookies(getHost()).clear();
                 }
             }
-            if (br.getCookie(getHost(), "PUR-SESS") == null) {
+            if (!containsSessionCookie(br)) {
                 account.clearCookies("");
                 final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for pureusenet.nl website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getPage("https://members.pureusenet.nl/en");
-                login = br.getFormbyKey("username");
-                login.put("username", Encoding.urlEncode(userName));
+                br.getPage("https://www.pureusenet.nl/en/login");
+                login = br.getFormbyActionRegex(".*/login");
+                login.put("email", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                login = br.getFormbyKey("username");
-                if (login != null && login.containsHTML("name=\"username\"") && login.containsHTML("name=\"password\"")) {
+                login = br.getFormbyActionRegex(".*/login");
+                if (login != null && login.containsHTML("name=\"password\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(getHost(), "PUR-SESS") == null) {
+                } else if (!containsSessionCookie(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://members.pureusenet.nl/en/index") && !StringUtils.containsIgnoreCase(br.getURL(), "https://members.pureusenet.nl/en")) {
-                br.getPage("https://members.pureusenet.nl/en/index");
+            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://www.pureusenet.nl/en/member")) {
+                br.getPage("https://www.pureusenet.nl/en/member");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String packageType = br.getRegex("<h3>Your package:\\s*<span class=\"font-primary\">(.*?)<").getMatch(0);
+            final String packageType = br.getRegex("<h3>Your package:\\s*<span class=\"font-primary.*?\">(.*?)<").getMatch(0);
             final String connections = br.getRegex("<li><b>Connections:</b>\\s*(\\d+)\\s*<").getMatch(0);
             if (packageType != null) {
                 ai.setStatus(packageType);
