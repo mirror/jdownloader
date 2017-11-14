@@ -104,12 +104,12 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         }
         title = Encoding.htmlDecode(title).trim();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
-        final String[] dlinfo = br.getRegex("<option value=\"(https?://dl\\d+\\.julesjordan\\.com/dl/[^<>\"]+\\.mp4)\"").getColumn(0);
-        for (final String dlurl : dlinfo) {
-            final String quality_url = new Regex(dlurl, "([A-Za-z0-9]+)\\.mp4$").getMatch(0);
-            if (dlurl == null || quality_url == null) {
-                continue;
-            }
+        final HashMap<String, String> allQualities = findAllQualities(this.br);
+        final Iterator<Entry<String, String>> it = allQualities.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, String> entry = it.next();
+            final String quality_url = entry.getKey();
+            final String dlurl = entry.getValue();
             final DownloadLink dl = this.createDownloadlink(dlurl);
             final String decrypter_filename = title + "_" + quality_url + ".mp4";
             dl.setName(decrypter_filename);
@@ -119,6 +119,7 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
             dl.setProperty("fid", url_name);
             dl.setProperty("quality", quality_url);
             dl.setProperty("decrypter_filename", decrypter_filename);
+            dl.setProperty("mainlink", parameter);
             all_found_downloadlinks.put("mp4_" + quality_url, dl);
         }
         final HashMap<String, DownloadLink> all_selected_downloadlinks = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, grabBest, grabBestWithinUserSelection, grabUnknownQualities);
@@ -133,6 +134,20 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(title.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public static HashMap<String, String> findAllQualities(final Browser br) {
+        final HashMap<String, String> allQualities = new HashMap<String, String>();
+        final String[] dlinfo = br.getRegex("<option value=\"(https?://dl\\d+\\.julesjordan\\.com/dl/[^<>\"]+\\.mp4)\"").getColumn(0);
+        for (final String dlurl : dlinfo) {
+            final String quality_url = new Regex(dlurl, "([A-Za-z0-9]+)\\.mp4$").getMatch(0);
+            if (dlurl == null || quality_url == null) {
+                /* Skip URLs which do nit fit our pattern. */
+                continue;
+            }
+            allQualities.put(quality_url, dlurl);
+        }
+        return allQualities;
     }
 
     private HashMap<String, DownloadLink> handleQualitySelection(final HashMap<String, DownloadLink> all_found_downloadlinks, final List<String> all_selected_qualities, final boolean grab_best, final boolean grab_best_out_of_user_selection, final boolean grab_unknown) {
