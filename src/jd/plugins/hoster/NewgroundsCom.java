@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,6 +33,11 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 public class NewgroundsCom extends antiDDoSForHost {
     public NewgroundsCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_by", "Choose file name + by?").setDefaultValue(true));
     }
 
     /* DEV NOTES */
@@ -64,7 +71,12 @@ public class NewgroundsCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This entry was")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = null;
+        // String filename = null;
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String artist = br.getRegex("<em>(?:Artist|Author|Programming) ?<[^<>]+>([^<>]*?)<").getMatch(0);
+        if (artist != null && getPluginConfig().getBooleanProperty("Filename_by", true)) {
+            filename = filename + " by " + artist;
+        }
         String ext = null;
         final boolean checkForFilesize;
         String url_filename = null;
@@ -77,10 +89,10 @@ public class NewgroundsCom extends antiDDoSForHost {
             checkForFilesize = false;
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             url_filename = fid;
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            // filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
                 if (filename != null) {
-                    filename = Encoding.htmlDecode(filename).trim() + "_" + fid;
+                    filename = Encoding.htmlDecode(filename).trim();// + "_" + fid;
                 }
                 dllink = "http://www." + this.getHost() + "/audio/download/" + fid;
                 ext = ".mp3";
