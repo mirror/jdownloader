@@ -320,13 +320,11 @@ public class SaveTv extends PluginForHost {
         if (isTypeTelecastIDOverview(link)) {
             /* telecast info --> If available, find record info */
             callAPITelecastsSingle(telecastID);
-            /* Object could be offline here but that does not matter, we will check for this later! */
-            try {
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                existsRecord = ((Boolean) entries.get("existsRecord")).booleanValue();
-            } catch (final Throwable e) {
-                /* On offline, we might get a Map instead of LinkedHashMap here */
+            if (isOfflineAPI(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            existsRecord = ((Boolean) entries.get("existsRecord")).booleanValue();
             if (existsRecord) {
                 /* Item downloadable --> Find quality list */
                 logger.info("Assumed not-yet-recorded telecastID is recorded and downloadable");
@@ -338,12 +336,7 @@ public class SaveTv extends PluginForHost {
         } else {
             /* record info --> If NOT available, find telecast info */
             callAPIRecordsSingle(telecastID);
-            if (isOfflineAPI(this.br)) {
-                /* Item not downloadable --> At least try to get general information about this ID */
-                logger.info("Failed to find record --> Checking if maybe it hasn't been recorded yet or is too old (offline)");
-                callAPITelecastsSingle(telecastID);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            } else {
+            if (!isOfflineAPI(this.br)) {
                 /* Item downloadable --> Find quality list */
                 existsRecord = true;
                 /*
@@ -351,10 +344,15 @@ public class SaveTv extends PluginForHost {
                  * instead of the expected LinkedHashMap!
                  */
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            } else {
+                /* Item not downloadable --> At least try to get general information about this ID */
+                logger.info("Failed to find record --> Checking if maybe it hasn't been recorded yet or is too old (offline)");
+                callAPITelecastsSingle(telecastID);
+                if (isOfflineAPI(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             }
-        }
-        if (isOfflineAPI(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (existsRecord) {
             qualityList = jsonGetFormatArrayAPI(entries);
@@ -395,6 +393,7 @@ public class SaveTv extends PluginForHost {
         return "adfreeavailable%2C%20adfreelength%2C%20createdate%2C%20telecast.hasmoved%2C%20enddate%2C%20formats%2C%20formats.recordformat.id%2C%20formats.recordformat.name%2C%20formats.recordstate.id%2C%20formats.recordstate.name%2C%20formats.retentiondate%2C%20formats.uncutvideosize%2C%20isadcutenabled%2C%20startdate%2C%20telecast.country%2C%20telecast.description%2C%20telecast.enddate%2C%20telecast.episode%2C%20telecast.id%2C%20telecast.startdate%2C%20telecast.subject%2C%20telecast.subtitle%2C%20telecast.title%2C%20telecast.tvcategory.id%2C%20telecast.tvcategory.name%2C%20telecast.tvstation.id%2C%20telecast.tvstation.name%2C%20telecast.tvsubcategory.id%2C%20telecast.tvsubcategory.name%2C%20telecast.year%2C%20telecastid";
     }
 
+    /** See method 'handleErrorsAPI' for more information on offline content. */
     private boolean isOfflineAPI(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404;
     }
@@ -1393,6 +1392,10 @@ public class SaveTv extends PluginForHost {
                 if (id.equalsIgnoreCase("DOWNLOADSESSIONVIDEOFILESSERVICE_NOCONTENT")) {
                     logger.info("AdFree version is empty --> Failed to start download");
                     errorAdsFreeUnavailableWithForcedWaittime(this.currDownloadlink, 60 * 60 * 1000);
+                } else if (id.equalsIgnoreCase("NOTFOUND_TELECAST_ID")) {
+                    logger.info("Offline message inside errorhandling --> This is supposed to be handled correctly by other code");
+                    // /* Usually this goes along with a 404 response */
+                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /** TODO: Collect errors at this stage */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -2346,11 +2349,14 @@ public class SaveTv extends PluginForHost {
 
     private void setConfigElements() {
         /* Crawler settings */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Archiv-Crawler Einstellungen:"));
         final ConfigEntry crawlerActivate = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.activateCrawler", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm\r\n")).setDefaultValue(defaultCrawlerActivate);
         getConfig().addEntry(crawlerActivate);
-        final ConfigEntry crawlerAddNew = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, JDL.L("plugins.hoster.SaveTv.crawlerOnlyAddNewIDs", "Nur neue abgeschlossene Aufnahmen crawlen?\r\nJDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!\r\n<html><b>Wichtig:</b> JDownloader kann nicht wissen, welche Sendungen du bereits geladen hast - nur, welche bereits in JDownloader eingefügt wurden!</html>")).setDefaultValue(defaultCrawlerAddNew).setEnabledCondidtion(crawlerActivate, true);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry crawlerAddNew = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ONLY_ADD_NEW_IDS, "Nur <b>neue</b> abgeschlossene Aufnahmen crawlen?<br />JDownloader gleicht dein save.tv Archiv ab mit den Einträgen, die du bereits eingefügt hast und zeigt immer nur neue Einträge an!<br /><html><b>Wichtig:</b> JDownloader kann nicht wissen, welche Sendungen du bereits geladen hast - nur, welche bereits in JDownloader eingefügt wurden!<br /><font color=\"red\">Achtung: Diese Funktion arbeitet (zurzeit) unzuverlässig!</font></html>").setDefaultValue(defaultCrawlerAddNew).setEnabledCondidtion(crawlerActivate, true);
         getConfig().addEntry(crawlerAddNew);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_GRAB_TIMEFRAME_COUNT, "Nur Aufnahmen der letzten X Tage crawlen??\r\nAnzahl der Tage, die gecrawlt werden sollen [0 = komplettes Archiv]:", 0, 62, 1).setDefaultValue(defaultCrawlLastDays).setEnabledCondidtion(crawlerAddNew, false));
         /*
          * 2017-09-21: Disable this setting as we're switching to API-only mode and API provides all required information straight away so
@@ -2440,6 +2446,7 @@ public class SaveTv extends PluginForHost {
         // JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell
         // welche gibt steht im Support Forum.")).setEnabled(defaultACTIVATE_BETA_FEATURES));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        /* More information see method 'is_API_enabled' */
         final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, "<html><p>APIv3 verwenden?<br />Dauerhaft aktiviert seit dem 14.11.2017, da die Webseite nicht mehr unterstützt wird.</p></html>").setDefaultValue(defaultUSEAPI).setEnabled(false);
         getConfig().addEntry(api);
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY,
