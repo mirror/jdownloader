@@ -88,6 +88,7 @@ public class JulesjordanCom extends antiDDoSForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (con.getResponseCode() == 410) {
+                    logger.info("Directurl expired --> Trying to refresh it");
                     /* Refresh directurl */
                     final String mainlink = link.getStringProperty("mainlink");
                     final String quality = link.getStringProperty("quality");
