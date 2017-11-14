@@ -28,6 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,13 +58,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyuploads.cc" }, urls = { "https?://(www\\.)?dailyuploads\\.(cc|net)/(embed\\-)?[a-z0-9]{12}" })
-public class DailyuploadsNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyuploads.cc" }, urls = { "https?://(?:www\\.)?dailyuploads\\.(?:cc|net)/(embed\\-)?[a-z0-9]{12}" })
+public class DailyuploadsCc extends PluginForHost {
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -143,7 +143,7 @@ public class DailyuploadsNet extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public DailyuploadsNet(PluginWrapper wrapper) {
+    public DailyuploadsCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }

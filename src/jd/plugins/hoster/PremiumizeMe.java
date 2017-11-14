@@ -254,8 +254,14 @@ public class PremiumizeMe extends UseNet {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isOK()) {
             br.followConnection();
-            if (br.containsHTML("Please check your fair use status at")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Please check your fair use status");
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /*
+                 * Very rare error which happens if user adds a previously downloadable URL to a file in his cloud but then moves it away
+                 * from there --> File is online but not downloadable anymore until he moves it back into his cloud. Keep in mind that this
+                 * message may also means that the users' fair use limit has been reached but in this download mode (directurl) it is
+                 * unlikely that the message is caused by the fair use limit.
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Most likely you have reached your bandwidth limit, or you don't have this file in your cloud!");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
