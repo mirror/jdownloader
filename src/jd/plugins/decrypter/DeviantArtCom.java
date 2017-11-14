@@ -62,8 +62,6 @@ public class DeviantArtCom extends PluginForDecrypt {
     // I've created the plugin this way to allow users to grab as little or as
     // much, content as they wish. Hopefully this wont create any
     // issues.
-    private static Object       LOCK                          = new Object();
-    private static final String FASTLINKCHECK_2               = "FASTLINKCHECK_2";
     private static final String TYPE_COLLECTIONS              = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
     private static final String TYPE_CATPATH_ALL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
     private static final String TYPE_CATPATH_1                = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
