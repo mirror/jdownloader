@@ -158,11 +158,14 @@ public class Rlnks extends antiDDoSForDecrypt {
         }
         /* Webdecryption */
         if (decryptedLinks.isEmpty()) {
-            decryptLinks(decryptedLinks, param);
-            final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            for (final String link : more_links) {
-                getPage(link);
-                decryptLinks(decryptedLinks, param);
+            if (decryptLinks(decryptedLinks, param)) {
+                final String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                for (final String link : more_links) {
+                    getPage(link);
+                    if (!decryptLinks(decryptedLinks, param)) {
+                        break;
+                    }
+                }
             }
         }
         if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) {
@@ -175,13 +178,21 @@ public class Rlnks extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptLinks(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
+    private boolean decryptLinks(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
         br.setFollowRedirects(false);
         final String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
         try {
             Browser brc = null;
             for (final String match : matches) {
-                sleep(2333, param);
+                try {
+                    sleep(2333, param);
+                } catch (InterruptedException e) {
+                    logger.log(e);
+                    return false;
+                }
+                if (isAbort()) {
+                    return false;
+                }
                 handleCaptchaAndPassword("/frame.php?" + match, param);
                 if (allForm != null && allForm.getRegex("captcha").matches()) {
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
@@ -205,10 +216,11 @@ public class Rlnks extends antiDDoSForDecrypt {
                         decryptedLinks.add(dl);
                     } else {
                         /* as bot detected */
-                        return;
+                        return false;
                     }
                 }
             }
+            return true;
         } finally {
             br.setFollowRedirects(true);
         }

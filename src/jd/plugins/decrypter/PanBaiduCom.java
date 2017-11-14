@@ -78,7 +78,6 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
         }
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         /* If we access urls without cookies we might get 404 responses for no reason so let's access the main page first. */
         br.getPage("http://pan.baidu.com");
         br.getPage(parameter);

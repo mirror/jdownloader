@@ -54,7 +54,6 @@ public class PanBaiduCom extends PluginForHost {
 
     private String               DLLINK                                     = null;
     private static final String  TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "https?://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
-    private static final String  USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
     // private static final String USER_AGENT =
     // "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
     private static final String  APPID                                      = "250528";
@@ -79,7 +78,6 @@ public class PanBaiduCom extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Other or older User-Agents might get slow speed
-        br.getHeaders().put("User-Agent", USER_AGENT);
         // From decrypter
         DLLINK = downloadLink.getStringProperty("dlink", null);
         // From host plugin
