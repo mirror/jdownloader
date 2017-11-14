@@ -56,8 +56,8 @@ public class DeviantArtCom extends PluginForHost {
     public static String        FORCEHTMLDOWNLOAD                = "FORCEHTMLDOWNLOAD";
     public static String        CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
     private static final String GENERALFILENAMEREGEX             = "<title>([^<>\"]*?) on deviantART</title>";
-    private static final String DLLINK_REFRESH_NEEDED            = "http://(www\\.)?deviantart\\.com/download/.+";
-    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">Download<";
+    private static final String DLLINK_REFRESH_NEEDED            = "https?://(www\\.)?deviantart\\.com/download/.+";
+    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">\\s*Download";
     private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
     private static final String TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
@@ -165,16 +165,21 @@ public class DeviantArtCom extends PluginForHost {
             }
             ext = "html";
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_GENERAL)) {
+            final String ret[] = getDownloadURL();
+            if (ret != null) {
+                DLLINK = ret[0];
+                ext = new Regex(ret[1], "span class=\"text\">([A-Za-z0-9]{1,5})\\s*download").getMatch(0);
+                filesize = new Regex(ret[1], "span class=\"text\">([A-Za-z0-9]{1,5})\\s*download\\s*([0-9]+ [KM]B)").getMatch(1);
+                if (ext == null) {
+                    ext = new Regex(ret[1], ">Download</span>[\t\n\r ]+<span class=\"text\">([A-Za-z0-9]{1,5}),? ([^<>\"]*?)</span>").getMatch(0);
+                }
+            }
             /* Download for other extensions */
-            final Regex fInfo = br.getRegex(">Download</span>[\t\n\r ]+<span class=\"text\">([A-Za-z0-9]{1,5}),? ([^<>\"]*?)</span>");
-            ext = fInfo.getMatch(0);
             // filesize = fInfo.getMatch(1);
-            DLLINK = getDOWNLOADdownloadlink();
             if (ext == null || DLLINK == null) {
                 logger.info("ext: " + ext + ", DLLINK: " + DLLINK);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = Encoding.htmlDecode(DLLINK.trim());
             if (filename == null) { // Config FilenameFromServer is enabled
                 filename = findServerFilename(filename); // Depends on DLLINK
             }
@@ -252,7 +257,7 @@ public class DeviantArtCom extends PluginForHost {
             if (ext == null || ext.length() > 5) {
                 final String dllink = getCrippledDllink();
                 if (dllink != null) {
-                    ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+                    ext = getFileNameExtensionFromURL(dllink);
                 }
             }
             if (ext == null) {
@@ -295,8 +300,49 @@ public class DeviantArtCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getDOWNLOADdownloadlink() {
-        return br.getRegex("data-download_url=\"(https?://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+    private String[] getDownloadURL() {
+        String ret[] = null;
+        final String downloadURLs1[][] = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(https?://(?:www\\.)?deviantart\\.com/download/[^<>\"]*?)\"(.*?)</a").getMatches();
+        if (downloadURLs1 != null) {
+            int best = -1;
+            for (final String downloadURL[] : downloadURLs1) {
+                final String height = new Regex(downloadURL[1], "Download\\s*\\d+\\s*&#215;\\s*(\\d+)\\s*<").getMatch(0);
+                if (height != null) {
+                    if (best == -1 || Integer.parseInt(height) > best) {
+                        ret = downloadURL;
+                        best = Integer.parseInt(height);
+                    }
+                }
+            }
+        }
+        if (ret == null) {
+            final String downloadURLs2[][] = br.getRegex("data-download_url=\"(https?://(?:www\\.)?deviantart\\.com/download/[^<>\"]*?)\"(.*?)</a").getMatches();
+            if (downloadURLs2 != null) {
+                int best = -1;
+                for (final String downloadURL[] : downloadURLs2) {
+                    final String height = new Regex(downloadURL[1], "Download\\s*\\d+\\s*&#215;\\s*(\\d+)\\s*<").getMatch(0);
+                    if (height != null) {
+                        if (best == -1 || Integer.parseInt(height) > best) {
+                            ret = downloadURL;
+                            best = Integer.parseInt(height);
+                        }
+                    }
+                }
+            }
+            if (ret == null) {
+                if (downloadURLs1 != null && downloadURLs1.length > 0) {
+                    ret = downloadURLs1[downloadURLs1.length - 1];
+                } else if (downloadURLs2.length > 0) {
+                    ret = downloadURLs2[downloadURLs2.length - 1];
+                }
+            }
+        }
+        if (ret != null) {
+            ret[0] = Encoding.htmlDecode(ret[0]);
+            return ret;
+        } else {
+            return null;
+        }
     }
 
     private String getfileSize() {
@@ -349,11 +395,9 @@ public class DeviantArtCom extends PluginForHost {
         if (br.containsHTML(TYPE_ACCOUNTNEEDED) || br.containsHTML(MATURECONTENTFILTER)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (DLLINK == null) {
-            getDllink();
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        final String dlLink = getDllink();
+        if (dlLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
@@ -363,7 +407,7 @@ public class DeviantArtCom extends PluginForHost {
             downloadLink.setVerifiedFileSize(-1);
             resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, resume, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors(downloadLink);
             br.followConnection();
@@ -382,11 +426,9 @@ public class DeviantArtCom extends PluginForHost {
         DOWNLOADS_STARTED = true;
         /* This will also log in */
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
-            getDllink();
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        final String dlLink = getDllink();
+        if (dlLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
@@ -396,7 +438,7 @@ public class DeviantArtCom extends PluginForHost {
             downloadLink.setVerifiedFileSize(-1);
             resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, resume, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors(downloadLink);
             br.followConnection();
@@ -432,23 +474,41 @@ public class DeviantArtCom extends PluginForHost {
 
     private String getDllink() throws PluginException {
         if (DLLINK == null) {
+            final String videoStreamURLs[][] = br.getRegex("\"src\":\"(https?:[^<>\"]*?mp4)\"(.*?)\\}").getMatches();
+            if (videoStreamURLs != null) {
+                int best = -1;
+                String bestURL = null;
+                for (final String videoStreamURL[] : videoStreamURLs) {
+                    final String height = new Regex(videoStreamURL[1], "height\":\\s*(\\d+)").getMatch(0);
+                    if (height != null) {
+                        if (best == -1 || Integer.parseInt(height) > best) {
+                            bestURL = videoStreamURL[0];
+                            best = Integer.parseInt(height);
+                        }
+                    }
+                }
+                if (bestURL == null) {
+                    bestURL = videoStreamURLs[0][0];
+                }
+                bestURL = bestURL.replace("\\", "");
+                DLLINK = bestURL;
+                return bestURL;
+            }
             String dllink = null;
-            // Check if it's a video
-            dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
             /* First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser */
             /*
              * NEVER open up this RegEx as sometimes users link downloadlinks in the description --> Open RegEx will lead to plugin errors
              * in some rare cases
              */
             if (dllink == null) {
-                dllink = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(https?://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
                 if (br.containsHTML(">Mature Content</span>")) {
                     /* Prefer HQ */
                     dllink = getHQpic();
                     if (dllink == null) {
-                        dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                        dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(htts?://[^<>\"]*?)\"").getMatch(0);
                     }
                     if (dllink == null) {
                         dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
@@ -457,7 +517,7 @@ public class DeviantArtCom extends PluginForHost {
                     /* Prefer HQ */
                     dllink = getHQpic();
                     if (dllink == null) {
-                        final String images[] = br.getRegex("<img collect_rid=\"[0-9:]+\" src=\"(http[^<>\"]*?)\"").getColumn(0);
+                        final String images[] = br.getRegex("<img collect_rid=\"[0-9:]+\" src=\"(https?[^<>\"]*?)\"").getColumn(0);
                         if (images != null && images.length > 0) {
                             String org = null;
                             for (String image : images) {
@@ -474,7 +534,7 @@ public class DeviantArtCom extends PluginForHost {
                                 dllink = org;
                             }
                         } else {
-                            dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+                            dllink = br.getRegex("(name|property)=\"og:image\" content=\"(https?://[^<>\"]*?)\"").getMatch(1);
                         }
                     }
                 }
