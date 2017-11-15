@@ -475,7 +475,7 @@ public class DeviantArtCom extends PluginForHost {
     private String getDllink() throws PluginException {
         if (DLLINK == null) {
             final String videoStreamURLs[][] = br.getRegex("\"src\":\"(https?:[^<>\"]*?mp4)\"(.*?)\\}").getMatches();
-            if (videoStreamURLs != null) {
+            if (videoStreamURLs != null && videoStreamURLs.length > 0) {
                 int best = -1;
                 String bestURL = null;
                 for (final String videoStreamURL[] : videoStreamURLs) {
