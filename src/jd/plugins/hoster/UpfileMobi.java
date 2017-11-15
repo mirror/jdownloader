@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,9 +32,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file&f=\\d+|[a-zA-Z0-9]{6,12})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file\\&f=\\d+|[a-zA-Z0-9]{6,12})" })
 public class UpfileMobi extends PluginForHost {
-
     private final String password_required = "Enter password:<br/>";
 
     public UpfileMobi(PluginWrapper wrapper) {
@@ -61,12 +59,14 @@ public class UpfileMobi extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("Download (File)?(</a>)?[\t\n\r ]+\\(([^<>\"]*?)\\)").getMatch(2);
-        if (filename == null || filesize == null) {
+        final String filesize = br.getRegex("Download (File)?(</a>)?\\s*?([^<>\"]+)").getMatch(2);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -156,5 +156,4 @@ public class UpfileMobi extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

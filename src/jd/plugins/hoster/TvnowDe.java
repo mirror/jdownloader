@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
@@ -29,6 +28,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,17 +53,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/.+" })
 public class TvnowDe extends PluginForHost {
-
     public TvnowDe(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -64,7 +62,6 @@ public class TvnowDe extends PluginForHost {
 
     /* Settings */
     private final String                  DEFAULTTIMEOUT               = "DEFAULTTIMEOUT";
-
     /*
      * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/<seriesID (same for all episodes of one
      * series>/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_<[a-f0-9] usually {30,}>\\.f4v\\.f4m\\?ts=\\d+
@@ -86,15 +83,12 @@ public class TvnowDe extends PluginForHost {
     private final String                  HDSTYPE_NEW_DETAILED_2       = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+[A-Za-z0-9\\-_]+_h264\\-(?:m|h)q_[a-f0-9]{25,}\\.f4v\\.f4m";
     // http://hds.fra.rtlnow.de/hds-vod-enc/abr/videos/1668/62899/V_804172_MCIG_05-50001000000089_62899_abr-1500_86d8ee67d82c9e561c1bdd58bcefb6fa.mp4.f4m
     private final String                  HDSTYPE_NEW_DETAILED_3       = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+[A-Za-z0-9\\-_]+_abr\\-\\d+_[a-f0-9]{25,}\\.mp4\\.f4m";
-
     private static final String           RTMPTYPE_h264                = "^(?!abr/).+_h264\\-(?:m|h)q.+\\.f4v$";
     private static final String           RTMPTYPE_abr                 = "^/abr/.+_abr\\-\\d+_.+\\.mp4$";
     private static final String           RTMPTYPE_VERY_OLD            = "^\\d+/.+\\.flv$";
     private static final String           RTMPTYPE_NEW                 = "^\\d+/.+\\.f4v$";
-
     private static final String           TYPE_GENERAL_ALRIGHT         = "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/[^/]+/[a-z0-9\\-]+/[^/]+";
     private final String                  CURRENT_DOMAIN               = "tvnow.de";
-
     private Document                      doc;
     private static final boolean          ALLOW_RTMP_TO_HDS_WORKAROUND = true;
     private static final boolean          ALLOW_HLS                    = true;
@@ -124,7 +118,6 @@ public class TvnowDe extends PluginForHost {
         } else {
             /* We have no supported url --> Fix eventually existing issues */
             String url_source = link.getDownloadURL();
-
             /* First let's remove rubbish we don't need ... */
             String rubbish = new Regex(link.getDownloadURL(), "(/(?:preview|player)(?:.+)?)").getMatch(0);
             if (rubbish != null) {
@@ -134,7 +127,6 @@ public class TvnowDe extends PluginForHost {
             if (rubbish != null) {
                 url_source = url_source.replace(rubbish, "");
             }
-
             final Regex sourceregex = new Regex(url_source, "https?://[^/]+/([^/]+)/([a-z0-9\\-]+)");
             final String name_tvstation = sourceregex.getMatch(0);
             final String name_series = sourceregex.getMatch(1);
@@ -204,7 +196,8 @@ public class TvnowDe extends PluginForHost {
     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     // }
     // br.getHeaders().put("User-Agent",
-    // "Mozilla/5.0 (Linux; Android 4.4.2; GT-I9505 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36");
+    // "Mozilla/5.0 (Linux; Android 4.4.2; GT-I9505 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile
+    // Safari/537.36");
     // }
     //
     // private void apiperformrequest(final String path, String params) {
@@ -247,7 +240,6 @@ public class TvnowDe extends PluginForHost {
     // final String params = "filmid=" + filmID;
     // apiperformrequest("/api/query/json/content.film_details", params);
     // }
-
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
@@ -303,7 +295,6 @@ public class TvnowDe extends PluginForHost {
         final String date_formatted = formatDate(date);
         title = encodeUnicode(title);
         title_series = encodeUnicode(title_series);
-
         filename += date_formatted + "_" + tv_station + "_" + title_series;
         if (season != -1 && episode != -1) {
             final DecimalFormat df = new DecimalFormat("00");
@@ -311,7 +302,6 @@ public class TvnowDe extends PluginForHost {
         }
         filename += "_" + title;
         filename += ".mp4";
-
         try {
             if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
                 final FilePackage fp = FilePackage.getInstance();
@@ -345,7 +335,6 @@ public class TvnowDe extends PluginForHost {
         long bitrate_temp = 0;
         final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
         boolean hls_version_available = false;
-
         if (movieID.equals("-1")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -406,9 +395,7 @@ public class TvnowDe extends PluginForHost {
                 final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp_highest);
                 url_hds = "http://hds.fra.rtlnow.de/hds-vod-enc/" + rtmp_app + "/videos/" + rtmp_playpath_part + ".f4m";
             }
-
         }
-
         if (ALLOW_HLS && url_hds != null && (url_hds.matches(this.HDSTYPE_NEW_DETAILED) || url_hds.matches(HDSTYPE_NEW_DETAILED_2) || url_hds.matches(HDSTYPE_NEW_DETAILED_3))) {
             /* Now we're sure that our .mp4 availablecheck-filename is correct */
             downloadLink.setFinalFileName(downloadLink.getName());
@@ -427,7 +414,15 @@ public class TvnowDe extends PluginForHost {
         }
         if (hls_version_available) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+            try {
+                dl = new HLSDownloader(downloadLink, br, url_hls);
+            } catch (final Throwable e) {
+                /*
+                 * 2017-11-15: They've changed these URLs to redirect to image content (a pixel). Most likely we have a broken HLS url -->
+                 * Download not possible, only crypted HDS available.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
+            }
             dl.startDownload();
         } else if (url_rtmp_highest != null && ALLOW_RTMP) {
             if (!isValidRTMPUrl(url_rtmp_highest) && url_rtmp_highest_valid == null) {
@@ -437,7 +432,6 @@ public class TvnowDe extends PluginForHost {
                 /* Fallback to lower bitrate that is available via rtmp. */
                 url_rtmp_highest = url_rtmp_highest_valid;
             }
-
             /*
              * Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url (see code BEFORE
              * rev 30393)
@@ -468,11 +462,9 @@ public class TvnowDe extends PluginForHost {
             }
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
             final String rtmpurl = "rtmpe://fms.rtl.de/" + rtmp_app + "/";
-
             downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, rtmpurl);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
             rtmp.setPlayPath(rtmp_playpath);
             rtmp.setPageUrl(pageURL);
             /* Other possible player: http://cdn.static-fra.de/now/PlayerApp.swf */
@@ -485,9 +477,7 @@ public class TvnowDe extends PluginForHost {
             if (!getPluginConfig().getBooleanProperty(DEFAULTTIMEOUT, false)) {
                 rtmp.setTimeOut(-1);
             }
-
             ((RTMPDownload) dl).startDownload();
-
         } else {
             /* Now we're sure that our .mp4 availablecheck-filename is correct */
             downloadLink.setFinalFileName(downloadLink.getName());
@@ -512,10 +502,8 @@ public class TvnowDe extends PluginForHost {
             // }
             // br.getPage(dllink);
             // final String hds = parseManifest();
-
             dl = new HDSDownloader(downloadLink, br, url_hds);
             dl.startDownload();
-
         }
     }
 
@@ -623,13 +611,10 @@ public class TvnowDe extends PluginForHost {
 
     private String parseManifest() {
         try {
-
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
-
             Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
             NodeList nl = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-
             for (int i = 0; i < nl.getLength(); i++) {
                 Node n = nl.item(i);
                 String streamId = null;
@@ -646,7 +631,6 @@ public class TvnowDe extends PluginForHost {
                     /* Uncrypted */
                     url = n.getAttributes().getNamedItem("href").getTextContent();
                 }
-
                 if (url.startsWith("http")) {
                     return url;
                 } else {
@@ -659,13 +643,10 @@ public class TvnowDe extends PluginForHost {
                 // byte[] mediaB = Base64.decode(media);
                 // media = new String(mediaB, "UTF-8");
                 // System.out.println(media);
-
             }
-
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
-
         }
         return null;
     }
@@ -752,9 +733,7 @@ public class TvnowDe extends PluginForHost {
     // c.update(a.getBytes("UTF-8"));
     // return c.getValue();
     // }
-
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DEFAULTTIMEOUT, JDL.L("plugins.hoster.rtlnowde.enabledefaulttimeout", "Enable default timeout?")).setDefaultValue(false));
     }
-
 }
