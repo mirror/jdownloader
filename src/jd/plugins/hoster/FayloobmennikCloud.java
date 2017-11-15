@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -25,13 +27,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.cloud" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.(?:net|cloud)/\\d+" })
-public class FayloobmennikNet extends PluginForHost {
+public class FayloobmennikCloud extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "fayloobmennik.cloud", "fayloobmennik.net" };
@@ -50,7 +51,7 @@ public class FayloobmennikNet extends PluginForHost {
         return super.rewriteHost(host);
     }
 
-    public FayloobmennikNet(PluginWrapper wrapper) {
+    public FayloobmennikCloud(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -63,6 +64,7 @@ public class FayloobmennikNet extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final String  pwprotected       = "file_user_password";
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -78,29 +80,40 @@ public class FayloobmennikNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String linkid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        link.setLinkID(linkid);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Файл не найден\\!<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("file_user_password")) {
-            // password not yet supported
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         String filename = br.getRegex("<title>Скачать ([^<>\"]+)</title>").getMatch(0);
         if (filename == null) {
-            /* Fallback to url-filename */
-            filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            /* Fallback to linkid */
+            filename = linkid;
+        }
+        /* Check for password here as for pw protected urls, filesize is not visible before password. */
+        if (br.containsHTML(pwprotected)) {
+            // password not yet supported
+            /* Try to get filename which is on another position than for non-pw-protected urls. */
+            filename = br.getRegex("download_ico\\.png\"[^>]+>([^<>\"]+)<").getMatch(0);
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename).trim();
+                link.setName(filename);
+            }
+            return AvailableStatus.TRUE;
         }
         String filesize = br.getRegex("class=\"note\">(\\d+[^<>\",]+), ").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("(\\d+(?:\\.\\d{1,2}? (?:MB|GB)))").getMatch(0);
         }
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Файл удалён<")) {
+            /* 2017-11-15: Even dead links can contain filename- and filesize information so leave this check here */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -112,7 +125,18 @@ public class FayloobmennikNet extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String passCode = downloadLink.getDownloadPassword();
         if (dllink == null) {
+            if (br.containsHTML(pwprotected)) {
+                if (passCode == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                }
+                br.postPage(br.getURL(), "file_user_password=" + Encoding.urlEncode(passCode));
+                if (br.containsHTML(pwprotected)) {
+                    downloadLink.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+            }
             dllink = br.getRegex("(https?://(?:www\\.)?fayloobmennik\\.(?:net|cloud)/files/go/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -129,6 +153,9 @@ public class FayloobmennikNet extends PluginForHost {
             downloadLink.setFinalFileName(server_filename);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        if (passCode != null) {
+            downloadLink.setDownloadPassword(passCode);
+        }
         dl.startDownload();
     }
 

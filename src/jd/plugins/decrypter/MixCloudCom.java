@@ -16,8 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -47,8 +45,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
     protected boolean useRUA() {
         return true;
     }
-
-    private final boolean attemptToDownloadOriginal = false;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -91,52 +87,34 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         String playInfo = null;
         String url_mp3_preview = null;
         String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
-        if (json == null) {
-            /* 2017-05-02: Set useful information as comment (user request) */
-            final String textinfo_playing_tracks_by = br.getRegex("<h3>Playing tracks by</h3><p>([^<>]+)</p>").getMatch(0);
-            final String textinfo_chart_positions = br.getRegex("<h3>Chart Positions</h3><p>([^<>]+)</p>").getMatch(0);
-            final String textinfo_tagged = br.getRegex("<h3>Tagged</h3>(<a.*?</a>)</div>").getMatch(0);
-            if (textinfo_playing_tracks_by != null) {
-                comment += textinfo_playing_tracks_by + ";";
+        Object cloudcastStreamInfo = null;
+        LinkedHashMap<String, Object> entries = null;
+        /* Find correct json object inside ArrayList */
+        json = Encoding.htmlDecode(json);
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        for (final Object audioO : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) audioO;
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
+            if (entries == null) {
+                continue;
             }
-            if (textinfo_chart_positions != null) {
-                comment += textinfo_chart_positions + ";";
-            }
-            if (textinfo_tagged != null) {
-                comment += textinfo_tagged;
-            }
-            playInfo = br.getRegex("m-play-info=\"([^\"]+)\"").getMatch(0);
-            url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
-        } else {
-            Object cloudcastStreamInfo = null;
-            LinkedHashMap<String, Object> entries = null;
-            /* Find correct json object inside ArrayList */
-            json = Encoding.htmlDecode(json);
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            for (final Object audioO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) audioO;
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
-                if (entries == null) {
-                    continue;
-                }
-                cloudcastStreamInfo = entries.get("streamInfo");
-                if (cloudcastStreamInfo != null) {
-                    /* We should have found the correct object here! */
-                    url_mp3_preview = (String) entries.get("previewUrl");
-                    entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
-                    /*
-                     * 2017-11-15: We can chose between dash, http or hls
-                     */
-                    playInfo = (String) entries.get("url");
-                    if (playInfo != null) {
-                        playInfo = playInfo.replace(" ", "/");
-                        playInfo = decode(playInfo);
-                        if (playInfo.contains("test")) {
-                            /* Skip teststreams */
-                            continue;
-                        }
-                        break;
+            cloudcastStreamInfo = entries.get("streamInfo");
+            if (cloudcastStreamInfo != null) {
+                /* We should have found the correct object here! */
+                url_mp3_preview = (String) entries.get("previewUrl");
+                entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
+                /*
+                 * 2017-11-15: We can chose between dash, http or hls
+                 */
+                playInfo = (String) entries.get("url");
+                if (playInfo != null) {
+                    playInfo = playInfo.replace(" ", "/");
+                    playInfo = decode(playInfo);
+                    if (playInfo.contains("test")) {
+                        /* Skip teststreams */
+                        continue;
                     }
+                    break;
                 }
             }
         }
@@ -144,43 +122,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (url_mp3_preview != null && attemptToDownloadOriginal) {
-            /* 2016-10-24: Original-file download not possible anymore[via this way](?!) */
-            final Regex originalinfo = new Regex(url_mp3_preview, "(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]+\\.mp3)");
-            final String previewLinkpart = originalinfo.getMatch(1);
-            if (previewLinkpart != null) {
-                /* 2016-05-01: It seems like it is not possibly anymore to download the original uploaded file (mp3) :( */
-                /* TODO: Find a way to get that server dynamically */
-                final String mp3link = "https://stream19.mixcloud.com/c/originals/" + previewLinkpart;
-                tempLinks.add(mp3link);
-            }
-            tempLinks.add(url_mp3_preview);
-        }
         tempLinks.add(playInfo);
-        if (tempLinks.isEmpty()) {
-            /* 2017-10-24: TODO: Maybe remove this old code?? */
-            final String[] temp = br.getRegex(" src=\"([^\"]+/js\\d*/[^\"]+\\.js)\"").getColumn(0);
-            if (temp != null) {
-                final ArrayList<String> jss = new ArrayList<String>(Arrays.asList(temp));
-                Collections.shuffle(jss);
-                for (final String js : jss) {
-                    try {
-                        final Browser rb = br.cloneBrowser();
-                        rb.getHeaders().put("Accept", "*/*");
-                        getPage(rb, js);
-                        final String key = rb.getRegex(",\\s*player\\s*:\\s*\\{.*?key_value\\w*:(\"|')(.*?)\\1").getMatch(1);
-                        if (key != null) {
-                            tempLinks.addAll(siht(playInfo, Encoding.Base64Encode(key)));
-                        }
-                    } catch (final Exception e) {
-                    }
-                }
-            }
-        }
-        if (tempLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         final HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
         boolean streamFailed;
         br.setFollowRedirects(true);
