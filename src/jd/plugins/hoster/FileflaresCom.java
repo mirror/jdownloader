@@ -83,8 +83,8 @@ public class FileflaresCom extends PluginForHost {
     private final boolean                  VIDEOHOSTER_2                      = false;
     private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
     /*
-     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
-     * will check for videohoster "next" Download/Ad- Form.
+     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree will
+     * check for videohoster "next" Download/Ad- Form.
      */
     private final boolean                  IMAGEHOSTER                        = false;
     private final boolean                  SUPPORTS_HTTPS                     = false;
@@ -171,6 +171,10 @@ public class FileflaresCom extends PluginForHost {
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
+        String redirectUrl = new Regex(correctedBR, "window\\.location\\s*=\\s*\"([^\"]+)").getMatch(0);
+        if (redirectUrl != null) {
+            getPage(redirectUrl);
+        }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -188,8 +192,8 @@ public class FileflaresCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             /*
-             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
-             * There are 2 alternative ways to get this information anyways!
+             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline. There are 2
+             * alternative ways to get this information anyways!
              */
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
@@ -234,16 +238,16 @@ public class FileflaresCom extends PluginForHost {
         }
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
-             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
-             * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
+             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add ".jpg"
+             * extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
              */
             fileInfo[0] = this.fuid + ".jpg";
             link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (inValidate(fileInfo[0])) {
             /*
-             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
-             * code needs to be updated in this case!
+             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin code needs
+             * to be updated in this case!
              */
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -265,8 +269,8 @@ public class FileflaresCom extends PluginForHost {
         link.setName(fileInfo[0]);
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
-             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already
-             * know that the file must be online!
+             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that
+             * the file must be online!
              */
             logger.info("Failed to find filesize --> Trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
@@ -691,8 +695,8 @@ public class FileflaresCom extends PluginForHost {
     }
 
     /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
+     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content [NOT
+     * html]).
      */
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
@@ -755,8 +759,8 @@ public class FileflaresCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -1087,8 +1091,8 @@ public class FileflaresCom extends PluginForHost {
     }
 
     /**
-     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
-     * as 403, 404 and 503.
+     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such as
+     * 403, 404 and 503.
      */
     private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
@@ -1208,8 +1212,7 @@ public class FileflaresCom extends PluginForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
-     * error.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date error.
      *
      * @param dl
      *            : The DownloadLink
