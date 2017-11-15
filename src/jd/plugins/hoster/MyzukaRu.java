@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me)/Song/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Song/(\\d+)" })
 public class MyzukaRu extends antiDDoSForHost {
     public MyzukaRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class MyzukaRu extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Florced https */
-        link.setUrlDownload("https://myzuka.me/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
+        link.setUrlDownload("https://myzuka.club/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
     }
 
     @SuppressWarnings("deprecation")

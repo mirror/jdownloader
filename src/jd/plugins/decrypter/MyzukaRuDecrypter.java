@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me)/Album/(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Album/(\\d+)" })
 public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +39,7 @@ public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced https */
-        final String parameter = "https://myzuka.me/Album/" + new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+        final String parameter = "https://myzuka.club/Album/" + new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         getPage(parameter);
         /* offline|abused */
