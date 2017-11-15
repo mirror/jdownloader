@@ -35,7 +35,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
@@ -89,8 +88,8 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         }
         theName = Encoding.htmlDecode(theName).trim();
         String comment = "";
-        final String playInfo;
-        final String url_mp3_preview;
+        String playInfo = null;
+        String url_mp3_preview = null;
         String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
         if (json == null) {
             /* 2017-05-02: Set useful information as comment (user request) */
@@ -109,10 +108,10 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             playInfo = br.getRegex("m-play-info=\"([^\"]+)\"").getMatch(0);
             url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
         } else {
-            json = Encoding.htmlDecode(json);
             Object cloudcastStreamInfo = null;
             LinkedHashMap<String, Object> entries = null;
             /* Find correct json object inside ArrayList */
+            json = Encoding.htmlDecode(json);
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             for (final Object audioO : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) audioO;
@@ -123,16 +122,23 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 cloudcastStreamInfo = entries.get("streamInfo");
                 if (cloudcastStreamInfo != null) {
                     /* We should have found the correct object here! */
-                    break;
+                    url_mp3_preview = (String) entries.get("previewUrl");
+                    entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
+                    /*
+                     * 2017-11-15: We can chose between dash, http or hls
+                     */
+                    playInfo = (String) entries.get("url");
+                    if (playInfo != null) {
+                        playInfo = playInfo.replace(" ", "/");
+                        playInfo = decode(playInfo);
+                        if (playInfo.contains("test")) {
+                            /* Skip teststreams */
+                            continue;
+                        }
+                        break;
+                    }
                 }
             }
-            if (cloudcastStreamInfo == null) {
-                return null;
-            }
-            url_mp3_preview = (String) entries.get("previewUrl");
-            entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
-            /* TODO: 2017-10-24: Check hlsUrl, dashUrl, url --> Check where we can find the BEST quality (preferably via http protocol!) */
-            playInfo = PluginJSonUtils.getJson(json, "dashUrl");
         }
         if (playInfo == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -150,8 +156,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             }
             tempLinks.add(url_mp3_preview);
         }
-        // tempLinks.addAll(siht(playInfo, null));
-        tempLinks.add(decode(playInfo));
+        tempLinks.add(playInfo);
         if (tempLinks.isEmpty()) {
             /* 2017-10-24: TODO: Maybe remove this old code?? */
             final String[] temp = br.getRegex(" src=\"([^\"]+/js\\d*/[^\"]+\\.js)\"").getColumn(0);
