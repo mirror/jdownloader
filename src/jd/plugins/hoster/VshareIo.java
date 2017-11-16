@@ -66,6 +66,7 @@ public class VshareIo extends PluginForHost {
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);
+        link.setLinkID(getFID(link));
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("error=404") || br.getURL().contains("/404/") || br.containsHTML(">We are sorry,")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -102,6 +103,10 @@ public class VshareIo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -111,6 +116,7 @@ public class VshareIo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            br.getPage(String.format("/v/%s/width-650/height-430/1", getFID(downloadLink)));
             dllink = getDllink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
