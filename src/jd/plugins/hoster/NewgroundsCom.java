@@ -15,11 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,6 +30,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
 public class NewgroundsCom extends antiDDoSForHost {
@@ -109,13 +115,38 @@ public class NewgroundsCom extends antiDDoSForHost {
                     accountneeded = true;
                     return AvailableStatus.TRUE;
                 }
-                dllink = br.getRegex("\"src\":[\t\n\r ]+\"(https?:[^<>\"]*?)\"").getMatch(0);
-                // Maybe video or .swf
-                if (dllink == null) {
-                    dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+                final String videoPlayer = br.getRegex("iframe\\s*src\\s*=\\s*\\\\\"([^\"]*/videoplayer[^\"]*)\\\\\"").getMatch(0);
+                if (videoPlayer != null) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(videoPlayer.replace("\\", ""));
+                    final String playerSrc = brc.getRegex("player\\.updateSrc\\((.*?)\\)").getMatch(0);
+                    final List<Object> items = JSonStorage.restoreFromString(playerSrc, TypeRef.LIST);
+                    Map<String, Object> best = null;
+                    for (final Object item : items) {
+                        if (item instanceof Map) {
+                            final Map<String, Object> map = (Map<String, Object>) item;
+                            if (best == null || ((Number) map.get("res")).longValue() > ((Number) best.get("res")).longValue()) {
+                                best = map;
+                            }
+                        }
+                    }
+                    if (best != null) {
+                        dllink = (String) best.get("src");
+                        if (filename != null) {
+                            filename += "_" + best.get("res");
+                        }
+                    }
                 }
-                if (dllink != null) {
-                    dllink = dllink.replace("\\", "");
+                if (dllink == null) {
+                    dllink = br.getRegex("\"src\":[\t\n\r ]+\"(https?:[^<>\"]*?)\"").getMatch(0);
+                    // Maybe video or .swf
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+                    }
+                    if (dllink != null) {
+                        dllink = dllink.replace("\\", "");
+                        dllink = Encoding.htmlDecode(dllink);
+                    }
                 }
             }
         }
@@ -125,9 +156,6 @@ public class NewgroundsCom extends antiDDoSForHost {
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
         }
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, ".mp4");
@@ -182,6 +210,10 @@ public class NewgroundsCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 60 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                br.followConnection();
+            } catch (final Throwable ignore) {
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -189,7 +221,6 @@ public class NewgroundsCom extends antiDDoSForHost {
             } else if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - wait before starting new downloads", 3 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -199,29 +230,6 @@ public class NewgroundsCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // con = br2.openHeadConnection(dllink);
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
