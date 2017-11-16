@@ -250,8 +250,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         String workaroundURL = null;
         if (con.getResponseCode() == 403 || con.getResponseCode() == 404) {
             /*
-             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com (404), txxx.com
-             * (403)
+             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com (404), txxx.com (403)
              */
             workaroundURL = con.getRequest().getUrl();
         }
@@ -260,8 +259,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
 
     public static String getDllink(final Browser br, final Plugin plugin) throws PluginException {
         /*
-         * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
-         * the old "video_url" as well but it will lead to 404 --> Prefer this way.
+         * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain the old
+         * "video_url" as well but it will lead to 404 --> Prefer this way.
          *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
@@ -343,6 +342,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             }
         }
         String video_url = br.getRegex("var\\s+video_url=\"(.*?)\";").getMatch(0);
+        if (video_url == null) {
+            video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
+        }
         if (inValidate(dllink, plugin) || video_url != null) {
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
             final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -356,9 +358,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             } catch (final Throwable e) {
                 plugin.getLogger().log(e);
             }
-        }
-        if (inValidate(dllink, plugin)) {
-            /* TODOI: 2017-11-15: Decrypt code for upornia.com, hclips.com and maybe others too goes here! */
         }
         if (inValidate(dllink, plugin)) {
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
