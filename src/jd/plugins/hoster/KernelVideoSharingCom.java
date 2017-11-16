@@ -345,7 +345,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (video_url == null) {
             video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
         }
-        if (inValidate(dllink, plugin) || video_url != null) {
+        if (inValidate(dllink, plugin) || (video_url != null && !video_url.contains("hdzog.com"))) {
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             final Invocable inv = (Invocable) engine;
