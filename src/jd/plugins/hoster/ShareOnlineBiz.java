@@ -32,15 +32,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,6 +53,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" })
 public class ShareOnlineBiz extends antiDDoSForHost {
@@ -89,9 +89,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
-    private String                                                  trafficmaxlimit                         = "100";
-    private final String                                            retrys                                  = "retrys";
-    private final String[]                                          allretrys                               = new String[] { "100", "99", "98", "97", "96", "95", "90" };
+    private final String                                            TRAFFIC_LIMIT                           = "TRAFFIC_LIMIT";
+    private final String[]                                          trafficLimits                           = new String[] { "100", "99", "98", "97", "96", "95", "90" };
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -248,7 +247,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
          * https downloads are speed-limited serverside
          */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HTTPS, _GUI.T.gui_plugin_settings_share_online_traffic_premium_prefer_https()).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), retrys, allretrys, JDL.L("", "Traffic max. Limit in GiB")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), TRAFFIC_LIMIT, trafficLimits, JDL.L("", "Traffic max. Limit in GiB")).setDefaultValue(0));
     }
 
     private void errorHandling(Browser br, DownloadLink downloadLink, Account acc, HashMap<String, String> usedPremiumInfos) throws PluginException {
@@ -477,8 +476,14 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP")) {
                 /* VIP do not have traffic usage available via api */
-                final int chosenRetrys = getPluginConfig().getIntegerProperty(retrys, 0);
-                trafficmaxlimit = this.allretrys[chosenRetrys];
+                final int chosenTrafficLimit = getPluginConfig().getIntegerProperty(TRAFFIC_LIMIT, 0);
+                String trafficmaxlimit = null;
+                try {
+                    trafficmaxlimit = trafficLimits[chosenTrafficLimit];
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    trafficmaxlimit = trafficLimits[0];
+                }
                 final int maxTraffic = Integer.parseInt(trafficmaxlimit);
                 final long maxDay = maxTraffic * 1024 * 1024 * 1024l;// 100 GiB per day
                 final String trafficDay = infos.get("traffic_1d");
