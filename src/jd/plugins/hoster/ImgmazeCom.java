@@ -52,7 +52,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com", "imgtown.net", "imgoutlet.co", "imgrock.co", "imgdew.com", "imgview.net" }, urls = { "https?://(?:www\\.)?imgmaze\\.(?:com|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgtown\\.(?:net|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgoutlet\\.com?/[a-z0-9]{12}", "https?://(?:www\\.)?imgrock\\.(?:net|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgdew\\.com/[a-z0-9]{12}", "https?://(?:www\\.)?imgview\\.(?:net|co|pw)/[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com", "imgtown.net", "imgoutlet.co", "imgrock.co", "imgdew.com", "imgview.pw" }, urls = { "https?://(?:www\\.)?imgmaze\\.(?:com|co|pw)/[a-z0-9]{12}", "https?://(?:www\\.)?imgtown\\.(?:net|co)/[a-z0-9]{12}", "https?://(?:www\\.)?imgoutlet\\.com?/[a-z0-9]{12}", "https?://(?:www\\.)?imgrock\\.(?:net|co|info)/[a-z0-9]{12}", "https?://(?:www\\.)?imgdew\\.com/[a-z0-9]{12}", "https?://(?:www\\.)?imgview\\.(?:net|co|pw)/[a-z0-9]{12}" })
 public class ImgmazeCom extends PluginForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -64,7 +64,7 @@ public class ImgmazeCom extends PluginForHost {
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
     /* 2017-10-06: Special case: We do not have to update this string */
-    private static final String            DOMAINS                         = "(imgmaze\\.(com|co))";
+    private static final String            DOMAINS                         = "(imgmaze\\.(com|co|pw))";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -135,7 +135,8 @@ public class ImgmazeCom extends PluginForHost {
         } else {
             protocol = "http://";
         }
-        final String corrected_downloadurl = protocol + Browser.getHost(link.getDownloadURL()) + "/" + fuid;
+        final String correctedHOST = Browser.getHost(link.getDownloadURL()).replaceAll("imgview\\.(net|co)", "imgview.pw").replaceAll("imgmaze\\.(com|co)", "imgmaze.pw").replaceAll("imgrock\\.(?:net|co)", "imgrock.info");
+        final String corrected_downloadurl = protocol + correctedHOST + "/" + fuid;
         link.setUrlDownload(corrected_downloadurl);
     }
 
@@ -657,6 +658,13 @@ public class ImgmazeCom extends PluginForHost {
         }
         /* 2017-10-06 */
         special_key = br.getRegex("\\([^\\)]+.([a-f0-9]{32})'\\+''\\)\\[[^\\]]+\\]").getMatch(0);
+        {
+            /* 2017-11-16 */
+            special_key = br.getRegex(",\"([a-f0-9]{32})\"\\);a\\[\\'setAttribute\\'\\]").getMatch(0);
+            if (special_key == null) {
+                special_key = br.getRegex(",\"([a-f0-9]{32})\"\\);a\\[_0x7").getMatch(0);
+            }
+        }
         // if (values.length > 1) {
         // /* 2017-05-23 */
         // special_key = values[values.length - 2];
