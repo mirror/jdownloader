@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -27,8 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "https?://(?:www\\.)?vshare\\.io/(?:d|v)/[a-z0-9]+" })
 public class VshareIo extends PluginForHost {
@@ -111,10 +111,8 @@ public class VshareIo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("style=\"text-decoration:none;\" href=\"(https?[^<>\"]+)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/[^<>\"]+)\"").getMatch(0);
-            }
+            br.getPage("https://vshare.io/v/262b501/width-650/height-430/1");
+            dllink = getDllink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -126,6 +124,32 @@ public class VshareIo extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        final String packedScript = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+        String decoded = null;
+        try {
+            Regex params = new Regex(packedScript, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
+            }
+            decoded = p;
+        } catch (Exception e) {
+        }
+        /* TODO: Run js function, build downloadlink */
+        String dllink = br.getRegex("style=\"text-decoration:none;\" href=\"(https?[^<>\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/[^<>\"]+)\"").getMatch(0);
+        }
+        return dllink;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

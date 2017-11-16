@@ -23,7 +23,6 @@ import java.util.Locale;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -44,29 +43,29 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingdebrid.com" }, urls = { "" })
-public class KingdebridCom extends PluginForHost {
-    private static final String                            NICE_HOST                    = "kingdebrid.com";
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leech360.com" }, urls = { "" })
+public class Leech360Com extends PluginForHost {
+    private static final String                            NICE_HOST                    = "leech360.com";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String                                   default_UA                   = "JDownloader";
-    private final String                                   html_loggedin                = "id=\"dropdown\\-user\"";
+    private final String                                   html_loggedin                = "id=\"linkpass\"";
     private static Object                                  LOCK                         = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
 
-    public KingdebridCom(PluginWrapper wrapper) {
+    public Leech360Com(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://kingdebrid.com/signup");
+        this.enablePremium("https://leech360.com/payment.html");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://kingdebrid.com/";
+        return "https://leech360.com/terms-of-service.html";
     }
 
     private Browser prepBR(final Browser br) {
@@ -134,14 +133,11 @@ public class KingdebridCom extends PluginForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            getAPISafe("https://" + this.getHost());
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("Valid-request", "true");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.postAPISafe("https://" + this.getHost() + "/index.php?id=generator", "generator[url]=" + Encoding.urlEncode(link.getDownloadURL()) + "&generator[pass]=");
-            dllink = PluginJSonUtils.getJsonValue(this.br, "link");
+            this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
             if (StringUtils.isEmpty(dllink)) {
-                /* Should never happen */
+                /* E.g. "error_message":"some.filehost current offline or not support this time!" */
                 handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
             }
         }
@@ -191,59 +187,79 @@ public class KingdebridCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         this.br = prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (br.getURL() != null && !br.getURL().matches(".+" + this.getHost() + "/?$")) {
-            br.getPage("//" + this.getHost());
-        }
-        String supportedhosts_source = null;
-        final String expire = this.br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
-        long trafficleft = 0;
-        String trafficleft_str = this.br.getRegex("<br>Total: <div class=\\'badge badge\\-warning\\'>([^<>\"]+)<").getMatch(0);
-        if (trafficleft_str != null) {
-            trafficleft = SizeFormatter.getSize(trafficleft_str);
-        }
+        /*
+         * Use 2nd browser object as we already got the page containing our supported hosts inside the login process and we do not want to
+         * access it twice.
+         */
+        final Browser br2 = br.cloneBrowser();
+        br2.getPage("/my-account.html");
+        final String expire = br2.getRegex("Premium until: <strong class=\\'[^\2\\']+\\'>([^<>\"]+ (AM|PM))<").getMatch(0);
         if (expire != null) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
-            if (trafficleft_str == null) {
-                /* Set unlimited traffic in case our RegEx fails! */
-                ai.setUnlimitedTraffic();
-            } else {
-                ai.setTrafficLeft(trafficleft);
-            }
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss a", Locale.US), br);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd yyyy hh:mm a", Locale.US), br);
         } else {
-            /* TODO: Check if free accounts have traffic. */
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
-            /* Try to only grab all hosts which are supported for free accounts. */
-            supportedhosts_source = this.br.getRegex("Free hosts <(.*?)</div>").getMatch(0);
-            if (trafficleft > 0) {
-                ai.setTrafficLeft(trafficleft);
-            }
         }
-        if (supportedhosts_source == null) {
-            /* Fallback to all supported hosts (or for premium, we need ALL). */
-            supportedhosts_source = this.br.toString();
+        final Regex trafficRegex = br.getRegex("id=\"total_traffic_used\">([^<>]+)</span> / ([^<>]+)<");
+        final String trafficUsedStr = trafficRegex.getMatch(0);
+        final String trafficMaxStr = trafficRegex.getMatch(1);
+        if (trafficUsedStr != null && trafficMaxStr != null) {
+            final long trafficUsed = SizeFormatter.getSize(trafficUsedStr);
+            final long trafficMax = SizeFormatter.getSize(trafficMaxStr);
+            final long trafficLeft = trafficMax - trafficUsed;
+            ai.setTrafficLeft(trafficLeft);
+            ai.setTrafficMax(trafficMax);
+        } else {
+            /* Fallback */
+            ai.setUnlimitedTraffic();
         }
-        account.setValid(true);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String hosttexts[] = new Regex(supportedhosts_source, "cdn/img/hosters/([^<>\"]+)\\.png\"").getColumn(0);
-        for (String hosttext : hosttexts) {
-            hosttext = hosttext.toLowerCase();
-            final String[] domains = hosttext.toLowerCase().split(",");
-            for (String domain : domains) {
-                domain = domain.trim();
+        final String supportedHostsTable = this.br.getRegex("<tbody>(.*?)</tbody>").getMatch(0);
+        final String tableLines[] = supportedHostsTable.split("<tr>");
+        for (final String lineHTML : tableLines) {
+            final String domain = new Regex(lineHTML, "class=\"bold\\-text\">([^<>\"]+)</td>").getMatch(0);
+            if (domain == null) {
+                continue;
+            }
+            final boolean individualLimitReached;
+            final Regex individualLimitRegex = new Regex(lineHTML, ">([^<>\"]*?)</span> / (?:<span>)?([^<>\"]*?)<");
+            final String individualTrafficUsedStr = individualLimitRegex.getMatch(0);
+            final String individualTrafficLimitStr = individualLimitRegex.getMatch(1);
+            if (individualTrafficUsedStr == null || individualTrafficLimitStr == null) {
+                /* Do not fail because of this missing data. */
+                individualLimitReached = false;
+            } else if (individualTrafficLimitStr.contains("infin")) {
+                individualLimitReached = false;
+            } else {
+                final long individualTrafficUsed = SizeFormatter.getSize(individualTrafficUsedStr);
+                final long individualTrafficLimit = SizeFormatter.getSize(individualTrafficLimitStr);
+                if (individualTrafficUsed >= individualTrafficLimit) {
+                    individualLimitReached = true;
+                } else {
+                    individualLimitReached = false;
+                }
+            }
+            final boolean hosterIsActive = lineHTML.contains("class='green-text'>ON<");
+            final boolean hosterIsPremiumOnly = lineHTML.contains("class='orange-text'>PREMIUM<");
+            if (!hosterIsActive) {
+                logger.info("Skipping host (inactive): " + domain);
+            } else if (hosterIsPremiumOnly && account.getType() != AccountType.PREMIUM) {
+                logger.info("Skipping host (premiumonly): " + domain);
+            } else if (individualLimitReached) {
+                logger.info("Skipping host (limitReached): " + domain);
+            } else {
                 supportedHosts.add(domain);
             }
-            ai.setMultiHostSupport(this, supportedHosts);
         }
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 
@@ -256,41 +272,20 @@ public class KingdebridCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (force) {
-                        /*
-                         * Even though login is forced first check if our cookies are still valid (prevent login captcha!) --> If not, force
-                         * login!
-                         */
-                        br.getPage("https://" + this.getHost());
-                        if (br.containsHTML(html_loggedin)) {
-                            return;
-                        }
-                        /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                        this.br = prepBR(new Browser());
-                    } else {
+                    /*
+                     * Even though login is forced first check if our cookies are still valid --> If not, force login!
+                     */
+                    br.getPage("https://" + this.getHost());
+                    if (br.containsHTML(html_loggedin)) {
                         return;
                     }
+                    /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                    this.br = prepBR(new Browser());
                 }
-                /* 2017-03-16: Needs to be accessed twice! */
-                br.getPage("https://" + this.getHost() + "/login");
-                br.getPage("https://" + this.getHost() + "/login");
-                String postData = "&login%5Bremember%5D=1&login%5Busername%5D=" + Encoding.urlEncode(currAcc.getUser()) + "&login%5Bpassword%5D=" + Encoding.urlEncode(currAcc.getPass());
-                if (this.br.containsHTML("g\\-recaptcha")) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
-                    }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
-                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
-                }
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.getHeaders().put("Valid-request", "true");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.postAPISafe("https://" + this.getHost() + "/index.php?id=login", postData);
-                if (this.br.getCookie(this.br.getHost(), "authority") == null) {
+                br.getPage("https://" + this.getHost() + "/sign-in.html");
+                String postData = "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass());
+                this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData);
+                if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
