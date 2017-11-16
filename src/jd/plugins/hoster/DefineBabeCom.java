@@ -25,9 +25,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
@@ -43,6 +40,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "definebabedecrypted://(?:www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" })
 public class DefineBabeCom extends PluginForHost {
     public DefineBabeCom(PluginWrapper wrapper) {
@@ -50,9 +50,9 @@ public class DefineBabeCom extends PluginForHost {
         /* Don't overload the server. */
         this.setStartIntervall(3 * 1000l);
     }
+
     /* Tags: TubeContext@Player */
     /* Sites using the same player: pornsharing.com, [definebabes.com, definebabe.com, definefetish.com] */
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -181,7 +181,7 @@ public class DefineBabeCom extends PluginForHost {
         try {
             Cipher rc4 = Cipher.getInstance("RC4");
             rc4.init(Cipher.DECRYPT_MODE, new SecretKeySpec(plainTextKey.getBytes(), "RC4"));
-            ret = new String(rc4.doFinal(DatatypeConverter.parseHexBinary(hexStringCiphertext)));
+            ret = new String(rc4.doFinal(HexFormatter.hexToByteArray(hexStringCiphertext)));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
