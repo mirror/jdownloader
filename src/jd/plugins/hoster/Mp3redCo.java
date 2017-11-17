@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3red.co" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co|me|cc)/(?:album/?)\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3red.cc" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co|me|cc)/\\d+/[a-z0-9\\-]+\\.html" })
 public class Mp3redCo extends PluginForHost {
     public Mp3redCo(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,17 +57,15 @@ public class Mp3redCo extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("mp3red.su".equals(getHost())) {
-            if (host == null || "mp3red.su".equals(host)) {
-                return "mp3red.co";
-            }
+        if (host == null || "mp3red.su".equals(host) || "mp3red.co".equals(host)) {
+            return "mp3red.cc";
         }
         return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://mp3red.co/";
+        return "http://mp3red.cc/";
     }
 
     @SuppressWarnings("deprecation")
@@ -81,7 +79,7 @@ public class Mp3redCo extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(link.getDownloadURL(), "https?://[^/]+/(?:album/)?(\\d+)/").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "https?://[^/]+/(\\d+)/").getMatch(0);
         final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)\\.html$").getMatch(0);
         boolean nice_filename = true;
         String filename = br.getRegex("mp3url_track_data_model\\s*?,\\s*?\"([^<>\"]+)\"").getMatch(0);

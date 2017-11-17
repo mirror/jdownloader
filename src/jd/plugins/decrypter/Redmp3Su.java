@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "redmp3.su" }, urls = { "https?://(?:www\\.)?redmp3\\.su/album/\\d+/[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "redmp3.su" }, urls = { "https?://(?:www\\.)?(redmp3|mp3red)\\.(su|co|me|cc)/album/\\d+/[a-z0-9\\-]+\\.html" })
 public class Redmp3Su extends PluginForDecrypt {
-
     public Redmp3Su(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +49,7 @@ public class Redmp3Su extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links) {
-            singleLink = "http://" + this.getHost() + singleLink;
+            singleLink = br.getURL(singleLink).toString();
             final String name_url = new Regex(singleLink, "([a-z0-9\\-]+)\\.html$").getMatch(0);
             final DownloadLink dl = createDownloadlink(singleLink);
             dl.setName(name_url + ".mp3");
@@ -59,14 +57,11 @@ public class Redmp3Su extends PluginForDecrypt {
             // dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }

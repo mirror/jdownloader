@@ -188,9 +188,9 @@ public abstract class PluginForHost extends Plugin {
          * point)
          */
         // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
@@ -223,7 +223,7 @@ public abstract class PluginForHost extends Plugin {
         tracker.wait(trackerJob);
     }
 
-    public AccountInfo handleAccountException(final Account account, final LogSource logger, final Throwable throwable) {
+    public AccountInfo handleAccountException(final Account account, final LogSource logger, Throwable throwable) {
         final AccountInfo ai;
         if (account.getAccountInfo() != null) {
             ai = account.getAccountInfo();
@@ -238,6 +238,9 @@ public abstract class PluginForHost extends Plugin {
         if (throwable instanceof NoGateWayException) {
             account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, _JDT.T.AccountController_updateAccountInfo_no_gateway());
             return ai;
+        }
+        if (throwable instanceof NullPointerException) {
+            throwable = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, throwable);
         }
         if (throwable instanceof PluginException) {
             final PluginException pluginException = (PluginException) throwable;
