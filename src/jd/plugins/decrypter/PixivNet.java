@@ -112,6 +112,7 @@ public class PixivNet extends PluginForDecrypt {
                 return null;
             }
             if (fpName != null) {
+                fpName = Encoding.htmlOnlyDecode(fpName);
                 if (!fpName.startsWith("「")) {
                     fpName = "「" + fpName;
                 }
@@ -178,6 +179,7 @@ public class PixivNet extends PluginForDecrypt {
         if (fpName == null) {
             fpName = lid;
         } else {
+            fpName = Encoding.htmlOnlyDecode(fpName);
             fpName = lid + "_" + fpName;
         }
         final FilePackage fp = FilePackage.getInstance();
