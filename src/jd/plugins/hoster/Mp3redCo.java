@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3red.co" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co|me)/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3red.co" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co|me|cc)/(?:album/?)\\d+/[a-z0-9\\-]+\\.html" })
 public class Mp3redCo extends PluginForHost {
-
     public Mp3redCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +38,6 @@ public class Mp3redCo extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp3";
     /* Connection stuff */
@@ -48,7 +45,6 @@ public class Mp3redCo extends PluginForHost {
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -85,7 +81,7 @@ public class Mp3redCo extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(link.getDownloadURL(), "https?://[^/]+/(\\d+)/").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "https?://[^/]+/(?:album/)?(\\d+)/").getMatch(0);
         final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)\\.html$").getMatch(0);
         boolean nice_filename = true;
         String filename = br.getRegex("mp3url_track_data_model\\s*?,\\s*?\"([^<>\"]+)\"").getMatch(0);
