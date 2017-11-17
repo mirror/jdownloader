@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -30,7 +29,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "androidfilehost.com" }, urls = { "https?://(www\\.)?androidfilehost\\.com/\\?fid=\\d+" })
 public class AndroidFileHostCom extends antiDDoSForHost {
-
     public AndroidFileHostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -78,7 +76,7 @@ public class AndroidFileHostCom extends antiDDoSForHost {
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             // sleep(10 * 1001l, downloadLink);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage("https://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
+            postPage("/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
             final String[] mirrors = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getColumn(0);
             if (mirrors == null || mirrors.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,7 +103,6 @@ public class AndroidFileHostCom extends antiDDoSForHost {
         }
         // Disabled chunks and resume because different downloadserver = different connection limits
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-
         if (dl.getConnection().getContentType().contains("html")) {
             /* Check again for server error 404 just to make sure... */
             if (dl.getConnection().getResponseCode() == 404) {
@@ -130,5 +127,4 @@ public class AndroidFileHostCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
