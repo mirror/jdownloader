@@ -22,9 +22,6 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +45,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
@@ -79,6 +79,7 @@ public class XHamsterCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, user_text).setDefaultValue(default_allow_multihoster_usage));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Preferred Format").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Choose file name + id?").setDefaultValue(false));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -165,20 +166,29 @@ public class XHamsterCom extends PluginForHost {
         fq.put("480p", q480);
         fq.put("240p", true); // Default
         // String video = br.getRegex("(video: \\{.*?\\}\\))").getMatch(0);
-        String videoUrls = br.getRegex("(videoUrls\":\"\\{.*?\\]\\})").getMatch(0).replace("\\", "");
-        // logger.info("videoUrls: " + videoUrls);
-        for (String key : fq.keySet()) {
-            logger.info(key + ":\t" + fq.get(key));
-            if (fq.get(key)) {
-                // dllink = new Regex(video, key + "\":\"(https?:[^\"]+)\"").getMatch(0);
-                dllink = new Regex(videoUrls, key + "\":\\[\"(https?:[^\"]+)\"").getMatch(0);
-                if (dllink != null) {
-                    vq = key;
-                    // dllink = dllink.replace("\\/", "/");
-                    logger.info("vq: " + vq + ", dllink: " + dllink);
-                    return dllink;
-                    // break;
+        if (br.containsHTML("videoUrls")) {
+            String videoUrls = br.getRegex("(videoUrls\":\"\\{.*?\\]\\})").getMatch(0).replace("\\", "");
+            // logger.info("videoUrls: " + videoUrls);
+            for (String key : fq.keySet()) {
+                logger.info(key + ":\t" + fq.get(key));
+                if (fq.get(key)) {
+                    // dllink = new Regex(video, key + "\":\"(https?:[^\"]+)\"").getMatch(0);
+                    dllink = new Regex(videoUrls, key + "\":\\[\"(https?:[^\"]+)\"").getMatch(0);
+                    if (dllink != null) {
+                        vq = key;
+                        // dllink = dllink.replace("\\/", "/");
+                        logger.info("vq: " + vq + ", dllink: " + dllink);
+                        return dllink;
+                        // break;
+                    }
                 }
+            }
+        }
+        if (br.containsHTML("\"720p\",\"url\"")) {
+            dllink = br.getRegex("720p\",\"url\":\"([^<>\"]+)\"").getMatch(0).replace("\\", "");
+            if (dllink != null) {
+                logger.info("vq: 720p" + ", dllink: " + dllink);
+                return dllink;
             }
         }
         logger.info("Video quality selection failed.");
@@ -273,7 +283,7 @@ public class XHamsterCom extends PluginForHost {
             }
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRequest().getHttpConnection().getResponseCode() == 423) {
-                if (br.containsHTML(">This video is visible for <")) {
+                if (br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
                     throw new AccountRequiredException("You need to be friends with uploader");
                 }
                 if (br.containsHTML("Conversion of video processing")) {
@@ -322,7 +332,11 @@ public class XHamsterCom extends PluginForHost {
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setFinalFileName(fid + "_" + filename);
+                if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
+                    downloadLink.setFinalFileName(filename + "_" + fid);
+                } else {
+                    downloadLink.setFinalFileName(fid + "_" + filename);
+                }
                 if (br.containsHTML(HTML_PAID_VIDEO)) {
                     downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
                     return AvailableStatus.TRUE;
