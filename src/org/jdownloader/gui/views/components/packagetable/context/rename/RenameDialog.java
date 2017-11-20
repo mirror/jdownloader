@@ -112,12 +112,12 @@ public class RenameDialog extends AbstractDialog<Object> {
             regex = regex.replaceAll("\\*+", "*").trim();
             final StringBuilder sb = new StringBuilder();
             if (StringUtils.isEmpty(regex)) {
-                sb.append("(.*)");
+                sb.append("^(.*)");
             } else if (regex.equals("*")) {
-                sb.append("(.*)");
+                sb.append("^(.*)");
             } else {
                 if (regex.startsWith("*")) {
-                    sb.append("(.*)");
+                    sb.append("^(.*)");
                 }
                 final String[] parts = regex.split("\\*+");
                 int actualParts = 0;
@@ -131,7 +131,7 @@ public class RenameDialog extends AbstractDialog<Object> {
                     }
                 }
                 if (sb.length() == 0) {
-                    sb.append("(.*)");
+                    sb.append("^(.*)");
                 } else {
                     if (regex.endsWith("*")) {
                         sb.append("(.*)");
@@ -199,7 +199,7 @@ public class RenameDialog extends AbstractDialog<Object> {
         }
         final boolean regex = CFG_GUI.CFG.isRenameActionRegexEnabled();
         if (StringUtils.isEmpty(allRegex)) {
-            allRegex = regex ? "(.*)" : "*";
+            allRegex = regex ? "^(.*)" : "*";
             allReplace = "$1";
         } else {
             if (length == allRegex.length()) {
@@ -207,7 +207,7 @@ public class RenameDialog extends AbstractDialog<Object> {
                 allRegex = quote(allRegex, regex);
             } else {
                 allReplace = Matcher.quoteReplacement(allRegex) + "$1";
-                allRegex = quote(allRegex, regex) + (regex ? "(.*)" : "*");
+                allRegex = quote(allRegex, regex) + (regex ? "^(.*)" : "*");
             }
         }
         txtSearch = new ExtTextField();
