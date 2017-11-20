@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +104,7 @@ public class UseNetNL extends UseNet {
                     ai.setTrafficLeft(currentDownloadVolume);
                 }
                 account.setMaxSimultanDownloads(16);
+                ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
                 return ai;
             }

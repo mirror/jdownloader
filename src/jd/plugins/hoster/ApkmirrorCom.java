@@ -13,11 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,9 +26,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkmirror.com" }, urls = { "http://(?:www\\.)?apkmirror\\.com/apk/[^/]+/[^/]+/[^/]+/[^/]+\\-download/" })
-public class ApkmirrorCom extends antiDDoSForHost {
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkmirror.com" }, urls = { "https?://(?:www\\.)?apkmirror\\.com/apk/[^/]+/[^/]+/[^/]+/[^/]+\\-download/" })
+public class ApkmirrorCom extends antiDDoSForHost {
     public ApkmirrorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,7 +54,6 @@ public class ApkmirrorCom extends antiDDoSForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -145,5 +142,4 @@ public class ApkmirrorCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
