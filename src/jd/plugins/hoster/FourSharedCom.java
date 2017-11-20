@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -57,18 +56,14 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+" })
 public class FourSharedCom extends PluginForHost {
-
     // DEV NOTES:
     // old versions of JDownloader can have troubles with Java7+ with HTTPS posts.
-
     public final String                    PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
     private final String                   PASSWORDTEXT                              = "enter a password to access";
     private final String                   COOKIE_HOST                               = "http://4shared.com";
     private static Object                  LOCK                                      = new Object();
-
     private static final boolean           TRY_FAST_FREE                             = true;
     private static final String            type_api_direct                           = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+";
-
     private static AtomicReference<String> agent                                     = new AtomicReference<String>();
     private String                         DLLINK                                    = null;
 
@@ -101,9 +96,8 @@ public class FourSharedCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com").replaceFirst("https:", "http:"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com").replaceFirst("http:", "https:"));
         final String locale = new Regex(link.getDownloadURL(), "((\\?|\\&)locale=[a-z]+)").getMatch(0);
-
         /* Remove language parameters as they can destroy all of the errorhandling */
         if (locale != null) {
             link.setUrlDownload(link.getDownloadURL().replace(locale, ""));
@@ -119,7 +113,6 @@ public class FourSharedCom extends PluginForHost {
                 }
             }
         }
-
         if (link.getDownloadURL().matches(type_api_direct)) {
             /* API directlink --> Don't touch it */
         } else {
@@ -152,7 +145,6 @@ public class FourSharedCom extends PluginForHost {
                 link.setUrlDownload(link.getDownloadURL().replaceAll("red.com/[^/]+/", "red.com/file/").replace("account/", ""));
             }
         }
-
     }
 
     @Override
@@ -220,10 +212,10 @@ public class FourSharedCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        if (DLLINK == null) {
+        if (!isDownloadURLSet(DLLINK)) {
             pass = handlePassword(downloadLink);
             DLLINK = checkDirectLink(downloadLink, "direct_link");
-            if (DLLINK == null) {
+            if (!isDownloadURLSet(DLLINK)) {
                 DLLINK = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 /* 2016-11-11: Make sure not to use wrong urls as final urls here!! */
                 if (DLLINK != null && DLLINK.matches(".+/get/.+\\.html$")) {
@@ -247,7 +239,7 @@ public class FourSharedCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            if (DLLINK == null) {
+            if (!isDownloadURLSet(DLLINK)) {
                 handleErrors(acc, downloadLink);
                 boolean downloadStreams = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
                 if (downloadLink.getBooleanProperty("streamDownloadDisabled", false) == false && downloadStreams) {
@@ -258,9 +250,9 @@ public class FourSharedCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-                if (DLLINK == null) {
+                if (!isDownloadURLSet(DLLINK)) {
                     String continueLink = null;
-                    if (DLLINK == null) {
+                    if (!isDownloadURLSet(DLLINK)) {
                         /* If file isn't available for free users we can still try to get the stream link */
                         handleErrors(acc, downloadLink);
                         continueLink = br.getRegex("<a href=\"(https?://(?:www\\.)?4shared(-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
@@ -278,7 +270,7 @@ public class FourSharedCom extends PluginForHost {
                         br.getPage(continueLink);
                         handleErrors(acc, downloadLink);
                         DLLINK = getNormalDownloadlink();
-                        if (DLLINK == null) {
+                        if (!isDownloadURLSet(DLLINK)) {
                             DLLINK = getDirectDownloadlink();
                         }
                         boolean downloadStreamsErrorhandling = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMSERRORHANDLING);
@@ -316,10 +308,8 @@ public class FourSharedCom extends PluginForHost {
                     }
                 }
             }
-
             br.setDebug(true);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         /**
          * Maybe download failed because we got a wrong directlink, disable getting directlinks first, if it then fails again the correct
@@ -402,7 +392,6 @@ public class FourSharedCom extends PluginForHost {
         if (br.containsHTML(">The download limit has been reached")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached", 60 * 60 * 1000l);
         }
-
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - ongoing maintenance!", 60 * 60 * 1000l);
         }
@@ -460,6 +449,10 @@ public class FourSharedCom extends PluginForHost {
         return dllink;
     }
 
+    private boolean isDownloadURLSet(final String url) {
+        return url != null && !getSupportedLinks().matcher(url).matches();
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
@@ -471,20 +464,22 @@ public class FourSharedCom extends PluginForHost {
         } else {
             String pass = null;
             br.setFollowRedirects(false);
-            if (DLLINK == null) {
+            if (!isDownloadURLSet(DLLINK)) {
                 br.getPage(downloadLink.getDownloadURL());
                 DLLINK = br.getRedirectLocation();
-                if (DLLINK == null) {
+                if (!isDownloadURLSet(DLLINK)) {
+                    br.followRedirect();
                     pass = handlePassword(downloadLink);
                     // direct download or not?
                     DLLINK = br.getRedirectLocation();
-                    if (DLLINK == null) {
+                    if (!isDownloadURLSet(DLLINK)) {
+                        br.followRedirect();
                         handleErrors(account, downloadLink);
                         DLLINK = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                         if (DLLINK == null) {
                             DLLINK = br.getRegex("\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]*?)\"").getMatch(0);
                         }
-                        if (DLLINK == null) {
+                        if (!isDownloadURLSet(DLLINK)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
@@ -820,7 +815,6 @@ public class FourSharedCom extends PluginForHost {
     public static void showSSLWarning(final String domain) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
