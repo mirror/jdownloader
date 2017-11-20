@@ -23,6 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -96,7 +97,7 @@ public class Srnnks extends antiDDoSForDecrypt {
             logger.info("Limit reached(1)!");
             return true;
         }
-        long maxTimeout = 5 * 60 * 1000l;
+        long maxTimeout = 6 * 60 * 1000l;
         int loopIndex = 0;
         while (!isAbort() && maxTimeout > 0) {
             loopIndex++;
@@ -109,7 +110,12 @@ public class Srnnks extends antiDDoSForDecrypt {
                 GLOBAL_LOCK.lock();
                 try {
                     Thread.sleep(sleep);
-                    br.getPage(br.getRequest().cloneRequest());
+                    final Request request = br.getRequest().cloneRequest();
+                    if (loopIndex > 3) {
+                        br.clearCookies(null);
+                        request.getCookies().clear();
+                    }
+                    br.getPage(request);
                 } finally {
                     GLOBAL_LOCK.unlock();
                     maxTimeout -= sleep;
@@ -120,7 +126,12 @@ public class Srnnks extends antiDDoSForDecrypt {
                 GLOBAL_LOCK.lock();
                 try {
                     Thread.sleep(sleep);
-                    br.getPage(br.getRequest().cloneRequest());
+                    final Request request = br.getRequest().cloneRequest();
+                    if (loopIndex > 3) {
+                        br.clearCookies(null);
+                        request.getCookies().clear();
+                    }
+                    br.getPage(request);
                 } finally {
                     GLOBAL_LOCK.unlock();
                     maxTimeout -= sleep;
@@ -402,8 +413,8 @@ public class Srnnks extends antiDDoSForDecrypt {
                             }
                         }
                     }
-                    logger.info("Max retries reached!");
-                    return ret;
+                logger.info("Max retries reached!");
+                return ret;
                 } catch (final Exception e) {
                     logger.log(e);
                     if (e == abortException) {
