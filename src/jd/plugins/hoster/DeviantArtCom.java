@@ -291,9 +291,14 @@ public class DeviantArtCom extends PluginForHost {
                 }
             }
         }
-        ext = ext.toLowerCase();
+        ext = ext.toLowerCase().trim();
         if (!filename.endsWith(ext)) {
-            filename += "." + ext.trim();
+            if (ext.startsWith(".")) {
+                // getFileNameExtensionFromURL
+                filename += ext;
+            } else {
+                filename += "." + ext;
+            }
         }
         filename = filename.replaceAll(" +", " ");
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
