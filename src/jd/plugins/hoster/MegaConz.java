@@ -72,6 +72,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
@@ -1211,6 +1212,17 @@ public class MegaConz extends PluginForHost {
         return false;
     }
 
+    private boolean isMULTIHOST(PluginForHost plugin) {
+        if (plugin != null) {
+            for (FEATURE feature : plugin.getFeatures()) {
+                if (FEATURE.MULTIHOST.equals(feature)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
         if (isPublic(downloadLink)) {
@@ -1218,7 +1230,7 @@ public class MegaConz extends PluginForHost {
         } else {
             if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
                 return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
-            } else if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
+            } else if (isMULTIHOST(buildForThisPlugin)) {
                 String fileID = getPublicFileID(downloadLink);
                 String keyString = getPublicFileKey(downloadLink);
                 if (fileID == null) {
