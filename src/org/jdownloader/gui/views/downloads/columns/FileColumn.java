@@ -50,7 +50,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
-
     /**
      *
      */
@@ -63,7 +62,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     protected Border          normalBorder;
     private boolean           selectAll            = false;
     private boolean           hideSinglePackage    = true;
-
     public final static int   EXPAND_COLLAPSE_AREA = 32 + 1/* leftGapBorder */+ 5 + 1/* super.defaultBorder */;
 
     public FileColumn() {
@@ -80,7 +78,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
-
             private Comparator<String> comp = new NaturalOrderComparator();
 
             @Override
@@ -99,7 +96,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     return comp.compare(o2s, o1s);
                 }
             }
-
         });
     }
 
@@ -108,7 +104,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
      */
     public JPopupMenu createHeaderPopup() {
         return FileColumn.createColumnPopup(this, (getMinWidth() == getMaxWidth() && getMaxWidth() > 0));
-
     }
 
     public static JPopupMenu createColumnPopup(ExtColumn<AbstractNode> fileColumn, boolean isLocked) {
@@ -246,13 +241,13 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         return false;
     }
 
+    @Override
     public boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
         if (isExpandCollapseArea(e, obj)) {
             return false;
         }
         startEditing(obj);
         return true;
-
     }
 
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
@@ -328,7 +323,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             // opaque.
             str = "";
         }
-
         if (getTableColumn() != null) {
             this.rendererField.setText(SwingUtilities2Wrapper.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str, getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32));
         } else {
@@ -344,7 +338,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                 renderer.setBorder(leftGapBorder);
             }
         }
-
     }
 
     @Override
@@ -357,7 +350,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             selectAll = false;
             editor.setBorder(leftGapBorder);
         }
-
     }
 
     @Override
@@ -367,22 +359,18 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     public void focusGained(final FocusEvent e) {
-
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
-
         int pointPart = txt.lastIndexOf(".part");
         if (pointPart > 0) {
             point = pointPart;
         }
-
         /* select filename only, try to keep the extension/filetype */
         if (point > 0 && selectAll == false) {
             editorField.select(0, point);
         } else {
             this.editorField.selectAll();
         }
-
     }
 
     @Override
@@ -394,10 +382,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     public final String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             //
-
             return ((DownloadLink) value).getView().getDisplayName();
         }
-
         return value.getName();
     }
 
@@ -409,5 +395,4 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         hideSinglePackage = newValue;
     }
-
 }
