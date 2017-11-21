@@ -49,22 +49,20 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leech360.com" }, urls = { "" })
 public class Leech360Com extends PluginForHost {
-    private static final String                            NICE_HOST                    = "leech360.com";
-    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NICE_HOST                 = "leech360.com";
+    private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String                            PROPERTY_API_TOKEN           = "api_login_token";
-    private final String                                   default_UA                   = "JDownloader";
-    /* 2017-11-21: TODO: Waiting for final admin API changes, then we can start using the API. */
-    private static final boolean                           USE_API                      = false;
-    private final String                                   website_html_loggedin        = "id=\"linkpass\"";
-    private static Object                                  LOCK                         = new Object();
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc                      = null;
-    private DownloadLink                                   currDownloadLink             = null;
-    private String                                         currAPIToken                 = null;
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final String                            PROPERTY_API_TOKEN        = "api_login_token";
+    private final String                                   default_UA                = "JDownloader";
+    private static final boolean                           USE_API                   = true;
+    private final String                                   website_html_loggedin     = "id=\"linkpass\"";
+    private static Object                                  LOCK                      = new Object();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc                   = null;
+    private DownloadLink                                   currDownloadLink          = null;
+    private String                                         currAPIToken              = null;
 
     public Leech360Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -453,7 +451,7 @@ public class Leech360Com extends PluginForHost {
         final String errorMessage = PluginJSonUtils.getJson(br, "error_message");
         if ("true".equalsIgnoreCase(errorStr)) {
             if ("Invalid token".equalsIgnoreCase(errorMessage)) {
-                /* TODO */
+                /* TODO_ check */
                 /* Reset token and retry via full login. */
                 this.currDownloadLink.setProperty(PROPERTY_API_TOKEN, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "API token invalid");
