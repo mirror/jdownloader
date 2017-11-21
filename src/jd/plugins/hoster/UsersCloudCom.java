@@ -170,6 +170,8 @@ public class UsersCloudCom extends PluginForHost {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
+        /* 2017-11-21: Special, especially 403 might happen here */
+        checkResponseCodeErrors(br.getHttpConnection());
         if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
@@ -495,13 +497,7 @@ public class UsersCloudCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-            }
+            checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -913,6 +909,7 @@ public class UsersCloudCom extends PluginForHost {
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -924,6 +921,21 @@ public class UsersCloudCom extends PluginForHost {
         }
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
+        }
+    }
+
+    /** Handles all kinds of error-responsecodes! */
+    private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
+        if (con == null) {
+            return;
+        }
+        final long responsecode = con.getResponseCode();
+        if (responsecode == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+        } else if (responsecode == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#1", 5 * 60 * 1000l);
+        } else if (responsecode == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
     }
 
