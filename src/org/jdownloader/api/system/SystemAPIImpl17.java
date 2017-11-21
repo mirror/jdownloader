@@ -22,11 +22,14 @@ import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 public class SystemAPIImpl17 {
     public static List<StorageInformationStorable> getStorageInfos(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
-        final List<String> filterList;
+        final List<String> typeFilters;
+        final List<String> pathFilters;
         if (CrossSystem.isUnix()) {
-            filterList = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs");
+            typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs");
+            pathFilters = Arrays.asList("/proc/sys/fs/binfmt_misc");
         } else {
-            filterList = Arrays.asList(new String[0]);
+            typeFilters = Arrays.asList(new String[0]);
+            pathFilters = Arrays.asList(new String[0]);
         }
         final LinkedHashMap<Path, FileStore> roots = new LinkedHashMap<Path, FileStore>();
         Path customPath = null;
@@ -54,7 +57,7 @@ public class SystemAPIImpl17 {
             final Path root = entry.getKey();
             try {
                 final FileStore store = entry.getValue();
-                if ((customPath == null || !customPath.equals(root)) && (filterList.contains(store.type()) || store.isReadOnly())) {
+                if ((customPath == null || !customPath.equals(root)) && (typeFilters.contains(store.type()) || store.isReadOnly() || pathFilters.contains(root.toString()))) {
                     continue;
                 }
                 storage.setPath(root.toString());
