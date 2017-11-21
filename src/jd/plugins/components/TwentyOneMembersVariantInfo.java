@@ -6,8 +6,16 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 
+import jd.parser.Regex;
+
 public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
     private String url;
+    private String shortType;
+    private String filesize;
+
+    public String getFilesize() {
+        return this.filesize;
+    }
 
     public String getUrl() {
         return url;
@@ -25,14 +33,18 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
         this.shortType = shortType;
     }
 
-    private String shortType;
-
     public TwentyOneMembersVariantInfo(/* Storable */) {
     }
 
-    public TwentyOneMembersVariantInfo(String url, String shortType) {
+    public TwentyOneMembersVariantInfo(final String url, final String shortType) {
         this.url = url;
         this.shortType = shortType;
+    }
+
+    public TwentyOneMembersVariantInfo(final String url, final String shortType, final String filesize) {
+        this.url = url;
+        this.shortType = shortType;
+        this.filesize = filesize;
     }
 
     @Override
@@ -41,53 +53,15 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
     }
 
     public int _getQuality() {
-        if (StringUtils.equals("fullhd", shortType)) {
-            return 1000;
-        }
-        if (StringUtils.equals("hd", shortType)) {
-            return 999;
-        }
-        if (StringUtils.equals("hq", shortType)) {
-            return 998;
-        }
-        if (StringUtils.equals("phone480", shortType)) {
-            return 997;
-        }
-        if (StringUtils.equals("phone272", shortType)) {
-            return 996;
-        }
-        if (StringUtils.equals("ziph", shortType)) {
-            return 0;
-        }
-        if (StringUtils.equals("hiresh", shortType)) {
-            return 1;
+        final String xx_p = new Regex(this.shortType, "(\\d+)").getMatch(0);
+        if (xx_p != null) {
+            return Integer.parseInt(xx_p);
         }
         return -1;
     }
 
     @Override
     public String _getName(Object caller) {
-        if (StringUtils.equals("fullhd", shortType)) {
-            return "FullHD 1080p Video";
-        }
-        if (StringUtils.equals("hd", shortType)) {
-            return "HD 720p Video";
-        }
-        if (StringUtils.equals("hq", shortType)) {
-            return "HQ 540p Video";
-        }
-        if (StringUtils.equals("phone480", shortType)) {
-            return "Phone 480p Video";
-        }
-        if (StringUtils.equals("phone272", shortType)) {
-            return "Phone 272p Video";
-        }
-        if (StringUtils.equals("ziph", shortType)) {
-            return "Low Quality Photos";
-        }
-        if (StringUtils.equals("hiresh", shortType)) {
-            return "High Quality Photos";
-        }
         return shortType;
     }
 
@@ -120,5 +94,4 @@ public class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
         }
         return false;
     }
-
 }

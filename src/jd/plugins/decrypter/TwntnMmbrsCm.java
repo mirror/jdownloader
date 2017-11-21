@@ -13,13 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,38 +31,42 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.TwentyOneMembersVariantInfo;
 import jd.plugins.hoster.TwentyOneMembersCom;
 
-import org.appwork.uio.UIOManager;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "21members.com" }, urls = { "http://(www\\.)?21members\\.com/members/scene/(info|photos)/\\d+/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "21members.com" }, urls = { "https://members.21members.com/[a-z]{2}/video/.+\\d+$" })
 public class TwntnMmbrsCm extends PluginForDecrypt {
-
     public TwntnMmbrsCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         if (!TwentyOneMembersCom.login(br)) {
             UIOManager.I().showErrorMessage("An active 21members.com account is required for " + parameter);
             return decryptedLinks;
         }
-        final String id = new Regex(parameter, "scene/(info|photos)/(\\d+)").getMatch(1);
-        br.getPage("http://21members.com/members/scene/info/" + id + "/");
+        final String id = new Regex(parameter, "(\\d+)$").getMatch(0);
+        br.getPage(parameter);
+        if (jd.plugins.hoster.TwentyOneMembersCom.isOffline(this.br)) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         final ArrayList<TwentyOneMembersVariantInfo> videoVariantInfos = TwentyOneMembersCom.parseVideoVariants(br);
         if (videoVariantInfos == null || videoVariantInfos.size() == 0) {
             UIOManager.I().showErrorMessage("No access to " + parameter);
             return decryptedLinks;
         }
         sortVariants(videoVariantInfos);
-
-        final String title = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        String title = PluginJSonUtils.getJson(this.br, "sceneTitle");
+        if (StringUtils.isEmpty(title)) {
+            /* Fallback */
+            title = id;
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-
         final DownloadLink videoDummy = createDownloadlink("http://21members.com/dummy/file/" + id);
         videoDummy.setProperty("title", title);
         videoDummy.setProperty("id", id);
@@ -68,7 +74,6 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
         videoDummy.setVariants(videoVariantInfos);
         TwentyOneMembersCom.setVariant(videoDummy, videoVariantInfos.get(0));
         decryptedLinks.add(videoDummy);
-
         br.getPage("http://21members.com/members/scene/photos/" + id + "/");
         final ArrayList<TwentyOneMembersVariantInfo> photoVariantInfos = TwentyOneMembersCom.parsePhotoVariants(br);
         if (photoVariantInfos != null && photoVariantInfos.size() > 0) {
@@ -96,7 +101,6 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
             }
             if (variantInfos.size() > 1) {
                 Collections.sort(variantInfos, new Comparator<TwentyOneMembersVariantInfo>() {
-
                     public int compare(int x, int y) {
                         return (x < y) ? -1 : ((x == y) ? 0 : 1);
                     }
@@ -114,5 +118,4 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
