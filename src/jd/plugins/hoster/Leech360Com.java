@@ -18,12 +18,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -51,12 +55,15 @@ public class Leech360Com extends PluginForHost {
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final String                            PROPERTY_API_TOKEN           = "api_login_token";
     private final String                                   default_UA                   = "JDownloader";
-    private final String                                   html_loggedin                = "id=\"linkpass\"";
+    private static final boolean                           USE_API                      = false;
+    private final String                                   website_html_loggedin        = "id=\"linkpass\"";
     private static Object                                  LOCK                         = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
+    private String                                         currAPIToken                 = null;
 
     public Leech360Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,6 +90,7 @@ public class Leech360Com extends PluginForHost {
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
+        currAPIToken = null;
     }
 
     @Override
@@ -110,7 +118,6 @@ public class Leech360Com extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = prepBR(this.br);
@@ -131,17 +138,25 @@ public class Leech360Com extends PluginForHost {
             }
         }
         login(account, false);
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
-            if (StringUtils.isEmpty(dllink)) {
-                /* E.g. "error_message":"some.filehost current offline or not support this time!" */
-                handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
-            }
+        String dllink = getDllink(link);
+        if (StringUtils.isEmpty(dllink)) {
+            /* E.g. (website) "error_message":"some.filehost current offline or not support this time!" */
+            handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
         }
         handleDL(account, link, dllink);
+    }
+
+    private String getDllink(final DownloadLink link) throws IOException, PluginException {
+        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        if (dllink == null) {
+            if (USE_API) {
+            } else {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+                dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
+            }
+        }
+        return dllink;
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
@@ -191,6 +206,16 @@ public class Leech360Com extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         this.br = prepBR(this.br);
+        final AccountInfo ai;
+        if (USE_API) {
+            ai = fetchAccountInfoAPI(account);
+        } else {
+            ai = fetchAccountInfoWebsite(account);
+        }
+        return ai;
+    }
+
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         /*
@@ -263,41 +288,131 @@ public class Leech360Com extends PluginForHost {
         return ai;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                this.br = prepBR(this.br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    /*
-                     * Even though login is forced first check if our cookies are still valid --> If not, force login!
-                     */
-                    br.getPage("https://" + this.getHost());
-                    if (br.containsHTML(html_loggedin)) {
-                        return;
-                    }
-                    /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                    this.br = prepBR(new Browser());
-                }
-                br.getPage("https://" + this.getHost() + "/sign-in.html");
-                String postData = "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass());
-                this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData);
-                if (!br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
+    @SuppressWarnings("unchecked")
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, false);
+        this.getAPISafe("https://" + account.getHoster() + "/api/get_userinfo?token=" + Encoding.urlEncode(this.currAPIToken));
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("data");
+        final String date_registered = (String) entries.get("joindate");
+        if (!StringUtils.isEmpty(date_registered)) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(date_registered, "MMM dd yyyy hh:mm a", Locale.US));
+        }
+        final long premium_expire = JavaScriptEngineFactory.toLong(entries.get("premium_expire"), 0);
+        final long traffic_used = JavaScriptEngineFactory.toLong(entries.get("total_used"), 0);
+        /* TODO: 2017-11-16 hardcoded value. Ask admin to put this in the API response. */
+        final long traffic_max = 536870912000l;
+        if (premium_expire > 0) {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Account");
+            ai.setValidUntil(premium_expire * 1000, br);
+        } else {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+        }
+        ai.setTrafficLeft(traffic_max - traffic_used);
+        ai.setTrafficMax(traffic_max);
+        this.getAPISafe("/api/get_support?token=" + Encoding.urlEncode(this.currAPIToken));
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("data");
+        final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+        LinkedHashMap<String, Object> host_info;
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        /* TODO: Ask admin to move traffic info for indivdual hosts from account info to this API call. */
+        while (it.hasNext()) {
+            final Entry<String, Object> entry = it.next();
+            host_info = (LinkedHashMap<String, Object>) entry.getValue();
+            final String domain = (String) host_info.get("hostname");
+            if (StringUtils.isEmpty(domain)) {
+                continue;
+            }
+            final String status = (String) host_info.get("status");
+            final boolean premiumOnlyHost = "vip".equals(status);
+            final boolean hostAvailable = "online".equals(status) || premiumOnlyHost;
+            if (!hostAvailable) {
+                logger.info("Skipping host (inactive): " + domain);
+            } else if (premiumOnlyHost && account.getType() != AccountType.PREMIUM) {
+                logger.info("Skipping host (premiumonly): " + domain);
+            } else {
+                supportedHosts.add(domain);
             }
         }
+        ai.setMultiHostSupport(this, supportedHosts);
+        return ai;
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            /* Load cookies */
+            br.setCookiesExclusive(true);
+            this.br = prepBR(this.br);
+            if (USE_API) {
+                loginAPI(account, force);
+            } else {
+                loginWebsite(account, force);
+            }
+        }
+    }
+
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
+        try {
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                /*
+                 * Even though login is forced first check if our cookies are still valid --> If not, force login!
+                 */
+                br.getPage("https://" + this.getHost());
+                if (br.containsHTML(website_html_loggedin)) {
+                    return;
+                }
+                /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                this.br = prepBR(new Browser());
+            }
+            br.getPage("https://" + this.getHost() + "/sign-in.html");
+            String postData = "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass());
+            this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData);
+            if (!br.containsHTML(website_html_loggedin)) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+        } catch (final PluginException e) {
+            account.clearCookies("");
+            throw e;
+        }
+    }
+
+    private void loginAPI(final Account account, final boolean force) throws Exception {
+        this.currAPIToken = account.getStringProperty(PROPERTY_API_TOKEN);
+        final long token_valid_until = account.getLongProperty("api_login_token_valid_until", 0);
+        if (this.currAPIToken != null && token_valid_until > System.currentTimeMillis()) {
+            /* Token should still be valid, let's blindly trust it! */
+            return;
+        }
+        /* Full login (generate new token) */
+        this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
+        if (StringUtils.isEmpty(this.currAPIToken)) {
+            /* No matter why this token is empty, this should mean that our account is not valid. */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
+        /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
+        /*
+         * TODO: Ask admin to return timestamp here. This way, he can adjust the validity of the token without us needing to change our
+         * code.
+         */
+        account.setProperty("api_login_token_valid_until", System.currentTimeMillis() + 8 * 60 * 1000);
+        account.saveCookies(this.br.getCookies(this.getHost()), "");
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
@@ -333,23 +448,20 @@ public class Leech360Com extends PluginForHost {
 
     /** Keep this for possible future API implementation */
     private void handleAPIErrors(final Browser br) throws PluginException {
-        // String statusMessage = null;
-        // try {
-        // switch (statuscode) {
-        // case 0:
-        // /* Everything ok */
-        // break;
-        // case 1:
-        // statusMessage = "";
-        // tempUnavailableHoster(5 * 60 * 1000l);
-        // break;
-        // default:
-        // handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
-        // }
-        // } catch (final PluginException e) {
-        // logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
-        // throw e;
-        // }
+        final String errorStr = PluginJSonUtils.getJson(br, "error");
+        final String errorMessage = PluginJSonUtils.getJson(br, "error_message");
+        if ("true".equalsIgnoreCase(errorStr)) {
+            if ("Invalid token".equalsIgnoreCase(errorMessage)) {
+                /* TODO */
+                /* Reset token and retry via full login. */
+                this.currDownloadLink.setProperty(PROPERTY_API_TOKEN, Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "API token invalid");
+            } else {
+                /* TODO: Add more errorhandling, remove DEFECT once plugin is done */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
+            }
+        }
     }
 
     /**
