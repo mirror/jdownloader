@@ -37,6 +37,7 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -231,6 +232,10 @@ public class AllDebridCom extends antiDDoSForHost {
         if (genlink == null || !genlink.matches("https?://.+")) {
             // we need a final error handling for situations when
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String filename = PluginJSonUtils.getJsonValue(br, "filename");
+        if (StringUtils.equalsIgnoreCase(filename, "Ip not allowed.") || StringUtils.endsWithCaseInsensitive(genlink, "/alldebrid_server_not_allowed.txt")) {
+            throw new AccountUnavailableException("Ip not allowed", 6 * 60 * 1000l);
         }
         handleDL(account, link, genlink);
     }
