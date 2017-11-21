@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/video/\\d+(?:/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net", "osakamotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/video/\\d+(?:/[^/]+)?", "https?://(?:www\\.)?osakamotion\\.net/video/\\d+(?:/[^/]+)?" })
 public class TokyomotionNet extends PluginForHost {
     public TokyomotionNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,13 +47,15 @@ public class TokyomotionNet extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean    RESUME           = true;
-    private final int        MAXCHUNKS        = 0;
-    private final int        MAXDOWNLOADS     = 20;
-    private String           dllink           = null;
-    private boolean          server_issues    = false;
-    private boolean          isPrivateContent = false;
-    public static final long trust_cookie_age = 300000l;
+    private final boolean        RESUME                                = true;
+    private final int            MAXCHUNKS                             = 0;
+    private final int            MAXDOWNLOADS                          = 20;
+    private String               dllink                                = null;
+    private boolean              server_issues                         = false;
+    private boolean              isPrivateContent                      = false;
+    /* 2017-11-21: Deactivated this as cookies can get invalid at any time. */
+    private static final boolean TRUST_YOUNG_COOKIES_WITHOUT_ANY_CHECK = false;
+    public static final long     trust_cookie_age                      = 300000l;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -156,7 +158,7 @@ public class TokyomotionNet extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && TRUST_YOUNG_COOKIES_WITHOUT_ANY_CHECK) {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
