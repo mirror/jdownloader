@@ -13,12 +13,19 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.logging.LogController;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -39,15 +46,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.TwentyOneMembersVariantInfo;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.logging.LogController;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" })
 public class TwentyOneMembersCom extends PluginForHost {
-
     private final String LOGIN_ERROR_REGEX = "<ul.*?class=\"loginErrors\".*?>.*?<li class=\"warning\">(.+?)</li>";
 
     public TwentyOneMembersCom(PluginWrapper wrapper) {
@@ -80,9 +80,8 @@ public class TwentyOneMembersCom extends PluginForHost {
         }
     }
 
-    public boolean login(Browser br, Account account, final long trustCookiesAge) throws Exception {
+    public boolean login(final Browser br, final Account account, final long trustCookiesAge) throws Exception {
         synchronized (account) {
-
             final boolean followRedirect = br.isFollowingRedirects();
             br.setFollowRedirects(true);
             try {
@@ -93,60 +92,58 @@ public class TwentyOneMembersCom extends PluginForHost {
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trustCookiesAge) {
                         return true;
                     }
-
-                    br.getPage("http://21members.com/members/home/");
-                    final String sidiCookie = br.getCookie(getHost(), "sidi");
-                    if (sidiCookie != null) {
-                        final String error = br.getRegex(LOGIN_ERROR_REGEX).getMatch(0);
-                        if (error == null && br.getRedirectLocation() == null) {
-                            account.saveCookies(br.getCookies(getHost()), "");
-                            return true;
-                        }
+                    br.getPage("https://members.21members.com/en");
+                    if (loggedinHTML(br)) {
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(br.getCookies(getHost()), "");
+                        return true;
                     }
                     account.clearCookies("");
                 }
-
-                br.getPage("http://21members.com/login");
+                br.getPage("https://www.21members.com/en/login");
                 final String relCaptchaUrl = br.getRegex("<span>Auth code\\:</span><img src='([^']+)\' .*?alt='captcha'").getMatch(0);
-                final Form login = br.getFormBySubmitvalue("Login");
+                final Form login = br.getFormbyKey("username");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (relCaptchaUrl != null) {
-                    // cookie appears after at least one bad login
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "21members.com", "http://21members.com", true);
-                    final DownloadLink before = getDownloadLink();
-                    final String code;
-                    try {
-                        setDownloadLink(dummyLink);
+                final DownloadLink before = getDownloadLink();
+                try {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "21members.com", "https://21members.com", true);
+                    setDownloadLink(dummyLink);
+                    if (relCaptchaUrl != null) {
+                        // cookie appears after at least one bad login
+                        final String code;
                         code = getCaptchaCode(br.getBaseURL() + relCaptchaUrl, dummyLink);
-                    } finally {
-                        setDownloadLink(before);
+                        login.getInputField("code").setValue(Encoding.urlEncode(code));
+                    } else {
+                        /* 2017-11-21: New */
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        login.put("g-recaptcha-response", recaptchaV2Response);
                     }
-                    login.getInputField("code").setValue(Encoding.urlEncode(code));
+                } finally {
+                    setDownloadLink(before);
                 }
                 login.setEncoding("application/x-www-form-urlencoded");
-                login.getInputField("identifier").setValue(Encoding.urlEncode(account.getUser()));
+                login.getInputField("username").setValue(Encoding.urlEncode(account.getUser()));
                 login.getInputField("password").setValue(Encoding.urlEncode(account.getPass()));
-                login.getInputField("password2").setValue("Password");
                 Request request = br.createFormRequest(login);
-                request.getHeaders().put(new HTTPHeader("Origin", "http://21members.com"));
+                request.getHeaders().put(new HTTPHeader("Origin", "https://21members.com"));
                 br.openRequestConnection(request);
                 br.followConnection();
-
                 final String error = br.getRegex(LOGIN_ERROR_REGEX).getMatch(0);
-                final String sidiCookie = br.getCookie("21members.com", "sidi");
-                final String redirect = br.getRedirectLocation();
-                if (error != null || sidiCookie == null || redirect == null) {
+                if (error != null || !loggedinHTML(br)) {
                     return false;
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
-                br.getPage(redirect);
                 return true;
             } finally {
                 br.setFollowRedirects(followRedirect);
             }
         }
+    }
+
+    public boolean loggedinHTML(final Browser br) {
+        return br.containsHTML("id=\"headerLinkLogout\"");
     }
 
     /**
@@ -164,7 +161,6 @@ public class TwentyOneMembersCom extends PluginForHost {
             maxDaysLeft = Math.max(maxDaysLeft, left);
         }
         final String[] activeNetwork = br.getRegex("infoPanel (\\S+)  active").getColumn(0);
-        ai.setPremiumPoints(br.getRegex("<span class=\"creditNum\">(\\d+)").getMatch(0));
         final StringBuilder sb = new StringBuilder();
         for (final String network : activeNetwork) {
             if (sb.length() > 0) {
@@ -173,12 +169,10 @@ public class TwentyOneMembersCom extends PluginForHost {
             sb.append(network);
         }
         ai.setStatus(sb.toString());
-        ai.setUnlimitedTraffic();
         if (maxDaysLeft >= 0) {
             ai.setValidUntil(System.currentTimeMillis() + (maxDaysLeft + 1) * (24 * 60 * 60 * 1000l));
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        ai.setUnlimitedTraffic();
     }
 
     @Override
@@ -194,16 +188,25 @@ public class TwentyOneMembersCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         final String id = downloadLink.getStringProperty("id");
-        final String sidi = br.getCookie(getHost(), "sidi");
         final List<TwentyOneMembersVariantInfo> variants;
         if (variant.isPhoto()) {
-            br.getPage("http://21members.com/members/scene/photos/" + id + "?sidi=" + sidi);
+            br.getPage("http://21members.com/members/scene/photos/" + id + "?sidi=");
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             variants = TwentyOneMembersCom.parsePhotoVariants(br);
         } else {
-            br.getPage("http://21members.com/members/scene/info/" + id + "?sidi=" + sidi);
+            br.getPage("https://members." + this.getHost() + "/en/video////" + id);
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             variants = TwentyOneMembersCom.parseVideoVariants(br);
         }
+        if (variants == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (variants != null) {
+            br.setFollowRedirects(true);
             for (final TwentyOneMembersVariantInfo v : variants) {
                 if (StringUtils.equals(v._getUniqueId(), variant._getUniqueId())) {
                     final String url = v.getUrl();
@@ -214,17 +217,20 @@ public class TwentyOneMembersCom extends PluginForHost {
                         if (con.isOK() && con.isContentDisposition()) {
                             return AvailableStatus.TRUE;
                         }
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } finally {
                         if (con != null) {
                             con.disconnect();
                         }
                     }
-
                 }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override
@@ -303,11 +309,22 @@ public class TwentyOneMembersCom extends PluginForHost {
 
     public static ArrayList<TwentyOneMembersVariantInfo> parseVideoVariants(final Browser br) throws Exception {
         if (!br.containsHTML("buy it first")) {
-            final String downloads = br.getRegex("<!-- download -->(.*?)<!-- end download -->").getMatch(0);
-            final String[][] downloadInfos = new Regex(downloads, "<a href=\"([^\"]+)\".*?>.*?<div class=\"([^\"]+)\" data-csst=\"([^\"]+)\">").getMatches();
+            final String downloads = br.getRegex("<div class=\"optionList\">(.*?)</div>\\s*?</div>").getMatch(0);
+            final String[] dlinfos = new Regex(downloads, "<p>(.*?)</p>").getColumn(0);
             final ArrayList<TwentyOneMembersVariantInfo> variantInfos = new ArrayList<TwentyOneMembersVariantInfo>();
-            for (final String[] downloadInfo : downloadInfos) {
-                variantInfos.add(new TwentyOneMembersVariantInfo(downloadInfo[0], downloadInfo[2]));
+            for (final String html : dlinfos) {
+                String url = new Regex(html, "(/movieaction/download/\\d+/\\d+p/mp4)").getMatch(0);
+                final String shorttype = new Regex(html, "(\\d+p)/").getMatch(0);
+                final String filesize = new Regex(html, "class=\"movieSize\">([^<>\"]+)<").getMatch(0);
+                if (url == null || shorttype == null) {
+                    continue;
+                }
+                url = "https://members." + br.getHost() + url;
+                if (filesize != null) {
+                    variantInfos.add(new TwentyOneMembersVariantInfo(url, shorttype, filesize));
+                } else {
+                    variantInfos.add(new TwentyOneMembersVariantInfo(url, shorttype));
+                }
             }
             return variantInfos;
         }
@@ -315,9 +332,14 @@ public class TwentyOneMembersCom extends PluginForHost {
     }
 
     public static void setVariant(final DownloadLink link, final TwentyOneMembersVariantInfo v) {
+        final String filesize = v.getFilesize();
         link.setVariant(v);
         link.setLinkID(link.getPluginPatternMatcher() + "." + v._getUniqueId());
-        link.setVerifiedFileSize(-1);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            link.setVerifiedFileSize(-1);
+        }
         final String fileName = formatFileName(link, v);
         link.setFinalFileName(fileName);
     }
@@ -326,6 +348,9 @@ public class TwentyOneMembersCom extends PluginForHost {
         if (!br.containsHTML("buy it first")) {
             final String downloads = br.getRegex("<!-- download -->(.*?)<!-- end download -->").getMatch(0);
             final String[][] downloadInfos = new Regex(downloads, "<a href=\"([^\"]+)\" class=\"([^\"]+)\">").getMatches();
+            if (downloadInfos == null) {
+                return null;
+            }
             final ArrayList<TwentyOneMembersVariantInfo> variantInfos = new ArrayList<TwentyOneMembersVariantInfo>();
             for (final String[] downloadInfo : downloadInfos) {
                 variantInfos.add(new TwentyOneMembersVariantInfo(downloadInfo[0], downloadInfo[1]));

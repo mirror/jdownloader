@@ -23,6 +23,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.captcha.SkipException;
@@ -48,12 +54,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" })
 public class NovaFileCom extends antiDDoSForHost {
     private String               correctedBR                  = "";
@@ -77,7 +77,7 @@ public class NovaFileCom extends antiDDoSForHost {
     // free account: untested, set same as FREE
     // premium account: 1 * 10
     // protocol: redirects to https
-    // captchatype: recaptcha
+    // captchatype: reCaptchaV2
     // other: OLD standard-JD User-Agent is blocked!
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -229,6 +229,7 @@ public class NovaFileCom extends antiDDoSForHost {
             Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
             if (dlForm == null) {
                 if (dlForm == null) {
+                    this.checkErrors(downloadLink, account, false, passCode);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -565,7 +566,7 @@ public class NovaFileCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "(can only download| can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|This file can only be downloaded by Premium Users|<div id=\"premium-only\">)").matches()) {
+        if (new Regex(correctedBR, "(can only download| can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|This file can only be downloaded by Premium|<div id=\"premium-only\">)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit == null) {
                 filesizelimit = new Regex(correctedBR, "Free Users can only download files sized up to(.*?)\\.<").getMatch(0);
