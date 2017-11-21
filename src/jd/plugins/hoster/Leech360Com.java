@@ -57,6 +57,7 @@ public class Leech360Com extends PluginForHost {
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String                            PROPERTY_API_TOKEN           = "api_login_token";
     private final String                                   default_UA                   = "JDownloader";
+    /* 2017-11-21: TODO: Waiting for final admin API changes, then we can start using the API. */
     private static final boolean                           USE_API                      = false;
     private final String                                   website_html_loggedin        = "id=\"linkpass\"";
     private static Object                                  LOCK                         = new Object();
