@@ -185,6 +185,7 @@ public class SaveTv extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setContentUrl(buildExternalDownloadURL(link, this));
+        link.setLinkID(getTelecastId(link));
     }
 
     @Override
@@ -260,11 +261,15 @@ public class SaveTv extends PluginForHost {
                 }
             }
         }
-        /* Set linkID for correct dupe-check as telecastID is bound to account! */
-        if (link.getLinkID() == null || (link.getLinkID() != null && !link.getLinkID().matches("\\d+"))) {
-            /* Every account has individual telecastIDs, only downloadable via this account. */
-            link.setLinkID(account.getUser() + telecast_ID);
-        }
+        /*
+         * 2017-11-21: Do not do this as it may cause issues with the dupecheck. CanHandle will ensure that we use the right account for the
+         * right file, also usually a user will never have more than one Save.tv account so this is not really required.
+         */
+        // /* Set linkID for correct dupe-check as telecastID is bound to account! */
+        // if (link.getLinkID() == null || (link.getLinkID() != null && !link.getLinkID().matches("\\d+"))) {
+        // /* Every account has individual telecastIDs, only downloadable via this account. */
+        // link.setLinkID(account.getUser() + telecast_ID);
+        // }
         setConstants(account, link);
         final AvailableStatus availablestatus;
         if (is_API_enabled(this.getHost())) {
