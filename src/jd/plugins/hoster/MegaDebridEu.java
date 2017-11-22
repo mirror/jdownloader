@@ -27,6 +27,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -212,6 +213,8 @@ public class MegaDebridEu extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             } else if (br.containsHTML("Limite de trafic dépassée pour cet hébergeur")) {
                 tempUnavailableHoster(account, link, 10 * 60 * 1000l);
+            } else if (br.containsHTML("UNALLOWED_IP")) {
+                throw new AccountUnavailableException("UNALLOWED_IP", 6 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
