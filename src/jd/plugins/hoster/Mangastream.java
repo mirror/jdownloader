@@ -35,7 +35,7 @@ public class Mangastream extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("mangastream://", "https://mangastream.com"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("mangastream://", "https://readms.net"));
     }
 
     @Override
@@ -112,6 +112,7 @@ public class Mangastream extends antiDDoSForHost {
         this.setBrowserExclusive();
         correctDownloadLink(downloadLink);
         getPage(downloadLink.getDownloadURL().replaceFirst("http://", "https://"));
+        br.followRedirect();
         if (br.containsHTML("We couldn't find the page you were looking for") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
