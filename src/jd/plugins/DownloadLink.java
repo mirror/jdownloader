@@ -2332,18 +2332,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setVariant(LinkVariant variant) {
         if (!StringUtils.equals(getStringProperty("VARIANT"), variant._getUniqueId())) {
-            final String orgLinkID = getStringProperty("ORG_LINKID");
-            if (orgLinkID == null) {
-                final String linkID = getLinkID();
-                setProperty("ORG_LINKID", linkID);
-            }
             this.setProperty("VARIANT", variant._getUniqueId());
             setVariantSupport(true);
             final LinkVariant existingVariant = (LinkVariant) getTempProperties().getProperty("VARIANT");
             if (existingVariant != null && !variant._getUniqueId().equals(existingVariant._getUniqueId())) {
                 getTempProperties().setProperty("VARIANT", null);
             }
-            setLinkID(getStringProperty("ORG_LINKID") + "_" + variant._getUniqueId());
+            getDefaultPlugin().setLinkID(this, variant);
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANT, variant));
             }
