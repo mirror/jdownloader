@@ -21,6 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
@@ -71,7 +75,7 @@ import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 import org.jdownloader.statistics.StatsManager;
 
-public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
+public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, ReconnecterListener {
     public static class SessionInfoWrapper extends SessionInfo {
         public static enum STATE {
             VALID,
@@ -331,6 +335,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         for (int port : CFG_MYJD.CFG.getDeviceConnectPorts()) {
             helper.add(new DeviceConnectionHelper(this, port, CFG_MYJD.CFG.getServerHost()));
         }
+        Reconnecter.getInstance().getEventSender().addListener(this, true);
         deviceConnectionHelper = helper.toArray(new DeviceConnectionHelper[helper.size()]);
         loadSessionInfo();
         DIRECTMODE mode = CFG_MYJD.CFG.getDirectConnectMode();
@@ -357,7 +362,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
         return api;
     }
 
-    public boolean putResponse(MyJDownloaderConnectionResponse response) {
+    public boolean putResponse(final MyJDownloaderConnectionResponse response) {
         synchronized (waitingConnections) {
             if (waitingConnections.size() == 0) {
                 return false;
@@ -941,6 +946,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
     }
 
     public void disconnect() {
+        Reconnecter.getInstance().getEventSender().removeListener(this);
         notifyInterests.clear();
         challengeExchangeEnabled.set(false);
         try {
@@ -983,13 +989,21 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
                 final MyJDownloaderWaitingConnectionThread thread = waitingConnections.get(index);
                 if (!thread.isRunning()) {
                     waitingConnections.remove(index);
+                } else {
+                    thread.abort();
                 }
             }
             for (int index = waitingConnections.size(); index < max; index++) {
-                final MyJDownloaderWaitingConnectionThread thread = new MyJDownloaderWaitingConnectionThread(this);
-                waitingConnections.add(thread);
-                thread.start();
+                startWaitingConnectionThread();
             }
+        }
+    }
+
+    private void startWaitingConnectionThread() {
+        synchronized (waitingConnections) {
+            final MyJDownloaderWaitingConnectionThread thread = new MyJDownloaderWaitingConnectionThread(this);
+            waitingConnections.add(thread);
+            thread.start();
         }
     }
 
@@ -1310,5 +1324,19 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge {
     @Override
     public boolean canHandleChunkedEncoding(HttpRequest request, HttpResponse response) {
         return true;
+    }
+
+    @Override
+    public void onAfterReconnect(ReconnecterEvent event) {
+        if (event != null && ReconnectResult.SUCCESSFUL.equals(event.getResult())) {
+            if (isEstablishingConnection()) {
+                startWaitingConnectionThread();
+                putResponse(null);
+            }
+        }
+    }
+
+    @Override
+    public void onBeforeReconnect(ReconnecterEvent event) {
     }
 }
