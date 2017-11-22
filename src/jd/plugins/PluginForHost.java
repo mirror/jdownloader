@@ -2493,6 +2493,22 @@ public abstract class PluginForHost extends Plugin {
         return downloadLink.getPluginPatternMatcher();
     }
 
+    public void setLinkID(DownloadLink downloadLink, LinkVariant variant) {
+        final boolean isOriginal = GenericVariants.ORIGINAL.equals(variant);
+        final String orgLinkID = downloadLink.getStringProperty("ORG_LINKID");
+        if (isOriginal) {
+            if (orgLinkID != null) {
+                downloadLink.setLinkID(orgLinkID);
+            }
+        } else {
+            if (orgLinkID == null) {
+                final String linkID = downloadLink.getLinkID();
+                downloadLink.setProperty("ORG_LINKID", linkID);
+            }
+            downloadLink.setLinkID(orgLinkID + "_" + variant._getUniqueId());
+        }
+    }
+
     public List<GenericVariants> getGenericVariants(DownloadLink downloadLink) {
         final List<String> converts = getConvertToList(downloadLink);
         if (converts != null && converts.size() > 0) {
