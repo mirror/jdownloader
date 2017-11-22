@@ -25,7 +25,7 @@ public class Mangastream extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://mangastream.com/content/privacy";
+        return "https://readms.net/content/privacy";
     }
 
     @Override
@@ -53,7 +53,7 @@ public class Mangastream extends antiDDoSForHost {
             downloadLink.getLinkStatus().setStatusText("Working...");
             downloadLink.getLinkStatus().setStatus(1 << 18);
             // We get every chunk of the image
-            String[][] chunksData = br.getRegex("<div style=\"position:absolute;z-index:\\d+;width:\\d+px;height:\\d+px;top:(\\d+)px;left:(\\d+)px\"><a href=\"/read/.+?\"><img src=\"(http://img.mangastream.com/m/\\d+/\\d+/\\w+.(jpg|png))\" border=\"0\" /></a></div>").getMatches();
+            String[][] chunksData = br.getRegex("<div style=\"position:absolute;z-index:\\d+;width:\\d+px;height:\\d+px;top:(\\d+)px;left:(\\d+)px\"><a href=\"/read/.+?\"><img src=\"(https?://img.mangastream.com/m/\\d+/\\d+/\\w+.(jpg|png))\" border=\"0\" /></a></div>").getMatches();
             for (String[] chunkData : chunksData) {
                 int offsetTop = Integer.parseInt(chunkData[0]);
                 int offsetLeft = Integer.parseInt(chunkData[1]);
