@@ -149,12 +149,24 @@ public class Leech360Com extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             if (USE_API) {
+                dllink = getDllinkAPI(link);
             } else {
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDownloadURL()));
-                dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
+                dllink = getDllinkWebsite(link);
             }
         }
+        return dllink;
+    }
+
+    private String getDllinkAPI(final DownloadLink link) throws IOException, PluginException {
+        this.getAPISafe("https://" + this.getHost() + "/generate?token=" + Encoding.urlEncode(this.currAPIToken) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        String dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
+        return dllink;
+    }
+
+    private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        String dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
         return dllink;
     }
 

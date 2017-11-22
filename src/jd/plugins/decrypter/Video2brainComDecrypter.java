@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,9 +32,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/videotraining/[a-z0-9\\-]+|en/courses/[a-z0-9\\-]+|fr/formation/[a-z0-9\\-]+|es/cursos/[a-z0-9\\-]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/videotraining/[a-z0-9\\-]+|en/courses/[a-z0-9\\-]+|fr/formation/[a-z0-9\\-]+|es/cursos/[a-z0-9\\-]+)" })
 public class Video2brainComDecrypter extends PluginForDecrypt {
-
     public Video2brainComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -71,7 +69,6 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
         final String productid = jd.plugins.hoster.Video2brainCom.getProductID(this.br);
         final String videoid_first_video = jd.plugins.hoster.Video2brainCom.getActiveVideoID(this.br);
         long counter = 1;
-
         if (productid == null) {
             logger.info("productid is null either the content is offline or it has not yet been released!");
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -136,24 +133,20 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                         /* Skip invalid content! */
                         continue;
                     }
-
                     if (!url.startsWith("http")) {
-                        url = "https://video2brain.com/" + url_language + "/" + url;
+                        url = "https://www.video2brain.com/" + url_language + "/" + url;
                     }
                     if (new Regex(url, this.getSupportedLinks()).matches()) {
                         /* Prevent decryption loops */
                         continue;
                     }
-
                     if (title == null) {
                         title = new Regex(url, "([^/]+)$").getMatch(0);
                     }
-
                     if (title == null) {
                         /* Should never happen */
                         continue;
                     }
-
                     title = Encoding.htmlDecode(title.trim());
                     String filename = "video2brain";
                     if (add_position) {
@@ -171,7 +164,6 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                     }
                     filename += "_" + title + ".mp4";
                     filename = encodeUnicode(filename);
-
                     final DownloadLink dl = this.createDownloadlink(url);
                     dl.setName(filename);
                     dl.setAvailable(true);
@@ -181,16 +173,13 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
                 }
             }
         }
-
         /* If everything else fails we can at least add the video of the current page as there usually is one :) */
         if (decryptedLinks.size() == 0 && videoid_first_video != null) {
             decryptedLinks.add(this.createDownloadlink(this.createOldDownloadURL(url_language, videoid_first_video)));
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -198,5 +187,4 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
         final String url = "https://www.video2brain.com/" + url_language + "/videos-" + videoID + ".htm";
         return url;
     }
-
 }
