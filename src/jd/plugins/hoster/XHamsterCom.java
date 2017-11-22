@@ -22,6 +22,9 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,9 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
@@ -480,6 +480,7 @@ public class XHamsterCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("https://xhamster.com/login.php");
                 final Form login = br.getFormbyProperty("name", "loginForm");
+                // samtimes not found loginForm. br.getFormbyAction("/login.php")
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -525,7 +526,7 @@ public class XHamsterCom extends PluginForHost {
                     login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     br.submitForm(login);
                 }
-                if (br.getCookie(MAINPAGE, "PWD") == null) {
+                if (br.getCookie(MAINPAGE, "UID") == null || br.getCookie(MAINPAGE, "_id") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -546,14 +547,14 @@ public class XHamsterCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /*
-         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites
-         * that present captcha to users all the time!
+         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites that
+         * present captcha to users all the time!
          */
         if (account.getCookiesTimeStamp("") != 0 && (System.currentTimeMillis() - 6 * 3480000l <= account.getCookiesTimeStamp(""))) {
             login(account, false);
             // because we have used cached login, we should verify that the cookie is still valid...
             br.getPage(MAINPAGE);
-            if (br.getCookie(MAINPAGE, "PWD") == null) {
+            if (br.getCookie(MAINPAGE, "UID") == null || br.getCookie(MAINPAGE, "_id") == null) {
                 // we should assume cookie is invalid, and perform a full login!
                 br = new Browser();
                 login(account, true);
