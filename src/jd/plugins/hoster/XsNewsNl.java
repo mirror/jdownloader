@@ -119,6 +119,8 @@ public class XsNewsNl extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.xsnews.nl", false, 80, 119));
         ret.addAll(UsenetServer.createServerList("reader.xsnews.nl", true, 563, 443));
+        ret.addAll(UsenetServer.createServerList("readeripv6.xsnews.nl", false, 80, 119));
+        ret.addAll(UsenetServer.createServerList("readeripv6.xsnews.nl", true, 563, 443));
         return ret;
     }
 }
