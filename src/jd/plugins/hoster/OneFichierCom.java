@@ -35,6 +35,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -462,7 +463,7 @@ public class OneFichierCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.setAllowedResponseCodes(503);
+        br.setAllowedResponseCodes(503, 403);
         // API login workaround for slow servers
         for (int i = 1; i <= 3; i++) {
             logger.info("1fichier.com: API login try 1 / " + i);
@@ -479,6 +480,9 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         checkConnection(br);
+        if (br.containsHTML("your IP address is temporarily locked") && br.getRequest().getHttpConnection().getResponseCode() == 403) {
+            throw new AccountUnavailableException("Your IP address is temporarily locked", 60 * 60 * 1000l);
+        }
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         // Use site login/site download if either API is not working or API says that there are no credits available
