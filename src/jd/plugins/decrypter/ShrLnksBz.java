@@ -23,14 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,9 +45,16 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" })
 public class ShrLnksBz extends antiDDoSForDecrypt {
-
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
 
@@ -322,9 +321,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 final Browser temp = br.cloneBrowser();
                 temp.getDownload(file, Captchamap + "&legend=1");
                 temp.getDownload(file, Captchamap);
-                String nexturl = null;
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                nexturl = getNextUrl(cp.getX(), cp.getY());
+                final String nexturl = getNextUrl(cp.getX(), cp.getY());
                 if (nexturl == null) {
                     throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
