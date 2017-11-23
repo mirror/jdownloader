@@ -1390,7 +1390,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                     final String[] replies = getCommentsFromPost(this.br.toString());
                     for (final String html_reply : replies) {
-                        websiteCrawlContent(html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
+                        websiteCrawlContent(null, html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
                     }
                     commentsHtml = this.br.getRegex("<div class=\"reply_text\"(.*?)</a>\\s*?</div>").getColumn(0);
                     if (commentsHtml == null || commentsHtml.length == 0) {
@@ -1490,9 +1490,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 this.postPageSafe("/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&owner_id=%s&type=own&wall_start_from=%s", "", currentOffset, ownerID, counter_wall_start_from));
                 this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             }
-            final String[] htmls = this.br.getRegex("<div class=\"post_content\">.*?reply_fakebox").getColumn(-1);
+            final String[] htmls = this.br.getRegex("<div class=\"post_content\">.*?class=\"post_views_count _count\"").getColumn(-1);
             for (final String html : htmls) {
-                decryptWallPostHtmlWebsite(html);
+                decryptWallPostHtmlWebsite(null, html);
                 /* It is NOT about the added items just the found ones as this is a fail-safe --> Abort if an offset contains 0 elements! */
                 counter_items_found++;
             }
@@ -1515,16 +1515,20 @@ public class VKontakteRu extends PluginForDecrypt {
         final Regex wallRegex = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "wall((?:\\-)?\\d+)_(\\d+)");
         final String ownerID = wallRegex.getMatch(0);
         final String postID = wallRegex.getMatch(1);
-        final String wall_list_id = ownerID + "_" + postID;
-        this.getPageSafe(String.format("https://vk.com/wall%s", wall_list_id));
+        final String wall_post_id = ownerID + "_" + postID;
+        this.getPageSafe(String.format("https://vk.com/wall%s", wall_post_id));
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(wall_list_id);
-        decryptWallPostHtmlWebsite(this.br.toString());
+        fp.setName(wall_post_id);
+        decryptWallPostHtmlWebsite(wall_post_id, this.br.toString());
         logger.info("Found " + decryptedLinks.size() + " links");
     }
 
-    /** Decrypts media of single Website html-post snippets. */
-    private void decryptWallPostHtmlWebsite(String html) throws IOException {
+    /**
+     * Decrypts media of single Website html-post snippets.
+     *
+     * @throws DecrypterException
+     */
+    private void decryptWallPostHtmlWebsite(final String wall_post_id, String html) throws IOException, DecrypterException {
         /* Remove reply (comments) html from post html because we do not yet know whether the user wants to decrypt it or not! */
         final String[] replies = getCommentsFromPost(html);
         for (final String html_reply : replies) {
@@ -1536,45 +1540,43 @@ public class VKontakteRu extends PluginForDecrypt {
             html = html.replace(script_html, "");
         }
         /* Crawl contents inside post itself after having removed comments- contents before ... */
-        websiteCrawlContent(html, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts);
+        websiteCrawlContent(wall_post_id, html, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts);
         /* Crawl content of comments */
         if (this.vkwall_grabcomments) {
             for (final String html_reply : replies) {
-                websiteCrawlContent(html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
+                websiteCrawlContent(wall_post_id, html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
             }
         }
     }
 
     private String[] getCommentsFromPost(final String html) {
-        return new Regex(html, "<div[^<>]*?class=\"reply_content\"[^<>]*?>(.*?)class=\"reply_link_wrap\">").getColumn(0);
+        return new Regex(html, "class=\"reply_wrap _reply_content _post_content clear_fix\".*?class=\"reply_link _reply_lnk\"").getColumn(-1);
     }
 
     /**
      * Crawls desired content from website html code from either a wall POST or COMMENT.
      *
      * @throws IOException
+     * @throws DecrypterException
      */
-    private void websiteCrawlContent(final String html, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText) throws IOException {
-        String post_reply_id = new Regex(html, "\"reply_delete((?:\\-)?\\d+_\\d+)").getMatch(0);
-        String wall_list_id = new Regex(html, "Wall\\.likeIt\\(this, \\'((?:\\-)?\\d+_\\d+)\\'").getMatch(0);
-        if (wall_list_id == null) {
-            wall_list_id = new Regex(html, "Wall\\.viewsUpdate\\(this, \\'((?:\\-)?\\d+_\\d+)\\'").getMatch(0);
+    private void websiteCrawlContent(String wall_post_id, final String html, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText) throws IOException, DecrypterException {
+        /* Do we have a post or a reply? */
+        final boolean is_reply = html.contains("class=\"reply_date\"");
+        final String wall_post_reply_id = new Regex(html, "\"reply_delete((?:\\-)?\\d+_\\d+)").getMatch(0);
+        /* ID of the original wall-post (NOT the reply-ID) */
+        if (wall_post_id == null) {
+            wall_post_id = new Regex(html, "Wall\\.replyClick\\(\\'((?:\\-)?\\d+_\\d+)'").getMatch(0);
         }
-        if (wall_list_id == null) {
-            wall_list_id = new Regex(html, "id=\"wpt((?:\\-)?\\d+_\\d+)\"").getMatch(0);
+        if (wall_post_id == null) {
+            throw new DecrypterException("Decrypter broken");
         }
-        if (wall_list_id == null) {
-            wall_list_id = new Regex(html, "data\\-post\\-id=\"((?:\\-)?\\d+_\\d+)\"").getMatch(0);
+        final String wall_post_content_id = wall_post_id.split("_")[1];
+        String wall_post_reply_content_id = null;
+        if (is_reply) {
+            wall_post_reply_content_id = wall_post_reply_id.split("_")[1];
         }
-        if (post_reply_id == null) {
-            /* Fallback */
-            post_reply_id = wall_list_id;
-        }
-        final String[] wall_ids = wall_list_id.split("_");
-        final String ownerID = wall_ids[0];
-        final String postID = wall_ids[1];
         /* URL to show this post. */
-        final String wall_single_post_url = String.format("https://vk.com/wall%s", wall_list_id);
+        final String wall_single_post_url = String.format("https://vk.com/wall%s", wall_post_id);
         DownloadLink dl = null;
         String ownerIDTemp = null;
         String contentIDTemp = null;
@@ -1589,17 +1591,24 @@ public class VKontakteRu extends PluginForDecrypt {
                 ownerIDTemp = wall_id_info[0];
                 contentIDTemp = wall_id_info[1];
                 /* 2017-11-21: TODO: Fix these urls, improve comments crawling */
-                final String wall_single_photo_content_url = getProtocol() + "vk.com/wall-" + wall_list_id + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + post_reply_id;
+                final String wall_single_photo_content_url;
+                if (is_reply) {
+                    /* Links photo 'directly' */
+                    wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_reply_id;
+                } else {
+                    /* Links the post containing the photo */
+                    wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_reply_id;
+                }
                 dl = getSinglePhotoDownloadLink(wall_id_info[0] + "_" + wall_id_info[1]);
                 /*
                  * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
                  */
                 dl.setContentUrl(wall_single_photo_content_url);
-                dl.setProperty("postID", postID);
+                dl.setProperty("postID", wall_post_content_id);
                 /* TODO */
                 dl.setProperty("albumid", null);
                 dl.setProperty("owner_id", wall_id_info[0]);
-                dl.setProperty("photo_list_id", wall_list_id);
+                dl.setProperty("photo_list_id", wall_post_id);
                 dl.setProperty("photo_module", "wall");
                 decryptedLinks.add(dl);
             }
