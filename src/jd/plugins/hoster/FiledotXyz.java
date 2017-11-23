@@ -16,6 +16,15 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,14 +35,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -93,8 +94,8 @@ public class FiledotXyz extends PluginForHost {
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_HTTPS                     = true;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
