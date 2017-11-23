@@ -52,20 +52,22 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String     unsupported_urls                    = "https://(?:www\\.)?pinterest\\.[A-Za-z]+/(business/create/|android\\-app:/.+|ios\\-app:/.+|categories/.+|resource/.+|explore/.+)";
-    private static final boolean    force_api_usage                     = true;
-    private ArrayList<DownloadLink> decryptedLinks                      = null;
-    private ArrayList<String>       dupeList                            = new ArrayList<String>();
-    private String                  parameter                           = null;
-    private String                  source_url                          = null;
-    private String                  board_id                            = null;
+    private static final String     unsupported_urls                             = "https://(?:www\\.)?pinterest\\.[A-Za-z]+/(business/create/|android\\-app:/.+|ios\\-app:/.+|categories/.+|resource/.+|explore/.+)";
+    private static final boolean    force_api_usage                              = true;
+    private ArrayList<DownloadLink> decryptedLinks                               = null;
+    private ArrayList<String>       dupeList                                     = new ArrayList<String>();
+    private String                  parameter                                    = null;
+    private String                  source_url                                   = null;
+    private String                  board_id                                     = null;
     private String                  linkpart;
-    private FilePackage             fp                                  = null;
-    private boolean                 loggedIN                            = false;
-    private boolean                 enable_description_inside_filenames = jd.plugins.hoster.PinterestCom.defaultENABLE_DESCRIPTION_IN_FILENAMES;
-    private final int               max_entries_per_page_free           = 25;
+    /* Reset this after every function use e.g. crawlSections --> Reset --> crawlBoardPINs */
+    private int                     numberof_pins_decrypted_via_current_function = 0;
+    private FilePackage             fp                                           = null;
+    private boolean                 loggedIN                                     = false;
+    private boolean                 enable_description_inside_filenames          = jd.plugins.hoster.PinterestCom.defaultENABLE_DESCRIPTION_IN_FILENAMES;
+    private static final int        max_entries_per_page_free                    = 25;
 
-    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         decryptedLinks = new ArrayList<DownloadLink>();
@@ -103,23 +105,30 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final String json_source_html = getJsonSourceFromHTML(this.br);
         board_id = getBoardID(json_source_html);
         final LinkedHashMap<String, Object> json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_html);
+        boolean foundTargetSection = false;
         final String section_count = PluginJSonUtils.getJson(json_source_html, "section_count");
         if (section_count != null && Integer.parseInt(section_count) > 0) {
             /* Crawl sections - only available when loggedIN (2017-11-22) */
-            crawlSections(ajax, targetSection);
-        } else {
+            foundTargetSection = this.crawlSections(ajax.cloneBrowser(), targetSection);
+        }
+        /*
+         * Now find all the PINs that are not in any sections (it may happen that we already have everything at this stage!) Only decrypt
+         * these leftover PINs if either the user did not want to have a specified section only or if he wanted to have a specified section
+         * only but it could not be found --> Crawl everything
+         */
+        if (!foundTargetSection) {
             this.crawlBoardPINs(ajax, json_root, json_source_html, param);
         }
         return decryptedLinks;
     }
 
-    private void crawlSections(final Browser ajax, final String targetSectionTitle) throws Exception {
+    private boolean crawlSections(final Browser ajax, final String targetSectionTitle) throws Exception {
         final String username_and_boardname = new Regex(this.parameter, "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
         ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
         LinkedHashMap<String, Object> json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         final ArrayList<Object> sections = (ArrayList) JavaScriptEngineFactory.walkJson(json_root, "resource_response/data");
         boolean foundTargetSection = false;
-        int sectionCounter = 0;
+        int sectionCounter = 1;
         for (final Object sectionO : sections) {
             if (this.isAbort()) {
                 break;
@@ -144,7 +153,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 decryptedLinks.clear();
             }
             int decryptedPinCount = 0;
-            int stepCount = 0;
+            int stepCount = 1;
             String bookmarks = "";
             // final String url_section = "https://www.pinterest.com/" + source_url + section_title + "/";
             ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22section_id%22%3A%22" + section_ID + "%22%2C%22prepend%22%3Afalse%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
@@ -161,7 +170,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 final ArrayList<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(json_root, "resource_response/data");
                 for (final Object pinO : pins) {
                     entries = (LinkedHashMap<String, Object>) pinO;
-                    proccessLinkedHashMap(entries, board_id, source_url);
+                    if (!proccessLinkedHashMap(entries, board_id, source_url)) {
+                        break;
+                    }
                     decryptedPinCount++;
                 }
                 stepCount++;
@@ -183,9 +194,11 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         } else {
             logger.info("Added ALL sections");
         }
+        return foundTargetSection;
     }
 
     private void crawlBoardPINs(final Browser ajax, LinkedHashMap<String, Object> json_root, String json_source_for_crawl_process, final CryptedLink param) throws Exception {
+        numberof_pins_decrypted_via_current_function = 0;
         /* Find- and set PackageName */
         String fpName = br.getRegex("class=\"boardName\">([^<>]*?)<").getMatch(0);
         if (fpName == null) {
@@ -212,10 +225,24 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
-        final long numberof_pins = Long.parseLong(numberof_pins_str.replace(".", ""));
-        if (numberof_pins == 0) {
+        final long number_of_decrypted_pins_in_sections = decryptedLinks.size();
+        long numberof_pins = Long.parseLong(numberof_pins_str.replace(".", ""));
+        if (numberof_pins == 0 && number_of_decrypted_pins_in_sections == 0) {
             decryptedLinks.add(getOffline(parameter));
             return;
+        } else if (numberof_pins == 0 && number_of_decrypted_pins_in_sections > 0) {
+            /* Do not add offline url in this case as we have found some PINs inside sections before */
+            return;
+        }
+        if (number_of_decrypted_pins_in_sections > 0 && numberof_pins > number_of_decrypted_pins_in_sections) {
+            /*
+             * We only get the total count but it may happen that some of these PINs are located inside sections which have already been
+             * crawled before --> Calculate the correct number of remaining PINs
+             */
+            logger.info("Total number of PINs: " + numberof_pins);
+            logger.info("Total number of PINs inside sections: " + number_of_decrypted_pins_in_sections);
+            numberof_pins = numberof_pins - number_of_decrypted_pins_in_sections;
+            logger.info("Total number of PINs outside sections (to be crawled now): " + numberof_pins);
         }
         if (json_source_for_crawl_process == null && force_api_usage) {
             // error handling, this has to be always not null!
@@ -375,12 +402,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             /* Fallback to RegEx */
                             nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
                         }
-                        logger.info("Decrypted " + dupeList.size() + " of " + numberof_pins + " pins");
+                        logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + numberof_pins + " pins");
                     }
                 } finally {
                     i++;
                 }
-            } while (dupeList.size() < numberof_pins);
+            } while (numberof_pins_decrypted_via_current_function < numberof_pins);
         } else {
             decryptSite();
             if (numberof_pins > max_entries_per_page_free) {
@@ -480,6 +507,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         fp.add(dl);
         decryptedLinks.add(dl);
         distribute(dl);
+        numberof_pins_decrypted_via_current_function++;
         return true;
     }
 
@@ -557,6 +585,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 continue;
             }
             dupeList.add(pin_id);
+            numberof_pins_decrypted_via_current_function++;
             String filename = pin_id;
             final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
             final DownloadLink dl = createDownloadlink(content_url);

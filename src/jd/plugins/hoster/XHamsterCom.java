@@ -23,6 +23,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -34,7 +35,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -68,6 +68,7 @@ public class XHamsterCom extends PluginForHost {
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
     private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p" };
+    private boolean               friendsOnly                     = false;
 
     private void setConfigElements() {
         String user_text;
@@ -271,7 +272,8 @@ public class XHamsterCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final boolean isDownload) throws Exception {
         synchronized (ctrlLock) {
-            final String fid = getFID(downloadLink);
+            friendsOnly = false;
+            downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             br.setFollowRedirects(true);
             prepBr();
             // quick fix to force old player
@@ -284,7 +286,8 @@ public class XHamsterCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRequest().getHttpConnection().getResponseCode() == 423) {
                 if (br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
-                    throw new AccountRequiredException("You need to be friends with uploader");
+                    friendsOnly = true;
+                    return AvailableStatus.TRUE;
                 }
                 if (br.containsHTML("Conversion of video processing")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
@@ -328,15 +331,11 @@ public class XHamsterCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             if (downloadLink.getFinalFileName() == null || dllink == null) {
-                filename = getFilename();
+                filename = getFilename(downloadLink);
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
-                    downloadLink.setFinalFileName(filename + "_" + fid);
-                } else {
-                    downloadLink.setFinalFileName(fid + "_" + filename);
-                }
+                downloadLink.setFinalFileName(filename);
                 if (br.containsHTML(HTML_PAID_VIDEO)) {
                     downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
                     return AvailableStatus.TRUE;
@@ -367,16 +366,25 @@ public class XHamsterCom extends PluginForHost {
         return title;
     }
 
-    private String getFilename() throws PluginException, IOException {
+    private String getFilename(final DownloadLink link) throws PluginException, IOException {
+        final String fid = getFID(link);
         String filename = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title.*?>([^<>\"]*?), Free Porn: xHamster</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = getSiteTitle();
+        }
+        if (filename == null) {
+            /* Fallback to URL filename - first try to get nice name from URL. */
+            filename = new Regex(br.getURL(), "/(?:videos|movies)/(.+)\\d+$").getMatch(0);
             if (filename == null) {
-                filename = getSiteTitle();
+                /* Last chance */
+                filename = new Regex(br.getURL(), "https?://[^/]+/(.+)").getMatch(0);
             }
         }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = getDllink();
         String ext;
@@ -386,10 +394,16 @@ public class XHamsterCom extends PluginForHost {
             ext = ".flv";
         }
         if (vq != null) {
-            filename = Encoding.htmlDecode(filename.trim() + "_" + vq + ext);
+            filename = Encoding.htmlDecode(filename.trim() + "_" + vq);
         } else {
-            filename = Encoding.htmlDecode(filename.trim() + ext);
+            filename = Encoding.htmlDecode(filename.trim());
         }
+        if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
+            filename += "_" + fid;
+        } else {
+            filename = fid + "_" + filename;
+        }
+        filename += ext;
         return filename;
     }
 
@@ -401,6 +415,9 @@ public class XHamsterCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception {
+        if (friendsOnly) {
+            throw new AccountRequiredException("You need to be friends with uploader");
+        }
         // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
         String passCode = downloadLink.getStringProperty("pass", null);
         br.getPage(downloadLink.getDownloadURL());
@@ -416,7 +433,7 @@ public class XHamsterCom extends PluginForHost {
                 downloadLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            downloadLink.setFinalFileName(getFilename());
+            downloadLink.setFinalFileName(getFilename(downloadLink));
         } else if (br.containsHTML(HTML_PAID_VIDEO)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
@@ -478,12 +495,11 @@ public class XHamsterCom extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://xhamster.com/login.php");
-                final Form login = br.getFormbyProperty("name", "loginForm");
-                // samtimes not found loginForm. br.getFormbyAction("/login.php")
-                if (login == null) {
+                if (true) {
+                    /* 2017-11-23: Broken at the moment */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                br.getPage("https://de.xhamster.com/login");
                 Browser br = this.br.cloneBrowser();
                 final long now = System.currentTimeMillis();
                 final String xsid;
@@ -495,24 +511,20 @@ public class XHamsterCom extends PluginForHost {
                     engine.eval("res2 = now.toString(16).substring(0,8);");
                     xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
                 }
-                // set in login form and cookie to the correct section
-                login.put("stats", Encoding.urlEncode(xsid));
-                br.setCookie(MAINPAGE, "xsid", xsid);
+                // br.setCookie(MAINPAGE, "xsid", xsid);
                 // now some other fingerprint set via js, again cookie and login form
-                final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
-                br.setCookie(MAINPAGE, "fingerprint", fingerprint);
-                login.put("fingerprint", fingerprint);
-                // set action, website changes action in js!
-                login.setAction("https://xhamster.com/ajax/login.php");
-                login.put("username", Encoding.urlEncode(account.getUser()));
-                login.put("password", Encoding.urlEncode(account.getPass()));
-                login.put("remember", "on");
+                // final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
+                // br.setCookie(MAINPAGE, "fingerprint", fingerprint);
                 // login.put("_", now + "");
-                br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.submitForm(login);
-                // Account is fine but we need a stupid login captcha
+                String postData = "[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"<TODO_FIXME>\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"true\"}}]";
+                br.postPageRaw("/x-api", postData);
+                // 2017-11-23: TODO: Check/fix captcha login
                 if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
+                    final Form login = br.getFormbyProperty("name", "loginForm");
+                    // samtimes not found loginForm. br.getFormbyAction("/login.php")
+                    if (login == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     // they use recaptchav2 now.
                     if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
@@ -547,8 +559,8 @@ public class XHamsterCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /*
-         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites that
-         * present captcha to users all the time!
+         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites
+         * that present captcha to users all the time!
          */
         if (account.getCookiesTimeStamp("") != 0 && (System.currentTimeMillis() - 6 * 3480000l <= account.getCookiesTimeStamp(""))) {
             login(account, false);
