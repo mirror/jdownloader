@@ -18,7 +18,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "retro.sx" }, urls = { "https?://(?:www\\.)?retro\\.sx/music/\\d+" })
 public class RetroSx extends PluginForDecrypt {
-
     public RetroSx(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -29,7 +28,7 @@ public class RetroSx extends PluginForDecrypt {
         br.getPage(parameter.toString());
         final String id = new Regex(parameter.toString(), ".+/(\\d+)").getMatch(0);
         final String title = Encoding.htmlDecode(br.getRegex("meta\\s*property='og:title'\\s*content='(.*?)'").getMatch(0));
-        final String all_data[][] = br.getRegex("<tr\\s*data-rttid='(\\d+)'\\s*>.*?class='ttDuration'\\s*title='([0-9\\.]+MB)'.*?class='ttName'\\s*title='(.*?)'").getMatches();
+        final String all_data[][] = br.getRegex("<tr[^~]*?data-rttid='(\\d+)'[^~]*?class='ttDuration'\\s*title='([0-9\\.]+MB)'[^~]*?class='ttName'\\s*title='(.*?)'").getMatches();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         int index = 1;
@@ -56,5 +55,4 @@ public class RetroSx extends PluginForDecrypt {
             throw new WTFException();
         }
     }
-
 }
