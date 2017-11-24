@@ -111,7 +111,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              contentID                                       = null;
     private String              mainlink                                        = null;
     private static final String ALPHANUMERIC                                    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
-    private String              vkID                                            = "0";
+    private String              vkID                                            = null;
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -256,6 +256,9 @@ public class VKontakteRuHoster extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(getBaseURL() + "/");
             vkID = br.getRegex("\\(\\{\"id\":(\\d+),").getMatch(0);
+            if (vkID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
                 String finalFilename = link.getFinalFileName();
                 if (finalFilename == null) {
