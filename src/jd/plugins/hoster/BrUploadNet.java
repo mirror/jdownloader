@@ -13,14 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -60,9 +53,13 @@ import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 2, names = { "brupload.net" }, urls = { "https?://(www\\.)?brupload\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 public class BrUploadNet extends PluginForHost {
-
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -85,7 +82,7 @@ public class BrUploadNet extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
+    private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
@@ -107,7 +104,6 @@ public class BrUploadNet extends PluginForHost {
     // protocol: http https
     // captchatype: solvemedia
     // other:
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing */
@@ -492,14 +488,11 @@ public class BrUploadNet extends PluginForHost {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -531,26 +524,21 @@ public class BrUploadNet extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -598,7 +586,7 @@ public class BrUploadNet extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, "id=\"countdown[^~]*?class=\"[^<>\"]+\">(?:[\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             wait -= passedTime;
@@ -881,12 +869,10 @@ public class BrUploadNet extends PluginForHost {
         }
         final String space[] = new Regex(correctedBR, "span>\\s*Used space\\:\\s*([\\d\\.]+)\\s*of\\s*([\\d\\.]+)\\s+(\\w+)\\s*</div>").getRow(0);
         if (space != null) {
-
             ai.setUsedSpace(space[0] + " " + space[2]);
         }
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "glyphicon glyphicon-signal\"></span>.*?(\\d+ \\w+)\\s*</div>").getMatch(0);
-
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -898,7 +884,6 @@ public class BrUploadNet extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-
         /* If the premium account is expired we'll simply accept it as a free account. */
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         long expire_milliseconds = 0;
@@ -1003,7 +988,6 @@ public class BrUploadNet extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
                 if (br.containsHTML("Limite de download excedido")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic Limit Reached (~50 GB daily)", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-
                 }
                 dllink = getDllink();
                 if (dllink == null) {
@@ -1054,5 +1038,4 @@ public class BrUploadNet extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
