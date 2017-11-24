@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -48,9 +47,8 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}" })
 public class Publish2Me extends K2SApi {
-
     private final String MAINPAGE = "http://publish2.me";
 
     public Publish2Me(PluginWrapper wrapper) {
@@ -71,7 +69,6 @@ public class Publish2Me extends K2SApi {
     }
 
     /* K2SApi setters */
-
     /**
      * sets domain the API will use!
      */
@@ -87,7 +84,7 @@ public class Publish2Me extends K2SApi {
 
     @Override
     protected String getFUID(final DownloadLink downloadLink) {
-        return new Regex(downloadLink.getDownloadURL(), "/([a-z0-9]+)/$").getMatch(0);
+        return new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]+)").getMatch(0);
     }
 
     /**
@@ -122,13 +119,16 @@ public class Publish2Me extends K2SApi {
     }
 
     /* end of K2SApi stuff */
-
     private void setConfigElements() {
         final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled());
         getConfig().addEntry(cfgapi);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode!)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
+    }
+
+    public String getFUID(final String link) {
+        return new Regex(link, "/file/([a-z0-9]+)$").getMatch(0);
     }
 
     @Override
@@ -454,7 +454,7 @@ public class Publish2Me extends K2SApi {
         String dllink = br.getRegex("(\"|')(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
         if (dllink != null) {
             getPage(dllink);
-            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"url\":\"(https?[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRedirectLocation();
             }
@@ -499,5 +499,4 @@ public class Publish2Me extends K2SApi {
         }
         return false;
     }
-
 }
