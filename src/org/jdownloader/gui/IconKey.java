@@ -73,6 +73,7 @@ public class IconKey {
     public static final String ICON_POPDOWNLARGE                = "popDownLarge";
     public static final String ICON_HEART                       = "heart";
     public static final String ICON_XMAS_GIFT                   = "xmas-gift";
+    public static final String ICON_BLACK_FRIDAY                = "black-friday";
     public static final String ICON_CHAMPAGNE                   = "champagne";
     public static final String ICON_OCR                         = "ocr";
     public static final String ICON_SORT                        = "sort";

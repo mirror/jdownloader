@@ -11,7 +11,6 @@ import org.jdownloader.images.AbstractIcon;
 
 public enum DONATE_EVENT {
     NEWYEARSEVE(IconKey.ICON_CHAMPAGNE) {
-
         @Override
         public boolean isNow() {
             // last day of the year and first day of the year
@@ -39,7 +38,6 @@ public enum DONATE_EVENT {
                 return name() + "." + year + "-" + (year + 1);
             }
         }
-
     },
     XMAS(IconKey.ICON_XMAS_GIFT) {
         @Override
@@ -50,6 +48,22 @@ public enum DONATE_EVENT {
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             if (month == 11 && day >= 20 && day <= 26) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    },
+    BLACK_FRIDAY(IconKey.ICON_BLACK_FRIDAY) {
+        @Override
+        public boolean isNow() {
+            // Black Friday, 24.12.2017
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(timeStamp);
+            final int day = calendar.get(Calendar.DAY_OF_MONTH);
+            final int month = calendar.get(Calendar.MONTH);
+            final int year = calendar.get(Calendar.YEAR);
+            if (month == 10 && day == 24 && year == 2017) {
                 return true;
             } else {
                 return false;
@@ -68,7 +82,6 @@ public enum DONATE_EVENT {
         }
     };
     private static final long timeStamp = System.currentTimeMillis();
-
     private final String      iconKey;
 
     private DONATE_EVENT(final String iconKey) {
