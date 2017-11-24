@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -31,7 +30,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvi.iol.pt", "tvi24.iol.pt", "tviplayer.iol.pt" }, urls = { "http://(?:www\\.)?tvi\\.iol\\.pt/mediacenter\\.html\\?(load=\\d+\\&gal_id=\\d+|mul_id=\\d+\\&load=\\d+&pagina=\\d+\\&pos=\\d+)", "http://(?:www\\.)?tvi24\\.iol\\.pt/videos/[^/]+/[^/]+/[^/]+", "http://(?:www\\.)?tviplayer\\.iol\\.pt/programa/[^/]+/[^/]+/video/[^/]+" })
 public class TviIolPt extends PluginForHost {
-
     private String clipUrl              = null;
     private String clipNetConnectionUrl = null;
 
@@ -89,12 +87,15 @@ public class TviIolPt extends PluginForHost {
             }
             ext = ".flv";
         } else {
-            filename = this.br.getRegex("title: \\'([^<>\"]*?)\\',").getMatch(0);
+            filename = br.getRegex("og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>\\s*([^<>\"]*?)( > TVI24)?\\s*</title>").getMatch(0);
+            }
             if (downloadLink.getDownloadURL().matches(type_2)) {
                 /* type_2 */
                 if (filename == null) {
                     /* Fallback to url-filename */
-                    filename = new Regex(downloadLink.getDownloadURL(), "tvi24\\.iol\\.pt/[^/]+/([^/]+)").getMatch(0);
+                    filename = new Regex(downloadLink.getDownloadURL(), "tvi24\\.iol\\.pt/[^/]+/[^/]+/([^/]+)").getMatch(0);
                 }
             } else {
                 /* type_3 */
@@ -123,17 +124,14 @@ public class TviIolPt extends PluginForHost {
             /* rtmp download */
             final String swfUrl = "http://www.tvi.iol.pt/flashplayers/player-52.swf";
             final String dllink = clipNetConnectionUrl + "/" + clipUrl;
-
             if (dllink.startsWith("rtmp")) {
                 dl = new RTMPDownload(this, downloadLink, dllink);
                 final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
                 rtmp.setPlayPath(clipUrl);
                 rtmp.setSwfVfy(swfUrl);
                 rtmp.setUrl(clipNetConnectionUrl);
                 rtmp.setTimeOut(-1);
                 rtmp.setResume(true);
-
                 ((RTMPDownload) dl).startDownload();
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
