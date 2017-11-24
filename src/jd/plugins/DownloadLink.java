@@ -1080,7 +1080,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -2338,7 +2338,24 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             if (existingVariant != null && !variant._getUniqueId().equals(existingVariant._getUniqueId())) {
                 getTempProperties().setProperty("VARIANT", null);
             }
-            getDefaultPlugin().setLinkID(this, variant);
+            final PluginForHost plugin = getDefaultPlugin();
+            if (plugin != null) {
+                plugin.setLinkID(this, variant);
+            } else {
+                final boolean isOriginal = variant == null || GenericVariants.ORIGINAL.equals(variant);
+                final String orgLinkID = getStringProperty("ORG_LINKID");
+                if (isOriginal) {
+                    if (orgLinkID != null) {
+                        setLinkID(orgLinkID);
+                    }
+                } else {
+                    if (orgLinkID == null) {
+                        final String linkID = getLinkID();
+                        setProperty("ORG_LINKID", linkID);
+                    }
+                    setLinkID(orgLinkID + "_" + variant._getUniqueId());
+                }
+            }
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANT, variant));
             }
