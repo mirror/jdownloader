@@ -43,7 +43,7 @@ public class UnknownPornScript9 extends PluginForHost {
     /* Similar sites but they use a different 'player_config' URL: drtuber.com, viptube.com */
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static int           free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
@@ -131,6 +131,9 @@ public class UnknownPornScript9 extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (downloadLink.getDownloadURL().contains("viptube")) {
+            free_maxchunks = 1; // https://svn.jdownloader.org/issues/84735
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
