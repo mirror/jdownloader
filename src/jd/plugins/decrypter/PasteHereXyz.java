@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -57,6 +58,13 @@ public class PasteHereXyz extends PluginForDecrypt {
         }
         if (br.containsHTML("Password protected")) {
             while (!isAbort()) {
+                Form form = br.getFormbyAction("/" + id);
+                if (form == null) {
+                    form = br.getFormbyAction("/" + id + "/");
+                }
+                if (form == null) {
+                    throw new DecrypterException("Decrypter broken for link: " + parameter);
+                }
                 final List<String> passwords = getPreSetPasswords();
                 final String passCode;
                 if (passwords.size() > 0) {
@@ -64,7 +72,6 @@ public class PasteHereXyz extends PluginForDecrypt {
                 } else {
                     passCode = Plugin.getUserInput(null, param);
                 }
-                final Form form = br.getFormbyAction("/" + id);
                 form.put("mypass", Encoding.urlEncode(passCode));
                 br.submitForm(form);
                 if (br.containsHTML("Password is Wrong")) {
