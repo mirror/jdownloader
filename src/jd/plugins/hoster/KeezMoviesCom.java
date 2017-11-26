@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.URL;
@@ -24,8 +23,6 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
@@ -43,9 +40,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" })
-public class KeezMoviesCom extends antiDDoSForHost {
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "https?://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" })
+public class KeezMoviesCom extends antiDDoSForHost {
     private String dllink         = null;
     private String FLASHVARS      = null;
     private String FLASHVARS_JSON = null;
@@ -105,7 +103,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
                 }
             }
         }
-        if (downloadLink.getDownloadURL().matches("(?i-)http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
+        if (downloadLink.getDownloadURL().matches("(?i-)https?://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
             // Set cookie so we can watch all videos ;)
             br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
             getPage(downloadLink.getDownloadURL());
@@ -157,12 +155,10 @@ public class KeezMoviesCom extends antiDDoSForHost {
             } else {
                 dllink = getValue("video_url");
             }
-
             /* All failed? Try to get html5 videourl. */
             if (dllink == null) {
                 dllink = br.getRegex("src=\"(http[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
             }
-
             if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -213,7 +209,6 @@ public class KeezMoviesCom extends antiDDoSForHost {
          * CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset!
          */
         byte[] k = Arrays.copyOf(key.getBytes(), nBits);
-
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         SecretKey secretKey = generateSecretKey(k, nBits);
         byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
@@ -351,5 +346,4 @@ public class KeezMoviesCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
