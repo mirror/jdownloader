@@ -22,10 +22,6 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +44,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
@@ -293,7 +293,7 @@ public class XHamsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (br.getRequest().getHttpConnection().getResponseCode() == (410 | 452)) {
+            } else if (br.getRequest().getHttpConnection().getResponseCode() == 410 || br.getRequest().getHttpConnection().getResponseCode() == 452) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // embeded correction --> Usually not needed
