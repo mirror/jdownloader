@@ -63,21 +63,22 @@ public class DupeManager {
                     }
                 }
                 return false;
-            }
-            final List<DownloadLink> lst = (List<DownloadLink>) item;
-            boolean invalidate = false;
-            for (final DownloadLink link : lst) {
-                if (StringUtils.equals(link.getLinkID(), linkID)) {
-                    final FilePackage p = link.getParentNode();
-                    if (p != null && p.getControlledBy() != null) {
-                        return true;
-                    } else {
-                        invalidate = true;
+            } else if (item instanceof List && item != null) {
+                final List<DownloadLink> lst = (List<DownloadLink>) item;
+                boolean invalidate = false;
+                for (final DownloadLink link : lst) {
+                    if (StringUtils.equals(link.getLinkID(), linkID)) {
+                        final FilePackage p = link.getParentNode();
+                        if (p != null && p.getControlledBy() != null) {
+                            return true;
+                        } else {
+                            invalidate = true;
+                        }
                     }
                 }
-            }
-            if (invalidate) {
-                invalidate();
+                if (invalidate) {
+                    invalidate();
+                }
             }
         }
         return false;
