@@ -21,11 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,9 +39,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
 public class UploadgigCom extends antiDDoSForHost {
-
     @Override
     protected boolean useRUA() {
         return true;
@@ -189,6 +188,9 @@ public class UploadgigCom extends antiDDoSForHost {
             // they use javascript to determine finallink...
             getDllink(br2);
         }
+        if (dl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -221,7 +223,7 @@ public class UploadgigCom extends antiDDoSForHost {
                     }
                 }
                 href = href.replace("'", "").replace("+", "");
-                if (dupe.add(href) && testLink(href)) {
+                if (dupe.add(href) && testLink(href, true)) {
                     return true;
                 }
             }
@@ -231,7 +233,7 @@ public class UploadgigCom extends antiDDoSForHost {
         final String js = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+\\+?'\">Download now</a>'\\);").getMatch(0);
         if (js != null) {
             String dllink = PluginJSonUtils.getJsonValue(br, js);
-            if (dupe.add(dllink) && testLink(dllink)) {
+            if (dupe.add(dllink) && testLink(dllink, true)) {
                 return true;
             }
         }
@@ -241,7 +243,7 @@ public class UploadgigCom extends antiDDoSForHost {
             final List<String> list = Arrays.asList(jokesonyou);
             Collections.shuffle(list);
             for (final String link : list) {
-                if (dupe.add(link) && testLink(link)) {
+                if (dupe.add(link) && testLink(link, true)) {
                     return true;
                 }
             }
@@ -249,7 +251,7 @@ public class UploadgigCom extends antiDDoSForHost {
         return false;
     }
 
-    private boolean testLink(String dllink) throws Exception {
+    private boolean testLink(String dllink, boolean throwException) throws Exception {
         try {
             final Browser br2 = this.br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(br2, this.getDownloadLink(), dllink, resumes, chunks);
@@ -266,10 +268,13 @@ public class UploadgigCom extends antiDDoSForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable ee) {
             }
-            if (e instanceof PluginException) {
+            if (throwException) {
                 throw e;
+            } else if (e instanceof PluginException) {
+                throw e;
+            } else {
+                return false;
             }
-            return false;
         }
     }
 
@@ -280,7 +285,7 @@ public class UploadgigCom extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) throws Exception {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            if (!testLink(dllink)) {
+            if (!testLink(dllink, false)) {
                 downloadLink.setProperty(property, Property.NULL);
                 return null;
             }
@@ -418,7 +423,10 @@ public class UploadgigCom extends antiDDoSForHost {
                 if (dllink == null) {
                     dllink = link.getDownloadURL();
                 }
-                testLink(dllink);
+                testLink(dllink, true);
+            }
+            if (dl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
