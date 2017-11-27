@@ -33,7 +33,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
  * - related to keezmovies, same group of sites. Tells: incapsula and phncdn.com CDN -raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mofosex.com" }, urls = { "https?://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" })
 public class MofoSexCom extends antiDDoSForHost {
     private String DLLINK = null;
 
@@ -51,7 +51,7 @@ public class MofoSexCom extends antiDDoSForHost {
         return -1;
     }
 
-    private static final String TYPE_EMBED = "http://(www\\.)?mofosex\\.com/(embed\\?videoid=|embed_player\\.php\\?id=)\\d+";
+    private static final String TYPE_EMBED = "https?://(www\\.)?mofosex\\.com/(embed\\?videoid=|embed_player\\.php\\?id=)\\d+";
 
     @SuppressWarnings("deprecation")
     @Override
