@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keezmovies.com" }, urls = { "https?://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" })
 public class KeezMoviesComDecrypter extends PornEmbedParser {
-
     public KeezMoviesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,5 +61,4 @@ public class KeezMoviesComDecrypter extends PornEmbedParser {
         decryptedLinks.add(decryptedMainlink);
         return decryptedLinks;
     }
-
 }

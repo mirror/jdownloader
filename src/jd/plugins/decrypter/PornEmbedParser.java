@@ -3,8 +3,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -15,8 +13,9 @@ import jd.plugins.Plugin;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
 
-public abstract class PornEmbedParser extends antiDDoSForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     public PornEmbedParser(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -108,10 +107,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
      */
     public final ArrayList<DownloadLink> findEmbedUrls(final Browser br, String title, final boolean processAll) throws Exception {
         final DecrypterArrayList<DownloadLink> decryptedLinks = new DecrypterArrayList<DownloadLink>() {
-
             /**
-            *
-            */
+             *
+             */
             private static final long serialVersionUID = 4665325651021721965L;
 
             @Override
@@ -124,7 +122,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 final String url = Request.getLocation(link, br.getRequest());
                 return add(createDownloadlink(url));
             }
-
         };
         // use plugin regex where possible... this means less maintaince required.
         Plugin plugin = null;
@@ -396,6 +393,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // mofo 1
         externID = br.getRegex("((?:https?:)?//(www\\.)?mofosex\\.com/(embed_player\\.php\\?id=|embed\\?videoid=)\\d+)").getMatch(0);
         if (externID != null) {
+            if (!externID.startsWith("http")) {
+                externID = "https:" + externID;
+            }
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             if (!processAll) {
@@ -836,7 +836,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
