@@ -3,6 +3,9 @@ package org.jdownloader.controlling.lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
@@ -31,7 +34,6 @@ public class DupeManager {
                 public void delayedrun() {
                     refreshMap();
                 }
-
             };
         } else {
             updateDelayer = null;
@@ -54,7 +56,6 @@ public class DupeManager {
             if (lst == null || lst.size() == 0) {
                 return false;
             }
-
             List<DownloadLink> toRemove = null;
             try {
                 for (final DownloadLink link : lst) {
@@ -72,26 +73,24 @@ public class DupeManager {
             } finally {
                 if (toRemove != null) {
                     lst.removeAll(toRemove);
-                    if (lst.size() == 0) {
-                        lMap.remove(linkID);
-                    }
                 }
             }
         }
         return false;
     }
 
-    private HashMap<String, List<DownloadLink>> refreshMap() {
+    private Map<String, List<DownloadLink>> refreshMap() {
         if (enabled) {
             final HashMap<String, List<DownloadLink>> map = new HashMap<String, List<DownloadLink>>();
             for (final FilePackage fpkg : DownloadController.getInstance().getPackagesCopy()) {
                 final boolean readL2 = fpkg.getModifyLock().readLock();
                 try {
                     for (final DownloadLink link : fpkg.getChildren()) {
-                        List<DownloadLink> lst = map.get(link.getLinkID());
+                        final String linkID = link.getLinkID();
+                        List<DownloadLink> lst = map.get(linkID);
                         if (lst == null) {
                             lst = new ArrayList<DownloadLink>();
-                            map.put(link.getLinkID(), lst);
+                            map.put(linkID, lst);
                         }
                         lst.add(link);
                     }
@@ -99,12 +98,15 @@ public class DupeManager {
                     fpkg.getModifyLock().readUnlock(readL2);
                 }
             }
-            this.map = map;
-            return map;
+            final HashMap<String, List<DownloadLink>> cowMap = new HashMap<String, List<DownloadLink>>();
+            for (Entry<String, List<DownloadLink>> entry : map.entrySet()) {
+                cowMap.put(entry.getKey(), new CopyOnWriteArrayList<DownloadLink>(entry.getValue()));
+            }
+            this.map = cowMap;
+            return cowMap;
         } else {
             this.map = null;
             return null;
         }
     }
-
 }
