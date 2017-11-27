@@ -39,6 +39,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -49,6 +51,11 @@ public class DropBoxCom extends PluginForDecrypt {
 
     public DropBoxCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return DropBoxConfig.class;
     }
 
     private static final String TYPE_NORMAL     = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
@@ -173,6 +180,9 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             currentPackage = FilePackage.getInstance();
             currentPackage.setName(Encoding.htmlDecode(fpName.trim()));
+            if (StringUtils.isEmpty(subFolder) && PluginJsonConfig.get(DropBoxConfig.class).isIncludeRootSubfolder()) {
+                subFolder = Encoding.htmlDecode(fpName.trim());
+            }
         }
         /*
          * 2017-01-27: This does not work anymore - also their .zip downloads often fail so rather not do this!Decrypt "Download as zip"
