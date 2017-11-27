@@ -6,13 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class DupeManager {
     private volatile Map<String, Object> map = null;
@@ -52,7 +52,9 @@ public class DupeManager {
                 return false;
             }
             final Object item = lMap.get(linkID);
-            if (item instanceof DownloadLink) {
+            if (item == null) {
+                return false;
+            } else if (item instanceof DownloadLink) {
                 final DownloadLink link = (DownloadLink) item;
                 if (StringUtils.equals(link.getLinkID(), linkID)) {
                     final FilePackage p = link.getParentNode();
