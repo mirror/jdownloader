@@ -26,6 +26,8 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -45,7 +47,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
-
     /**
      *
      */
@@ -61,7 +62,6 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
         warningEnabled.set(CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled());
         CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 warningEnabled.set(Boolean.TRUE.equals(newValue));
@@ -72,10 +72,8 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
             }
         });
         warningIcon = NewTheme.I().getIcon(IconKey.ICON_WARNING, 16);
-
         speedLimiterEnabled.set(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
 
@@ -89,13 +87,26 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         } else {
             maxSizeUnit = SIZEUNIT.MB;
         }
+        this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+            @Override
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
+                final long s1 = getSpeed(o1);
+                final long s2 = getSpeed(o2);
+                if (s1 == s2) {
+                    return 0;
+                } else if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                    return s1 > s2 ? -1 : 1;
+                } else {
+                    return s1 < s2 ? -1 : 1;
+                }
+            }
+        });
     }
 
     public JPopupMenu createHeaderPopup() {
         final JPopupMenu ret = new JPopupMenu();
         LockColumnWidthAction action;
         ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(this)));
-
         ret.add(new JCheckBoxMenuItem(new AppAction() {
             {
                 setName(_GUI.T.literall_premium_alert());
@@ -197,8 +208,19 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
                 e1.printStackTrace();
             }
         }
-
         return false;
+    }
+
+    protected long getSpeed(AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            final PluginProgress pluginProgress = ((DownloadLink) value).getPluginProgress();
+            if (pluginProgress instanceof DownloadPluginProgress) {
+                return ((DownloadPluginProgress) pluginProgress).getSpeed();
+            }
+        } else if (value instanceof FilePackage) {
+            return DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage((FilePackage) value);
+        }
+        return -1;
     }
 
     @Override
