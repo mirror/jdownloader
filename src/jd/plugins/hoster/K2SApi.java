@@ -699,6 +699,7 @@ public abstract class K2SApi extends PluginForHost {
                     // lets retry
                     // The arg contains auth_key, we need to update the original request with new auth_token
                     if (arg.contains("\"auth_token\"")) {
+                        logger.info("retry with new auth_token");
                         final String r = arg.replace(PluginJSonUtils.getJsonValue(arg, "auth_token"), getAuthToken(account));
                         // re-enter using new auth_token
                         postPageRaw(ibr, url, r, account);
@@ -789,6 +790,7 @@ public abstract class K2SApi extends PluginForHost {
                         logger.warning("problem in the old carel");
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     } else {
+                        logger.info("new auth_token");
                         account.setProperty(AUTHTOKEN, currentAuthToken);
                     }
                 }
