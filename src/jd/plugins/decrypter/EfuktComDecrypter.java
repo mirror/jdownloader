@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "https?://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktComDecrypter extends antiDDoSForDecrypt {
@@ -39,6 +39,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        setBrowserExclusive();
         br.setFollowRedirects(false);
         getPage(parameter);
         String redirect = br.getRedirectLocation();
@@ -50,6 +51,14 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             return decryptedLinks;
         } else if (redirect != null) {
             getPage(redirect);
+            redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(http[^<>\"]*?)\\';").getMatch(0);
+            }
+            if (redirect != null && !redirect.contains("efukt.com/")) {
+                decryptedLinks.add(createDownloadlink(redirect));
+                return decryptedLinks;
+            }
             br.followRedirect(true);
         }
         final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
