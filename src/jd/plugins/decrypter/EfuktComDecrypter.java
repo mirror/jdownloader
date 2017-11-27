@@ -34,8 +34,6 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private static final String type_redirect = "http://(www\\.)?efukt\\.com/out\\.php\\?id=\\d+";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -44,7 +42,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
         getPage(parameter);
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
-            redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(http[^<>\"]*?)\\';").getMatch(0);
+            redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(https?[^<>\"]*?)\\';").getMatch(0);
         }
         if (redirect != null && !redirect.contains("efukt.com/")) {
             decryptedLinks.add(createDownloadlink(redirect));
@@ -53,7 +51,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             getPage(redirect);
             redirect = br.getRedirectLocation();
             if (redirect == null) {
-                redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(http[^<>\"]*?)\\';").getMatch(0);
+                redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(https?[^<>\"]*?)\\';").getMatch(0);
             }
             if (redirect != null && !redirect.contains("efukt.com/")) {
                 decryptedLinks.add(createDownloadlink(redirect));
@@ -62,7 +60,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             br.followRedirect(true);
         }
         final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
-        if (br.getURL().equals("http://efukt.com/")) {
+        if (br.getURL().equals("http://efukt.com/") || br.getURL().equals("https://efukt.com/")) {
             main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);
