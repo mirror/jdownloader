@@ -13,15 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.Locale;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 /**
  *
  * @author raztoki
@@ -47,7 +46,6 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" })
 public class FileBoomMe extends K2SApi {
-
     private final String MAINPAGE = "http://fboom.me";
 
     public FileBoomMe(PluginWrapper wrapper) {
@@ -98,7 +96,6 @@ public class FileBoomMe extends K2SApi {
     }
 
     /* K2SApi setters */
-
     /**
      * sets domain the API will use!
      */
@@ -144,7 +141,6 @@ public class FileBoomMe extends K2SApi {
     }
 
     /* end of K2SApi stuff */
-
     private void setConfigElements() {
         final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled());
         getConfig().addEntry(cfgapi);
@@ -354,12 +350,13 @@ public class FileBoomMe extends K2SApi {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (ACCLOCK) {
+            final String cookieHost = MAINPAGE;
             try {
                 boolean login = true;
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* 2017-04-25: Always check cookies here */
-                    br.setCookies(this.getHost(), cookies);
+                    br.setCookies(cookieHost, cookies);
                     getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()));
                     if (br.containsHTML("/auth/logout")) {
                         login = false;
@@ -385,9 +382,11 @@ public class FileBoomMe extends K2SApi {
                         }
                     }
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(cookieHost), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -564,5 +563,4 @@ public class FileBoomMe extends K2SApi {
         }
         return false;
     }
-
 }
