@@ -63,7 +63,7 @@ public class DupeManager {
                     }
                 }
                 return false;
-            } else if (item instanceof List && item != null) {
+            } else {
                 final List<DownloadLink> lst = (List<DownloadLink>) item;
                 boolean invalidate = false;
                 for (final DownloadLink link : lst) {
@@ -84,7 +84,7 @@ public class DupeManager {
         return false;
     }
 
-    private Map<String, Object> refreshMap() {
+    private void refreshMap() {
         if (enabled) {
             final HashMap<String, ArrayList<DownloadLink>> map = new HashMap<String, ArrayList<DownloadLink>>();
             for (final FilePackage fpkg : DownloadController.getInstance().getPackagesCopy()) {
@@ -112,11 +112,13 @@ public class DupeManager {
                     cowMap.put(entry.getKey(), entry.getValue());
                 }
             }
-            this.map = cowMap;
-            return cowMap;
+            if (cowMap.size() > 0) {
+                this.map = cowMap;
+            } else {
+                this.map = null;
+            }
         } else {
             this.map = null;
-            return null;
         }
     }
 }
