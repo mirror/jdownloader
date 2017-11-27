@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.awt.Dialog.ModalityType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -46,9 +47,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" })
 public class DropBoxCom extends PluginForDecrypt {
-    private boolean     pluginloaded;
-    private FilePackage currentPackage;
-
     public DropBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -101,12 +99,13 @@ public class DropBoxCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptLink(String link) throws Exception {
         final String crawl_subfolder_string = new Regex(link, "(\\&crawl_subfolders=(?:true|false))").getMatch(0);
-        currentPackage = null;
+        final AtomicReference<FilePackage> currentPackage = new AtomicReference<FilePackage>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
-                if (currentPackage != null) {
-                    currentPackage.add(e);
+                final FilePackage fp = currentPackage.get();
+                if (fp != null) {
+                    fp.add(e);
                 }
                 distribute(e);
                 return super.add(e);
@@ -178,8 +177,9 @@ public class DropBoxCom extends PluginForDecrypt {
             if (fpName.contains("\\")) {
                 fpName = Encoding.unicodeDecode(fpName);
             }
-            currentPackage = FilePackage.getInstance();
-            currentPackage.setName(Encoding.htmlDecode(fpName.trim()));
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            currentPackage.set(fp);
             if (StringUtils.isEmpty(subFolder) && PluginJsonConfig.get(DropBoxConfig.class).isIncludeRootSubfolder()) {
                 subFolder = Encoding.htmlDecode(fpName.trim());
             }
