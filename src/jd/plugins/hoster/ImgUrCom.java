@@ -517,7 +517,8 @@ public class ImgUrCom extends PluginForHost {
         if (title != null) {
             formattedFilename = formattedFilename.replace("*title*", title);
         }
-        return formattedFilename;
+        formattedFilename = formattedFilename.replace("- - -_", "").trim();
+        return formattedFilename.trim();
     }
 
     /** Returns either the original server filename or one that is very similar to the original */
