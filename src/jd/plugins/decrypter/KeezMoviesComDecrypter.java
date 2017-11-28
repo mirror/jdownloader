@@ -38,7 +38,7 @@ public class KeezMoviesComDecrypter extends PornEmbedParser {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("/embed/", "/video/");
+        final String parameter = param.toString().replace("/embed/", "/video/").replace("http:", "https:");
         final DownloadLink decryptedMainlink = createDownloadlink(parameter.replace("keezmovies.com/", "keezmoviesdecrypted.com/"));
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
