@@ -16,7 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.script.ScriptEngine;
@@ -45,6 +47,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -67,7 +72,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String   DOMAIN_CURRENT                  = "xhamster.com";
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
-    private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p" };
+    private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p" };
     private boolean               friendsOnly                     = false;
 
     private void setConfigElements() {
@@ -137,61 +142,90 @@ public class XHamsterCom extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     public String getDllink() throws IOException, PluginException {
-        String dllink = null;
         final SubConfiguration cfg = getPluginConfig();
         final int selected_format = cfg.getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
-        boolean q240 = false;
-        boolean q480 = false;
-        boolean q720 = false;
+        final List<String> qualities = new ArrayList<String>();
         switch (selected_format) {
-        case 0:
-            q720 = true;
-            q480 = true;
-            break;
         case 1:
-            q240 = true;
+            qualities.add("240p");
             break;
         case 2:
-            q480 = true;
+            qualities.add("480p");
             break;
         case 3:
-            q720 = true;
+            qualities.add("720p");
+            break;
+        case 4:
+            qualities.add("960p");
+            break;
+        case 5:
+            qualities.add("1080p");
+            break;
+        case 6:
+            qualities.add("1440p");
             break;
         default:
-            q720 = true;
-            q480 = true;
+            qualities.add("1440p");
+            qualities.add("1080p");
+            qualities.add("960p");
+            qualities.add("720p");
+            qualities.add("480p");
+            qualities.add("240p");
             break;
         }
-        final LinkedHashMap<String, Boolean> fq = new LinkedHashMap<String, Boolean>();
-        fq.put("720p", q720);
-        fq.put("480p", q480);
-        fq.put("240p", true); // Default
-        // String video = br.getRegex("(video: \\{.*?\\}\\))").getMatch(0);
-        if (br.containsHTML("videoUrls")) {
-            String videoUrls = br.getRegex("(videoUrls\":\"\\{.*?\\]\\})").getMatch(0).replace("\\", "");
-            // logger.info("videoUrls: " + videoUrls);
-            for (String key : fq.keySet()) {
-                logger.info(key + ":\t" + fq.get(key));
-                if (fq.get(key)) {
-                    // dllink = new Regex(video, key + "\":\"(https?:[^\"]+)\"").getMatch(0);
-                    dllink = new Regex(videoUrls, key + "\":\\[\"(https?:[^\"]+)\"").getMatch(0);
-                    if (dllink != null) {
-                        vq = key;
-                        // dllink = dllink.replace("\\/", "/");
-                        logger.info("vq: " + vq + ", dllink: " + dllink);
-                        return dllink;
-                        // break;
+        final String newPlayer = br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0);
+        if (newPlayer != null) {
+            // new player
+            final Map<String, Object> map = JSonStorage.restoreFromString(JSonStorage.restoreFromString("\"" + newPlayer + "\"", TypeRef.STRING), TypeRef.HASHMAP);
+            if (map != null) {
+                for (final String quality : qualities) {
+                    final Object list = map.get(quality);
+                    if (list != null && list instanceof List) {
+                        final List<String> urls = (List<String>) list;
+                        if (urls.size() > 0) {
+                            vq = quality;
+                            return urls.get(0);
+                        }
                     }
                 }
             }
         }
-        if (br.containsHTML("\"720p\",\"url\"")) {
-            dllink = br.getRegex("720p\",\"url\":\"([^<>\"]+)\"").getMatch(0).replace("\\", "");
-            if (dllink != null) {
-                logger.info("vq: 720p" + ", dllink: " + dllink);
-                return dllink;
+        for (final String quality : qualities) {
+            // old player
+            final String urls[] = br.getRegex(quality + "\"\\s*:\\s*(\"https?:[^\"]+\")").getColumn(0);
+            if (urls != null && urls.length > 0) {
+                String best = null;
+                for (String url : urls) {
+                    url = JSonStorage.restoreFromString(url, TypeRef.STRING);
+                    if (best == null || StringUtils.containsIgnoreCase(url, ".mp4")) {
+                        best = url;
+                    }
+                }
+                if (best != null) {
+                    vq = quality;
+                    return best;
+                }
             }
         }
+        for (final String quality : qualities) {
+            // 3d videos
+            final String urls[] = br.getRegex(quality + "\"\\s*,\\s*\"url\"\\s*:\\s*(\"https?:[^\"]+\")").getColumn(0);
+            if (urls != null && urls.length > 0) {
+                String best = null;
+                for (String url : urls) {
+                    url = JSonStorage.restoreFromString(url, TypeRef.STRING);
+                    if (best == null || StringUtils.containsIgnoreCase(url, ".mp4")) {
+                        best = url;
+                    }
+                }
+                if (best != null) {
+                    vq = quality;
+                    return best;
+                }
+            }
+        }
+        // is the rest still in use/required?
+        String dllink = null;
         logger.info("Video quality selection failed.");
         int urlmodeint = 0;
         final String urlmode = br.getRegex("url_mode=(\\d+)").getMatch(0);
@@ -237,8 +271,8 @@ public class XHamsterCom extends PluginForHost {
                 /* E.g. 4753816 */
                 flashvars = Encoding.htmlDecode(flashvars);
                 flashvars = flashvars.replace("\\", "");
-                final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
-                for (final String quality : qualities) {
+                final String[] qualities2 = { "1080p", "720p", "480p", "360p", "240p" };
+                for (final String quality : qualities2) {
                     dllink = new Regex(flashvars, "\"" + quality + "\":\\[\"(http[^<>\"]*?)\"\\]").getMatch(0);
                     if (dllink != null) {
                         break;
