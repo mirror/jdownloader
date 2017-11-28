@@ -54,7 +54,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("keezmoviesdecrypted.com/", "keezmovies.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keezmoviesdecrypted.com/", "keezmovies.com/").replace("http:", "https:"));
     }
 
     private static final String default_extension = ".mp4";
@@ -172,7 +172,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
         filename = Encoding.htmlDecode(filename).trim();
         downloadLink.setFinalFileName(filename + ext);
         dllink = Encoding.htmlDecode(dllink);
-        URLConnectionAdapter con = br.openGetConnection(dllink);
+        URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
