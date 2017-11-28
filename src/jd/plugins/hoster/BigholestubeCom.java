@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigholestube.com" }, urls = { "http://(?:www\\.)?bigholestube\\.com/[a-z0-9\\-_]+/" })
 public class BigholestubeCom extends PluginForHost {
-
     public BigholestubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,12 +41,10 @@ public class BigholestubeCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -62,8 +58,9 @@ public class BigholestubeCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://bigholestube.com/", "ageCookieRemember", "1");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("id=\"(playerbox|Video_Player)\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"(playerbox|Video_Player)\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
