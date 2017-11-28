@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 /**
  *
  * @author raztoki
@@ -46,7 +46,7 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" })
 public class FileBoomMe extends K2SApi {
-    private final String MAINPAGE = "http://fboom.me";
+    private final String MAINPAGE = "https://fboom.me";
 
     public FileBoomMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +57,11 @@ public class FileBoomMe extends K2SApi {
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/page/terms.html";
+    }
+
+    @Override
+    protected boolean enforcesHTTPS() {
+        return true;
     }
 
     @Override
@@ -101,7 +106,7 @@ public class FileBoomMe extends K2SApi {
      */
     @Override
     protected String getDomain() {
-        return "fileboom.me";
+        return "fboom.me";
     }
 
     @Override
@@ -162,6 +167,7 @@ public class FileBoomMe extends K2SApi {
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.followRedirect();
         final String filename = br.getRegex("<i class=\"icon-download\"></i>([^<>\"]*?)</").getMatch(0);
         final String filesize = br.getRegex(">File size: ([^<>\"]*?)</").getMatch(0);
         if (filename == null || filesize == null) {
