@@ -12,7 +12,6 @@
 //    GNU General Public License for more details.
 //
 //     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.laf;
 
 import java.io.File;
@@ -57,7 +56,6 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class LookAndFeelController implements LAFManagerInterface {
     public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
     public static final String                 JD_PLAIN                                                      = "org.jdownloader.gui.laf.plain.PlainLookAndFeel";
-
     private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
     /**
@@ -79,13 +77,10 @@ public class LookAndFeelController implements LAFManagerInterface {
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
-
         SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 CFG_GUI.LOOK_AND_FEEL_THEME.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
                     @Override
                     public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
                         handleThemesInstallation();
@@ -104,17 +99,14 @@ public class LookAndFeelController implements LAFManagerInterface {
         if (UpdateController.getInstance().getHandler() == null) {
             return;
         }
-
         LookAndFeelType lafTheme = CFG_GUI.CFG.getLookAndFeelTheme();
         if (lafTheme == null) {
             lafTheme = LookAndFeelType.DEFAULT;
             CFG_GUI.CFG.setLookAndFeelTheme(lafTheme);
         }
-
         if (LookAndFeelType.DEFAULT.equals(lafTheme) || lafTheme.isAvailable() || lafTheme.getExtensionID() == null) {
             return;
         }
-
         if (UpdateController.getInstance().isExtensionInstalled(lafTheme.getExtensionID())) {
             return;
         }
@@ -145,7 +137,6 @@ public class LookAndFeelController implements LAFManagerInterface {
     /**
      * Config parameter to store the users laf selection
      */
-
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean     uiInitated     = false;
 
@@ -157,6 +148,9 @@ public class LookAndFeelController implements LAFManagerInterface {
             return;
         } else {
             uiInitated = true;
+        }
+        if (Application.isHeadless()) {
+            return;
         }
         initWindowManager();
         long t = System.currentTimeMillis();
@@ -278,18 +272,15 @@ public class LookAndFeelController implements LAFManagerInterface {
                 org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
                 if (!StringUtils.equals("standard", theme) && StringUtils.isNotEmpty(theme)) {
                     SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
-
                         @Override
                         public void run() {
                             if (Application.isJared(null)) {
                                 SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
                                     @Override
                                     public void run() {
                                         final String extensionID = "iconset-" + theme;
                                         if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
                                             try {
-
                                                 UpdateController.getInstance().setGuiVisible(true);
                                                 UpdateController.getInstance().runExtensionInstallation(extensionID);
                                             } catch (InterruptedException e) {
@@ -299,10 +290,8 @@ public class LookAndFeelController implements LAFManagerInterface {
                                     }
                                 });
                             }
-
                         }
                     });
-
                 }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
@@ -312,13 +301,9 @@ public class LookAndFeelController implements LAFManagerInterface {
     }
 
     private void initWindowManager() {
-        if (Application.isHeadless()) {
-            return;
-        }
         WindowManager wm = WindowManager.getInstance();
         if (wm instanceof WindowsWindowManager && CrossSystem.isWindows()) {
             final WindowsWindowManager wwm = (WindowsWindowManager) wm;
-
             wwm.setAltWorkaroundEnabled(CFG_GUI.CFG.isWindowsWindowManagerAltKeyWorkaroundEnabled());
             wwm.setAltWorkaroundKeys(CFG_GUI.CFG.getWindowsWindowManagerAltKeyCombi());
             try {
@@ -328,7 +313,6 @@ public class LookAndFeelController implements LAFManagerInterface {
                 logger.log(e);
             }
             CFG_GUI.WINDOWS_WINDOW_MANAGER_FOREGROUND_LOCK_TIMEOUT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
-
                 @Override
                 public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
                 }
@@ -337,7 +321,6 @@ public class LookAndFeelController implements LAFManagerInterface {
                 public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                     try {
                         if (newValue >= 0 && newValue != WindowsWindowManager.readForegroundLockTimeout()) {
-
                             WindowsWindowManager.writeForegroundLockTimeout(newValue);
                             Dialog.getInstance().showMessageDialog(_GUI.T.LookAndFeelController_onConfigValueModified_reboot_required());
                         }
@@ -348,7 +331,6 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
             });
             CFG_GUI.WINDOWS_WINDOW_MANAGER_ALT_KEY_WORKAROUND_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                 @Override
                 public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                 }
@@ -359,7 +341,6 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
             });
             CFG_GUI.WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI.getEventSender().addListener(new GenericConfigEventListener<int[]>() {
-
                 @Override
                 public void onConfigValueModified(KeyHandler<int[]> keyHandler, int[] newValue) {
                     wwm.setAltWorkaroundKeys(CFG_GUI.CFG.getWindowsWindowManagerAltKeyCombi());
@@ -374,7 +355,6 @@ public class LookAndFeelController implements LAFManagerInterface {
 
     @Override
     public void init() {
-
         setUIManager();
     }
 }
