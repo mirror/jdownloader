@@ -227,6 +227,10 @@ public class Leech360Com extends PluginForHost {
     }
 
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        /*
+         * 2017-11-29: Lifetime premium not (yet) supported via website mode! But by the time we might need the website version again, they
+         * might have stopped premium lifetime sales already as that has never been a good idea for any (M)OCH.
+         */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         /*
@@ -258,6 +262,7 @@ public class Leech360Com extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final boolean userHasPremium = userOwnsPremiumAccount(account);
         final String supportedHostsTable = this.br.getRegex("<tbody>(.*?)</tbody>").getMatch(0);
         final String tableLines[] = supportedHostsTable.split("<tr>");
         for (final String lineHTML : tableLines) {
@@ -287,7 +292,7 @@ public class Leech360Com extends PluginForHost {
             final boolean hosterIsPremiumOnly = lineHTML.contains("class='orange-text'>PREMIUM<");
             if (!hosterIsActive) {
                 logger.info("Skipping host (inactive): " + domain);
-            } else if (hosterIsPremiumOnly && account.getType() != AccountType.PREMIUM) {
+            } else if (hosterIsPremiumOnly && !userHasPremium) {
                 logger.info("Skipping host (premiumonly): " + domain);
             } else if (individualLimitReached) {
                 logger.info("Skipping host (limitReached): " + domain);
@@ -306,19 +311,29 @@ public class Leech360Com extends PluginForHost {
         this.getAPISafe("https://" + account.getHoster() + "/api/get_userinfo?token=" + Encoding.urlEncode(this.currAPIToken));
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
+        /*
+         * For lifetime, this will return 'lifetime', for premium this will contain expire date in this form: 'Dec 16 2017 08:48 AM' (yes,
+         * this is confusing!)
+         */
+        final String accountType = (String) entries.get("status");
         final String date_registered = (String) entries.get("joindate");
         if (!StringUtils.isEmpty(date_registered)) {
             ai.setCreateTime(TimeFormatter.getMilliSeconds(date_registered, "MMM dd yyyy hh:mm a", Locale.US));
         }
         final long premium_expire = JavaScriptEngineFactory.toLong(entries.get("premium_expire"), 0);
         final long traffic_used = JavaScriptEngineFactory.toLong(entries.get("total_used"), 0);
-        /* TODO: 2017-11-16 hardcoded value. Ask admin to put this in the API response. */
+        /* TODO: 2017-11-16 (daily) limit hardcoded value. Ask admin to put this in the API response. */
         final long traffic_max = 536870912000l;
-        if (premium_expire > 0) {
+        if (accountType.equalsIgnoreCase("lifetime")) {
+            /* Lifetime of course has not expire date */
+            account.setType(AccountType.LIFETIME);
+        } else if (premium_expire > 0) {
+            // accountType == 'premium'
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
             ai.setValidUntil(premium_expire * 1000, br);
         } else {
+            /* The only possibility left is free */
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
@@ -330,6 +345,7 @@ public class Leech360Com extends PluginForHost {
         final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
         LinkedHashMap<String, Object> host_info;
         final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final boolean userHasPremium = userOwnsPremiumAccount(account);
         /* TODO: Ask admin to move traffic info for indivdual hosts from account info to this API call. */
         while (it.hasNext()) {
             final Entry<String, Object> entry = it.next();
@@ -343,7 +359,7 @@ public class Leech360Com extends PluginForHost {
             final boolean hostAvailable = "online".equals(status) || premiumOnlyHost;
             if (!hostAvailable) {
                 logger.info("Skipping host (inactive): " + domain);
-            } else if (premiumOnlyHost && account.getType() != AccountType.PREMIUM) {
+            } else if (premiumOnlyHost && !userHasPremium) {
                 logger.info("Skipping host (premiumonly): " + domain);
             } else {
                 supportedHosts.add(domain);
@@ -351,6 +367,11 @@ public class Leech360Com extends PluginForHost {
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
+    }
+
+    private boolean userOwnsPremiumAccount(final Account account) {
+        final AccountType acctype = account.getType();
+        return acctype.equals(AccountType.PREMIUM) || acctype.equals(AccountType.LIFETIME);
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -468,9 +489,8 @@ public class Leech360Com extends PluginForHost {
                 this.currDownloadLink.setProperty(PROPERTY_API_TOKEN, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "API token invalid");
             } else {
-                /* TODO: Add more errorhandling, remove DEFECT once plugin is done */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
+                /* E.g. "error_message":"Could not connect to download server, please try again!" */
+                handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
             }
         }
     }
