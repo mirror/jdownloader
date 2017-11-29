@@ -258,7 +258,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        fpName = fpName.replace("\n", "");
+        fpName = fpName.replaceAll("\\s+", " ");
         // isolate post html
         final String postBody = findPostBody();
         decryptedLinks.addAll(processGeneric(br, postBody, fpName, puid));
