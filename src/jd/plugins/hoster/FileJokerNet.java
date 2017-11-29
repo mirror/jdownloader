@@ -403,15 +403,15 @@ public class FileJokerNet extends antiDDoSForHost {
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it."); /*
-                                                                                                                                      * wait
-                                                                                                                                      * time
-                                                                                                                                      * is
-                                                                                                                                      * usually
-                                                                                                                                      * skippable
-                                                                                                                                      * for
-                                                                                                                                      * reCaptcha
-                                                                                                                                      * handling
-                                                                                                                                      */
+                     * wait
+                     * time
+                     * is
+                     * usually
+                     * skippable
+                     * for
+                     * reCaptcha
+                     * handling
+                     */
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
@@ -1048,7 +1048,7 @@ public class FileJokerNet extends antiDDoSForHost {
                     dllink = null;
                 }
                 final Form captchaForm = this.br.getFormbyProperty("id", "f1");
-                if (captchaForm != null && correctedBR.contains("g-recaptcha")) {
+                if (captchaForm != null && captchaForm.containsHTML("g-recaptcha")) {
                     /*
                      * 2016-08-16: Got captcha in premium mode and I was not able to solve it - website redirected me to captcha again and
                      * again
