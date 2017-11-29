@@ -369,7 +369,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 /**
                  * Photo albums lists/overviews Example: http://vk.com/albums46486585
                  */
-                decryptPhotoAlbums();
+                decryptPhotoAlbums_Website();
             } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_POST_LINK)) {
                 /**
                  * Single posts of wall links: https://vk.com/wall-28122291_906
@@ -403,8 +403,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("Cannot decrypt unsupported linktype: " + CRYPTEDLINK_FUNCTIONAL);
                 return null;
             }
-            /* Always execute this - if we have single posts, we can crawl the contents of their posts. */
-            decryptWallPostCommentsViaWebsiteAfterApiDecryption();
         } catch (final BrowserException e) {
             logger.warning("Browser exception thrown: " + e.getMessage());
             logger.warning("Decrypter failed for link: " + CRYPTEDLINK_FUNCTIONAL);
@@ -846,8 +844,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final String type = "singlephotoalbum";
         if (this.CRYPTEDLINK_FUNCTIONAL.contains("#/album")) {
             this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/album" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
-        } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/(photos|id)(?:\\-)?\\d+")) {
-            this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_FUNCTIONAL.replaceAll("vk\\.com/(?:photos|id)(?:\\-)?", "vk.com/album") + "_0";
+        } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id(?:\\-)?\\d+")) {
+            this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_FUNCTIONAL.replaceAll("vk\\.com/|id(?:\\-)?", "vk.com/album") + "_0";
         }
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         if (br.containsHTML(FILEOFFLINE) || br.containsHTML("В альбоме нет фотографий|<title>DELETED</title>")) {
@@ -875,8 +873,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
         fp.setProperty("CLEANUP_NAME", false);
-        final String[] regexesPage1 = { "<a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" };
-        final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
+        final String[] regexesPage1 = { "showPhoto\\(\\'((?:\\-)\\d+_\\d+)'", "0" };
+        final ArrayList<String> decryptedData = decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&al_ad=0&part=1&offset=");
         String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album.+)").getMatch(0);
         for (final String content_id : decryptedData) {
             if (albumID == null) {
@@ -905,7 +903,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** NOT Using API */
-    private void decryptPhotoAlbums() throws NumberFormatException, Exception {
+    private void decryptPhotoAlbums_Website() throws NumberFormatException, Exception {
         /*
          * Another possibility to get these (but still no API): https://vk.com/al_photos.php act=show_albums&al=1&owner=<owner_id> AblumsXXX
          * --> XXX may also be the owner_id, depending on linktype.
@@ -943,7 +941,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /** Photos are placed in different locations, find them all */
         final String[] regexesPage1 = { "class=\"photo_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
         final String[] regexesAllOthers = { "class=\"photo(?:_album)?_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
-        final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         if (decryptedData != null && decryptedData.size() != 0) {
             for (String element : decryptedData) {
                 final String decryptedLink = getProtocol() + "vk.com/" + element;
@@ -1107,11 +1105,14 @@ public class VKontakteRu extends PluginForDecrypt {
         if (vkwall_use_api) {
             decryptWallLink_API();
         } else {
-            decryptWallLink_Website();
+            decryptWall_Website();
         }
     }
 
-    /** Using API */
+    /**
+     * Using API <br />
+     * TODO: Add support for comments
+     */
     @SuppressWarnings("unchecked")
     private void decryptWallLink_API() throws Exception {
         long total_numberof_entries;
@@ -1132,7 +1133,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (this.getCurrentAPIErrorcode() == 15) {
                     /* Access denied --> We have to be logged in via API --> Try website-fallback */
                     logger.info("API wall decryption failed because of 'Access denied' --> Trying via website");
-                    decryptWallLink_Website();
+                    decryptWall_Website();
                     return;
                 }
                 throw e;
@@ -1158,7 +1159,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
             logger.info("Decrypted offset " + currentOffset + " / " + total_numberof_entries);
-            logger.info("Found " + decryptedLinks.size() + " links so far");
+            logger.info("Found " + decryptedLinks.size() + " items so far");
             if (decryptedLinks.size() >= MAX_LINKS_PER_RUN) {
                 logger.info("Reached " + MAX_LINKS_PER_RUN + " links per run limit -> Returning link to continue");
                 final DownloadLink loopBack = createDownloadlink(this.CRYPTEDLINK_FUNCTIONAL + "-maxoffset=" + total_numberof_entries + "-currentoffset=" + currentOffset);
@@ -1348,75 +1349,12 @@ public class VKontakteRu extends PluginForDecrypt {
         return ((Number) entry.get("id")).longValue();
     }
 
-    /**
-     * Decrypts the contents of comments of previously API-decrypted posts because comment crawling is not easily possible via API.
-     *
-     * @throws Exception
-     */
-    private void decryptWallPostCommentsViaWebsiteAfterApiDecryption() throws Exception {
-        /* wallSinglePostIDs!= null --> User wants contents of comments! */
-        if (wallSinglePostIDs != null) {
-            final short max_comments_per_page = 20;
-            int offset = max_comments_per_page;
-            int last_offset_increase = 0;
-            String[] commentsHtml = null;
-            for (final String wall_single_post_id : wallSinglePostIDs) {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
-                    return;
-                }
-                logger.info("Decrypting comments of single wall post: " + wall_single_post_id);
-                final String url_single_wall_post_full = this.getProtocol() + this.getHost() + "/wall" + wall_single_post_id;
-                /* First access the single post. */
-                /* Avoid unnecessary http requests. */
-                if (!this.br.getURL().contains(wall_single_post_id)) {
-                    getPage(this.br, url_single_wall_post_full);
-                }
-                // final String[] wall_single_post_id_info = wall_single_post_id.split("_");
-                // final String ownerID = wall_single_post_id_info[0];
-                // final String postID = wall_single_post_id_info[1];
-                /* Reset variables before re-using them. */
-                offset = 0;
-                last_offset_increase = 0;
-                do {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user");
-                        return;
-                    }
-                    logger.info("Decrypting offset: " + offset);
-                    if (offset > max_comments_per_page) {
-                        /* We got many comments? Access current offset. */
-                        postPageSafe(url_single_wall_post_full, "al=1&offset=" + offset + "&part=1");
-                    }
-                    final String[] replies = getCommentsFromPost(this.br.toString());
-                    for (final String html_reply : replies) {
-                        websiteCrawlContent(null, html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
-                    }
-                    commentsHtml = this.br.getRegex("<div class=\"reply_text\"(.*?)</a>\\s*?</div>").getColumn(0);
-                    if (commentsHtml == null || commentsHtml.length == 0) {
-                        logger.info("Comment decryption ends");
-                        break;
-                    }
-                    /*
-                     * 2016-11-10: To get more information e.g. for audio content not only the url but also the artist & songname, we need
-                     * to use the API with authentification so that we can use "extended=1"
-                     */
-                    /* 2016-12-06: API does not fit our needs --> Do not use it at all for comments decryption. */
-                    // apiGetPageSafe(this.getProtocol() + "api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID +
-                    // "&offset=" + offset);
-                    /* Increase offset by the number of comments regardless of how many urls we found. */
-                    offset += commentsHtml.length;
-                    last_offset_increase = commentsHtml.length;
-                } while (last_offset_increase >= max_comments_per_page);
-            }
-        }
-    }
-
     private void decryptWallPost() throws Exception {
         if (vkwall_use_api) {
             decryptWallPost_API();
         } else {
-            decryptWallPost_Website();
+            final String wall_post_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/wall((?:\\-)\\d+_\\d+)").getMatch(0);
+            decryptSingleWallPostAndComments_Website(wall_post_id, null);
         }
     }
 
@@ -1433,7 +1371,8 @@ public class VKontakteRu extends PluginForDecrypt {
             if (this.getCurrentAPIErrorcode() == 15) {
                 /* Access denied --> We have to be logged in via API --> Try website-fallback */
                 logger.info("API wall decryption failed because of 'Access denied' --> Trying via website");
-                decryptWallPost_Website();
+                this.getPageSafe("https://vk.com/wall" + postIDWithOwnerID);
+                decryptSingleWallPostAndComments_Website(postIDWithOwnerID, br.toString());
                 return;
             }
             throw e;
@@ -1459,14 +1398,15 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Using Website */
-    private void decryptWallLink_Website() throws Exception {
+    private void decryptWall_Website() throws Exception {
         long total_numberof_entries;
         final String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(ownerID);
         int currentOffset = 0;
         int counter_wall_start_from = 0;
-        int counter_items_found = 10;
+        int counter_items_found__in_current_offset = 10;
+        final int offset_increase = 10;
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
             final Regex info = new Regex(CRYPTEDLINK_ORIGINAL, "\\-maxoffset=(\\d+)\\-currentoffset=(\\d+)");
             total_numberof_entries = Long.parseLong(info.getMatch(0));
@@ -1479,25 +1419,24 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        while (currentOffset < total_numberof_entries && counter_items_found > 0) {
+        while (currentOffset < total_numberof_entries && counter_items_found__in_current_offset > 0) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user, stopping...");
                 break;
             }
-            counter_items_found = 0;
-            logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
+            counter_items_found__in_current_offset = 0;
+            logger.info("Decrypted offset " + currentOffset);
             if (currentOffset > 0) {
                 this.postPageSafe("/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&owner_id=%s&type=own&wall_start_from=%s", "", currentOffset, ownerID, counter_wall_start_from));
                 this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             }
-            final String[] htmls = this.br.getRegex("<div class=\"post_content\">.*?class=\"post_views_count _count\"").getColumn(-1);
+            final String[] htmls = this.br.getRegex("<div class=\"post_header_info\">.*?class=\"post_views_count _count\"").getColumn(-1);
             for (final String html : htmls) {
-                decryptWallPostHtmlWebsite(null, html);
-                /* It is NOT about the added items just the found ones as this is a fail-safe --> Abort if an offset contains 0 elements! */
-                counter_items_found++;
+                decryptSingleWallPostAndComments_Website(null, html);
+                /* Count how many items the current offset exists to stop if it does not contain any. */
+                counter_items_found__in_current_offset++;
             }
-            logger.info("Decrypted offset " + currentOffset + " / " + total_numberof_entries);
-            logger.info("Found " + decryptedLinks.size() + " links so far");
+            logger.info("Found " + decryptedLinks.size() + " items so far");
             if (decryptedLinks.size() >= MAX_LINKS_PER_RUN) {
                 logger.info("Reached " + MAX_LINKS_PER_RUN + " links per run limit -> Returning link to continue");
                 final DownloadLink loopBack = createDownloadlink(this.CRYPTEDLINK_FUNCTIONAL + "-maxoffset=" + total_numberof_entries + "-currentoffset=" + currentOffset);
@@ -1505,21 +1444,74 @@ public class VKontakteRu extends PluginForDecrypt {
                 decryptedLinks.add(loopBack);
                 break;
             }
-            currentOffset += counter_items_found;
+            currentOffset += offset_increase;
             counter_wall_start_from += 10;
         }
     }
 
-    /** Using Website, finds and adds contents of a single wall post. */
-    private void decryptWallPost_Website() throws Exception {
-        final Regex wallRegex = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "wall((?:\\-)?\\d+)_(\\d+)");
-        final String ownerID = wallRegex.getMatch(0);
-        final String postID = wallRegex.getMatch(1);
-        final String wall_post_id = ownerID + "_" + postID;
-        this.getPageSafe(String.format("https://vk.com/wall%s", wall_post_id));
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(wall_post_id);
-        decryptWallPostHtmlWebsite(wall_post_id, this.br.toString());
+    /**
+     * Using Website, finds and adds contents of a single wall post and, if wished by the user, comments as well. <br />
+     * Keep in mind that this may require a lot of time as single posts can have huge amounts of comments!<br />
+     *
+     * @param wall_post_ID
+     *            : ID of the wall post e.g.
+     * @param html
+     *            : html containing post / comments information
+     *
+     *            Both parameters can be null which would then mean that wall URL will get accessed for the first time and IDs will be found
+     *            during crawl process.
+     */
+    private void decryptSingleWallPostAndComments_Website(String wall_post_ID, String html) throws Exception {
+        final String rndVer = "61532";
+        if (wall_post_ID == null && html != null) {
+            /* E.g. happens when crawling a complete wall. */
+            wall_post_ID = getWallPostIDFromWallPostHTML(html);
+        }
+        final int maxEntriesPerRequest = 20;
+        int offset = 0;
+        int requestNum = 1;
+        int founItemsTempOld = 0;
+        int foundItemsTemp;
+        do {
+            if (this.isAbort()) {
+                return;
+            }
+            if (offset > 0) {
+                if (wall_post_ID == null) {
+                    /* This should never happen! */
+                    logger.info("Cannot continue single wall post decryption: wall_post_ID is null");
+                    break;
+                }
+                /* Everything after the first request --> We only have comments */
+                this.getPageSafe(String.format("/wall%s?al=-1&local=1&offset=%d&_rndVer=%s", wall_post_ID, offset, rndVer));
+                /* HTML is inside json --> Simply unescape this */
+                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+                html = br.toString();
+            } else if (offset == 0 && html == null && wall_post_ID != null) {
+                /* First request --> We have a post and comments below */
+                this.getPageSafe(String.format("https://vk.com/wall%s", wall_post_ID));
+                html = br.toString();
+                decryptWallPostHTMLWebsite(wall_post_ID, html);
+            } else if (html != null) {
+                decryptWallPostHTMLWebsite(wall_post_ID, html);
+            } else {
+                /* Unknown status */
+                break;
+            }
+            if (this.vkwall_grabcomments) {
+                decryptWallPostCommentsWebsite(wall_post_ID, html);
+            }
+            foundItemsTemp = decryptedLinks.size() - founItemsTempOld;
+            logger.info("Found " + decryptedLinks.size() + " links in offset " + offset);
+            requestNum++;
+            offset += maxEntriesPerRequest;
+            founItemsTempOld = decryptedLinks.size();
+            /* Avoid this sleep time if we stop after the current */
+            if (this.vkwall_grabcomments) {
+                sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
+                /* Only continue if user wants comments inside posts at all! */
+            }
+        } while (foundItemsTemp > 0 && this.vkwall_grabcomments);
         logger.info("Found " + decryptedLinks.size() + " links");
     }
 
@@ -1527,30 +1519,46 @@ public class VKontakteRu extends PluginForDecrypt {
      * Decrypts media of single Website html-post snippets.
      *
      * @throws DecrypterException
+     * @param wall_post_id
+     *            : ID of the initial post.
+     * @param html
+     *            : html Code containing post and (maybe) comments
      */
-    private void decryptWallPostHtmlWebsite(final String wall_post_id, String html) throws IOException, DecrypterException {
+    private void decryptWallPostHTMLWebsite(final String wall_post_ids, String html) throws IOException, DecrypterException {
+        html = cleanupHTMLWebsite(html);
+        String html_containing_wall_post = html;
         /* Remove reply (comments) html from post html because we do not yet know whether the user wants to decrypt it or not! */
-        final String[] replies = getCommentsFromPost(html);
+        final String[] replies = getCommentsFromHTML(html);
         for (final String html_reply : replies) {
-            html = html.replace(html_reply, "");
+            html_containing_wall_post = html_containing_wall_post.replace(html_reply, "");
         }
-        /* More cleanup */
+        /* Crawl contents inside post itself after having removed comments- contents before ... */
+        websiteCrawlContent(wall_post_ids, html_containing_wall_post, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts);
+    }
+
+    private void decryptWallPostCommentsWebsite(final String wall_post_ids, String html) throws IOException, DecrypterException {
+        final String[] replies = getCommentsFromHTML(html);
+        /* Crawl content of comments */
+        for (final String html_reply : replies) {
+            websiteCrawlContent(wall_post_ids, html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
+        }
+    }
+
+    private String cleanupHTMLWebsite(String html) {
+        /* Remove some js / json which could cause duplicates */
         final String[] scriptData = new Regex(html, "<script[^<>]*?type=\"text/javascript\"[^<>]*?>(.*?)</script>").getColumn(0);
         for (final String script_html : scriptData) {
             html = html.replace(script_html, "");
         }
-        /* Crawl contents inside post itself after having removed comments- contents before ... */
-        websiteCrawlContent(wall_post_id, html, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts);
-        /* Crawl content of comments */
-        if (this.vkwall_grabcomments) {
-            for (final String html_reply : replies) {
-                websiteCrawlContent(wall_post_id, html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
-            }
-        }
+        return html;
     }
 
-    private String[] getCommentsFromPost(final String html) {
+    private String[] getCommentsFromHTML(final String html) {
         return new Regex(html, "class=\"reply_wrap _reply_content _post_content clear_fix\".*?class=\"reply_link _reply_lnk\"").getColumn(-1);
+    }
+
+    private String getWallPostIDFromWallPostHTML(final String html) {
+        return new Regex(html, "data\\-post\\-id=\"((?:\\-)?\\d+_\\d+)\"").getMatch(0);
     }
 
     /**
@@ -1565,12 +1573,18 @@ public class VKontakteRu extends PluginForDecrypt {
         final String wall_post_reply_id = new Regex(html, "\"reply_delete((?:\\-)?\\d+_\\d+)").getMatch(0);
         /* ID of the original wall-post (NOT the reply-ID) */
         if (wall_post_id == null) {
-            wall_post_id = new Regex(html, "Wall\\.replyClick\\(\\'((?:\\-)?\\d+_\\d+)'").getMatch(0);
+            if (is_reply) {
+                wall_post_id = new Regex(html, "class=\"post_link\"  href=\"/wall((?:\\-)\\d+_\\d+)").getMatch(0);
+            } else {
+                wall_post_id = getWallPostIDFromWallPostHTML(html);
+            }
         }
         if (wall_post_id == null) {
             throw new DecrypterException("Decrypter broken");
         }
-        final String wall_post_content_id = wall_post_id.split("_")[1];
+        final String[] wall_post_IDs = wall_post_id.split("_");
+        final String wall_post_owner_ID = wall_post_IDs[0];
+        final String wall_post_content_id = wall_post_IDs[1];
         String wall_post_reply_content_id = null;
         if (is_reply) {
             wall_post_reply_content_id = wall_post_reply_id.split("_")[1];
@@ -1592,12 +1606,15 @@ public class VKontakteRu extends PluginForDecrypt {
                 contentIDTemp = wall_id_info[1];
                 /* 2017-11-21: TODO: Fix these urls, improve comments crawling */
                 final String wall_single_photo_content_url;
+                final String photo_list_id;
                 if (is_reply) {
                     /* Links photo 'directly' */
                     wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_reply_id;
+                    photo_list_id = wall_post_owner_ID + "_" + wall_post_reply_content_id;
                 } else {
                     /* Links the post containing the photo */
                     wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_reply_id;
+                    photo_list_id = wall_post_id;
                 }
                 dl = getSinglePhotoDownloadLink(wall_id_info[0] + "_" + wall_id_info[1]);
                 /*
@@ -1605,10 +1622,9 @@ public class VKontakteRu extends PluginForDecrypt {
                  */
                 dl.setContentUrl(wall_single_photo_content_url);
                 dl.setProperty("postID", wall_post_content_id);
-                /* TODO */
                 dl.setProperty("albumid", null);
                 dl.setProperty("owner_id", wall_id_info[0]);
-                dl.setProperty("photo_list_id", wall_post_id);
+                dl.setProperty("photo_list_id", photo_list_id);
                 dl.setProperty("photo_module", "wall");
                 decryptedLinks.add(dl);
             }
@@ -1715,10 +1731,10 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** NOT using API - general method --> NEVER change a running system! */
-    private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[] regexesPageOne, final String[] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
-        ArrayList<String> decryptedData = new ArrayList<String>();
+    private ArrayList<String> decryptMultiplePagesPhotos(final String type, final String numberOfEntries, final String[] regexesPageOne, final String[] regexesAllOthers, int offset, int entries_per_page, int alreadyOnPage, final String postPage, final String postData) throws Exception {
+        final ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
-        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);
+        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / entries_per_page);
         if (maxLoops < 0) {
             maxLoops = 0;
         }
@@ -1731,34 +1747,30 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decryption aborted by user, stopping...");
                 break;
             }
+            final String correctedBR;
+            final String[] theData;
             if (i > 0) {
                 postPageSafe(postPage, postData + offset);
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
-                final String correctedBR = br.toString().replace("\\", "");
-                final String[] theData = new Regex(correctedBR, regexesAllOthers[0]).getColumn(Integer.parseInt(regexesAllOthers[1]));
-                if (theData == null || theData.length == 0) {
-                    addedLinks = 0;
-                    break;
-                }
-                addedLinks = theData.length;
-                for (String data : theData) {
-                    decryptedData.add(data);
-                }
-                offset += increase;
+                correctedBR = br.toString().replace("\\", "");
+                theData = new Regex(correctedBR, regexesAllOthers[0]).getColumn(Integer.parseInt(regexesAllOthers[1]));
             } else {
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
-                String correctedBR = br.toString().replace("\\", "");
-                String[] theData = new Regex(correctedBR, regexesPageOne[0]).getColumn(Integer.parseInt(regexesPageOne[1]));
-                if (theData == null || theData.length == 0) {
-                    addedLinks = 0;
-                    break;
-                }
-                addedLinks = theData.length;
-                for (String data : theData) {
-                    decryptedData.add(data);
-                }
+                correctedBR = br.toString().replace("\\", "");
+                theData = new Regex(correctedBR, regexesPageOne[0]).getColumn(Integer.parseInt(regexesPageOne[1]));
             }
-            if (addedLinks < increase || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
+            if (theData == null || theData.length == 0) {
+                break;
+            }
+            addedLinks = theData.length;
+            for (final String data : theData) {
+                if (decryptedData.contains(data)) {
+                    continue;
+                }
+                decryptedData.add(data);
+                offset++;
+            }
+            if (addedLinks < entries_per_page || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
                 logger.info("Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1) + ", returned " + decryptedData.size() + " results.");
                 break;
             }

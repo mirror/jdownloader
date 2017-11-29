@@ -255,10 +255,6 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.getPage(getBaseURL() + "/");
-            vkID = br.getRegex("\\(\\{\"id\":(\\d+),").getMatch(0);
-            if (vkID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
                 String finalFilename = link.getFinalFileName();
                 if (finalFilename == null) {
@@ -275,8 +271,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     final Browser br = this.br.cloneBrowser();
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     /*
-                     * If these two values are present, we know that the content initially came from a 'wall' which requires us to use a different method to
-                     * grab it as without that, permissions to play the track might be missing as it can only be accessed inside that particular wall!
+                     * If these two values are present, we know that the content initially came from a 'wall' which requires us to use a
+                     * different method to grab it as without that, permissions to play the track might be missing as it can only be
+                     * accessed inside that particular wall!
                      */
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
@@ -299,12 +296,14 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (failed) {
                         logger.info("refreshing audiolink directlink via album-handling");
                         /*
-                         * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for our ID.
+                         * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
+                         * our ID.
                          *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
-                         * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's try both variants.
+                         * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's try
+                         * both variants.
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID + "," + ownerID + "_" + contentID);
                         url = audioGetDirectURL();
@@ -320,8 +319,8 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (url == null) {
                         if (failed) {
                             /*
-                             * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had a good test case to identify
-                             * offline urls.
+                             * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had a
+                             * good test case to identify offline urls.
                              */
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - track might be offline", 5 * 60 * 1000l);
                         }
@@ -373,7 +372,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (module != null && photo_list_id != null) {
                         /* Access photo inside wall-post */
                         setHeadersPhoto(this.br);
-                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
+                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&al_ad=0&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
@@ -443,7 +442,8 @@ public class VKontakteRuHoster extends PluginForHost {
             // virgin download.
             if (finalUrl == null) {
                 /*
-                 * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is downloadable!
+                 * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
+                 * downloadable!
                  */
                 getHighestQualityPic(downloadLink);
                 return;
@@ -463,7 +463,7 @@ public class VKontakteRuHoster extends PluginForHost {
         dl.startDownload();
     }
 
-    private String decryptURLSubL(String decryptType, String t, String e) {
+    private String decryptURLSubL(String decryptType, String t, String e) throws PluginException {
         final String result;
         if (decryptType == null) {
             result = null;
@@ -489,6 +489,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 int eVal = Integer.parseInt(e);
                 result = decryptURLSubLS(t, eVal);
             } else if ("i".equals(decryptType)) {
+                if (vkID == null) {
+                    logger.warning("vkID is null but we need it");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 int eVal = Integer.parseInt(e);
                 result = decryptURLSubLS(t, eVal ^ Integer.parseInt(vkID));
             } else if ("x".equals(decryptType)) {
@@ -559,7 +563,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return result;
     }
 
-    private String decryptURL(final String url) {
+    private String decryptURL(final String url) throws PluginException {
         String result = url;
         if (!url.contains("audio_api_unavailable")) {
             return result;
@@ -591,7 +595,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return result;
     }
 
-    private String audioGetDirectURL() {
+    private String audioGetDirectURL() throws PluginException {
         String url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
         if (url != null) {
             url = url.replace("\\", "");
@@ -740,8 +744,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Checks a given directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as final
-     * filename.
+     * Checks a given directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as
+     * final filename.
      *
      * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
      *         Server 404 response
@@ -826,11 +830,11 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Checks a given photo directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server filename as
-     * final filename.
+     * Checks a given photo directlink for content. Sets finalfilename as final filename if finalfilename != null - else sets server
+     * filename as final filename.
      *
-     * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link is
-     *         not downloadable!
+     * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
+     *         is not downloadable!
      */
     private boolean photolinkOk(final DownloadLink downloadLink, String finalfilename, final boolean isLast) throws Exception {
         final Browser br2 = this.br.cloneBrowser();
@@ -901,7 +905,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Returns the final filename for photourls based on given circumstances and user-setting VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME .
+     * Returns the final filename for photourls based on given circumstances and user-setting
+     * VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME .
      */
     private String photoGetFinalFilename(final DownloadLink dl, String finalfilename, final String directlink) throws MalformedURLException {
         final String url_filename = this.getFileNameFromURL(new URL(directlink));
@@ -918,11 +923,11 @@ public class VKontakteRuHoster extends PluginForHost {
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
     public void login(Browser br, final Account account) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
+            br.setCookiesExclusive(true);
+            prepBrowser(br, false);
+            this.vkID = account.getStringProperty("vkid");
+            final Cookies cookies = account.loadCookies("");
             try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br, false);
-                final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(DOMAIN, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
@@ -938,6 +943,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
                             br.setCookie(DOMAIN, "remixlang", "3");
                         }
+                        this.vkID = regExVKAccountID(br);
                         /* Refresh timestamp */
                         account.saveCookies(br.getCookies(DOMAIN), "");
                         return;
@@ -983,13 +989,23 @@ public class VKontakteRuHoster extends PluginForHost {
                     lol.put("expire", "0");
                     br.submitForm(lol);
                 }
+                this.vkID = regExVKAccountID(br);
                 /* Save cookies */
                 account.saveCookies(br.getCookies(DOMAIN), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
+            } finally {
+                /* Save accountID as we need it later to decrypt downloadurls. */
+                if (this.vkID != null) {
+                    account.setProperty("vkid", this.vkID);
+                }
             }
         }
+    }
+
+    private String regExVKAccountID(final Browser br) {
+        return br.getRegex("\\(\\{\"id\":(\\d+),").getMatch(0);
     }
 
     /* Handle all kinds of stuff that disturbs the downloadflow */
@@ -1226,8 +1242,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Changes server of picture links if wished by user - if not it will change them back to their "original" format. On error (server does not
-     * match expected) it won't touch the current finallink at all! Only use this for photo links!
+     * Changes server of picture links if wished by user - if not it will change them back to their "original" format. On error (server does
+     * not match expected) it won't touch the current finallink at all! Only use this for photo links!
      */
     private void photo_correctLink() {
         if (true || this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
@@ -1235,8 +1251,8 @@ public class VKontakteRuHoster extends PluginForHost {
                 logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> final link is already in desired format ::: " + finalUrl);
             } else {
                 /*
-                 * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g. server returns
-                 * errorcode 500 instead of the file) but this is a very rare problem.
+                 * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
+                 * server returns errorcode 500 instead of the file) but this is a very rare problem.
                  */
                 final String was = finalUrl;
                 final String oldserver = new Regex(finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
