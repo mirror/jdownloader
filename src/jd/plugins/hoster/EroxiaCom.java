@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,14 +32,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxiadecrypted\\.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" })
 public class EroxiaCom extends PluginForHost {
-
     public EroxiaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
-
     private String dllink = null;
 
     @Override
@@ -58,7 +55,7 @@ public class EroxiaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.eroxia.com/") || br.containsHTML("Tube</title>")) {
+        if (br.getURL().equals("http://www.eroxia.com/") || br.containsHTML("Tube</title>|error\">(Page you are|We're sorry)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1(?: class=\"detail\\-title\")?>([^<>\"]*?)</h1>").getMatch(0);
