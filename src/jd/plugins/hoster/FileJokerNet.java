@@ -251,6 +251,9 @@ public class FileJokerNet extends antiDDoSForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty, final Account account) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
@@ -403,15 +406,15 @@ public class FileJokerNet extends antiDDoSForHost {
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it."); /*
-                     * wait
-                     * time
-                     * is
-                     * usually
-                     * skippable
-                     * for
-                     * reCaptcha
-                     * handling
-                     */
+                                                                                                                                      * wait
+                                                                                                                                      * time
+                                                                                                                                      * is
+                                                                                                                                      * usually
+                                                                                                                                      * skippable
+                                                                                                                                      * for
+                                                                                                                                      * reCaptcha
+                                                                                                                                      * handling
+                                                                                                                                      */
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
