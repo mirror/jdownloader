@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +25,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,11 +42,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
 public class RaiItDecrypter extends PluginForDecrypt {
@@ -121,6 +122,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             entries = (LinkedHashMap<String, Object>) parsedJson;
             daysList = (ArrayList<Object>) entries.get(channel_name_with_space);
         }
+        boolean foundUserDate = false;
         /* Walk through all days. */
         for (final Object dayO : daysList) {
             if (dayO instanceof HashMap) {
@@ -133,6 +135,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 /* Date is missing or not the date we want? Skip item! */
                 continue;
             }
+            foundUserDate = true;
             /* Get all items of the day. */
             final ArrayList<Object> itemsOfThatDayList = (ArrayList<Object>) getObjectFromMap(entries, entries2, "palinsesto");
             for (final Object itemsOfThatDayListO : itemsOfThatDayList) {
@@ -168,6 +171,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink(url_for_user));
                 }
             }
+        }
+        if (!foundUserDate) {
+            logger.info("Failed to find date which the user wanted --> Crawled nothing");
         }
     }
 
@@ -214,9 +220,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
         String date = null;
         String date_formatted = null;
         String description = null;
+        String seasonnumber = null;
+        String episodenumber = null;
         this.br.getPage(this.parameter);
         final String jsredirect = this.br.getRegex("document\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        if (jsredirect != null) {
+        if (jsredirect != null && jsredirect.length() >= this.parameter.length()) {
             this.br.getPage(jsredirect.trim());
         }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -244,6 +252,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(name_show) && !StringUtils.isEmpty(name_episode) && name_show.equals(name_episode) && counterString(title.toLowerCase(), name_show.toLowerCase()) > 1) {
             title = name_show;
         }
+        episodenumber = br.getRegex("class=\"subtitle\\-spacing\">Ep (\\d+)</span>").getMatch(0);
+        seasonnumber = br.getRegex("class=\"subtitle\\-spacing\">St (\\d+)</span>").getMatch(0);
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || (contentset_id == null && content_id_from_html == null && dllink == null)) {
@@ -350,7 +360,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         date_formatted = jd.plugins.hoster.RaiTv.formatDate(date);
         title = Encoding.htmlDecode(title);
-        title = date_formatted + "_raitv_" + title;
+        title = date_formatted + "_raitv_";
+        /* Add series information if available */
+        if (seasonnumber != null && episodenumber != null) {
+            final DecimalFormat df = new DecimalFormat("00");
+            final String seriesString = "S" + df.format(Integer.parseInt(seasonnumber)) + "E" + df.format(Integer.parseInt(episodenumber));
+            title += seriesString + "_";
+        }
         title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

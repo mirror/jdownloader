@@ -15,6 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,12 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -82,13 +84,17 @@ public class TwitterCom extends PluginForHost {
         }
     }
 
+    /** 2017-11-29: TODO: For videos: Check this way https://api.twitter.com/1.1/videos/tweet/config/<tweetid>.json */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setconstants(link);
         URLConnectionAdapter con = null;
+        String title = null;
+        String description = null;
         /* Most times twitter-image/videolinks will come from the decrypter. */
         String filename = link.getStringProperty("decryptedfilename", null);
+        String vmap_url = null;
         if (link.getDownloadURL().matches(TYPE_VIDEO) || link.getDownloadURL().matches(TYPE_VIDEO_VMAP)) {
             this.br.getPage(link.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 403) {
@@ -97,23 +103,20 @@ public class TwitterCom extends PluginForHost {
             } else if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String vmap_url = null;
             if (link.getDownloadURL().matches(TYPE_VIDEO_VMAP)) {
                 /* Direct vmap url was added by user- or decrypter. */
                 vmap_url = link.getDownloadURL();
             } else {
                 /* Videolink was added by user or decrypter. */
                 vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
-                if (vmap_url == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
             }
-            if (this.dllink == null) {
-                this.br.getPage(vmap_url);
-                dllink = this.br.getRegex("<MediaFile>[\t\n\r ]+<\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]>[\t\n\r ]+</MediaFile>").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            if (StringUtils.isEmpty(vmap_url)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage(vmap_url);
+            this.dllink = regexVideoVmapHighestQualityURL(this.br);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else if (link.getDownloadURL().matches(TYPE_VIDEO_EMBED)) {
             this.br.getPage(link.getDownloadURL());
@@ -125,7 +128,23 @@ public class TwitterCom extends PluginForHost {
             }
             this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
             dllink = PluginJSonUtils.getJson(this.br, "video_url");
-            filename = tweetid + "_" + tweetid + ".mp4";
+            if (StringUtils.isEmpty(dllink)) {
+                final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.TwitterCom.getPlayerData(br);
+                final LinkedHashMap<String, Object> videoInfo = (LinkedHashMap<String, Object>) entries.get("videoInfo");
+                title = (String) videoInfo.get("title");
+                description = (String) videoInfo.get("description");
+                vmap_url = (String) entries.get("vmap_url");
+                if (StringUtils.isEmpty(vmap_url)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(vmap_url);
+                this.dllink = regexVideoVmapHighestQualityURL(this.br);
+            }
+            if (!StringUtils.isEmpty(title)) {
+                filename = tweetid + "_" + title + ".mp4";
+            } else {
+                filename = tweetid + "_" + tweetid + ".mp4";
+            }
         } else { // TYPE_DIRECT - jpg/png/mp4
             dllink = link.getDownloadURL();
             if (dllink.contains("jpg") || dllink.contains("png")) {
@@ -215,7 +234,19 @@ public class TwitterCom extends PluginForHost {
                 }
             }
         }
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(description);
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private static String regexVideoVmapHighestQualityURL(final Browser br) {
+        String videourl = br.getRegex("<MediaFile>\\s*?<\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]>\\s*?</MediaFile>").getMatch(0);
+        if (videourl == null) {
+            /* HLS */
+            videourl = br.getRegex("<MediaFile type=\"application/x-mpegURL\">\\s*?<\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]>\\s*?</MediaFile>").getMatch(0);
+        }
+        return videourl;
     }
 
     public static String regexTwitterVideo(final String source) {
@@ -274,6 +305,7 @@ public class TwitterCom extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
+                // br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
                 br.getPage("https://twitter.com/login");
                 final String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
                 if (authenticytoken == null) {
@@ -285,8 +317,8 @@ public class TwitterCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1";
-                br.postPage("https://twitter.com/sessions", postData);
+                final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
+                br.postPage("/sessions", postData);
                 if (br.getCookie(MAINPAGE, "auth_token") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -15,15 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +23,14 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -54,7 +53,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
-
     private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
     private static AtomicReference<String> MAINPAGE                     = new AtomicReference<String>("https://depfile.com/");
     private static Object                  LOCK                         = new Object();
@@ -225,9 +223,10 @@ public class DepfileCom extends PluginForHost {
         /* <p class='notice'>Download limit for free user.</p> */
         if (br.containsHTML(">Download limit for free user")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
-        }
-        if (br.containsHTML(">Free users can download up to \\d+G per day.")) {
+        } else if (br.containsHTML(">Free users can download up to \\d+G per day.")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 4 * 60 * 60 * 1000l);
+        } else if (this.br.containsHTML(">Another download is currently carried from your")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads");
         }
         if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">The image code you entered is incorrect\\!<")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -614,7 +613,6 @@ public class DepfileCom extends PluginForHost {
 
     public Browser newBrowser() {
         Browser nbr = new Browser() {
-
             @Override
             public void updateCookies(Request request) {
                 super.updateCookies(request);
@@ -664,9 +662,7 @@ public class DepfileCom extends PluginForHost {
     }
 
     public static interface DepfileConfigInterface extends PluginConfigInterface {
-
         public static class TRANSLATION {
-
             public String getEnableDMCADownload_label() {
                 return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till depfile irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart";
             }

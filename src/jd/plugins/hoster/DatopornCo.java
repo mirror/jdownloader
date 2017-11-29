@@ -57,18 +57,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dato.porn" }, urls = { "https?://(?:www\\.)?dato\\.porn/(?:embed\\-)?[a-z0-9]{12}" })
-public class DatoPorn extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datoporn.co" }, urls = { "https?://(?:www\\.)?(dato\\.porn|datoporn\\.co)/(?:embed\\-)?[a-z0-9]{12}" })
+public class DatopornCo extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     private final boolean        SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = "http://dato.porn".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = "http://datoporn.co".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private final static String  DOMAINS                            = "(?:dato\\.porn)";
+    private final static String  DOMAINS                            = "(?:dato\\.porn|datoporn\\.co)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?" + DOMAINS + ")(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?" + DOMAINS + ")(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
@@ -140,7 +140,7 @@ public class DatoPorn extends antiDDoSForHost {
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: 2017-11-29: null<br />
      * other:<br />
      */
     @Override
@@ -171,7 +171,7 @@ public class DatoPorn extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public DatoPorn(PluginWrapper wrapper) {
+    public DatopornCo(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -431,7 +431,7 @@ public class DatoPorn extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })

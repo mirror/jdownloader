@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mygirlfriendporn.com", "pornyeah.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mygirlfriendporn.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
     public UnknownPornScript4(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,7 +70,6 @@ public class UnknownPornScript4 extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().endsWith("/404.php")) {
             /* E.g. 404.php: http://www.bondagebox.com/ */
-            /* E.g. responsecode 404: http://www.pornyeah.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.br.getURL().contains(host + "/")) {
             /* E.g. http://www.watchgfporn.com/videos/she-fucked-just-about-all-of-us-that-night-9332.html */
@@ -78,7 +77,6 @@ public class UnknownPornScript4 extends PluginForHost {
         }
         String url_filename = null;
         if (downloadLink.getDownloadURL().matches(type_1)) {
-            /* Fits for 99% e.g. pornyeah.com */
             url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
         } else {
             /* E.g. homemoviestube.com */

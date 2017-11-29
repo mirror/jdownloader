@@ -39,7 +39,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
-
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -141,7 +140,7 @@ public class TwitterCom extends PornEmbedParser {
         } else if (parameter.matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
             final LinkedHashMap<String, Object> entries = getPlayerData(br);
             final String sourcetype = (String) entries.get("source_type");
-            if (sourcetype.equals("consumer") || sourcetype.equals("gif")) {
+            if (sourcetype.equals("consumer") || sourcetype.equals("gif") || sourcetype.equals("amplify")) {
                 /* Video uploaded by user, hosted on Twitter --> Download via Twitter hosterplugin */
                 decryptedLinks.add(this.createDownloadlink(parameter));
             } else {
@@ -344,7 +343,7 @@ public class TwitterCom extends PornEmbedParser {
     public static LinkedHashMap<String, Object> getPlayerData(final Browser br) {
         LinkedHashMap<String, Object> entries = null;
         try {
-            String json_source = br.getRegex("<div id=\"playerContainer\"[^<>]*?data\\-config=\"([^<>\"]+)\"").getMatch(0);
+            String json_source = br.getRegex("<div id=\"playerContainer\"[^<>]*?data\\-config=\"([^<>]+)\" >").getMatch(0);
             json_source = Encoding.htmlDecode(json_source);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
         } catch (final Throwable e) {
