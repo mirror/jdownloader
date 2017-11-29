@@ -735,7 +735,11 @@ public class SecondLevelLaunch {
         if (!org.appwork.utils.Application.isHeadless()) {
             lafInit.start();
         } else {
-            LookAndFeelController.getInstance().init();
+            try {
+                LookAndFeelController.getInstance().init();
+            } catch (final Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
             // LAFOptions.init("org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
             // try {
             // final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
