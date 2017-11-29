@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,7 +34,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/download/[^/]+/[^/]+" })
 public class ArchiveOrg extends PluginForHost {
-
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://archive.org/account/login.createaccount.php");
@@ -56,7 +54,6 @@ public class ArchiveOrg extends PluginForHost {
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private boolean       registered_only              = false;
 
     @Override
@@ -141,7 +138,9 @@ public class ArchiveOrg extends PluginForHost {
                 }
                 br.getPage("https://" + account.getHoster() + "/account/login.php");
                 br.postPage("/account/login.php", "remember=CHECKED&referer=https%3A%2F%2F" + account.getHoster() + "%2F&action=login&submit=Log+in&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(account.getHoster(), "logged-in-sig") == null) {
+                String logged_in_sig = br.getCookie(account.getHoster(), "logged-in-sig");
+                // if (br.getCookie(account.getHoster(), "logged-in-sig") == null) {
+                if (logged_in_sig == null || logged_in_sig.equals("deleted")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -200,5 +199,4 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
