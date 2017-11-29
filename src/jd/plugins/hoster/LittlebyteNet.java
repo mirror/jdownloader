@@ -67,7 +67,7 @@ public class LittlebyteNet extends PluginForHost {
         this.setBrowserExclusive();
         prepBR(this.br);
         br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("title\">\\s*File is deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("the file: <span>([^<>\"]+)</span>").getMatch(0);
