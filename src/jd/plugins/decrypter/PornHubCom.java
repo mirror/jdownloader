@@ -16,10 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -84,6 +86,7 @@ public class PornHubCom extends PluginForDecrypt {
         int page = 1;
         final int max_entries_per_page = 50;
         int last_count_entries_per_page;
+        final Set<String> dups = new HashSet<String>();
         do {
             if (this.isAbort()) {
                 return;
@@ -91,11 +94,15 @@ public class PornHubCom extends PluginForDecrypt {
             if (page > 1) {
                 jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
             }
-            final String[] viewkeys = br.getRegex("_vkey=\"([^<>\"]+)\"").getColumn(0);
+            // only parse the user videos
+            final String publicVideos = br.getRegex(">public Videos<(.+)").getMatch(0);
+            final String[] viewkeys = new Regex(publicVideos, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
             for (final String viewkey : viewkeys) {
-                final DownloadLink dl = this.createDownloadlink("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                if (dups.add(viewkey)) {
+                    final DownloadLink dl = this.createDownloadlink("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
             }
             last_count_entries_per_page = viewkeys.length;
             page++;
