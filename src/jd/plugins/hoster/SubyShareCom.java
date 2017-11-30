@@ -45,7 +45,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -76,7 +75,6 @@ public class SubyShareCom extends PluginForHost {
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           ENFORCESHTTPS                = true;
-    private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = false;
@@ -511,14 +509,6 @@ public class SubyShareCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setCookie(COOKIE_HOST, "is_checkddos", "1");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
     }
 
     /**
