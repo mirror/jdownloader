@@ -40,7 +40,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
-
     public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://natour.naughtyamerica.com/signup/signup.php");
@@ -58,8 +57,8 @@ public class NaughtyamericaCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     /*
-     * 2017-01-23: Max 100 connections tital seems to be a stable value - I'd not recommend allowing more as this will most likely cause
-     * failing downloads which start over and over.
+     * 2017-01-23: Max 100 connections tital seems to be a stable value - I'd not recommend allowing more as this will most likely cause failing
+     * downloads which start over and over.
      */
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -209,8 +208,8 @@ public class NaughtyamericaCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /*
-                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
-                     * when the user logs in via browser.
+                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g. when the user logs
+                     * in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
@@ -222,6 +221,9 @@ public class NaughtyamericaCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
+                // p={} now OK. but It may be taken countermeasures in the future
+                // br.postPage("https://members.naughtyamerica.com/ntmrcdstl.js?PID=615ED852-4A7C-3188-9104-A81B865A0D34", new UrlQuery().append("p", "{}",
+                // true));
                 br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
                 Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
@@ -328,8 +330,8 @@ public class NaughtyamericaCom extends PluginForHost {
             return true;
         } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
             /*
-             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
-             * supported host array.
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the supported
+             * host array.
              */
             return true;
         } else {
