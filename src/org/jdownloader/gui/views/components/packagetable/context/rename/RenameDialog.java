@@ -204,10 +204,10 @@ public class RenameDialog extends AbstractDialog<Object> {
         } else {
             if (length == allRegex.length()) {
                 allReplace = allRegex;
-                allRegex = quote(allRegex, regex);
+                allRegex = (regex ? "^" : "") + quote(allRegex, regex);
             } else {
                 allReplace = Matcher.quoteReplacement(allRegex) + "$1";
-                allRegex = quote(allRegex, regex) + (regex ? "^(.*)" : "*");
+                allRegex = (regex ? "^" : "") + quote(allRegex, regex) + (regex ? "(.*)" : "*");
             }
         }
         txtSearch = new ExtTextField();
