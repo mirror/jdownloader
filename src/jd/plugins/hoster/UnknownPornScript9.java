@@ -132,8 +132,8 @@ public class UnknownPornScript9 extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (downloadLink.getDownloadURL().contains("viptube")) {
-            free_maxchunks = 1; // https://svn.jdownloader.org/issues/84735
+        if (downloadLink.getDownloadURL().contains("iceporn") || downloadLink.getDownloadURL().contains("viptube")) {
+            free_maxchunks = 1; // https://svn.jdownloader.org/issues/84428, /84735
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
