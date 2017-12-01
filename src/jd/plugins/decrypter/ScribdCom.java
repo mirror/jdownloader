@@ -13,11 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,11 +26,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/user/\\d+/[^/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/user/\\d+/[^/]+" })
 public class ScribdCom extends PluginForDecrypt {
-
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,7 +71,7 @@ public class ScribdCom extends PluginForDecrypt {
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/(?:doc|document)/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
                     break;
                 }
@@ -118,7 +114,6 @@ public class ScribdCom extends PluginForDecrypt {
                 decryptedLinks.add(getOfflineLink(parameter));
                 return decryptedLinks;
             }
-
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             int documentsNum;
             String doccount = br.getRegex("class=\"document_count\">\\((\\d+)\\)</span>").getMatch(0);
@@ -153,7 +148,7 @@ public class ScribdCom extends PluginForDecrypt {
                 if (br.containsHTML("\"objects\":null")) {
                     break;
                 }
-                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
+                final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/(?:doc|document)/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
                     if (decryptedLinks.size() == 0 && br.containsHTML("\"has_more\":false")) {
                         decryptedLinks.add(getOfflineLink(parameter));
@@ -195,5 +190,4 @@ public class ScribdCom extends PluginForDecrypt {
         offline.setProperty("offline", true);
         return offline;
     }
-
 }

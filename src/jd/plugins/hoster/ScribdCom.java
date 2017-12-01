@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -46,21 +45,16 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/doc/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document)/\\d+" })
 public class ScribdCom extends PluginForHost {
-
     private final String        formats            = "formats";
-
     /** The list of server values displayed to the user */
     private final String[]      allFormats         = new String[] { "PDF", "TXT", "DOCX" };
-
     private static final String FORMAT_PPS         = "class=\"format_ext\">\\.PPS</span>";
-
     private final String        NODOWNLOAD         = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
     private final String        PREMIUMONLY        = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
     private String              authenticity_token = null;
     private String              ORIGURL            = null;
-
     private static Object       LOCK               = new Object();
     private static final String COOKIE_HOST        = "http://scribd.com";
 
@@ -72,7 +66,7 @@ public class ScribdCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        final String linkPart = new Regex(link.getDownloadURL(), "(scribd\\.com/doc/\\d+)").getMatch(0);
+        final String linkPart = new Regex(link.getDownloadURL(), "(scribd\\.com/(?:doc|document)/\\d+)").getMatch(0);
         /* Forced https */
         link.setUrlDownload("https://www." + linkPart.toLowerCase());
     }
@@ -89,7 +83,6 @@ public class ScribdCom extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
                 counter400++;
             } while (counter400 <= 5 && br.getHttpConnection().getResponseCode() == 400);
-
             for (int i = 0; i <= 5; i++) {
                 String newurl = br.getRedirectLocation();
                 if (newurl != null) {
@@ -136,9 +129,7 @@ public class ScribdCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         downloadLink.setName(Encoding.htmlDecode(filename.trim()) + "." + getExtension());
-
         /* saving session info can result in avoiding 400, 410 server errors */
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = br.getCookies(this.getHost());
@@ -226,7 +217,6 @@ public class ScribdCom extends PluginForHost {
     // }
     // return newText;
     // }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -442,7 +432,6 @@ public class ScribdCom extends PluginForHost {
                 final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
                 for (Map.Entry<String, String> entry : cookies.entrySet()) {
                     prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
-
                 }
                 coLoaded = true;
             }
