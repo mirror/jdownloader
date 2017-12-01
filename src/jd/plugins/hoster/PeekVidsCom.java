@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -44,9 +43,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(?:www\\.)?peekvids\\.com/watch\\?v=([A-Za-z0-9\\-_]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(?:www\\.)?peekvids\\.com/(?:watch\\?v=|v/)([A-Za-z0-9\\-_]+)(?:/\\w+)?" })
 public class PeekVidsCom extends PluginForHost {
-
     public PeekVidsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.playvid.com/peekvids/join");
@@ -56,7 +54,6 @@ public class PeekVidsCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     private String            dllink = null;
     private static AtomicLong time   = new AtomicLong();
 
@@ -148,7 +145,6 @@ public class PeekVidsCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 flashvars = Encoding.htmlDecode(flashvars);
-
                 int counter = 0;
                 for (final String quality : qualities) {
                     dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
