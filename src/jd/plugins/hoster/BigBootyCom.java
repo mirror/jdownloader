@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "http://(?:www\\.)?bigbooty\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "https?://(?:www\\.)?bigbooty\\.com/video/\\d+" })
 public class BigBootyCom extends PluginForHost {
-
     private String dllink = null;
 
     public BigBootyCom(PluginWrapper wrapper) {
@@ -77,7 +75,7 @@ public class BigBootyCom extends PluginForHost {
         if (!downloadLink.isNameSet()) {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         }
-        if (br.containsHTML(PREMIUMONLYTEXT)) {
+        if (br.containsHTML("message\">[^<>]*?You must be")) {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
@@ -113,7 +111,7 @@ public class BigBootyCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLYTEXT)) {
+        if (br.containsHTML("message\">[^<>]*?You must be")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
