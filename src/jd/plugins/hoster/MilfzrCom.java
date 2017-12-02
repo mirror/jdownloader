@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,16 +30,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/[A-Za-z0-9\\-]+" })
 public class MilfzrCom extends PluginForHost {
     public MilfzrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -66,7 +66,7 @@ public class MilfzrCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(url_filename)) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(url_filename)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 id=\"title\">([^<>\"]+)</h1>").getMatch(0);
@@ -153,6 +153,9 @@ public class MilfzrCom extends PluginForHost {
         }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
+            if (dllink.contains("//videos-up")) {
+                dllink = dllink.replace("//videos-up", "//milfzr.com/videos-up");
+            }
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
