@@ -17,15 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.Regex;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores\\.tv/videos/\\d+/[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores\\.(?:tv|video|biz|sc|io|adult|cc)/videos/\\d+/[a-z0-9\\-]+/" })
 public class CamwhoresTv extends PornEmbedParser {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,6 +55,6 @@ public class CamwhoresTv extends PornEmbedParser {
     }
 
     public static String createDownloadUrlForHostPlugin(final String dl) {
-        return dl.replace("camwhores.tv/", "camwhoresdecrypted.tv/");
+        return dl.replaceFirst("camwhores.+?/", "camwhoresdecrypted.tv/");
     }
 }

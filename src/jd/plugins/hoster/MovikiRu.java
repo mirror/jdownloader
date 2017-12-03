@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -26,8 +28,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "https?://(?:www\\.)?moviki\\.ru/(?:embed|videos)/\\d+(.+)?" })
 public class MovikiRu extends PluginForHost {
@@ -81,7 +81,7 @@ public class MovikiRu extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        dllink = jd.plugins.hoster.CamwhoresTv.getDllinkCrypted(this.br);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllinkCrypted(this.br);
         String ext = null;
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
@@ -121,7 +121,7 @@ public class MovikiRu extends PluginForHost {
         /* 2017-04-28: The final downloadlink is only valid once - we have to create a new one to be able to download the file. */
         this.br.clearCookies(this.br.getURL());
         br.getPage(downloadLink.getDownloadURL());
-        dllink = jd.plugins.hoster.CamwhoresTv.getDllinkCrypted(this.br);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllinkCrypted(this.br);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
