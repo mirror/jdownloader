@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.script.Invocable;
@@ -250,8 +253,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         String workaroundURL = null;
         if (con.getResponseCode() == 403 || con.getResponseCode() == 404) {
             /*
-             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com (404), txxx.com
-             * (403)
+             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com (404), txxx.com (403)
              */
             workaroundURL = con.getRequest().getUrl();
         }
@@ -260,8 +262,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
 
     public static String getDllink(final Browser br, final Plugin plugin) throws PluginException {
         /*
-         * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
-         * the old "video_url" as well but it will lead to 404 --> Prefer this way.
+         * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain the old
+         * "video_url" as well but it will lead to 404 --> Prefer this way.
          *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
@@ -287,6 +289,13 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (inValidate(dllink, plugin)) {
             /* RegEx for "older" KVS versions, example for website with relative URL: sex3.com */
             dllink = br.getRegex("video_url\\s*:\\s*\\'((?:http|/)[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (inValidate(dllink, plugin)) {
+            // function/0/http camwheres, pornyeah
+            dllink = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getMatch(0);
+            if (dllink != null) {
+                dllink = getDllinkCrypted(br, dllink);
+            }
         }
         if (inValidate(dllink, plugin)) {
             /* Last change: 2017-08-03, regarding txxx.com */
@@ -373,6 +382,119 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
         }
         return dllink;
+    }
+
+    public static String getDllinkCrypted(final Browser br) {
+        String videoUrl = br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        if (videoUrl == null) {
+            return null;
+        }
+        return getDllinkCrypted(br, videoUrl);
+    }
+
+    public static String getDllinkCrypted(final Browser br, final String videoUrl) {
+        String dllink = null;
+        // final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
+        final String licenseCode = br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        if (videoUrl.startsWith("function")) {
+            if (videoUrl != null && licenseCode != null) {
+                // final Browser cbr = br.cloneBrowser();
+                // cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                // cbr.getPage(scriptUrl);
+                // final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
+                String hashRange = "16";
+                dllink = decryptHash(videoUrl, licenseCode, hashRange);
+            }
+        } else {
+            dllink = videoUrl;
+        }
+        return dllink;
+    }
+
+    private static String decryptHash(final String videoUrl, final String licenseCode, final String hashRange) {
+        String result = null;
+        List<String> videoUrlPart = new ArrayList<String>();
+        Collections.addAll(videoUrlPart, videoUrl.split("/"));
+        // hash
+        String hash = videoUrlPart.get(7).substring(0, 2 * Integer.parseInt(hashRange));
+        String nonConvertHash = videoUrlPart.get(7).substring(2 * Integer.parseInt(hashRange));
+        String seed = calcSeed(licenseCode, hashRange);
+        String[] seedArray = new String[seed.length()];
+        for (int i = 0; i < seed.length(); i++) {
+            seedArray[i] = seed.substring(i, i + 1);
+        }
+        if (seed != null && hash != null) {
+            for (int k = hash.length() - 1; k >= 0; k--) {
+                String[] hashArray = new String[hash.length()];
+                for (int i = 0; i < hash.length(); i++) {
+                    hashArray[i] = hash.substring(i, i + 1);
+                }
+                int l = k;
+                for (int m = k; m < seedArray.length; m++) {
+                    l += Integer.parseInt(seedArray[m]);
+                }
+                for (; l >= hashArray.length;) {
+                    l -= hashArray.length;
+                }
+                StringBuffer n = new StringBuffer();
+                for (int o = 0; o < hashArray.length; o++) {
+                    n.append(o == k ? hashArray[l] : o == l ? hashArray[k] : hashArray[o]);
+                }
+                hash = n.toString();
+            }
+            videoUrlPart.set(7, hash + nonConvertHash);
+            for (String string : videoUrlPart.subList(2, videoUrlPart.size())) {
+                if (result == null) {
+                    result = string;
+                } else {
+                    result = result + "/" + string;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static String calcSeed(final String licenseCode, final String hashRange) {
+        StringBuffer fb = new StringBuffer();
+        String[] licenseCodeArray = new String[licenseCode.length()];
+        for (int i = 0; i < licenseCode.length(); i++) {
+            licenseCodeArray[i] = licenseCode.substring(i, i + 1);
+        }
+        for (String c : licenseCodeArray) {
+            if (c.equals("$")) {
+                continue;
+            }
+            int v = Integer.parseInt(c);
+            fb.append(v != 0 ? c : "1");
+        }
+        String f = fb.toString();
+        int j = f.length() / 2;
+        int k = Integer.parseInt(f.substring(0, j + 1));
+        int l = Integer.parseInt(f.substring(j));
+        int g = l - k;
+        g = Math.abs(g);
+        int fi = g;
+        g = k - l;
+        g = Math.abs(g);
+        fi += g;
+        fi *= 2;
+        String s = String.valueOf(fi);
+        String[] fArray = new String[s.length()];
+        for (int i = 0; i < s.length(); i++) {
+            fArray[i] = s.substring(i, i + 1);
+        }
+        int i = Integer.parseInt(hashRange) / 2 + 2;
+        StringBuffer m = new StringBuffer();
+        for (int g2 = 0; g2 < j + 1; g2++) {
+            for (int h = 1; h <= 4; h++) {
+                int n = Integer.parseInt(licenseCodeArray[g2 + h]) + Integer.parseInt(fArray[g2]);
+                if (n >= i) {
+                    n -= i;
+                }
+                m.append(String.valueOf(n));
+            }
+        }
+        return m.toString();
     }
 
     public static String getURL_source(final Browser br, final DownloadLink dl) {

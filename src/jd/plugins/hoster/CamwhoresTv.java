@@ -16,9 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,8 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores\\.tv/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
@@ -67,7 +64,7 @@ public class CamwhoresTv extends PluginForHost {
     private boolean             is_private_video             = false;
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", "camwhores.tv/"));
+        link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", "camwhores.video/"));
         final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
         link.setLinkID(getHost() + "://" + id);
     }
@@ -149,121 +146,6 @@ public class CamwhoresTv extends PluginForHost {
         if (dllink != null && dllink.contains("login-required")) {
             dllink = null;
         }
-        this.dllink = getDllinkCrypted(this.br);
-    }
-
-    /**
-     * 2017-04-28: Universal decrypt function for a lot, if not all KernelVideoSharing website which crypt their final downloadlinks.
-     *
-     * @throws Exception
-     */
-    public static String getDllinkCrypted(final Browser br) throws Exception {
-        String dllink = null;
-        final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
-        final String licenseCode = br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        final String videoUrl = br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        if (videoUrl == null) {
-            return null;
-        }
-        if (videoUrl.startsWith("function")) {
-            if (scriptUrl != null && videoUrl != null && licenseCode != null) {
-                final Browser cbr = br.cloneBrowser();
-                cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                cbr.getPage(scriptUrl);
-                final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
-                dllink = decryptHash(videoUrl, licenseCode, hashRange);
-            }
-        } else {
-            dllink = videoUrl;
-        }
-        return dllink;
-    }
-
-    public static String decryptHash(final String videoUrl, final String licenseCode, final String hashRange) {
-        String result = null;
-        List<String> videoUrlPart = new ArrayList<String>();
-        Collections.addAll(videoUrlPart, videoUrl.split("/"));
-        // hash
-        String hash = videoUrlPart.get(7).substring(0, 2 * Integer.parseInt(hashRange));
-        String nonConvertHash = videoUrlPart.get(7).substring(2 * Integer.parseInt(hashRange));
-        String seed = calcSeed(licenseCode, hashRange);
-        String[] seedArray = new String[seed.length()];
-        for (int i = 0; i < seed.length(); i++) {
-            seedArray[i] = seed.substring(i, i + 1);
-        }
-        if (seed != null && hash != null) {
-            for (int k = hash.length() - 1; k >= 0; k--) {
-                String[] hashArray = new String[hash.length()];
-                for (int i = 0; i < hash.length(); i++) {
-                    hashArray[i] = hash.substring(i, i + 1);
-                }
-                int l = k;
-                for (int m = k; m < seedArray.length; m++) {
-                    l += Integer.parseInt(seedArray[m]);
-                }
-                for (; l >= hashArray.length;) {
-                    l -= hashArray.length;
-                }
-                StringBuffer n = new StringBuffer();
-                for (int o = 0; o < hashArray.length; o++) {
-                    n.append(o == k ? hashArray[l] : o == l ? hashArray[k] : hashArray[o]);
-                }
-                hash = n.toString();
-            }
-            videoUrlPart.set(7, hash + nonConvertHash);
-            for (String string : videoUrlPart.subList(2, videoUrlPart.size())) {
-                if (result == null) {
-                    result = string;
-                } else {
-                    result = result + "/" + string;
-                }
-            }
-        }
-        return result;
-    }
-
-    public static String calcSeed(final String licenseCode, final String hashRange) {
-        StringBuffer fb = new StringBuffer();
-        String[] licenseCodeArray = new String[licenseCode.length()];
-        for (int i = 0; i < licenseCode.length(); i++) {
-            licenseCodeArray[i] = licenseCode.substring(i, i + 1);
-        }
-        for (String c : licenseCodeArray) {
-            if (c.equals("$")) {
-                continue;
-            }
-            int v = Integer.parseInt(c);
-            fb.append(v != 0 ? c : "1");
-        }
-        String f = fb.toString();
-        int j = f.length() / 2;
-        int k = Integer.parseInt(f.substring(0, j + 1));
-        int l = Integer.parseInt(f.substring(j));
-        int g = l - k;
-        g = Math.abs(g);
-        int fi = g;
-        g = k - l;
-        g = Math.abs(g);
-        fi += g;
-        fi *= 2;
-        String s = String.valueOf(fi);
-        String[] fArray = new String[s.length()];
-        for (int i = 0; i < s.length(); i++) {
-            fArray[i] = s.substring(i, i + 1);
-        }
-        // f = "" + f;
-        int i = Integer.parseInt(hashRange) / 2 + 2;
-        StringBuffer m = new StringBuffer();
-        for (int g2 = 0; g2 < j + 1; g2++) {
-            for (int h = 1; h <= 4; h++) {
-                int n = Integer.parseInt(licenseCodeArray[g2 + h]) + Integer.parseInt(fArray[g2]);
-                if (n >= i) {
-                    n -= i;
-                }
-                m.append(String.valueOf(n));
-            }
-        }
-        return m.toString();
     }
 
     @Override
@@ -324,8 +206,8 @@ public class CamwhoresTv extends PluginForHost {
                 br.clearCookies(getHost());
                 br.getPage("http://www." + this.getHost() + "/login/");
                 /*
-                 * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
-                 * premium accounts available at all.
+                 * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no premium accounts
+                 * available at all.
                  */
                 br.postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww.camwhores.tv%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 final String kt_member = br.getCookie(this.getHost(), "kt_member");

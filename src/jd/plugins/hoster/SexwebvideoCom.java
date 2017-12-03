@@ -67,7 +67,7 @@ public class SexwebvideoCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = jd.plugins.hoster.CamwhoresTv.getDllinkCrypted(this.br);
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllinkCrypted(this.br);
         if (dllink == null) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
