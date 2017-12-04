@@ -75,7 +75,7 @@ public class BigBootyCom extends PluginForHost {
         if (!downloadLink.isNameSet()) {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         }
-        if (br.containsHTML("message\">[^<>]*?You must be")) {
+        if (br.containsHTML("video_access_message")) {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
@@ -111,7 +111,7 @@ public class BigBootyCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("message\">[^<>]*?You must be")) {
+        if (br.containsHTML("video_access_message")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
