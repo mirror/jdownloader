@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -32,9 +31,8 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "https?://(www\\.)?ustream\\.tv/(embed/?)recorded/\\d+(/highlight/\\d+)?" })
 public class UstreamTv extends PluginForHost {
-
     private String dllink = null;
 
     public UstreamTv(final PluginWrapper wrapper) {
@@ -106,7 +104,6 @@ public class UstreamTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = encodeUnicode(title);
-
         final String ext;
         if (dllink != null && dllink.contains(".mp4")) {
             ext = ".mp4";
@@ -114,12 +111,10 @@ public class UstreamTv extends PluginForHost {
             ext = ".flv";
         }
         final String filename = user + " - " + fid + " - " + title + ext;
-
         link.setFinalFileName(filename);
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-
         if (filesize == -1 && dllink != null) {
             /* Only check if the json source did not contain filesize information */
             URLConnectionAdapter con = null;
@@ -137,9 +132,7 @@ public class UstreamTv extends PluginForHost {
                 }
             }
         }
-
         link.setDownloadSize(filesize);
-
         return AvailableStatus.TRUE;
     }
 
@@ -180,5 +173,4 @@ public class UstreamTv extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
