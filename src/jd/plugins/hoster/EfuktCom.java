@@ -71,18 +71,25 @@ public class EfuktCom extends antiDDoSForHost {
         if (dllink == null) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(https?[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (dllink != null) {
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            downloadLink.setFinalFileName(filename);
+        } else {
+            downloadLink.setName(filename);
         }
-        downloadLink.setFinalFileName(filename);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dllink = Encoding.htmlDecode(dllink);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
