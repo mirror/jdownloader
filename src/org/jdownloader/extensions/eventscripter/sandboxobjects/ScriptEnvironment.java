@@ -122,7 +122,7 @@ public class ScriptEnvironment {
         return;
     }
 
-    static void askForPermission(final String string) throws EnvironmentException {
+    static synchronized void askForPermission(final String string) throws EnvironmentException {
         final ScriptThread env = getScriptThread();
         final String md5 = Hash.getMD5(env.getScript().getScript());
         ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
@@ -945,22 +945,26 @@ public class ScriptEnvironment {
 
     private static final HashMap<File, AtomicInteger> LOCKS = new HashMap<File, AtomicInteger>();
 
-    private static synchronized Object requestLock(File name) {
-        final AtomicInteger existingLock = LOCKS.get(name);
-        if (existingLock == null) {
-            final AtomicInteger newLock = new AtomicInteger(1);
-            LOCKS.put(name, newLock);
-            return newLock;
-        } else {
-            existingLock.incrementAndGet();
-            return existingLock;
+    private static Object requestLock(File name) {
+        synchronized (LOCKS) {
+            final AtomicInteger existingLock = LOCKS.get(name);
+            if (existingLock == null) {
+                final AtomicInteger newLock = new AtomicInteger(1);
+                LOCKS.put(name, newLock);
+                return newLock;
+            } else {
+                existingLock.incrementAndGet();
+                return existingLock;
+            }
         }
     }
 
-    private static synchronized void unLock(File name) {
-        final AtomicInteger existingLock = LOCKS.get(name);
-        if (existingLock != null && existingLock.decrementAndGet() == 0) {
-            LOCKS.remove(name);
+    private static void unLock(File name) {
+        synchronized (LOCKS) {
+            final AtomicInteger existingLock = LOCKS.get(name);
+            if (existingLock != null && existingLock.decrementAndGet() == 0) {
+                LOCKS.remove(name);
+            }
         }
     }
 
