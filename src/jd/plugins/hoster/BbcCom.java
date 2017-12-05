@@ -243,6 +243,8 @@ public class BbcCom extends PluginForHost {
             heightselect = "570";
         } else if (height > 600 && height <= 800) {
             heightselect = "720";
+        } else if (height > 800 && height <= 1080) {
+            heightselect = "1080";
         } else {
             /* Either unknown quality or audio (0x0) */
             heightselect = Integer.toString(height);

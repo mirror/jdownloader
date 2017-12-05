@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +29,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" })
 public class BbcComDecrypter extends PluginForDecrypt {
@@ -44,6 +44,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML("This programme is not currently available on BBC iPlayer")) {
+            /* Content is online but not streamable at the moment */
+            decryptedLinks.add(this.createOfflinelink(parameter, "This programme is not currently available on BBC iPlayer"));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -66,6 +70,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
         if (jsons == null || jsons.length == 0) {
             /* Type 4 + 5 (4 OR 5) */
             jsons = this.br.getRegex("mediator\\.bind\\((\\{.*?\\}),\\s*?document\\.").getColumn(0);
+            if (jsons == null || jsons.length == 0) {
+                /* 2017-12-05 */
+                jsons = this.br.getRegex("\\(\"tviplayer\"\\),(\\{.*?\\})\\);").getColumn(0);
+            }
         }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
@@ -113,6 +121,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 /* Type 5 */
                 entries = (LinkedHashMap<String, Object>) o_episode;
                 title = (String) entries.get("title");
+                subtitle = (String) entries.get("subtitle");
                 vpid = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/id");
                 tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "master_brand/id");
                 episodeType = (String) entries.get("type");
