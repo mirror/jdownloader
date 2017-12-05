@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -36,9 +35,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(\\w+\\.)?(livemixtapesdecrypted\\.com/download(/mp3)?/\\d+/.*?\\.html|club\\.livemixtapes\\.com/play/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(\\w+\\.)?(livemixtapesdecrypted\\.com/download(/mp3)?/\\d+/.*?\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
 public class LiveMixTapesCom extends PluginForHost {
-
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
     private static final String MAINPAGE               = "http://www.livemixtapes.com/";
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
@@ -100,7 +98,6 @@ public class LiveMixTapesCom extends PluginForHost {
                     link.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
                     return AvailableStatus.TRUE;
                 }
-
                 final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
                 filename = fileInfo.getMatch(0);
                 filesize = fileInfo.getMatch(1);
@@ -132,19 +129,16 @@ public class LiveMixTapesCom extends PluginForHost {
                     br2.getPage("http://www.livemixtapes.com/play/" + new Regex(downloadLink.getDownloadURL(), "download(/mp3)?/(\\d+)").getMatch(1));
                     dllink = br2.getRedirectLocation();
                 } catch (final Exception e) {
-
                 }
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
                 }
             } else {
-
                 final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
                 if (timeRemaining != null) {
                     downloadLink.getLinkStatus().setStatusText("Not yet released, cannot download");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
-
                 final String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
                 if (timestamp == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -164,7 +158,6 @@ public class LiveMixTapesCom extends PluginForHost {
                     if (challengekey == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                   
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     sm.setChallengeKey(challengekey);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
@@ -251,7 +244,7 @@ public class LiveMixTapesCom extends PluginForHost {
     public void login(final Browser br, final Account account) throws Exception {
         this.setBrowserExclusive();
         // br.getPage(MAINPAGE);
-        br.postPage("http://www.livemixtapes.com/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        br.postPage("https://www.livemixtapes.com/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie(MAINPAGE, "u") == null || br.getCookie(MAINPAGE, "p") == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
