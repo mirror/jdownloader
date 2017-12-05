@@ -57,8 +57,8 @@ public class NaughtyamericaCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     /*
-     * 2017-01-23: Max 100 connections tital seems to be a stable value - I'd not recommend allowing more as this will most likely cause failing
-     * downloads which start over and over.
+     * 2017-01-23: Max 100 connections tital seems to be a stable value - I'd not recommend allowing more as this will most likely cause
+     * failing downloads which start over and over.
      */
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -69,6 +69,7 @@ public class NaughtyamericaCom extends PluginForHost {
 
     public static Browser prepBR(final Browser br) {
         br.addAllowedResponseCodes(456);
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -208,8 +209,8 @@ public class NaughtyamericaCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /*
-                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g. when the user logs
-                     * in via browser.
+                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
+                     * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
@@ -222,8 +223,11 @@ public class NaughtyamericaCom extends PluginForHost {
                     br = prepBR(new Browser());
                 }
                 // p={} now OK. but It may be taken countermeasures in the future
-                // br.postPage("https://members.naughtyamerica.com/ntmrcdstl.js?PID=615ED852-4A7C-3188-9104-A81B865A0D34", new UrlQuery().append("p", "{}",
-                // true));
+                // br.postPage("https://members.naughtyamerica.com/ntmrcdstl.js?PID=8FD0A593-9AE8-3213-AFB8-118379C6E433", new
+                // UrlQuery().append("p", "{}", true));
+                // br.setCookie(br.getURL(), "DG_IID", "");
+                // br.setCookie(br.getURL(), "DG_SID", "");
+                // br.setCookie(br.getURL(), "DG_UID", "");
                 br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
                 Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
@@ -247,7 +251,7 @@ public class NaughtyamericaCom extends PluginForHost {
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 br.submitForm(loginform);
-                final String loginCookie = br.getCookie("nrc", jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
+                final String loginCookie = br.getCookie("nrc", account.getHoster());
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
@@ -330,8 +334,8 @@ public class NaughtyamericaCom extends PluginForHost {
             return true;
         } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
             /*
-             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the supported
-             * host array.
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
              */
             return true;
         } else {

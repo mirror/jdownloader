@@ -13,19 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,12 +37,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videoboxdecrypted\\.com/decryptedscene/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videoboxdecrypted\\.com/decryptedscene/\\d+" })
 public class VideoBoxCom extends PluginForHost {
-
     public VideoBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.videobox.com/tour/home/");
@@ -54,7 +49,8 @@ public class VideoBoxCom extends PluginForHost {
         return "http://www.videobox.com/public/terms-of-service";
     }
 
-    private String DLLINK = null;
+    private String           dllink           = null;
+    public static final long trust_cookie_age = 300000l;
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -77,16 +73,16 @@ public class VideoBoxCom extends PluginForHost {
         this.setBrowserExclusive();
         login(account, false, this.br);
         final String sessionID = br.getCookie("http://videobox.com/", "JSESSIONID");
-        DLLINK = checkDirectLink(link, "directlink");
+        dllink = checkDirectLink(link, "directlink");
         br.setFollowRedirects(true);
         final String orginalurl = link.getStringProperty("originalurl", null);
         if (orginalurl == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Delete link and re-add it!");
         }
         br.getPage(orginalurl);
-        if (DLLINK == null) {
+        if (dllink == null) {
             br.getPage("http://www.videobox.com/content/download/options/" + link.getStringProperty("sceneid", null) + ".json?x-user-name=" + Encoding.urlEncode(account.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
-            DLLINK = getSpecifiedQuality(link.getStringProperty("quality", null));
+            dllink = getSpecifiedQuality(link.getStringProperty("quality", null));
         }
         link.setFinalFileName(link.getStringProperty("finalname", null));
         link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("plainfilesize", null)));
@@ -122,57 +118,46 @@ public class VideoBoxCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private static final String MAINPAGE = "http://videobox.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, final Browser br) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(account.getHoster(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
                         return;
                     }
+                    /* TODO: Check if loggedIn, via HTML code */
+                    return;
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://www.videobox.com/j_spring_security_check", "_spring_security_remember_me=true&login-page=login-page&j_username=" + Encoding.urlEncode(account.getUser()) + "&j_password=" + Encoding.urlEncode(account.getPass()) + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
+                br.getPage("https://www." + account.getUser() + "/login");
+                String postData = "login-page=login-page&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true&x=0&y=0";
+                /* TODO: Fix this */
+                if (false) {
+                    if (this.getDownloadLink() == null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dummyLink);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                }
+                br.postPage(br.getURL(), postData);
                 if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null || br.getURL().contains("videobox.com/auth-fail")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -204,7 +189,7 @@ public class VideoBoxCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -230,5 +215,4 @@ public class VideoBoxCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

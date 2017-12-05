@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,9 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[pb][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
     public BbcCom(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class BbcCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.bbc.co.uk/terms/";
+        return "http://www.bbc.com/terms/";
     }
 
     private String rtmp_host       = null;
