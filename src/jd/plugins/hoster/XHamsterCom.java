@@ -40,6 +40,7 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -65,6 +66,7 @@ public class XHamsterCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
+    public static final long      trust_cookie_age                = 300000l;
     private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean  default_allow_multihoster_usage = false;
     private static final String   HTML_PASSWORD_PROTECTED         = "id='videoPass'";
@@ -521,57 +523,84 @@ public class XHamsterCom extends PluginForHost {
             // used in finally to restore browser redirect status.
             final boolean frd = br.isFollowingRedirects();
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 prepBr();
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(this.getHost(), cookies);
-                    return;
+                if (cookies != null) {
+                    br.setCookies(account.getHoster(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    /* Try to avoid login cookie whenever possible! */
+                    br.getPage("https://" + account.getHoster() + "/");
+                    if (isLoggedInHTML(br)) {
+                        /* Save new cookie timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    /* Reset Browser */
+                    br.clearCookies(br.getHost());
                 }
                 br.setFollowRedirects(true);
-                if (true) {
-                    /* 2017-11-23: Broken at the moment */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage("https://xhamster.com/login");
+                if (!htmlIsOldDesign(br)) {
+                    /* Switch to old design */
+                    br.getPage("/switch");
                 }
-                br.getPage("https://de.xhamster.com/login");
-                Browser br = this.br.cloneBrowser();
-                final long now = System.currentTimeMillis();
-                final String xsid;
-                {
-                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-                    final ScriptEngine engine = manager.getEngineByName("javascript");
-                    engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
-                    engine.eval("now = " + now);
-                    engine.eval("res2 = now.toString(16).substring(0,8);");
-                    xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
-                }
-                // br.setCookie(MAINPAGE, "xsid", xsid);
-                // now some other fingerprint set via js, again cookie and login form
-                // final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
-                // br.setCookie(MAINPAGE, "fingerprint", fingerprint);
-                // login.put("_", now + "");
-                String postData = "[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"<TODO_FIXME>\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"true\"}}]";
-                br.postPageRaw("/x-api", postData);
-                // 2017-11-23: TODO: Check/fix captcha login
-                if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
+                if (htmlIsOldDesign(br)) {
                     final Form login = br.getFormbyProperty("name", "loginForm");
-                    // samtimes not found loginForm. br.getFormbyAction("/login.php")
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    // they use recaptchav2 now.
-                    if (this.getDownloadLink() == null) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
-                        this.setDownloadLink(dummyLink);
+                    /* set action, website changes action in js! */
+                    login.setAction("https://xhamster.com/ajax/login.php");
+                    Browser br = this.br.cloneBrowser();
+                    final long now = System.currentTimeMillis();
+                    final String xsid;
+                    {
+                        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+                        final ScriptEngine engine = manager.getEngineByName("javascript");
+                        engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
+                        engine.eval("now = " + now);
+                        engine.eval("res2 = now.toString(16).substring(0,8);");
+                        xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
                     }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    br = this.br.cloneBrowser();
-                    login.put("_", System.currentTimeMillis() + "");
+                    // set in login form and cookie to the correct section
+                    login.put("stats", Encoding.urlEncode(xsid));
+                    br.setCookie(MAINPAGE, "xsid", xsid);
+                    // now some other fingerprint set via js, again cookie and login form
+                    final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
+                    br.setCookie(MAINPAGE, "fingerprint", fingerprint);
+                    login.put("fingerprint", fingerprint);
+                    login.put("username", Encoding.urlEncode(account.getUser()));
+                    login.put("password", Encoding.urlEncode(account.getPass()));
+                    login.put("remember", "on");
+                    // login.put("_", now + "");
                     br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     br.submitForm(login);
+                    /* Account is fine but we need a stupid login captcha */
+                    if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
+                        if (this.getDownloadLink() == null) {
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
+                            this.setDownloadLink(dummyLink);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        br = this.br.cloneBrowser();
+                        login.put("_", System.currentTimeMillis() + "");
+                        br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        br.submitForm(login);
+                    }
+                } else {
+                    /* TODO: 2017-12-05: New login method is not yet supported */
+                    if (true) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String postData = "[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"<TODO_FIXME>\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"true\"}}]";
+                    br.postPageRaw("/x-api", postData);
                 }
                 if (br.getCookie(MAINPAGE, "UID") == null || br.getCookie(MAINPAGE, "_id") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -587,6 +616,18 @@ public class XHamsterCom extends PluginForHost {
             } finally {
                 br.setFollowRedirects(frd);
             }
+        }
+    }
+
+    private boolean htmlIsOldDesign(final Browser br) {
+        return br.containsHTML("class=\"design\\-switcher\"");
+    }
+
+    private boolean isLoggedInHTML(final Browser br) {
+        if (htmlIsOldDesign(br)) {
+            return br.containsHTML("id=\"menuLogin\"");
+        } else {
+            return br.containsHTML("\"myProfile\"");
         }
     }
 

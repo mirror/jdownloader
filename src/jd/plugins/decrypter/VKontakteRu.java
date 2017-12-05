@@ -873,7 +873,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
         fp.setProperty("CLEANUP_NAME", false);
-        final String[] regexesPage1 = { "showPhoto\\(\\'((?:\\-)\\d+_\\d+)'", "0" };
+        final String[] regexesPage1 = { "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)'", "0" };
         final ArrayList<String> decryptedData = decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&al_ad=0&part=1&offset=");
         String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album.+)").getMatch(0);
         for (final String content_id : decryptedData) {
@@ -1470,8 +1470,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final int maxEntriesPerRequest = 20;
         int offset = 0;
         int requestNum = 1;
-        int founItemsTempOld = 0;
-        int foundItemsTemp;
+        int foundItemsOld = 0;
+        int foundItemsTemp = 0;
         do {
             if (this.isAbort()) {
                 return;
@@ -1484,33 +1484,37 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 /* Everything after the first request --> We only have comments */
                 this.getPageSafe(String.format("/wall%s?al=-1&local=1&offset=%d&_rndVer=%s", wall_post_ID, offset, rndVer));
-                /* HTML is inside json --> Simply unescape this */
+                /* HTML is inside json --> Unescape this */
                 br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
                 html = br.toString();
+                /* --> Crawl comments only */
             } else if (offset == 0 && html == null && wall_post_ID != null) {
                 /* First request --> We have a post and comments below */
                 this.getPageSafe(String.format("https://vk.com/wall%s", wall_post_ID));
                 html = br.toString();
+                logger.info("Crawling post");
                 decryptWallPostHTMLWebsite(wall_post_ID, html);
             } else if (html != null) {
+                logger.info("Crawling post");
                 decryptWallPostHTMLWebsite(wall_post_ID, html);
             } else {
                 /* Unknown status */
                 break;
             }
             if (this.vkwall_grabcomments) {
-                decryptWallPostCommentsWebsite(wall_post_ID, html);
+                logger.info("Crawling comments");
+                foundItemsTemp = decryptWallPostCommentsWebsite(wall_post_ID, html);
             }
-            foundItemsTemp = decryptedLinks.size() - founItemsTempOld;
-            logger.info("Found " + decryptedLinks.size() + " links in offset " + offset);
+            logger.info("Offset " + offset + " contained " + foundItemsTemp + " items (this is NOT the number of crawled items)");
+            logger.info("Number of added items: " + (decryptedLinks.size() - foundItemsOld));
             requestNum++;
             offset += maxEntriesPerRequest;
-            founItemsTempOld = decryptedLinks.size();
             /* Avoid this sleep time if we stop after the current */
             if (this.vkwall_grabcomments) {
                 sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
                 /* Only continue if user wants comments inside posts at all! */
             }
+            foundItemsOld = decryptedLinks.size();
         } while (foundItemsTemp > 0 && this.vkwall_grabcomments);
         logger.info("Found " + decryptedLinks.size() + " links");
     }
@@ -1536,12 +1540,19 @@ public class VKontakteRu extends PluginForDecrypt {
         websiteCrawlContent(wall_post_ids, html_containing_wall_post, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts);
     }
 
-    private void decryptWallPostCommentsWebsite(final String wall_post_ids, String html) throws IOException, DecrypterException {
+    /**
+     * Crawls content inside comments from under single wall posts. <br />
+     *
+     * @return Number of comments found (NOT number of items crawled as when comments only contain text without any URLs or user settings
+     *         are not set to crawl everything, not every found comment contains desired content!)
+     */
+    private int decryptWallPostCommentsWebsite(final String wall_post_ids, String html) throws IOException, DecrypterException {
         final String[] replies = getCommentsFromHTML(html);
         /* Crawl content of comments */
         for (final String html_reply : replies) {
             websiteCrawlContent(wall_post_ids, html_reply, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, this.vkwall_comment_grabdocs, this.vkwall_comment_grablink);
         }
+        return replies.length;
     }
 
     private String cleanupHTMLWebsite(String html) {
@@ -1605,16 +1616,19 @@ public class VKontakteRu extends PluginForDecrypt {
                 ownerIDTemp = wall_id_info[0];
                 contentIDTemp = wall_id_info[1];
                 /* 2017-11-21: TODO: Fix these urls, improve comments crawling */
-                final String wall_single_photo_content_url;
+                String wall_single_photo_content_url;
                 final String photo_list_id;
                 if (is_reply) {
                     /* Links photo 'directly' */
-                    wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_reply_id;
+                    wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp;
                     photo_list_id = wall_post_owner_ID + "_" + wall_post_reply_content_id;
                 } else {
                     /* Links the post containing the photo */
-                    wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_reply_id;
+                    wall_single_photo_content_url = getProtocol() + "vk.com/wall" + wall_post_id + "?z=photo" + ownerIDTemp + "_" + contentIDTemp;
                     photo_list_id = wall_post_id;
+                }
+                if (wall_post_reply_id != null) {
+                    wall_single_photo_content_url += "%2Fwall" + wall_post_reply_id;
                 }
                 dl = getSinglePhotoDownloadLink(wall_id_info[0] + "_" + wall_id_info[1]);
                 /*
@@ -1622,8 +1636,8 @@ public class VKontakteRu extends PluginForDecrypt {
                  */
                 dl.setContentUrl(wall_single_photo_content_url);
                 dl.setProperty("postID", wall_post_content_id);
-                dl.setProperty("albumid", null);
-                dl.setProperty("owner_id", wall_id_info[0]);
+                dl.setProperty("albumid", Property.NULL);
+                dl.setProperty("owner_id", ownerIDTemp);
                 dl.setProperty("photo_list_id", photo_list_id);
                 dl.setProperty("photo_module", "wall");
                 decryptedLinks.add(dl);
