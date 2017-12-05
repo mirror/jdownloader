@@ -1105,17 +1105,16 @@ public class LinkCrawler {
                                     crawl(generation, inspectedLinks);
                                 }
                             } else {
-                                final PackageInfo fpi;
+                                final String finalPackageName;
                                 if (matchingRule != null && matchingRule._getPackageNamePattern() != null) {
                                     final String packageName = br.getRegex(matchingRule._getPackageNamePattern()).getMatch(0);
                                     if (StringUtils.isNotEmpty(packageName)) {
-                                        fpi = new PackageInfo();
-                                        fpi.setName(Encoding.htmlDecode(packageName.trim()));
+                                        finalPackageName = Encoding.htmlDecode(packageName.trim());
                                     } else {
-                                        fpi = null;
+                                        finalPackageName = null;
                                     }
                                 } else {
-                                    fpi = null;
+                                    finalPackageName = null;
                                 }
                                 /* try to load the webpage and find links on it */
                                 if (matchingRule != null && LinkCrawlerRule.RULE.SUBMITFORM.equals(matchingRule.getRule())) {
@@ -1147,8 +1146,13 @@ public class LinkCrawler {
                                     if (formLinks != null && formLinks.size() > 0) {
                                         final boolean singleDest = formLinks.size() == 1;
                                         for (final CrawledLink formLink : formLinks) {
-                                            formLink.setDesiredPackageInfo(fpi);
                                             forwardCrawledLinkInfos(deeperSource, formLink, lm, sourceURLs, singleDest);
+                                            PackageInfo dpi = formLink.getDesiredPackageInfo();
+                                            if (dpi == null) {
+                                                dpi = new PackageInfo();
+                                            }
+                                            dpi.setName(finalPackageName);
+                                            formLink.setDesiredPackageInfo(dpi);
                                         }
                                         crawl(generation, formLinks);
                                     }
@@ -1167,8 +1171,13 @@ public class LinkCrawler {
                                     if (possibleCryptedLinks != null) {
                                         final boolean singleDest = possibleCryptedLinks.size() == 1;
                                         for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                            possibleCryptedLink.setDesiredPackageInfo(fpi);
                                             forwardCrawledLinkInfos(deeperSource, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                            PackageInfo dpi = possibleCryptedLink.getDesiredPackageInfo();
+                                            if (dpi == null) {
+                                                dpi = new PackageInfo();
+                                            }
+                                            dpi.setName(finalPackageName);
+                                            possibleCryptedLink.setDesiredPackageInfo(dpi);
                                         }
                                         if (possibleCryptedLinks.size() == 1) {
                                             final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
@@ -1205,8 +1214,13 @@ public class LinkCrawler {
                                                     if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
                                                         final boolean singleDest = possibleCryptedLinks2.size() == 1;
                                                         for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                            possibleCryptedLink.setDesiredPackageInfo(fpi);
                                                             forwardCrawledLinkInfos(deeperSource, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                                            PackageInfo dpi = possibleCryptedLink.getDesiredPackageInfo();
+                                                            if (dpi == null) {
+                                                                dpi = new PackageInfo();
+                                                            }
+                                                            dpi.setName(finalPackageName);
+                                                            possibleCryptedLink.setDesiredPackageInfo(dpi);
                                                         }
                                                         lc.crawl(generation, possibleCryptedLinks2);
                                                     }

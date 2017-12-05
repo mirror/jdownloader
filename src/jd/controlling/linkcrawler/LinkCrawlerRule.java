@@ -1,8 +1,10 @@
 package jd.controlling.linkcrawler;
 
+import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class LinkCrawlerRule {
@@ -74,7 +76,22 @@ public class LinkCrawlerRule {
 
     public boolean matches(final String input) {
         final Pattern lPattern = _getPattern();
-        return lPattern != null && lPattern.matcher(input).matches();
+        if (lPattern == null) {
+            return false;
+        } else if (lPattern.matcher(input).matches()) {
+            return true;
+        } else {
+            try {
+                final URL url = new URL(input);
+                if (url.getUserInfo() != null) {
+                    return lPattern.matcher(URLHelper.getURL(url, true, false, true).toString()).matches();
+                } else {
+                    return false;
+                }
+            } catch (final Throwable ignore) {
+                return false;
+            }
+        }
     }
 
     public Pattern _getPattern() {
