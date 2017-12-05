@@ -231,14 +231,7 @@ public class ScribdCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         sleep(10000, downloadLink, PREMIUMONLY);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
@@ -338,7 +331,7 @@ public class ScribdCom extends PluginForHost {
         }
         String[] dlinfo = new String[2];
         dlinfo[1] = getExtension();
-        final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)").getMatch(0);
+        final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/(?:doc|document)/(\\d+)").getMatch(0);
         if (fileId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
