@@ -67,7 +67,7 @@ public class Puls4Com extends PluginForHost {
             final String urlpart = new Regex(URL, "puls4\\.com/(.+)").getMatch(0);
             String mobileID = new Regex(URL, "(\\d{5,})$").getMatch(0);
             if (mobileID == null) {
-                br.getPage("http://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
+                br.getPage("https://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 mobileID = this.br.getRegex("/video-grid/(\\d+)").getMatch(0);
                 if (mobileID == null) {
@@ -78,7 +78,7 @@ public class Puls4Com extends PluginForHost {
             }
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
+            br.getPage("https://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
             if (br.getHttpConnection().getResponseCode() == 404 || "[]".equals(br.toString())) {
                 return false;
             } else {
