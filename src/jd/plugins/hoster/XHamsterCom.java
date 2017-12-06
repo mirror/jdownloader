@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,13 @@ import java.util.Random;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -47,13 +55,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
@@ -544,10 +546,6 @@ public class XHamsterCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://xhamster.com/login");
-                if (!htmlIsOldDesign(br)) {
-                    /* Switch to old design */
-                    br.getPage("/switch");
-                }
                 if (htmlIsOldDesign(br)) {
                     final Form login = br.getFormbyProperty("name", "loginForm");
                     if (login == null) {
@@ -595,12 +593,18 @@ public class XHamsterCom extends PluginForHost {
                         br.submitForm(login);
                     }
                 } else {
-                    /* TODO: 2017-12-05: New login method is not yet supported */
-                    if (true) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
+                    String requestData = "r=[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"" + createID() + "\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null";
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage("/x-api?" + requestData + "}}]");
+                    if (br.containsHTML("showCaptcha\":true")) {
+                        if (this.getDownloadLink() == null) {
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
+                            this.setDownloadLink(dummyLink);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                        br.postPageRaw("/x-api", requestData + ",\"captcha\":\"" + recaptchaV2Response + "\"}}]");
                     }
-                    String postData = "[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"<TODO_FIXME>\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"true\"}}]";
-                    br.postPageRaw("/x-api", postData);
                 }
                 if (br.getCookie(MAINPAGE, "UID") == null || br.getCookie(MAINPAGE, "_id") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -621,6 +625,26 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
+    private String createID() {
+        StringBuffer result = new StringBuffer();
+        byte bytes[] = new byte[16];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(bytes);
+        if (bytes[6] == 15) {
+            bytes[6] |= 64;
+        }
+        if (bytes[8] == 63) {
+            bytes[8] |= 128;
+        }
+        for (int i = 0; i < bytes.length; i++) {
+            result.append(String.format("%02x", bytes[i] & 0xFF));
+            if (i == 3 || i == 5 || i == 7 || i == 9) {
+                result.append("-");
+            }
+        }
+        return result.toString();
+    }
+
     private boolean htmlIsOldDesign(final Browser br) {
         return br.containsHTML("class=\"design\\-switcher\"");
     }
@@ -637,8 +661,8 @@ public class XHamsterCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /*
-         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites
-         * that present captcha to users all the time!
+         * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites that
+         * present captcha to users all the time!
          */
         if (account.getCookiesTimeStamp("") != 0 && (System.currentTimeMillis() - 6 * 3480000l <= account.getCookiesTimeStamp(""))) {
             login(account, false);
