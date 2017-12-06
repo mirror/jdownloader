@@ -24,6 +24,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
@@ -48,6 +49,7 @@ public class XxxBunkerCom extends PornEmbedParser {
         }
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
         br.setFollowRedirects(true);
+        // br.setCookie(getHost(), "ageconfirm", "20150302"); // Until 05 Desember 2018
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(parameter);
@@ -90,8 +92,7 @@ public class XxxBunkerCom extends PornEmbedParser {
         }
         // filename needed for all IDs below here
         if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         filename = Encoding.htmlDecode(filename.trim());
         String externID = null;
@@ -122,20 +123,18 @@ public class XxxBunkerCom extends PornEmbedParser {
             final Browser br = this.br.cloneBrowser();
             // without https you wont get response
             br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&ageconfirm=true&autoplay=true");
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">FILE NOT FOUND<")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            // source
-            externID = br.getRegex("<source src=\"(http.*?)\"").getMatch(0);
-            // window location also
-            if (externID == null) {
-                externID = br.getRegex("window\\.location\\.href=(\"|')(http.*?)\\1").getMatch(1);
-            }
-            if (externID != null) {
-                final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+            if (br.getHttpConnection().getResponseCode() != 404 || !br.containsHTML(">FILE NOT FOUND<")) {
+                // source
+                externID = br.getRegex("<source src=\"(http.*?)\"").getMatch(0);
+                // window location also
+                if (externID == null) {
+                    externID = br.getRegex("window\\.location\\.href=(\"|')(http.*?)\\1").getMatch(1);
+                }
+                if (externID != null) {
+                    final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
             }
         }
         externID = br.getRegex("postbackurl=([^<>\"]*?)\"").getMatch(0);
@@ -150,8 +149,7 @@ public class XxxBunkerCom extends PornEmbedParser {
                 br.getPage(Encoding.Base64Decode(externID));
                 externID = br.getRedirectLocation();
                 if (externID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new DecrypterException("Decrypter broken for link: " + parameter);
                 }
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
@@ -181,8 +179,8 @@ public class XxxBunkerCom extends PornEmbedParser {
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
                 decryptedLinks.add(dl);
                 return decryptedLinks;
-            } else {
-                externID = br.getRegex("player\\.swf\\?config=(http%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
+            } else { // Dead code?
+                externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
                 if (externID != null) {
                     final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
                     decryptedLinks.add(dl);
@@ -190,8 +188,13 @@ public class XxxBunkerCom extends PornEmbedParser {
                 }
             }
         }
-        logger.warning("Decrypter broken for link: " + parameter);
-        return null;
+        externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        throw new DecrypterException("Decrypter broken for link: " + parameter);
     }
 
     private DownloadLink getOffline(final String parameter) {
