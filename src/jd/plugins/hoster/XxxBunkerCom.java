@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -29,7 +28,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunkerdecrypted\\.com/[a-z0-9_\\-]+" })
 public class XxxBunkerCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public XxxBunkerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,12 +38,10 @@ public class XxxBunkerCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -87,7 +83,7 @@ public class XxxBunkerCom extends PluginForHost {
             filename = new Regex(downloadLink.getDownloadURL(), "xxxbunker\\.com/(.+)").getMatch(0);
         }
         String externID_extern = br.getRegex("postbackurl(?:=|%3D)([^<>\"\\&]*?)%26amp%3B").getMatch(0);
-        String externID = br.getRegex("player\\.swf\\?config=(http%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
+        String externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
         final String externID3 = br.getRegex("lvid=(\\d+)").getMatch(0);
         if (externID_extern == null && externID == null && externID3 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
