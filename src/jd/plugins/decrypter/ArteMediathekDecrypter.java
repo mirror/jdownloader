@@ -222,7 +222,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              */
             final boolean germanSelected = cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true);
             final boolean francaisSelected = cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true);
-            if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, true)) {
+            final boolean loadURLLanguage = cfg.getBooleanProperty(LOAD_LANGUAGE_URL, true);
+            if (loadURLLanguage) {
                 selectedLanguages.add(this.getUrlLang());
             } else {
                 if (isGerman && germanSelected) {
@@ -369,10 +370,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         /* User does not want the subtitled version */
                         continue;
                     }
-                    if (!francaisSelected && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
+                    if (!francaisSelected && !loadURLLanguage && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
                         continue;
                     }
-                    if (!germanSelected && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
+                    if (!germanSelected && !loadURLLanguage && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
                         continue;
                     }
                     // TODO
