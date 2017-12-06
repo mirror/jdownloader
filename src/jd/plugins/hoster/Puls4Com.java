@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -35,7 +34,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "https?://(?:www\\.)?puls4\\.com/.*" })
 public class Puls4Com extends PluginForHost {
-
     public Puls4Com(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,7 +44,6 @@ public class Puls4Com extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issue      = false;
 
@@ -70,8 +67,8 @@ public class Puls4Com extends PluginForHost {
             final String urlpart = new Regex(URL, "puls4\\.com/(.+)").getMatch(0);
             String mobileID = new Regex(URL, "(\\d{5,})$").getMatch(0);
             if (mobileID == null) {
-                this.br.getPage("http://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
-                this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+                br.getPage("http://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
+                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 mobileID = this.br.getRegex("/video-grid/(\\d+)").getMatch(0);
                 if (mobileID == null) {
                     return br.containsHTML("playerVideo");
@@ -131,9 +128,7 @@ public class Puls4Com extends PluginForHost {
             }
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             date = (String) entries.get("broadcast_date");
-
             filename = (String) entries.get("title");
-
             /* Get highest quality downloadlink */
             final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) entries.get("files");
             if (files == null) {
