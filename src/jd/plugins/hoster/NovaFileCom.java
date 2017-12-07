@@ -147,7 +147,7 @@ public class NovaFileCom extends antiDDoSForHost {
             /* define custom browser headers and language settings */
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
         }
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.0) Gecko/20100101 Firefox/52.0");
+        // prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.0) Gecko/20100101 Firefox/52.0");
         return prepBr;
     }
 
