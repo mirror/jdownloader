@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,9 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * Eventually variant of OuoIo, see also fas.li
@@ -41,7 +41,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?igram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
     public CatlyUs(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,10 +74,21 @@ public class CatlyUs extends antiDDoSForDecrypt {
         if (form != null) {
             boolean requiresCaptchaWhichCanFail = false;
             boolean captcha_failed = true;
+            /* E.g. websites without given captcha_type var: linclik.com */
+            String captcha_type = this.br.getRegex("app_vars\\[\\'captcha_type\\'\\]\\s*?=\\s*?\\'([^<>\"]+)\\';").getMatch(0);
+            if (captcha_type == null) {
+                captcha_type = "unknown";
+            }
             final String solvemediaChallengeKey = br.getRegex("app_vars\\[\\'solvemedia_challenge_key\\'\\]\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
             final String reCaptchaSiteKey = br.getRegex("app_vars\\[\\'reCAPTCHA_site_key\\'\\]\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
             for (int i = 0; i <= 2; i++) {
-                if (form.containsHTML("adcopy_response") && solvemediaChallengeKey != null) {
+                if (captcha_type.contains("recaptcha") || (solvemediaChallengeKey == null && reCaptchaSiteKey != null)) {
+                    /* E.g. 'recaptcha' or 'invisible-recaptcha' */
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken();
+                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    captcha_failed = false;
+                } else if (form.containsHTML("adcopy_response") && solvemediaChallengeKey != null) {
+                    /* == captcha_type 'solvemedia' */
                     requiresCaptchaWhichCanFail = true;
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     if (solvemediaChallengeKey != null) {
@@ -89,10 +100,6 @@ public class CatlyUs extends antiDDoSForDecrypt {
                     final String chid = sm.getChallenge(code);
                     form.put("adcopy_challenge", chid);
                     form.put("adcopy_response", "manual_challenge");
-                } else if (form.containsHTML("g\\-recaptcha") && reCaptchaSiteKey != null) {
-                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken();
-                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    captcha_failed = false;
                 } else {
                     captcha_failed = false;
                 }

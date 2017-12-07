@@ -13,14 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,12 +38,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.(?:co|me)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.(?:co|me|im)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com|cpmlink\\.net)/[A-Za-z0-9]+$" })
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "adshort.me", "brlink.in", "urle.co", "mitly.us", "cutwin.com" };
+        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "adshort.me", "adshort.im", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "cpmlink.net" };
     }
 
     public MightyScriptAdLinkFly(PluginWrapper wrapper) {
@@ -100,7 +98,6 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             if (evalulateRecaptchaV2(form)) {
                 // recaptchav2 is different.
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
-
                     @Override
                     public String getSiteKey() {
                         final String key = getAppVarsResult("reCAPTCHA_site_key");
@@ -109,7 +106,6 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         return super.getSiteKey(br.toString());
                     }
-
                 }.getToken();
                 form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             } else {
@@ -174,7 +170,6 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         if (form.containsHTML("(?:id|class)=(\"|')g-recaptcha\\1")) {
             return true;
         }
-
         return false;
     }
 
@@ -202,5 +197,4 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MightyScript_AdLinkFly;
     }
-
 }

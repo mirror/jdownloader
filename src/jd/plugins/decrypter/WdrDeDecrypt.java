@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,9 +41,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.WdrDeMediathek.WdrDeConfigInterface;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class WdrDeDecrypt extends PluginForDecrypt {
@@ -128,7 +128,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             if (episode_name == null) {
                 episode_name = br.getRegex("class=\"siteHeadline hidden\">([^<>]*?)<").getMatch(0);
             }
-            json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
+            json_api_url = this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
         } else {
             final String thisvideo_src = einsfestivalGetVideoSrc(this.br);
             sendung = einsfestivalGetTitleSubtitleWithErrorhandlingFromVideoSrc(thisvideo_src);

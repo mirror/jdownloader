@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -39,7 +38,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "http://ndrdecrypted\\.de/\\d+" })
 public class NdrDe extends PluginForHost {
-
     public NdrDe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -54,14 +52,13 @@ public class NdrDe extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = -1;
-
     private static final String  Q_SUBTITLES       = "Q_SUBTITLES";
     private static final String  Q_BEST            = "Q_BEST";
     private static final String  Q_LOW             = "Q_LOW";
     private static final String  Q_HIGH            = "Q_HIGH";
     private static final String  Q_VERYHIGH        = "Q_VERYHIGH";
+    private static final String  Q_HD              = "Q_HD";
     public static final String   FAST_LINKCHECK    = "FAST_LINKCHECK";
-
     private String               DLLINK            = null;
 
     @Override
@@ -140,7 +137,6 @@ public class NdrDe extends PluginForHost {
      */
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         boolean success = false;
         BufferedWriter dest = null;
         try {
@@ -153,11 +149,9 @@ public class NdrDe extends PluginForHost {
             } catch (IOException e1) {
                 return false;
             }
-
             final StringBuilder xml = new StringBuilder();
             int counter = 1;
             final String lineseparator = System.getProperty("line.separator");
-
             Scanner in = null;
             try {
                 in = new Scanner(new FileReader(source));
@@ -169,9 +163,7 @@ public class NdrDe extends PluginForHost {
             } finally {
                 in.close();
             }
-
             final String xmlContent = xml.toString();
-
             if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
                 success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
             } else {
@@ -181,11 +173,9 @@ public class NdrDe extends PluginForHost {
                     final int starttime = 0;
                     for (String[] match : matches) {
                         dest.write(counter++ + lineseparator);
-
                         final Double start = Double.valueOf(match[0]) + starttime;
                         final Double end = Double.valueOf(match[1]) + starttime;
                         dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-
                         String text = match[2].trim();
                         text = text.replaceAll(lineseparator, " ");
                         text = text.replaceAll("&amp;", "&");
@@ -195,7 +185,6 @@ public class NdrDe extends PluginForHost {
                         text = text.replaceAll("<br />", lineseparator);
                         text = text.replace("</p>", "");
                         text = text.replace("<span ", "").replace("</span>", "");
-
                         final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
                         if (textReplaces != null && textReplaces.length != 0) {
                             for (final String[] singleText : textReplaces) {
@@ -207,23 +196,19 @@ public class NdrDe extends PluginForHost {
                         } else {
                             dest.write(text + lineseparator + lineseparator);
                         }
-
                     }
                     success = true;
                 } catch (final Exception e) {
                     success = false;
                 }
             }
-
         } finally {
             try {
                 dest.close();
             } catch (final IOException e) {
             }
         }
-
         source.delete();
-
         return success;
     }
 
@@ -239,9 +224,7 @@ public class NdrDe extends PluginForHost {
         String minute = "00";
         String second = "00";
         String millisecond = "0";
-
         Integer itime = Integer.valueOf(time.intValue());
-
         // Hour
         Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
         if (timeHour < 10) {
@@ -249,7 +232,6 @@ public class NdrDe extends PluginForHost {
         } else {
             hour = timeHour.toString();
         }
-
         // Minute
         Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
         if (timeMinute < 10) {
@@ -257,7 +239,6 @@ public class NdrDe extends PluginForHost {
         } else {
             minute = timeMinute.toString();
         }
-
         // Second
         Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
         if (timeSecond < 10) {
@@ -265,7 +246,6 @@ public class NdrDe extends PluginForHost {
         } else {
             second = timeSecond.toString();
         }
-
         // Millisecond
         millisecond = String.valueOf(time - itime).split("\\.")[1];
         if (millisecond.length() == 1) {
@@ -277,10 +257,8 @@ public class NdrDe extends PluginForHost {
         if (millisecond.length() > 2) {
             millisecond = millisecond.substring(0, 3);
         }
-
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
-
         return result;
     }
 
@@ -305,6 +283,7 @@ public class NdrDe extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ndr.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.ndr.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.ndr.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, "Load HD version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.ndr.fastlinkcheck", "Schnellen Linkcheck aktivieren?\r\n<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>")).setDefaultValue(defaultFAST_LINKCHECK));
     }
 
@@ -315,5 +294,4 @@ public class NdrDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
