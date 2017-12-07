@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,7 +34,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores\\.tv/embed/\\d+" })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,7 +64,7 @@ public class CamwhoresTv extends PluginForHost {
     private boolean             is_private_video             = false;
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", "camwhores.video/"));
+        link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", getCurrentDomain() + "/").replace("camwhores.tv/", getCurrentDomain() + "/"));
         final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
         link.setLinkID(getHost() + "://" + id);
     }
@@ -91,8 +91,8 @@ public class CamwhoresTv extends PluginForHost {
         dllink = null;
         server_issues = false;
         br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "kt_tcookie", "1");
-        br.setCookie(this.getHost(), "kt_is_visited", "1");
+        br.setCookie(getCurrentDomain(), "kt_tcookie", "1");
+        br.setCookie(getCurrentDomain(), "kt_is_visited", "1");
         br.getPage(link.getDownloadURL());
         if (isOffline(this.br)) {
             /* 2017-01-21: For now, we do not support private videos --> Offline */
@@ -184,33 +184,38 @@ public class CamwhoresTv extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    private String getCurrentDomain() {
+        return "camwhores.cc";
+    }
+
     private void login(final Account account, final boolean force, final boolean test) throws Exception {
         synchronized (account) {
+            final String host = getCurrentDomain();
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.setCookies(host, cookies);
                     if (test) {
-                        br.getPage("http://www." + this.getHost() + "/");
-                        final String kt_member = br.getCookie(this.getHost(), "kt_member");
+                        br.getPage("http://www." + host + "/");
+                        final String kt_member = br.getCookie(host, "kt_member");
                         if (kt_member != null && !StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
-                            account.saveCookies(this.br.getCookies(this.getHost()), "");
+                            account.saveCookies(this.br.getCookies(host), "");
                             return;
                         }
                     } else {
                         return;
                     }
                 }
-                br.clearCookies(getHost());
-                br.getPage("http://www." + this.getHost() + "/login/");
+                br.clearCookies(host);
+                br.getPage("http://www." + host + "/login/");
                 /*
-                 * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no premium accounts
-                 * available at all.
+                 * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
+                 * premium accounts available at all.
                  */
                 br.postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww.camwhores.tv%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                final String kt_member = br.getCookie(this.getHost(), "kt_member");
+                final String kt_member = br.getCookie(host, "kt_member");
                 if (kt_member == null || StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -218,9 +223,11 @@ public class CamwhoresTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(host), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -246,7 +253,7 @@ public class CamwhoresTv extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false, false);
         requestFileInformation(link);
-        final String kt_member = br.getCookie(this.getHost(), "kt_member");
+        final String kt_member = br.getCookie(getCurrentDomain(), "kt_member");
         if (kt_member == null || StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
             login(account, false, true);
             requestFileInformation(link);
