@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.SimpleDateFormat;
@@ -22,6 +21,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,23 +36,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/.*?\\.html" })
 public class NdrDeDecrypter extends PluginForDecrypt {
-
     public NdrDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String domain      = "ndr.de";
-    private final String[]      qualities   = { "hq", "hi", "lo" };
-
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
+    private static final String domain    = "ndr.de";
+    private final String[]      qualities = { "hd", "hq", "hi", "lo" };
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -60,23 +52,27 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         final String parameter = param.toString().replace("https://", "http://");
         final String url_id = new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0);
         final SubConfiguration cfg = SubConfiguration.getConfig(domain);
-        final boolean qsubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        final boolean qsubtitles = cfg.getBooleanProperty("Q_SUBTITLES", true);
         final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.NdrDe.FAST_LINKCHECK, jd.plugins.hoster.NdrDe.defaultFAST_LINKCHECK);
         br.setFollowRedirects(true);
-
         this.br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String url_player_html = this.br.getRegex("\"(/fernsehen/[^<>\"]*?\\-player_[^<>\"]*?\\.html)\"").getMatch(0);
+        final String url_iframe = br.getRegex("src=\"(/[^<>\"]+)_theme\\-[A-Za-z0-9\\-_]+\\.html\"\\s*?></iframe>").getMatch(0);
         final String url_json;
         if (url_player_html != null) {
             url_json = url_player_html.replace("-player_", "-ppjson_").replace(".html", ".json");
+        } else if (url_iframe != null) {
+            /* 2017-12-07: New */
+            url_json = "http://www." + this.getHost() + url_iframe.replace("-ardplayer", "-ardjson") + ".json";
         } else {
             /* Fallback - this might sometimes work too */
-            url_json = "http://www.ndr.de/epg/" + url_id + ".json";
+            url_json = "http://www." + this.getHost() + "/epg/" + url_id + ".json";
         }
+        // http://www.ndr.de/fernsehen/sendungen/die_nordstory/dienordstory264-ardjson_image-19fb5bd4-d7d6-4c2f-8af1-a2a201daf8a7.json
         /* API - well, basically returns same html code as if we simply access the normal link... */
         br.getPage(url_json);
         /* Offline | livestream | no stream */
@@ -101,6 +97,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         final String date_formatted = formatDate(date);
         final String availablequalitiestext = br.getRegex("\\.,([a-z,]+),\\.mp4\\.csmil/master\\.m3u8").getMatch(0);
         final Regex afnreg = br.getRegex("afn: \"TV-(\\d{4})(\\d{4})([0-9\\-]+)\"");
+        // http://hls.ndr.de/i/ndr/2015/0806/TV-20150806-1349-2442.,lo,hi,hq,hd,.mp4.csmil/master.m3u8
         final Regex afneg_replacement = br.getRegex("hls\\.ndr\\.de/i/ndr/(\\d+)/(\\d+)/TV\\-\\d+([^<>\"(]*?)\\.,");
         String v_year = afnreg.getMatch(0);
         if (v_year == null) {
@@ -118,7 +115,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             logger.info("Found no downloadable content: " + parameter);
             return decryptedLinks;
         }
-        String subtitle_url = br.getRegex("\"(/media/ut\\d+\\.(?:xml|html))\"").getMatch(0);
+        String subtitle_url = PluginJSonUtils.getJson(this.br, "_subtitleUrl");
         if (subtitle_url != null) {
             subtitle_url = "https://www.ndr.de" + subtitle_url.replace(".html", ".xml");
         }
@@ -143,7 +140,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         }
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        if (cfg.getBooleanProperty(Q_BEST, false)) {
+        if (cfg.getBooleanProperty("Q_BEST", false)) {
             for (final String quality : qualities) {
                 if (foundqualities.get(quality) != null) {
                     selectedQualities.add(quality);
@@ -152,15 +149,18 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             }
         } else {
             /** User selected nothing -> Decrypt everything */
-            boolean qveryhigh = cfg.getBooleanProperty(Q_VERYHIGH, false);
-            boolean qhigh = cfg.getBooleanProperty(Q_HIGH, false);
-            boolean qlow = cfg.getBooleanProperty(Q_LOW, false);
+            boolean qhd = cfg.getBooleanProperty("Q_HD", true);
+            boolean qveryhigh = cfg.getBooleanProperty("Q_VERYHIGH", true);
+            boolean qhigh = cfg.getBooleanProperty("Q_HIGH", true);
+            boolean qlow = cfg.getBooleanProperty("Q_LOW", true);
             if (qveryhigh == false && qhigh == false && qlow == false) {
                 qveryhigh = true;
                 qhigh = true;
                 qlow = true;
             }
-
+            if (qhd) {
+                selectedQualities.add("hd");
+            }
             if (qveryhigh) {
                 selectedQualities.add("hq");
             }
@@ -177,6 +177,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             if (dl != null) {
                 decryptedLinks.add(dl);
                 if (subtitle_url != null && qsubtitles) {
+                    /* Add subtitle */
                     final String quality = dl.getStringProperty("quality", null);
                     final String finalfilename = date_formatted + "_ndr_" + title + "_" + getNiceQuality(quality) + ".xml";
                     final DownloadLink dlsubtitle = createDownloadlink("http://ndrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
@@ -197,19 +198,19 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             logger.info(domain + ": None of the selected qualities were found, decrypting done...");
             return decryptedLinks;
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(date_formatted + "_ndr_" + Encoding.htmlDecode(title.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
     private String getNiceQuality(final String qual) {
         String nicequal;
-        if (qual.equals("hq")) {
+        if (qual.equalsIgnoreCase("hd")) {
+            nicequal = "HD";
+        } else if (qual.equalsIgnoreCase("hq")) {
             nicequal = "VERYHIGH";
-        } else if (qual.equals("hi")) {
+        } else if (qual.equalsIgnoreCase("hi")) {
             nicequal = "HIGH";
         } else {
             nicequal = "LOW";
@@ -243,5 +244,4 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         }
         return formattedDate;
     }
-
 }
