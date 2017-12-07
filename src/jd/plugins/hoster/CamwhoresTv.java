@@ -214,7 +214,7 @@ public class CamwhoresTv extends PluginForHost {
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
                  * premium accounts available at all.
                  */
-                br.postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww.camwhores.tv%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + host + "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 final String kt_member = br.getCookie(host, "kt_member");
                 if (kt_member == null || StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
