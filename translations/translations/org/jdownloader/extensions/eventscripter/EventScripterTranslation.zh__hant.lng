@@ -33,6 +33,7 @@ interval_settings=以毫秒為呼叫間隔
 loading_editor_title=正在載入編輯器...
 none_trigger=// 這個事件將永遠不會被觸發。
 permission_title=事件指令碼所需的權限！
+properties_for_eventtrigger=// ========= 事件觸發的內容 '%s1'  =========
 reset_link_on_low_speed=如果速度較低，重設下載
 script_editor_title=指令碼編輯器：%s1
 securityLoading=您正在試圖從 %s1 載入並執行 JavaScript。請記住，這個指令碼具有目前環境屬性和功能的完全存取權限。請執行受信任的代碼！我們建議只載入本地信任的 JavaScript 檔案。
