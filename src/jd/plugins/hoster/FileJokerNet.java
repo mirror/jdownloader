@@ -23,6 +23,14 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,6 +41,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -44,15 +53,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class FileJokerNet extends antiDDoSForHost {
@@ -351,12 +354,42 @@ public class FileJokerNet extends antiDDoSForHost {
                         downloadLink.setMD5Hash(md5hash.trim());
                     }
                 }
-                waitTime(timeBefore, downloadLink);
                 /* Captcha START */
                 if (correctedBR.contains("g-recaptcha")) {
+                    /* 2017-12-07: Do NOT wait before this captcha otherwise we might run into a timeout! */
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+                        /* 2017-12-07: New */
+                        /* Do not put the result in this Form as the check is handled below already */
+                        dlForm.put("g-recaptcha-response", "");
+                        final Form specialCaptchaForm = new Form();
+                        specialCaptchaForm.setMethod(MethodType.POST);
+                        specialCaptchaForm.setAction("/ddl");
+                        final InputField if_Rand = dlForm.getInputFieldByName("rand");
+                        final String file_id = PluginJSonUtils.getJson(br, "file_id");
+                        if (if_Rand != null) {
+                            /* This is usually given */
+                            specialCaptchaForm.put("rand", if_Rand.getValue());
+                        }
+                        if (!StringUtils.isEmpty(file_id)) {
+                            /* This is usually given */
+                            specialCaptchaForm.put("file_id", file_id);
+                        }
+                        specialCaptchaForm.put("op", "captcha1");
+                        specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        /* User existing Browser object as we get a cookie which is required later. */
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.submitForm(br, specialCaptchaForm);
+                        if (!br.toString().equalsIgnoreCase("OK")) {
+                            logger.warning("Fatal reCaptchaV2 special handling failure");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.getHeaders().remove("X-Requested-With");
+                    } else {
+                        /* Old */
+                        dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
                 } else if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
@@ -405,16 +438,7 @@ public class FileJokerNet extends antiDDoSForHost {
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it."); /*
-                                                                                                                                      * wait
-                                                                                                                                      * time
-                                                                                                                                      * is
-                                                                                                                                      * usually
-                                                                                                                                      * skippable
-                                                                                                                                      * for
-                                                                                                                                      * reCaptcha
-                                                                                                                                      * handling
-                                                                                                                                      */
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
@@ -446,6 +470,7 @@ public class FileJokerNet extends antiDDoSForHost {
                 if (password) {
                     passCode = handlePassword(dlForm, downloadLink);
                 }
+                waitTime(timeBefore, downloadLink);
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, account);

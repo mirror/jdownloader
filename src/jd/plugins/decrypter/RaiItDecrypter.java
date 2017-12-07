@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -360,7 +361,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         date_formatted = jd.plugins.hoster.RaiTv.formatDate(date);
         title = Encoding.htmlDecode(title);
-        title = date_formatted + "_raitv_";
+        title = date_formatted + "_raitv_" + title;
         /* Add series information if available */
         if (seasonnumber != null && episodenumber != null) {
             final DecimalFormat df = new DecimalFormat("00");
@@ -400,11 +401,12 @@ public class RaiItDecrypter extends PluginForDecrypt {
             if (this.br.containsHTML("video_no_available\\.mp4")) {
                 /* Offline/Geo-Blocked */
                 /* XML response with e.g. this (and some more): <url>http://download.rai.it/video_no_available.mp4</url> */
-                final DownloadLink offline = this.createOfflinelink(relinker_url);
                 if (title == null) {
+                    /* Fallback */
                     title = cont;
                 }
-                offline.setName("GEOBLOCKED_" + title);
+                final DownloadLink offline = this.createOfflinelink(relinker_url, "GEOBLOKED_" + title, "GEOBLOCKED");
+                offline.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                 this.decryptedLinks.add(offline);
                 return;
             }

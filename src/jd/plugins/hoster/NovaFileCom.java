@@ -18,11 +18,18 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
@@ -30,6 +37,8 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.captcha.SkipException;
 import jd.http.Browser;
@@ -38,7 +47,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -51,24 +62,35 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" })
 public class NovaFileCom extends antiDDoSForHost {
-    private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "https://novafile.com";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode|No htmlCode read";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private String                         correctedBR                  = "";
+    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            COOKIE_HOST                  = "https://novafile.com";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode|No htmlCode read";
+    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
+    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
+    private static Object                  LOCK                         = new Object();
+    private static final long              FREE_RECONNECTWAIT           = 45 * 60 * 1000L;
+    private static String[]                IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String                   EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                     = new Object();
+    private String                         PROPERTY_LASTIP              = "NOVAFILE_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD        = "NOVAFILE_lastdownload_timestamp";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -92,6 +114,7 @@ public class NovaFileCom extends antiDDoSForHost {
     public NovaFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        setConfigElements();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -124,11 +147,12 @@ public class NovaFileCom extends antiDDoSForHost {
             /* define custom browser headers and language settings */
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
         }
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:52.0) Gecko/20100101 Firefox/52.0");
         return prepBr;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
@@ -226,6 +250,29 @@ public class NovaFileCom extends antiDDoSForHost {
             dllink = getDllink();
         }
         if (dllink == null) {
+            currentIP.set(this.getIP());
+            synchronized (CTRLLOCK) {
+                /* Load list of saved IPs + timestamp of last download */
+                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                    blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                }
+            }
+            /**
+             * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+             */
+            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+                /*
+                 * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
+                 * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
+                 * download using the same free accounts after performing a reconnect!
+                 */
+                long lastdownload = getPluginSavedLastDownloadTimestamp();
+                long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+                }
+            }
             Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
             if (dlForm == null) {
                 if (dlForm == null) {
@@ -250,12 +297,42 @@ public class NovaFileCom extends antiDDoSForHost {
                         downloadLink.setMD5Hash(md5hash.trim());
                     }
                 }
-                waitTime(timeBefore, downloadLink);
                 /* Captcha START */
                 if (br.containsHTML("g-recaptcha")) {
+                    /* 2017-12-07: Do NOT wait before this captcha otherwise we might run into a timeout! */
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+                        /* 2017-12-07: New */
+                        /* Do not put the result in this Form as the check is handled below already */
+                        dlForm.put("g-recaptcha-response", "");
+                        final Form specialCaptchaForm = new Form();
+                        specialCaptchaForm.setMethod(MethodType.POST);
+                        specialCaptchaForm.setAction("/ddl");
+                        final InputField if_Rand = dlForm.getInputFieldByName("rand");
+                        final String file_id = PluginJSonUtils.getJson(br, "file_id");
+                        if (if_Rand != null) {
+                            /* This is usually given */
+                            specialCaptchaForm.put("rand", if_Rand.getValue());
+                        }
+                        if (!StringUtils.isEmpty(file_id)) {
+                            /* This is usually given */
+                            specialCaptchaForm.put("file_id", file_id);
+                        }
+                        specialCaptchaForm.put("op", "captcha1");
+                        specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        /* User existing Browser object as we get a cookie which is required later. */
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.submitForm(br, specialCaptchaForm);
+                        if (!br.toString().equalsIgnoreCase("OK")) {
+                            logger.warning("Fatal reCaptchaV2 special handling failure");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.getHeaders().remove("X-Requested-With");
+                    } else {
+                        /* Old */
+                        dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
                 } else if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /** Captcha method by ManiacMansion */
@@ -314,6 +391,7 @@ public class NovaFileCom extends antiDDoSForHost {
                 if (password) {
                     passCode = handlePassword(passCode, dlForm, downloadLink);
                 }
+                waitTime(timeBefore, downloadLink);
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true, passCode);
@@ -333,6 +411,8 @@ public class NovaFileCom extends antiDDoSForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dllink = Encoding.urlEncode_light(dllink);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
+        setDownloadStarted(downloadLink, 0);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume failed --> Retrying from zero");
             downloadLink.setChunksProgress(null);
@@ -490,7 +570,7 @@ public class NovaFileCom extends antiDDoSForHost {
         }
     }
 
-    public void checkErrors(final DownloadLink theLink, final Account account, boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink theLink, final Account account, boolean checkAll, final String passCode) throws Exception {
         if (account != null) {
             synchronized (LOCK) {
                 final String hours = new Regex(correctedBR, "class=\"error_page\">\\s*You've used \\d+ different IPs to download in last \\d+ hours\\. You're not allowed to download for (\\d+) hours\\.").getMatch(0);
@@ -556,6 +636,7 @@ public class NovaFileCom extends antiDDoSForHost {
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
                 }
+                setDownloadStarted(theLink, waittime);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
@@ -592,6 +673,10 @@ public class NovaFileCom extends antiDDoSForHost {
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (new Regex(correctedBR, "Connection limit\\!").matches()) {
+            /* Comes along with response 503 */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
     }
 
@@ -880,6 +965,131 @@ public class NovaFileCom extends antiDDoSForHost {
                 sleep(tt * 1000l, downloadLink);
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws Exception {
+        synchronized (CTRLLOCK) {
+            final long timestamp_download_started;
+            if (remaining_reconnect_wait > 0) {
+                /*
+                 * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp. Add
+                 * 1 minute to make sure that we wait long enough!
+                 */
+                long timePassed = FREE_RECONNECTWAIT - remaining_reconnect_wait;
+                /* Errorhandling for invalid values */
+                if (timePassed < 0) {
+                    timePassed = 0;
+                }
+                timestamp_download_started = System.currentTimeMillis() - timePassed;
+            } else {
+                /*
+                 * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just now.
+                 */
+                timestamp_download_started = System.currentTimeMillis();
+            }
+            blockedIPsMap.put(currentIP.get(), timestamp_download_started);
+            setIP(dl, null);
+            getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean setIP(final DownloadLink link, final Account account) throws Exception {
+        synchronized (IPCHECK) {
+            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (ipChanged(link) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                String lastIP = currentIP.get();
+                link.setProperty(PROPERTY_LASTIP, lastIP);
+                NovaFileCom.lastIP.set(lastIP);
+                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
+                logger.info("LastIP = " + lastIP);
+                return true;
+            }
+        }
+    }
+
+    private long getPluginSavedLastDownloadTimestamp() {
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Long> ipentry = it.next();
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                    /* Remove old entries */
+                    it.remove();
+                }
+                if (ip.equals(currentIP.get())) {
+                    lastdownload = timestamp;
+                }
+            }
+        }
+        return lastdownload;
+    }
+
+    private boolean ipChanged(final DownloadLink link) throws Exception {
+        String currIP = null;
+        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
+            currIP = currentIP.get();
+        } else {
+            currIP = getIP();
+        }
+        if (currIP == null) {
+            return false;
+        }
+        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
+        if (lastIP == null) {
+            lastIP = NovaFileCom.lastIP.get();
+        }
+        if (lastIP == null) {
+            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
+        }
+        return !currIP.equals(lastIP);
+    }
+
+    private String getIP() throws Exception {
+        Browser ip = new Browser();
+        String currentIP = null;
+        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
+        Collections.shuffle(checkIP);
+        Exception exception = null;
+        for (String ipServer : checkIP) {
+            if (currentIP == null) {
+                try {
+                    ip.getPage(ipServer);
+                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
+                    if (currentIP != null) {
+                        break;
+                    }
+                } catch (Exception e) {
+                    if (exception == null) {
+                        exception = e;
+                    }
+                }
+            }
+        }
+        if (currentIP == null) {
+            if (exception != null) {
+                throw exception;
+            }
+            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return currentIP;
+    }
+
+    private final boolean default_eh = false;
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.").setDefaultValue(default_eh));
     }
 
     @Override

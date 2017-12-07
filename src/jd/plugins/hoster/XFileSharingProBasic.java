@@ -27,6 +27,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
@@ -44,7 +45,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -55,6 +58,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
@@ -136,7 +140,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.6.2<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.6.3<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -572,9 +576,39 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Captcha START */
                 if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     waitTime(downloadLink, timeBefore);
-                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    logger.info("Detected captcha method \"RecaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+                        /* 2017-12-07: New */
+                        /* Do not put the result in this Form as the check is handled below already */
+                        dlForm.put("g-recaptcha-response", "");
+                        final Form specialCaptchaForm = new Form();
+                        specialCaptchaForm.setMethod(MethodType.POST);
+                        specialCaptchaForm.setAction("/ddl");
+                        final InputField if_Rand = dlForm.getInputFieldByName("rand");
+                        final String file_id = PluginJSonUtils.getJson(br, "file_id");
+                        if (if_Rand != null) {
+                            /* This is usually given */
+                            specialCaptchaForm.put("rand", if_Rand.getValue());
+                        }
+                        if (!StringUtils.isEmpty(file_id)) {
+                            /* This is usually given */
+                            specialCaptchaForm.put("file_id", file_id);
+                        }
+                        specialCaptchaForm.put("op", "captcha1");
+                        specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        /* User existing Browser object as we get a cookie which is required later. */
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.submitForm(br, specialCaptchaForm);
+                        if (!br.toString().equalsIgnoreCase("OK")) {
+                            logger.warning("Fatal reCaptchaV2 special handling failure");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.getHeaders().remove("X-Requested-With");
+                    } else {
+                        /* Old */
+                        dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
                 } else {
                     if (correctedBR.contains(";background:#ccc;text-align")) {
                         logger.info("Detected captcha method \"plaintext captchas\" for this host");

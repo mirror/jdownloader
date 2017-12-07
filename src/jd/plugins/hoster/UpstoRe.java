@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -56,7 +55,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
-
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
         if ("upstore.net".equals(getHost())) {
@@ -86,7 +84,6 @@ public class UpstoRe extends antiDDoSForHost {
     private static Object                  LOCK                          = new Object();
     private final String                   MAINPAGE                      = "http://upstore.net";
     private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
-
     private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private final String                   EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
     private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
@@ -165,8 +162,6 @@ public class UpstoRe extends antiDDoSForHost {
                 blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
             }
         }
-        long lastdownload = 0;
-        long passedTimeSinceLastDl = 0;
         String dllink = checkDirectLink(downloadLink, "freelink");
         if (dllink == null) {
             {
@@ -185,8 +180,8 @@ public class UpstoRe extends antiDDoSForHost {
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
                  * download using the same free accounts after performing a reconnect!
                  */
-                lastdownload = getPluginSavedLastDownloadTimestamp();
-                passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                long lastdownload = getPluginSavedLastDownloadTimestamp();
+                long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
                 if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
@@ -286,7 +281,6 @@ public class UpstoRe extends antiDDoSForHost {
         } else if (br.containsHTML(">This file is available only for Premium users<")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-
         /* Here some errors that should only happen in free(account) mode: */
         if (br.containsHTML(">Server for free downloads is overloaded<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server for free downloads is overloaded'", 30 * 60 * 1000l);
@@ -305,33 +299,6 @@ public class UpstoRe extends antiDDoSForHost {
             v = v + soup.charAt(r.nextInt(soup.length()));
         }
         return v;
-    }
-
-    @SuppressWarnings("deprecation")
-    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws Exception {
-        synchronized (CTRLLOCK) {
-            final long timestamp_download_started;
-            if (remaining_reconnect_wait > 0) {
-                /*
-                 * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp. Add
-                 * 1 minute to make sure that we wait long enough!
-                 */
-                long timePassed = FREE_RECONNECTWAIT - remaining_reconnect_wait - FREE_RECONNECTWAIT_ADDITIONAL;
-                /* Errorhandling for invalid values */
-                if (timePassed < 0) {
-                    timePassed = 0;
-                }
-                timestamp_download_started = System.currentTimeMillis() - timePassed;
-            } else {
-                /*
-                 * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just now.
-                 */
-                timestamp_download_started = System.currentTimeMillis();
-            }
-            blockedIPsMap.put(currentIP.get(), timestamp_download_started);
-            setIP(dl, null);
-            getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -512,7 +479,6 @@ public class UpstoRe extends antiDDoSForHost {
         ai.setTrafficMax(trafficDaily);
         ai.setStatus("Premium Account");
         account.setValid(true);
-
         return ai;
     }
 
@@ -666,6 +632,33 @@ public class UpstoRe extends antiDDoSForHost {
             }
         }
         return dllink;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws Exception {
+        synchronized (CTRLLOCK) {
+            final long timestamp_download_started;
+            if (remaining_reconnect_wait > 0) {
+                /*
+                 * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp. Add
+                 * 1 minute to make sure that we wait long enough!
+                 */
+                long timePassed = FREE_RECONNECTWAIT - remaining_reconnect_wait - FREE_RECONNECTWAIT_ADDITIONAL;
+                /* Errorhandling for invalid values */
+                if (timePassed < 0) {
+                    timePassed = 0;
+                }
+                timestamp_download_started = System.currentTimeMillis() - timePassed;
+            } else {
+                /*
+                 * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just now.
+                 */
+                timestamp_download_started = System.currentTimeMillis();
+            }
+            blockedIPsMap.put(currentIP.get(), timestamp_download_started);
+            setIP(dl, null);
+            getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+        }
     }
 
     @SuppressWarnings("deprecation")
