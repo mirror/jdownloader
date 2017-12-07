@@ -17,15 +17,16 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores\\.(?:tv|video|biz|sc|io|adult|cc)/videos/\\d+/[a-z0-9\\-]+/" })
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/videos/\\d+/[a-z0-9\\-]+/" })
 public class CamwhoresTv extends PornEmbedParser {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,13 +37,18 @@ public class CamwhoresTv extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceFirst("camwhores.tv/", "camwhores.cc/");
         br.getPage(parameter);
         if (jd.plugins.hoster.CamwhoresTv.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "cwcams.com/landing")) {
+            return decryptedLinks;
+        } else if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "de.stripchat.com")) {
+            return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        br.followRedirect();
+        final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.size() == 0) {
             /* Probably a selfhosted video. */
