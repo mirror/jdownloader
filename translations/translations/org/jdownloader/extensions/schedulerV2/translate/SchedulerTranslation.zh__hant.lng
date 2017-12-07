@@ -1,4 +1,5 @@
 action_Reconnect=重新連線
+action_Restart_JDownloader=重新啟動 JDownloader
 action_addAllDownloads=全部加入下載
 action_captcha_none=無
 action_captcha_service=服務

@@ -100,6 +100,7 @@ extpasswordeditorcolumn_tooltip=您的密碼
 extttable_disable_all=全部停用
 extttable_enabled_all=全部啟用
 inactive=已停用
+lit_and=及
 lit_close=關閉
 lit_continue=繼續
 lit_save=儲存
