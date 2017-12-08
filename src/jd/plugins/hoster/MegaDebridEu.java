@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,9 +36,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static Object                                  ACCLOCK            = new Object();
@@ -94,7 +93,7 @@ public class MegaDebridEu extends PluginForHost {
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final Object resultz : (ArrayList<Object>) results.get("hosters")) {
             final LinkedHashMap<String, Object> r = (LinkedHashMap<String, Object>) resultz;
-            if (!"up".equals(r.get("status"))) {
+            if (!"up".equals(r.get("status")) || r.get("domains") == null) {
                 continue;
             }
             for (final String domain : (ArrayList<String>) r.get("domains")) {
