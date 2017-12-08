@@ -13,13 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +27,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-mylinks.com" }, urls = { "https?://(?:www\\.)?protect\\-mylinks\\.com/(?:decrypt|f)\\?i=[a-z0-9]+" })
 public class ProtectMylinksCom extends antiDDoSForDecrypt {
-
     public ProtectMylinksCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,14 +56,14 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            br.setFollowRedirects(false);
             for (final String singleLink : links) {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(false);
                 getPage(br2, singleLink);
-                final String finallink = br.getRedirectLocation();
+                final String finallink = br2.getRedirectLocation();
                 if (finallink == null || finallink.contains(this.getHost() + "/")) {
                     continue;
                 }
@@ -83,14 +81,11 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(this.createDownloadlink(Request.getLocation(finallink, br.getRequest())));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
