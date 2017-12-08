@@ -26,14 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -57,9 +49,16 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mexashare.com" }, urls = { "https?://(?:www\\.)?mexashare\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class MexashareCom extends PluginForHost {
-
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode|>The service is currently under maintenance";
@@ -1082,9 +1081,12 @@ public class MexashareCom extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|download this file after :)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+            if (wait == null) {
+                wait = new Regex(correctedBR, "You have to wait|download this file after :</a><br>\\s<br><[^<>]+>([^<>]+)").getMatch(0);
+            }
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
