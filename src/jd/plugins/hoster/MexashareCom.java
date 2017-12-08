@@ -1085,13 +1085,13 @@ public class MexashareCom extends PluginForHost {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             if (wait == null) {
-                wait = new Regex(correctedBR, "You have to wait|download this file after :</a><br>\\s<br><[^<>]+>([^<>]+)").getMatch(0);
+                wait = new Regex(correctedBR, "download this file after :</a><br>\\s*<br><[^<>]+>([^<>]+)").getMatch(0);
             }
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             }
-            String tmpmin = new Regex(wait, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(wait, "\\s*(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin == null) {
                 tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             }
