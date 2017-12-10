@@ -84,29 +84,38 @@ public class PornHubCom extends PluginForDecrypt {
         final String username = new Regex(parameter, "users/([^/]+)/").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int page = 1;
-        final int max_entries_per_page = 50;
-        int last_count_entries_per_page;
+        final int max_entries_per_page = 48;
+        int links_found_in_this_page;
         final Set<String> dups = new HashSet<String>();
+        String publicVideos = null;
         do {
             if (this.isAbort()) {
                 return;
             }
             if (page > 1) {
-                jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
+                // jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
+                br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    break;
+                }
+                publicVideos = br.toString();
+            } else {
+                // only parse the user videos
+                publicVideos = br.getRegex("(>public Videos<.+?>Load More<)").getMatch(0);
             }
-            // only parse the user videos
-            final String publicVideos = br.getRegex(">public Videos<(.+)").getMatch(0);
             final String[] viewkeys = new Regex(publicVideos, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
             for (final String viewkey : viewkeys) {
                 if (dups.add(viewkey)) {
-                    final DownloadLink dl = this.createDownloadlink("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
+                    // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
+                    final DownloadLink dl = createDownloadlink("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
             }
-            last_count_entries_per_page = viewkeys.length;
+            logger.info("Links found in page " + page + ": " + viewkeys.length);
+            links_found_in_this_page = viewkeys.length;
             page++;
-        } while (last_count_entries_per_page >= max_entries_per_page);
+        } while (links_found_in_this_page == max_entries_per_page);
     }
 
     private void decryptSingleVideo() throws Exception {
