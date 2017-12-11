@@ -108,7 +108,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                  */
                 playInfo = (String) entries.get("url");
                 if (playInfo != null) {
-                    playInfo = playInfo.replace(" ", "/");
+                    playInfo = playInfo.replace(" ", "+");
                     playInfo = decode(playInfo);
                     if (playInfo.contains("test")) {
                         /* Skip teststreams */
