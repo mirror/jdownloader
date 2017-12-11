@@ -17,7 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
-import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -33,9 +33,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "https?://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" })
 public class MinhatecaComBr extends PluginForDecrypt {
-
     public MinhatecaComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,7 +54,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
-        /* No permission to see file/folder */ {
+        /* No permission to see file/folder */{
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -86,19 +87,20 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 if (passCode == null) {
                     passCode = Plugin.getUserInput("Folder password?", param);
                 }
-                // TODO: fix this with form!
-                if (true) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                final Form pwform = br.getFormbyAction("/action/Files/LoginToFolder");
+                if (pwform == null) {
+                    logger.info("Password Form == null");
+                } else {
+                    logger.info("Put password \"" + passCode + "\" entered by user in the pwform.");
+                    pwform.put("password", Encoding.urlEncode(passCode));
                 }
-                // br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid
-                // + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode)
-                // + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                br.submitForm(pwform);
                 if (br.containsHTML("\"IsSuccess\":false")) {
-                    this.getPluginConfig().setProperty("last_used_password", Property.NULL);
+                    getPluginConfig().setProperty("last_used_password", Property.NULL);
                     continue;
                 }
                 success = true;
-                this.getPluginConfig().setProperty("last_used_password", passCode);
+                getPluginConfig().setProperty("last_used_password", passCode);
                 break;
             }
             if (!success) {
