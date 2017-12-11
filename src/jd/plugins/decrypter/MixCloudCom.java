@@ -90,7 +90,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         Object cloudcastStreamInfo = null;
         LinkedHashMap<String, Object> entries = null;
         /* Find correct json object inside ArrayList */
-        json = Encoding.htmlDecode(json);
+        json = Encoding.htmlOnlyDecode(json);
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         for (final Object audioO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) audioO;
@@ -108,7 +108,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                  */
                 playInfo = (String) entries.get("url");
                 if (playInfo != null) {
-                    playInfo = playInfo.replace(" ", "+");
                     playInfo = decode(playInfo);
                     if (playInfo.contains("test")) {
                         /* Skip teststreams */
