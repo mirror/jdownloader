@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video\\.php\\?id=[A-Za-z0-9]+.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video(?:\\.php\\?id=|/)[A-Za-z0-9]+.+" })
 public class JavynowCom extends PluginForHost {
-
     public JavynowCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,14 +39,12 @@ public class JavynowCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -69,7 +65,12 @@ public class JavynowCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "id=([A-Za-z0-9]+)").getMatch(0).replace("-", " ");
+        if (br.getRedirectLocation().contains("/cushion/")) {
+            br.getPage(br.getRedirectLocation());
+            // <a href="https://javynow.com/video/20805072/">
+            br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
+        }
+        final String url_filename = new Regex(link.getDownloadURL(), "(?:id=|/)([A-Za-z0-9]+)").getMatch(0).replace("-", " ");
         String filename = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
@@ -84,9 +85,11 @@ public class JavynowCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink == null && !this.br.containsHTML("id=\"playerArea\"")) {
+        if (dllink == null && !br.containsHTML("id=\"playerArea\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // Todo: Find m3u8 from p,a,c,k,e,d
+        logger.info(br.getRegex("(playerArea.+?</script>)").getMatch(0));
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
