@@ -80,7 +80,7 @@ public class YouPornCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         final String fid = getFID(link.getDownloadURL());
         link.setLinkID(fid);
-        link.setUrlDownload("http://www.youporn.com/watch/" + fid + "/" + System.currentTimeMillis() + "/");
+        link.setUrlDownload("https://www.youporn.com/watch/" + fid + "/" + System.currentTimeMillis() + "/");
     }
 
     private static final String defaultEXT = ".mp4";
@@ -156,16 +156,16 @@ public class YouPornCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
+            dllink = br.getRegex("\"(https?://[^<>\"\\']+)\">MP4").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://cdn[a-z0-9]+\\.public\\.youporn\\.phncdn\\.com/[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://cdn[a-z0-9]+\\.public\\.youporn\\.phncdn\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
+            dllink = br.getRegex("<ul class=\"downloadList\">.*?href=\"(https?://[^\"]+)\">.*?</ul>").getMatch(0);
         }
         if (dllink != null) {
             /* Do NOT htmldecode! */
