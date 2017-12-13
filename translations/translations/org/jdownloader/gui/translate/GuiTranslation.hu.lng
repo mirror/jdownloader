@@ -412,6 +412,7 @@ EnableAction_run_msg_=Valóban szeretné letiltani és leállnak letöltést?\nA
 EnabledAction_EnabledAction_disable=Tiltás
 EnabledAction_EnabledAction_empty=Link engedélyezése/tiltása
 EnabledAction_EnabledAction_enable=Engedélyez
+EnabledAction_EnabledAction_mode=Mód
 EnabledDisabledColumn_EnabledDisabledColumn=Engedélyezett / Letiltott
 EndCaptchaSolver_gettypeName_=EndCaptcha.com
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Szűrő kivétel szabály
