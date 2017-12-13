@@ -166,7 +166,7 @@ public class PornveCom extends PluginForHost {
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (br.getURL().contains("/404.") || new Regex(correctedBR, "(No such file|File Not Found|>The file was removed by|Reason for deletion:\n|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = this.br.cloneBrowser();
