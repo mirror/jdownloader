@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -29,9 +26,11 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,10 +41,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" })
 public class MinhatecaComBr extends PluginForHost {
-
     @Override
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
         if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
@@ -116,8 +117,8 @@ public class MinhatecaComBr extends PluginForHost {
     }
 
     public void doFree(final Account account, final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        handlePWProtected(downloadLink);
         final String requestVerificationToken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        handlePWProtected(downloadLink);
         final String fid = downloadLink.getStringProperty("plain_fid", null);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null && downloadLink.getFinalFileName().contains(".mp3") && this.getPluginConfig().getBooleanProperty("ENABLE_MP3_STREAM_DOWNLOAD", true)) {
@@ -353,7 +354,7 @@ public class MinhatecaComBr extends PluginForHost {
         }
     }
 
-    private void handlePWProtected(final DownloadLink dl) throws Exception {
+    private void handlePWProtected0(final DownloadLink dl) throws Exception { // To be deleted, has been replaced.
         String passCode = dl.getStringProperty("pass", null);
         if (br.containsHTML("class=\"LoginToFolderForm\"")) {
             final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -383,6 +384,47 @@ public class MinhatecaComBr extends PluginForHost {
             /* We don't want to work with the encoded json bla html response */
             br.getPage(dl.getStringProperty("mainlink", null));
         }
+    }
+
+    private void handlePWProtected(final DownloadLink dl) throws Exception {
+        String passCode = null;
+        final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML("class=\"LoginToFolderForm\"")) {
+            // folder password
+            if (reqtoken == null) {
+                // logger.warning("Decrypter broken for link: " + parameter);
+                // return null;
+            }
+            boolean success = false;
+            for (int i = 0; i <= 2; i++) {
+                if (i == 0) {
+                    passCode = this.getPluginConfig().getStringProperty("last_used_password", null);
+                }
+                if (passCode == null) {
+                    passCode = Plugin.getUserInput("Folder password?", dl);
+                }
+                final Form pwform = br.getFormbyAction("/action/Files/LoginToFolder");
+                if (pwform == null) {
+                    logger.info("Password Form == null");
+                } else {
+                    logger.info("Put password \"" + passCode + "\" entered by user in the pwform.");
+                    pwform.put("password", Encoding.urlEncode(passCode));
+                }
+                br.submitForm(pwform);
+                if (br.containsHTML("\"IsSuccess\":false")) {
+                    getPluginConfig().setProperty("last_used_password", Property.NULL);
+                    continue;
+                }
+                success = true;
+                getPluginConfig().setProperty("last_used_password", passCode);
+                break;
+            }
+            if (!success) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+        }
+        /* We don't want to work with the encoded json bla html response */
+        // br.getPage(parameter);
     }
 
     @Override
