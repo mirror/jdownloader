@@ -296,7 +296,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     return false;
                 }
                 // needs to be before password
-                if (br.containsHTML("Continue to album >>")) {
+                if (br.containsHTML("Continue to album(?: >>)?")) {
                     String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(http://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
                     if (newLink == null) {
                         /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
