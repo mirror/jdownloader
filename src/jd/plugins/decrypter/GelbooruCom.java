@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "https?://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "https?://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-%]+" })
 public class GelbooruCom extends PluginForDecrypt {
     public GelbooruCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +42,7 @@ public class GelbooruCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "tags=([A-Za-z0-9]+)").getMatch(0);
+        final String fpName = new Regex(parameter, "tags=([A-Za-z0-9_\\-%]+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         final String url_part = parameter;
