@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -81,8 +82,8 @@ public class SpeedvidNet extends antiDDoSForHost {
     private final boolean        VIDEOHOSTER_2                      = true;
     private final boolean        VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = true;
     /*
-     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
-     * will check for videohoster "next" Download/Ad- Form.
+     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree will
+     * check for videohoster "next" Download/Ad- Form.
      */
     private final boolean        IMAGEHOSTER                        = false;
     private final boolean        SUPPORTS_HTTPS                     = false;
@@ -198,8 +199,8 @@ public class SpeedvidNet extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             /*
-             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
-             * There are 2 alternative ways to get this information anyways!
+             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline. There are 2
+             * alternative ways to get this information anyways!
              */
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
@@ -244,16 +245,16 @@ public class SpeedvidNet extends antiDDoSForHost {
         }
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
-             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
-             * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
+             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add ".jpg"
+             * extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
              */
             fileInfo[0] = this.fuid + ".jpg";
             link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (inValidate(fileInfo[0])) {
             /*
-             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
-             * code needs to be updated in this case!
+             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin code needs
+             * to be updated in this case!
              */
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -275,8 +276,8 @@ public class SpeedvidNet extends antiDDoSForHost {
         link.setName(fileInfo[0]);
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
-             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already
-             * know that the file must be online!
+             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that
+             * the file must be online!
              */
             logger.info("Failed to find filesize --> Trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
@@ -727,8 +728,8 @@ public class SpeedvidNet extends antiDDoSForHost {
     }
 
     /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
+     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content [NOT
+     * html]).
      */
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
@@ -778,8 +779,8 @@ public class SpeedvidNet extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -818,6 +819,7 @@ public class SpeedvidNet extends antiDDoSForHost {
     /** Function to find the final downloadlink. */
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
+        Map<String, String> dllinkMap = new HashMap<String, String>();
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
@@ -826,12 +828,10 @@ public class SpeedvidNet extends antiDDoSForHost {
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     int counter = 0;
                     for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        /* 2017-07-20: Workaround as the first source contains an invalid downloadurl ... */
-                        if (dllink != null && counter == 1) {
-                            break;
+                        final String[] result = decodeDownloadLink(crypted);
+                        if (result != null && result.length == 2) {
+                            dllinkMap.put(result[0], result[1]);
                         }
-                        counter++;
                     }
                 }
             }
@@ -876,7 +876,10 @@ public class SpeedvidNet extends antiDDoSForHost {
                 }
             }
             if (inValidate(dllink)) {
-                dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+                final String[] result = new Regex(correctedBR, "jwplayer\\((?:\"|')([^\"']+).+?file:\\s*(?:\"|')([^\"|']+)").getRow(0);
+                if (result != null && result.length == 2) {
+                    dllinkMap.put(result[0], result[1]);
+                }
             }
         }
         if (dllink == null && IMAGEHOSTER) {
@@ -895,10 +898,14 @@ public class SpeedvidNet extends antiDDoSForHost {
                 }
             }
         }
+        if (dllink == null && !dllinkMap.isEmpty()) {
+            String key = new Regex(correctedBR, "jwplayer\\((?:\"|')([^\"']+)(?:\"|')\\)\\.onReady\\(").getMatch(0);
+            dllink = dllinkMap.get(key);
+        }
         return dllink;
     }
 
-    private String decodeDownloadLink(final String s) {
+    private String[] decodeDownloadLink(final String s) {
         String decoded = null;
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
@@ -915,16 +922,11 @@ public class SpeedvidNet extends antiDDoSForHost {
             decoded = p;
         } catch (Exception e) {
         }
-        String finallink = null;
+        String[] mapData = null;
         if (decoded != null) {
-            /* Open regex is possible because in the unpacked JS there are usually only 1 links */
-            finallink = new Regex(decoded, "(?:\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(?:\"|\\')").getMatch(0);
-            if (finallink == null) {
-                /* Maybe rtmp */
-                finallink = new Regex(decoded, "(?:\"|\\')(rtmp://[^<>\"\\']*?mp4:[^<>\"\\']+)(?:\"|\\')").getMatch(0);
-            }
+            mapData = new Regex(decoded, "jwplayer\\((?:\"|')([^\"']+).+?file:(?:\"|')([^\"|']+)").getRow(0);
         }
-        return finallink;
+        return mapData;
     }
 
     @Override
@@ -1084,8 +1086,8 @@ public class SpeedvidNet extends antiDDoSForHost {
         this.fuid = getFUIDFromURL(dl);
         if (this.fuid == null) {
             /*
-             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code
-             * has been changed an user still has old URLs in downloadlist --> These are usually offline.
+             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code has been
+             * changed an user still has old URLs in downloadlist --> These are usually offline.
              */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1118,8 +1120,8 @@ public class SpeedvidNet extends antiDDoSForHost {
     }
 
     /**
-     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
-     * as 403, 404 and 503.
+     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such as
+     * 403, 404 and 503.
      */
     private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
@@ -1239,8 +1241,7 @@ public class SpeedvidNet extends antiDDoSForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
-     * error.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date error.
      *
      * @param dl
      *            : The DownloadLink
