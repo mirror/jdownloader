@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "http://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "https?://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_]+\\d+\\.html" })
 public class RealGfPornCom extends PluginForHost {
-
     public RealGfPornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +57,7 @@ public class RealGfPornCom extends PluginForHost {
         }
         String filename = br.getRegex("<h3 class=\"video_title\">(.*?)</h3>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?)( - Real Girlfriend Porn)?</title>").getMatch(0);
         }
         dllink = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
         if (dllink == null) {
@@ -75,6 +73,7 @@ public class RealGfPornCom extends PluginForHost {
             }
         }
         if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -89,7 +88,7 @@ public class RealGfPornCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -123,5 +122,4 @@ public class RealGfPornCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
