@@ -39,7 +39,7 @@ public class VepornNet extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("video/") || br.containsHTML("URL=http://www.veporn.net'")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("video/") || br.containsHTML("URL=http://www.ve(?:-)?porn.net'")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
