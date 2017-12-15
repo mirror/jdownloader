@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,9 +26,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporn.net" }, urls = { "https?://(?:www\\.)?veporn\\.net/video/[A-Za-z0-9\\-_]+" })
-public class VepornNet extends antiDDoSForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporn.net" }, urls = { "https?://(?:www\\.)?ve(?:-)?porn\\.net/video/[A-Za-z0-9\\-_]+" })
+public class VepornNet extends antiDDoSForDecrypt {
     public VepornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,7 +56,7 @@ public class VepornNet extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             final Browser br = this.br.cloneBrowser();
-            getPage(br, "http://www.veporn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
+            getPage(br, "http://www.ve-porn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
             final String finallink = br.getRegex("iframe src=\"(http[^<>\"]+)\"").getMatch(0);
             if (finallink == null) {
                 continue;
@@ -66,14 +64,11 @@ public class VepornNet extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
             counter++;
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
