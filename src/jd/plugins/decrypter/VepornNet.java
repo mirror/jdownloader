@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -25,8 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporn.net" }, urls = { "https?://(?:www\\.)?ve(?:-)?porn\\.net/video/[A-Za-z0-9\\-_]+" })
 public class VepornNet extends antiDDoSForDecrypt {
@@ -57,9 +57,12 @@ public class VepornNet extends antiDDoSForDecrypt {
             }
             final Browser br = this.br.cloneBrowser();
             getPage(br, "http://www.ve-porn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
-            final String finallink = br.getRegex("iframe src=\"(http[^<>\"]+)\"").getMatch(0);
+            String finallink = br.getRegex("iframe src='(http[^<>']+)'").getMatch(0);
             if (finallink == null) {
-                continue;
+                finallink = br.getRegex("iframe src=\"(http[^<>\"]+)\"").getMatch(0);
+                if (finallink == null) {
+                    continue;
+                }
             }
             decryptedLinks.add(createDownloadlink(finallink));
             counter++;
