@@ -13,13 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +27,11 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short.am" }, urls = { "https?://(?:www\\.)?short\\.am/[A-Za-z0-9]+" })
-public class ShortAm extends antiDDoSForDecrypt {
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short.am" }, urls = { "https?://(?:www\\.)?s(ho)?rt\\.am/[A-Za-z0-9]+" })
+public class ShortAm extends antiDDoSForDecrypt {
     public ShortAm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -73,9 +71,7 @@ public class ShortAm extends antiDDoSForDecrypt {
             }
             return null;
         }
-
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 }
