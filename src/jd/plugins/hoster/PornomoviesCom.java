@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornomovies.com" }, urls = { "https?://(?:www\\.)?pornomovies\\.com/(?:\\d+\\-[a-z0-9\\-]+\\.html|embed/\\d+)" })
 public class PornomoviesCom extends PluginForHost {
-
     public PornomoviesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,12 +41,10 @@ public class PornomoviesCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -73,7 +69,7 @@ public class PornomoviesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Content Removed<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "pornomovies\\.com/([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
@@ -81,20 +77,22 @@ public class PornomoviesCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        // dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("file:\\s*(?:'|\")([^<>'\"]*?)(?:'|\")").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            // dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            // dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            // dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("(https?://[^<>\"]+\\.mp4[^<>\"]+\\&nva=[^<>\"]+)").getMatch(0);
+            // dllink = br.getRegex("(https?://[^<>\"]+\\.mp4[^<>\"]+\\&nva=[^<>\"]+)").getMatch(0);
         }
-        if (filename == null) {
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
