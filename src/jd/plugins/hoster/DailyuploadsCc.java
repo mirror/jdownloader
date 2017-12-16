@@ -32,6 +32,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -413,7 +414,11 @@ public class DailyuploadsCc extends PluginForHost {
                     }
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
+                if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } else if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
                     final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
@@ -609,8 +614,8 @@ public class DailyuploadsCc extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -981,8 +986,7 @@ public class DailyuploadsCc extends PluginForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
-     * error.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date error.
      *
      * @param dl
      *            : The DownloadLink
