@@ -101,9 +101,13 @@ public class PornHubCom extends PluginForDecrypt {
                 publicVideos = br.toString();
             } else {
                 // only parse the user videos
-                publicVideos = br.getRegex("(>public Videos<.+?>Load More<)").getMatch(0);
+                publicVideos = br.getRegex("(>public Videos<.+?(>Load More<|</section>))").getMatch(0);
             }
+            // logger.info("publicVideos: " + publicVideos); // For debugging
             final String[] viewkeys = new Regex(publicVideos, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
+            if (viewkeys == null || viewkeys.length == 0) {
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
             for (final String viewkey : viewkeys) {
                 if (dups.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
@@ -130,7 +134,7 @@ public class PornHubCom extends PluginForDecrypt {
             }
             final String newLink = br.getRegex("<link_url>(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
-                throw new DecrypterException("Decrypter broken");
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             parameter = newLink;
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
