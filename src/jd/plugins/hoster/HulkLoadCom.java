@@ -527,11 +527,13 @@ public class HulkLoadCom extends PluginForHost {
         // remove custom rules first!!! As html can change because of generic cleanup rules.
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
-        for (final Form f : br.getForms()) {
-            if (!f.containsHTML("(<input[^>]+type=\"submit\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<input[^>]+type=\"button\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>)|" + dllinkRegex + ")")) {
-                toClean = toClean.replace(f.getHtmlCode(), "");
-            }
-        }
+        // for (final Form f : br.getForms()) {
+        // if
+        // (!f.containsHTML("(<input[^>]+type=\"submit\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<input[^>]+type=\"button\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>)|"
+        // + dllinkRegex + ")")) {
+        // toClean = toClean.replace(f.getHtmlCode(), "");
+        // }
+        // }
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
@@ -567,7 +569,44 @@ public class HulkLoadCom extends PluginForHost {
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
-        String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        String ttt = cbr.getRegex("id=\"countdown\">[^<>\"]+<span class=\"[^<>\"]+\"?>\\s*(\\d+)\\s*</span>").getMatch(0);
+        if (inValidate(ttt)) {
+            if (cbr.containsHTML("You have to wait")) {
+                String WAIT = cbr.getRegex("((You have to wait)[^<>]+)").getMatch(0);
+                String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
+                if (inValidate(tmphrs)) {
+                    tmphrs = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+                }
+                String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+                if (inValidate(tmpmin)) {
+                    tmpmin = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+                }
+                String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+                String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
+                if (inValidate(tmphrs) && inValidate(tmpmin) && inValidate(tmpsec) && inValidate(tmpdays)) {
+                    logger.info("Waittime regexes seem to be broken");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                } else {
+                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                    if (!inValidate(tmpdays)) {
+                        days = Integer.parseInt(tmpdays);
+                    }
+                    if (!inValidate(tmphrs)) {
+                        hours = Integer.parseInt(tmphrs);
+                    }
+                    if (!inValidate(tmpmin)) {
+                        minutes = Integer.parseInt(tmpmin);
+                    }
+                    if (!inValidate(tmpsec)) {
+                        seconds = Integer.parseInt(tmpsec);
+                    }
+                    ttt = String.valueOf((years * 86400 * 365) + (days * 86400) + (hours * 3600) + (minutes * 60) + (seconds * 1));
+                }
+            }
+        }
+        if (inValidate(ttt)) {
+            ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        }
         if (inValidate(ttt)) {
             ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         }
