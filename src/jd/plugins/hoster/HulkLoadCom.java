@@ -571,40 +571,6 @@ public class HulkLoadCom extends PluginForHost {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown\">[^<>\"]+<span class=\"[^<>\"]+\"?>\\s*(\\d+)\\s*</span>").getMatch(0);
         if (inValidate(ttt)) {
-            if (cbr.containsHTML("You have to wait")) {
-                String WAIT = cbr.getRegex("((You have to wait)[^<>]+)").getMatch(0);
-                String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
-                if (inValidate(tmphrs)) {
-                    tmphrs = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-                }
-                String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-                if (inValidate(tmpmin)) {
-                    tmpmin = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-                }
-                String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-                String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
-                if (inValidate(tmphrs) && inValidate(tmpmin) && inValidate(tmpsec) && inValidate(tmpdays)) {
-                    logger.info("Waittime regexes seem to be broken");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                } else {
-                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpdays)) {
-                        days = Integer.parseInt(tmpdays);
-                    }
-                    if (!inValidate(tmphrs)) {
-                        hours = Integer.parseInt(tmphrs);
-                    }
-                    if (!inValidate(tmpmin)) {
-                        minutes = Integer.parseInt(tmpmin);
-                    }
-                    if (!inValidate(tmpsec)) {
-                        seconds = Integer.parseInt(tmpsec);
-                    }
-                    ttt = String.valueOf((years * 86400 * 365) + (days * 86400) + (hours * 3600) + (minutes * 60) + (seconds * 1));
-                }
-            }
-        }
-        if (inValidate(ttt)) {
             ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         }
         if (inValidate(ttt)) {
