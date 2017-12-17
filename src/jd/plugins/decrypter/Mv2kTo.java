@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(www\\.)?movie4k\\.(?:to|tv)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(www\\.)?movie4k\\.(?:to|tv|org)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
 public class Mv2kTo extends PluginForDecrypt {
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,6 +79,9 @@ public class Mv2kTo extends PluginForDecrypt {
                 part = parts.length;
             }
             for (int i = 0; i <= mirror; i++) {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                }
                 m++;
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim() + (mirror > 1 ? "@Mirror " + i : "")));
