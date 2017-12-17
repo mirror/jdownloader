@@ -60,7 +60,7 @@ public class NudezCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("notification error")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("notification error|You must be friends with")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]+)").getMatch(0);
