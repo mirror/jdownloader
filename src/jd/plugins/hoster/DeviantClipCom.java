@@ -64,7 +64,7 @@ public class DeviantClipCom extends PluginForHost {
         br.setFollowRedirects(true);
         String thelink = downloadLink.getDownloadURL();
         br.getPage(thelink);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("jpg\">\\s*</video>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (downloadLink.getDownloadURL().contains("?fileid=")) {
@@ -85,10 +85,7 @@ public class DeviantClipCom extends PluginForHost {
             }
             dllink = br.getRegex("\"file\":\"(.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<source src='(https?://[^<>']*?)'").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(Encoding.htmlDecode(br.toString()), "\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?\\.flv\\?.*?)\"").getMatch(0);
+                dllink = br.getRegex("<source src=(?:'|\")(https?://[^<>'\"]*?)('|\")").getMatch(0);
             }
             if (filename != null && filename.matches("Free Porn Tube Videos, Extreme Hardcore Porn Galleries")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -139,7 +136,7 @@ public class DeviantClipCom extends PluginForHost {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
-            if (this.br.containsHTML("<embed src=")) {
+            if (br.containsHTML("<embed src=")) {
                 /* E.g. video not even playable via browser. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
