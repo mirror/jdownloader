@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,20 +31,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "http://(?:www\\.)?24video\\.(?:net|xxx|sex)/video/view/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "http://(?:www\\.)?24video\\.(?:net|xxx|sex|adult)/video/view/\\d+" })
 public class TwenteeFourVideoXxx extends PluginForHost {
-
     public TwenteeFourVideoXxx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("24video\\.(net|xxx)/", "24video.sex/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("24video\\.(net|xxx|sex)/", "24video.adult/"));
+        link.setContentUrl(link.getDownloadURL().replaceFirst("24video\\.(net|xxx|sex)/", "24video.adult/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.24video.xxx/staticPage/view/agreement_en";
+        return "http://www.24video.adult/staticPage/view/agreement_en";
     }
 
     @Override
@@ -82,13 +81,31 @@ public class TwenteeFourVideoXxx extends PluginForHost {
         }
         ajaxGetPage("/video/xml/" + getFID(link) + "?mode=init");
         String filename = ajax.getRegex("txt='([^<>]*?)'").getMatch(0);
-        final String filesize = ajax.getRegex("filesize='(\\d+)'").getMatch(0);
-        if (filename == null || filesize == null) {
+        // final String filesize = ajax.getRegex("filesize='(\\d+)'").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = encodeUnicode(Encoding.htmlDecode(filename.trim()) + ".mp4");
         link.setFinalFileName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
+        // link.setDownloadSize(Long.parseLong(filesize));
+        String dllink = ajax.getRegex("<video url=('|\")(http[^<>\"]*?)\\1").getMatch(1);
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html") && con.getLongContentLength() != 0) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("directlink", Property.NULL);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -161,5 +178,4 @@ public class TwenteeFourVideoXxx extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
