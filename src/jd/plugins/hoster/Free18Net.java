@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free18.net" }, urls = { "http://(www\\.)?free18\\.net/video\\-[a-z0-9\\-_]+\\-watch\\-\\d+\\.html" })
 public class Free18Net extends PluginForHost {
-
     public Free18Net(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -80,7 +78,7 @@ public class Free18Net extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.getLongContentLength() != 0) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,26 +105,21 @@ public class Free18Net extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "\"(http[^<>\"]*?)\"").getMatch(0);
