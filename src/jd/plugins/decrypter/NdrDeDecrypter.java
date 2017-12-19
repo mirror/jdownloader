@@ -22,8 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -35,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/.*?\\.html" })
 public class NdrDeDecrypter extends PluginForDecrypt {
@@ -153,7 +153,8 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             boolean qveryhigh = cfg.getBooleanProperty("Q_VERYHIGH", true);
             boolean qhigh = cfg.getBooleanProperty("Q_HIGH", true);
             boolean qlow = cfg.getBooleanProperty("Q_LOW", true);
-            if (qveryhigh == false && qhigh == false && qlow == false) {
+            if (qhd == qveryhigh == qhigh == qlow == false) {
+                qhd = true;
                 qveryhigh = true;
                 qhigh = true;
                 qlow = true;
@@ -205,17 +206,17 @@ public class NdrDeDecrypter extends PluginForDecrypt {
     }
 
     private String getNiceQuality(final String qual) {
-        String nicequal;
-        if (qual.equalsIgnoreCase("hd")) {
-            nicequal = "HD";
+        if (qual == null) {
+            return null;
+        } else if (qual.equalsIgnoreCase("hd")) {
+            return "HD";
         } else if (qual.equalsIgnoreCase("hq")) {
-            nicequal = "VERYHIGH";
+            return "VERYHIGH";
         } else if (qual.equalsIgnoreCase("hi")) {
-            nicequal = "HIGH";
+            return "HIGH";
         } else {
-            nicequal = "LOW";
+            return "LOW";
         }
-        return nicequal;
     }
 
     private String formatDate(String input) {

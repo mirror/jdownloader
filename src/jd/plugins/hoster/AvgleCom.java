@@ -89,7 +89,6 @@ public class AvgleCom extends PluginForHost {
             filename += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);

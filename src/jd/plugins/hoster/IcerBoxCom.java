@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -50,7 +49,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.com" }, urls = { "https?://(www\\.)?icerbox\\.com/[A-Z0-9]{8}" })
 public class IcerBoxCom extends antiDDoSForHost {
-
     private final String language = System.getProperty("user.language");
     private final String baseURL  = "https://icerbox.com";
     private final String apiURL   = "https://icerbox.com/api/v1";
@@ -243,80 +241,76 @@ public class IcerBoxCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (useAPI()) {
-            return fetchAccountInfoApi(account);
-        } else {
-            return fetchAccountInfoWeb(account, false, true);
-        }
+        return fetchAccountInfoApi(account);
     }
 
     private AccountInfo fetchAccountInfoApi(final Account account) throws Exception {
         synchronized (LOCK) {
-            if (inValidate(account.getUser()) || !account.getUser().matches(".+@.+")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            final AccountInfo ai = new AccountInfo();
-            Browser ajax = new Browser();
-            ajax.getHeaders().put("Accept", "application/json");
-            postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            handleApiErrors(ajax, account, null);
-            // recaptcha can happen here on brute force attack
-            if (ajax.getHttpConnection().getResponseCode() == 429) {
-                final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
-                final DownloadLink odl = this.getDownloadLink();
-                this.setDownloadLink(dummyLink);
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, "6LcKRRITAAAAAExk3Pb2MfEBMP7HGTk8HG4cRBXv").getToken();
-                if (odl != null) {
-                    this.setDownloadLink(odl);
+            try {
+                if (inValidate(account.getUser()) || !account.getUser().matches(".+@.+")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                final AccountInfo ai = new AccountInfo();
+                Browser ajax = new Browser();
+                ajax.getHeaders().put("Accept", "application/json");
+                postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 handleApiErrors(ajax, account, null);
+                // recaptcha can happen here on brute force attack
                 if (ajax.getHttpConnection().getResponseCode() == 429) {
-
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                    final DownloadLink odl = this.getDownloadLink();
+                    this.setDownloadLink(dummyLink);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, "6LcKRRITAAAAAExk3Pb2MfEBMP7HGTk8HG4cRBXv").getToken();
+                    if (odl != null) {
+                        this.setDownloadLink(odl);
+                    }
+                    postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                    handleApiErrors(ajax, account, null);
+                    if (ajax.getHttpConnection().getResponseCode() == 429) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                 }
-            }
-            // token
-            final String token = PluginJSonUtils.getJsonValue(ajax, "token");
-            if (token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            account.setProperty("token", token);
-            ajax.getHeaders().put("Authorization", "Bearer " + account.getStringProperty("token"));
-            getPage(ajax, apiURL + "/user/account");
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-            final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
-            final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
-            final Long dailyTrafficMax = (Long) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
-            final Long dailyTrafficUsed = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today")).longValue();
-            // free account
-            if (Boolean.FALSE.equals(is_premium)) {
-                // jdlog://8835079150841
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                // available traffic
-                ai.setTrafficLeft(dailyTrafficMax - dailyTrafficUsed);
-                ai.setTrafficMax(dailyTrafficMax);
-                // date
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("\\.0{6}", ""), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), ajax);
-                if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {
-                    // premium account
-                    account.setType(AccountType.PREMIUM);
-                    ai.setStatus("Premium Account");
-                    account.setValid(true);
-                } else {
-                    // this shouldn't happen....
+                // token
+                final String token = PluginJSonUtils.getJsonValue(ajax, "token");
+                if (token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                account.setProperty("token", token);
+                ajax.getHeaders().put("Authorization", "Bearer " + account.getStringProperty("token"));
+                getPage(ajax, apiURL + "/user/account");
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+                final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
+                final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
+                final Long dailyTrafficMax = (Long) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
+                final Long dailyTrafficUsed = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today")).longValue();
+                // free account
+                if (Boolean.FALSE.equals(is_premium)) {
+                    // jdlog://8835079150841
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    // available traffic
+                    ai.setTrafficLeft(dailyTrafficMax - dailyTrafficUsed);
+                    ai.setTrafficMax(dailyTrafficMax);
+                    // date
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("\\.0{6}", ""), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), ajax);
+                    if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {
+                        // premium account
+                        account.setType(AccountType.PREMIUM);
+                        ai.setStatus("Premium Account");
+                        account.setValid(true);
+                    } else {
+                        // this shouldn't happen....
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    return ai;
                 }
-                return ai;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty("token");
+                }
+                throw e;
             }
         }
-    }
-
-    private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullLogin, boolean fullInfo) throws Exception {
-        synchronized (LOCK) {
-        }
-        return null;
     }
 
     @Override
@@ -369,7 +363,6 @@ public class IcerBoxCom extends antiDDoSForHost {
             handleDownloadErrors(account, downloadLink, true);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-
         dl.startDownload();
     }
 
@@ -538,5 +531,4 @@ public class IcerBoxCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
         }
     }
-
 }

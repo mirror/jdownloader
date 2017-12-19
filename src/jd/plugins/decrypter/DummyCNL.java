@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -43,9 +43,8 @@ import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" })
 public class DummyCNL extends PluginForDecrypt {
-
     public DummyCNL(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,7 +55,6 @@ public class DummyCNL extends PluginForDecrypt {
         try {
             ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
         } catch (Throwable e) {
-
         }
         return ret;
     }
@@ -82,7 +80,6 @@ public class DummyCNL extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String hex = new Regex(parameter, "http://dummycnl\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
-
         HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
         }, null);
         String crypted = params.get("crypted");
@@ -97,13 +94,11 @@ public class DummyCNL extends PluginForDecrypt {
         String source = params.get("source");
         String packageName = params.get("package");
         FilePackage fp = null;
-
         if (packageName != null) {
             fp = FilePackage.getInstance();
             fp.setProperty("ALLOW_MERGE", true);
             fp.setName(packageName);
         }
-
         for (String s : Regex.getLines(decrypted)) {
             final DownloadLink dl = createDownloadlink(s);
             // respect the source url as container url assuming another plugin hasn't set this field.
@@ -124,11 +119,11 @@ public class DummyCNL extends PluginForDecrypt {
     }
 
     /* decrypt given crypted string with js encrypted aes key */
-    public static String decrypt(String crypted, final String jk, String k) {
+    public static String decrypt(String crypted, final String jk, String k) throws Exception {
         byte[] key = null;
         if (jk != null) {
-            Context cx = null;
             try {
+                Context cx = null;
                 try {
                     cx = ContextFactory.getGlobal().enterContext();
                     cx.setClassShutter(new ClassShutter() {
@@ -161,6 +156,9 @@ public class DummyCNL extends PluginForDecrypt {
         if (baseDecoded == null) {
             baseDecoded = Base64.decode(crypted.replaceAll("\\s", "+"));
         }
+        if (baseDecoded == null) {
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+        }
         final String ret = decrypt(baseDecoded, key);
         if (ret != null) {
             return ret.trim();
@@ -170,11 +168,10 @@ public class DummyCNL extends PluginForDecrypt {
     }
 
     public static String decrypt(byte[] b, byte[] key) {
-        Cipher cipher;
         try {
-            IvParameterSpec ivSpec = new IvParameterSpec(key);
-            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-            cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            final IvParameterSpec ivSpec = new IvParameterSpec(key);
+            final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            final Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b), "UTF-8");
         } catch (Throwable e) {
@@ -197,5 +194,4 @@ public class DummyCNL extends PluginForDecrypt {
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
     }
-
 }

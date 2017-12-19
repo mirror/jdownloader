@@ -123,18 +123,19 @@ public class XHamsterGallery extends PluginForDecrypt {
             // logger.info("json_source: " + json_source);
             if (json_source != null) {
                 final ArrayList<Object> lines = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
-                Map<String, Object> entries = null;
                 for (final Object line : lines) {
                     // logger.info("line: " + line);
                     if (line instanceof Map) {
-                        entries = (Map<String, Object>) line;
-                        String imageURL = (String) entries.get("imageURL");
-                        // logger.info("imageURL: " + imageURL);
-                        final DownloadLink dl = createDownloadlink(imageURL);
-                        dl.setAvailable(true);
-                        dl._setFilePackage(fp);
-                        distribute(dl);
-                        decryptedLinks.add(dl);
+                        final Map<String, Object> entries = (Map<String, Object>) line;
+                        final String imageURL = (String) entries.get("imageURL");
+                        if (imageURL != null) {
+                            // logger.info("imageURL: " + imageURL);
+                            final DownloadLink dl = createDownloadlink(imageURL);
+                            dl.setAvailable(true);
+                            dl._setFilePackage(fp);
+                            distribute(dl);
+                            decryptedLinks.add(dl);
+                        }
                     }
                 }
             }

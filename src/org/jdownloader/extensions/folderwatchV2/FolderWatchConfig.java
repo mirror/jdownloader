@@ -6,6 +6,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
 public interface FolderWatchConfig extends ExtensionConfigInterface {
     @AboutConfig
@@ -16,6 +17,7 @@ public interface FolderWatchConfig extends ExtensionConfigInterface {
 
     @AboutConfig
     @DefaultLongValue(10 * 1000)
+    @DescriptionForConfigEntry("check interval in milliseconds (1 second = 1000)")
     long getCheckInterval();
 
     void setCheckInterval(long ms);
