@@ -1,6 +1,7 @@
 #this is a property file format. You can put all these entries in a jsonarray [{..},{...}] as well.
 #save this as myFile.crawljob
 #Start a new entry with anything but a comment (#...) or key=. An empty line would be ok as well
+#\ must be double encoded! \ -> \\
 ->NEW ENTRY<-
    chunks=0
 #a comment
