@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -32,6 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/(gallery/[0-9A-Za-z_\\-/]+(\\.html)?|view/[0-9A-Za-z_\\-/]+(\\.html)?)" })
 public class XHamsterGallery extends PluginForDecrypt {
@@ -97,32 +100,43 @@ public class XHamsterGallery extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpname.trim()));
         int pageIndex = 1;
-        while (true) {
+        Boolean next = true;
+        while (next) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 break;
             }
             if (pageIndex > 1) {
                 br.getPage(urlWithoutPageParameter + "/" + pageIndex);
-                if (br.getRequest().getHttpConnection().getResponseCode() == 452) {
+                if (br.getHttpConnection().getResponseCode() == 452 || br.containsHTML(">Page Not Found<")) {
                     break;
+                }
+                if (!br.containsHTML(">Next<")) {
+                    next = false;
                 }
             }
             String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
                 allLinks = br.getRegex("id='imgSized'(.*?)gid='\\d+").getMatch(0);
             }
-            // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
-            final String[][] thumbNails = new Regex(allLinks, "(\"|')(https?://(?:ept|upt|ep\\d+)\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_(?:160|1000)\\.(je?pg|gif|png))\\1").getMatches();
-            if (thumbNails == null || thumbNails.length == 0) {
-                break;
-            }
-            for (final String[] thumbNail : thumbNails) {
-                final DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)(160|1000)\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                distribute(dl);
-                decryptedLinks.add(dl);
+            final String json_source = br.getRegex("\"photos\":(\\[\\{.*?\\}\\])").getMatch(0);
+            // logger.info("json_source: " + json_source);
+            if (json_source != null) {
+                final ArrayList<Object> lines = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+                Map<String, Object> entries = null;
+                for (final Object line : lines) {
+                    // logger.info("line: " + line);
+                    if (line instanceof Map) {
+                        entries = (Map<String, Object>) line;
+                        String imageURL = (String) entries.get("imageURL");
+                        // logger.info("imageURL: " + imageURL);
+                        final DownloadLink dl = createDownloadlink(imageURL);
+                        dl.setAvailable(true);
+                        dl._setFilePackage(fp);
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                    }
+                }
             }
             pageIndex++;
         }
