@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -31,14 +30,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -69,41 +60,41 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" })
 public class DepositFiles extends antiDDoSForHost {
-
     private final String                  UA                           = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
     private final String                  FILE_NOT_FOUND               = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private final String                  downloadLimitReached         = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
     private final String                  PATTERN_PREMIUM_FINALURL     = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
     public static AtomicReference<String> MAINPAGE                     = new AtomicReference<String>();
     public static final String            DOMAINS                      = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
-
     private String                        protocol                     = null;
-
     public String                         DLLINKREGEX2                 = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern                 FILE_INFO_NAME               = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
     private final Pattern                 FILE_INFO_SIZE               = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
-
     private static Object                 PREMLOCK                     = new Object();
     private static Object                 LOCK                         = new Object();
-
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger          totalMaxSimultanFreeDownload = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger          maxFree                      = new AtomicInteger(1);
     private static AtomicInteger          simultanpremium              = new AtomicInteger(1);
     private static AtomicBoolean          useAPI                       = new AtomicBoolean(true);
-
     private final String                  SETTING_SSL_CONNECTION       = "SSL_CONNECTION";
 
     // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
-
     // @Override
     // public String[] siteSupportedNames() {
     // return new String[] { "depositfiles.com", "depositfiles.org", "dfiles.eu", "dfiles.ru" };
     // }
-
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -170,7 +161,6 @@ public class DepositFiles extends antiDDoSForHost {
         }
         final String newLink = link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.get().replaceAll("https?://(www\\.)?", "") + "/de/files");
         link.setUrlDownload(fixLinkSSL(newLink));
-
     }
 
     protected void showFreeDialog(final String domain) {
@@ -180,7 +170,6 @@ public class DepositFiles extends antiDDoSForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -309,8 +298,14 @@ public class DepositFiles extends antiDDoSForHost {
         if (br.containsHTML("Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt|Diese Datei besteht nicht, der Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt, wegen der Urheberrechtsverletzung\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("This file does not exist, the access to the following file is limited or it has been removed due to infringement of copyright")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("Leider, sind alle Slots f")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Free Downloadslot", 20 * 60 * 1000l);
+        }
+        if (br.containsHTML("html_download_api-not_exists")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Server under maintenance */
         if (br.containsHTML("(html_download_api-temporary_unavailable|The site is temporarily unavailable for we are making some important upgrades)")) {
@@ -502,7 +497,6 @@ public class DepositFiles extends antiDDoSForHost {
                 sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1000l) - (System.currentTimeMillis() - timeBefore), downloadLink);
                 // // ajax request, here they give you more html && js. Think this is where the captcha type is determined.
                 ajaxGetPage("/get_file.php?fid=" + fid);
-
                 // this changes each time you load page...
                 final String ck = ajax.getRegex("ACPuzzleKey\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
                 if (ck != null) {
@@ -790,7 +784,6 @@ public class DepositFiles extends antiDDoSForHost {
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br2 = br.cloneBrowser();
                 br2.submitForm(login);
-
                 if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid == null) {
                     logger.warning("cid = null, captcha is required to login");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -820,7 +813,6 @@ public class DepositFiles extends antiDDoSForHost {
                     logger.info("Depositfiles website login method == success!");
                 }
                 br.setFollowRedirects(false);
-
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
                 account.setProperty("uprand", br.getCookie(MAINPAGE.get(), "uprand"));
             } catch (final PluginException e) {
@@ -1313,7 +1305,10 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     public void setLangtoGer() throws IOException {
-        br.setCookie(MAINPAGE.get(), "lang_current", "de");
+        br.setCookie("depositfiles.com", "lang_current", "de");
+        br.setCookie("depositfiles.org", "lang_current", "de");
+        br.setCookie("dfiles.eu", "lang_current", "de");
+        br.setCookie("dfiles.ru", "lang_current", "de");
     }
 
     @Override
@@ -1321,5 +1316,4 @@ public class DepositFiles extends antiDDoSForHost {
         setMainpage();
         return MAINPAGE.get() + "/en/agreem.html";
     }
-
 }
