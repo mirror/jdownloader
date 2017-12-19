@@ -95,6 +95,12 @@ public class NewgroundsCom extends antiDDoSForHost {
             url_filename = new Regex(downloadLink.getDownloadURL(), "/view/(.+)").getMatch(0).replace("/", "_");
             checkForFilesize = true;
             dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"<img src=\\\\\"(https?:[^<>\"]*?)\\\\\"").getMatch(0);
+                if (dllink != null) {
+                    dllink = dllink.replace("\\", "");
+                }
+            }
         } else {
             /* Audio & Video download */
             /*
