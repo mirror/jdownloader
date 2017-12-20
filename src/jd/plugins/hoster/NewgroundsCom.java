@@ -78,13 +78,10 @@ public class NewgroundsCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        String artist = br.getRegex("<em>(?:Artist|Author|Programming) ?<[^<>]+>([^<>]*?)<").getMatch(0);
+        // String artist = br.getRegex("<em>(?:Artist|Author|Programming) ?<[^<>]+>([^<>]*?)<").getMatch(0);
+        String artist = br.getRegex("<h4>\\s*<[^<>]+>([^<>]*?)</a>[^~]*?<em>(?:Artist|Author|Programming)").getMatch(0);
+        // logger.info("artist:" + artist + "|");
         // final String username = br.getRegex("newgrounds\\.com/pm/send/([^<>\"]+)\"").getMatch(0);
-        final String username_inside_artist = new Regex(artist, "\\((.+)\\)").getMatch(0);
-        if (username_inside_artist != null) {
-            /* User request: Use the username as artist name if available */
-            artist = username_inside_artist;
-        }
         if (artist != null && getPluginConfig().getBooleanProperty("Filename_by", true)) {
             filename = filename + " by " + artist;
         }
@@ -114,7 +111,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename).trim();// + "_" + fid;
                 }
-                dllink = "http://www." + this.getHost() + "/audio/download/" + fid;
+                dllink = "https://www." + this.getHost() + "/audio/download/" + fid;
                 ext = ".mp3";
             } else {
                 if (br.containsHTML("requires a Newgrounds account to play\\.<")) {
