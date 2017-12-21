@@ -84,8 +84,12 @@ public class Rule34Xxx extends PluginForDecrypt {
                 }
                 final String id = new Regex(parameter, "id=(\\d+)").getMatch(0);
                 // set by decrypter from list, but not set by view!
-                if (!StringUtils.equals(this.getCurrentLink().getSourceLink().getLinkID(), prefixLinkID + id)) {
-                    dl.setLinkID(prefixLinkID + id);
+                try { // Pevent NPE: https://svn.jdownloader.org/issues/84419
+                    if (!StringUtils.equals(this.getCurrentLink().getSourceLink().getLinkID(), prefixLinkID + id)) {
+                        dl.setLinkID(prefixLinkID + id);
+                    }
+                } catch (Exception e) {
+                    dl.setLinkID(id);
                 }
                 if (".webm".equals(getFileNameExtensionFromString(image))) {
                     dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.WEBM);
