@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -54,7 +53,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" })
 public class DiskYandexNet extends PluginForHost {
-
     public DiskYandexNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://passport.yandex.ru/passport?mode=register&from=cloud&retpath=https%3A%2F%2Fdisk.yandex.ru%2F%3Fauth%3D1&origin=face.en");
@@ -71,17 +69,13 @@ public class DiskYandexNet extends PluginForHost {
     private final String          MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
     private final String          DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
     private final String          DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
-
     private static final String   NORESUME                           = "NORESUME";
-
     /* Some constants which they used in browser */
     public static final String    CLIENT_ID                          = "6214e1ac6b579eb984b716151bcb5143";
     public static String          VERSION                            = "8.5";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
-
     /* Different languages == different 'downloads' directory names */
     private static final String[] downloaddirs                       = { "Downloads", "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8" };
-
     /* Connection limits */
     private final boolean         FREE_RESUME                        = true;
     private final int             FREE_MAXCHUNKS                     = 0;
@@ -89,12 +83,10 @@ public class DiskYandexNet extends PluginForHost {
     private final boolean         ACCOUNT_FREE_RESUME                = true;
     private final int             ACCOUNT_FREE_MAXCHUNKS             = 0;
     private static final int      ACCOUNT_FREE_MAXDOWNLOADS          = 20;
-
     /* Domain & other login stuff */
     private final String          MAIN_DOMAIN                        = "https://yandex.com";
     private final String[]        domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
     private static Object         LOCK                               = new Object();
-
     /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
     private String                ACCOUNT_SK                         = null;
@@ -105,7 +97,6 @@ public class DiskYandexNet extends PluginForHost {
     private Account               currAcc                            = null;
     private String                currHash                           = null;
     private String                currPath                           = null;
-
     /* 2017-02-08: Disabled API usage due to issues/ especially the download API request seems not to work anymore. */
     private static final boolean  use_api_file_free_availablecheck   = false;
     private static final boolean  use_api_file_free_download         = false;
@@ -523,7 +514,7 @@ public class DiskYandexNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        getPage("https://beta.disk.yandex.com/client/disk/Downloads/");
+        getPage("https://disk.yandex.com/client/disk/");
         ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
         if (ACCOUNT_SK == null) {
             final String lang = System.getProperty("user.language");
@@ -547,7 +538,6 @@ public class DiskYandexNet extends PluginForHost {
         login(account, false);
         setConstants(link, account);
         String dllink = checkDirectLink(link, "directlink_account");
-
         if (dllink == null) {
             final String hash = getHash(link);
             /* This should never happen */
@@ -605,7 +595,6 @@ public class DiskYandexNet extends PluginForHost {
                             }
                         }
                     }
-
                 } catch (final PluginException e) {
                     if (file_moved) {
                         logger.info("MoveToAccount download-handling failed (dllink == null) -> Deleting moved file and emptying trash, then falling back to free download handling");
@@ -628,7 +617,6 @@ public class DiskYandexNet extends PluginForHost {
                 }
             }
         }
-
         boolean resume = ACCOUNT_FREE_RESUME;
         int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
         if (link.getBooleanProperty(DiskYandexNet.NORESUME, false)) {
@@ -636,12 +624,10 @@ public class DiskYandexNet extends PluginForHost {
             resume = false;
             link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
         }
-
         if (isZippedFolder(link)) {
             resume = false;
             maxchunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors(link);
@@ -747,6 +733,9 @@ public class DiskYandexNet extends PluginForHost {
         } else {
             filepath = Encoding.urlEncode(plain_filename);
         }
+        if (filepath == null) {
+            filepath = PluginJSonUtils.getJsonValue(br, "path");
+        }
         return filepath;
     }
 
@@ -811,7 +800,6 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
-
     private void postPage(final String url, final String data) throws Exception {
         br.postPage(url, data);
         if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
@@ -860,7 +848,6 @@ public class DiskYandexNet extends PluginForHost {
     private static void showDiskFeatureDialogAll() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -906,5 +893,4 @@ public class DiskYandexNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
