@@ -663,13 +663,17 @@ public class DiskYandexNet extends PluginForHost {
 
     private String getLinkFromFileInAccount(final DownloadLink dl, final Browser br2) {
         final String filepath = siteGetInternalFilePath(dl);
+        if (filepath == null) {
+            logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
+            return null;
+        }
         String dllink = null;
         for (final String downloaddir : downloaddirs) {
             try {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
-                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
+                postPage("https://disk.yandex.com/models/?_m=do-get-resource-subresources,do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
                 /* 28 = file not found, 70 = folder not found */
                 if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
                     logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
@@ -734,7 +738,7 @@ public class DiskYandexNet extends PluginForHost {
             filepath = Encoding.urlEncode(plain_filename);
         }
         if (filepath == null) {
-            filepath = PluginJSonUtils.getJsonValue(br, "path");
+            logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
         }
         return filepath;
     }

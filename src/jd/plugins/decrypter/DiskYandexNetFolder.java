@@ -161,7 +161,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 dl.setProperty("mainlink", parameter);
                 dl.setLinkID(mainhashID + path_main);
-                // dl.setProperty("plain_filename", required by hoster plugin to get filepath);
+                /* Required by hoster plugin to get filepath (filename) */
+                dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
