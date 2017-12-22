@@ -25,6 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,21 +54,15 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * Note: prem.link redirects to grab8
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "t" + "", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" })
 public class Grab8Com extends antiDDoSForHost {
+
     private final String                 NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
     private final String                 NOCHUNKS                       = NICE_HOSTproperty + "_NOCHUNKS";
     private final String                 NORESUME                       = NICE_HOSTproperty + "_NORESUME";
@@ -111,6 +112,7 @@ public class Grab8Com extends antiDDoSForHost {
             if (accounts != null && accounts.size() != 0) {
                 // lets sort, premium > non premium
                 Collections.sort(accounts, new Comparator<Account>() {
+
                     @Override
                     public int compare(Account o1, Account o2) {
                         final int io1 = AccountType.PREMIUM.equals(o1.getType()) ? 1 : 0;
@@ -399,8 +401,8 @@ public class Grab8Com extends antiDDoSForHost {
                 }
             } catch (final PluginException e) {
                 /*
-                 * Incomplete means that they have a broken or 0byte file on their servers which we cannot correct via plugin - links for
-                 * which this happens cannot be downloaded via this multihost, at least for some hours.
+                 * Incomplete means that they have a broken or 0byte file on their servers which we cannot correct via plugin - links for which this happens
+                 * cannot be downloaded via this multihost, at least for some hours.
                  */
                 if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                     logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Next download candidate");
@@ -499,8 +501,8 @@ public class Grab8Com extends antiDDoSForHost {
     }
 
     /**
-     * IMPORTANT: If a users' account gets banned, their servers will return the exact same message as if the user entered invalid login
-     * data - there is no way to differ between these two states!
+     * IMPORTANT: If a users' account gets banned, their servers will return the exact same message as if the user entered invalid login data -
+     * there is no way to differ between these two states!
      *
      * @throws Exception
      */
