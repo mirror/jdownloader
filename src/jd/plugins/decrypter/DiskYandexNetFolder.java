@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
-
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,11 +45,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private final String        type_primaryURLs  = "https?://(?:www\\.)?(((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+)";
     private final String        type_shortURLs_d  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+(/[^/]+){0,}";
     private final String        type_shortURLs_i  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
-
     private final String        type_yadi_sk_mail = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
-
     private final String        DOWNLOAD_ZIP      = "DOWNLOAD_ZIP_2";
-
     private static final String OFFLINE_TEXT      = "class=\"not\\-found\\-public__caption\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
     private static final String JSON_TYPE_DIR     = "dir";
 
@@ -123,21 +118,16 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (!parameter_correct) {
             parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
         }
-
         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
         main.setProperty("mainlink", parameter);
         main.setProperty("LINKDUPEID", "copydiskyandexcom" + mainhashID);
         main.setName(mainhashID);
-
         short offset = 0;
         final short entries_per_request = 200;
         long numberof_entries = 0;
         long filesize_total = 0;
-
         final FilePackage fp = FilePackage.getInstance();
-
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
@@ -151,10 +141,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             final String type_main = (String) entries.get("type");
-
             if (!type_main.equals(JSON_TYPE_DIR)) {
                 /* We only have a single file --> Add to downloadliste / host plugin */
                 final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
@@ -173,13 +161,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 dl.setProperty("mainlink", parameter);
                 dl.setLinkID(mainhashID + path_main);
+                // dl.setProperty("plain_filename", required by hoster plugin to get filepath);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-
             final String walk_string = "_embedded/items";
             final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, walk_string);
-
             if (offset == 0) {
                 /* Set total number of entries on first loop. */
                 numberof_entries = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "_embedded/total"), 0);
@@ -190,13 +177,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 fp.setName(fpName);
             }
-
             main.setProperty("hash_main", mainhashID);
             mainhashID = Encoding.htmlDecode(mainhashID);
-
             for (final Object list_object : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) list_object;
-
                 final String type = (String) entries.get("type");
                 final String hash = (String) entries.get("public_key");
                 final String path = (String) entries.get("path");
@@ -229,10 +213,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                          */
                         url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
                     }
-
                     dl.setProperty("hash_main", hash);
                     dl.setProperty("mainlink", url_content);
-
                     if (md5 != null) {
                         /* md5 hash is usually given */
                         dl.setMD5Hash(md5);
@@ -248,19 +230,16 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 offset++;
             }
-
             if (resource_data_list.size() < entries_per_request) {
                 /* Fail safe */
                 break;
             }
-
         } while (offset < numberof_entries);
         if (decryptedLinks.size() == 0) {
             /* Should never happen! */
             logger.info("Probably empty folder");
             return decryptedLinks;
         }
-
         /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip anyways which makes no sense. */
         final boolean is_root_folder = path_main.equals("/");
         if (is_root_folder && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
@@ -275,7 +254,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             main.setAvailable(true);
             decryptedLinks.add(main);
         }
-
         return decryptedLinks;
     }
 
@@ -307,5 +285,4 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             return false;
         }
     }
-
 }
