@@ -17,9 +17,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "turbovid.me" }, urls = { "http://turbovid\\.me/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "turbovid.me" }, urls = { "http://turbovid\\.me/{a-z0-9]{12}" })
 public class Turbovid extends PluginForHost {
 
+    // this is xfilesharing/video why not use that established template?
     private boolean              server_issues = false;
     private static final boolean RESUME        = true;
     private static final int     MAXCHUNKS     = 0;
@@ -43,21 +44,16 @@ public class Turbovid extends PluginForHost {
         } else if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-
         String mainlink = downloadLink.getPluginPatternMatcher();
         br.getPage(mainlink);
         if (br.containsHTML("The file you were looking for could not be found, sorry for any inconvenience") || br.containsHTML("File Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         Form form = br.getFormbyAction(mainlink);
-
         String filename = form.getInputFieldByName("fname").getValue();
         downloadLink.setName(Encoding.htmlDecode(filename));
-
         return AvailableStatus.TRUE;
     }
 
@@ -65,16 +61,13 @@ public class Turbovid extends PluginForHost {
         String mainlink = downloadLink.getPluginPatternMatcher();
         br.setFollowRedirects(true);
         br.getPage(mainlink);
-
         Form form = br.getFormbyAction(mainlink);
-
         UrlQuery query = new UrlQuery();
         query.add("op", form.getInputFieldByName("op").getValue());
         query.add("id", form.getInputFieldByName("id").getValue());
         query.add("fname", form.getInputFieldByName("fname").getValue());
         query.add("referer", form.getInputFieldByName("referer").getValue());
         query.add("hash", form.getInputFieldByName("hash").getValue());
-
         int again = NUM_RETRIES;
         String dllink = null;
         Matcher m = null;
@@ -82,7 +75,6 @@ public class Turbovid extends PluginForHost {
             sleep(WAIT_TIME * 1000, downloadLink);
             String page = br.postPage(form.getInputFieldByName("id").getValue(), query);
             String decodedPage = Encoding.unicodeDecode(page);
-
             m = Pattern.compile("<script type='text/javascript'>.+split\\('\\|'\\)\\)\\)").matcher(decodedPage);
             if (m.find()) {
                 break;
@@ -102,10 +94,8 @@ public class Turbovid extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int base = Integer.parseInt(baseMatcher.group(1));
-
             dllink = decode(pieces, link.group(1), base) + "://" + decode(pieces, link.group(2), base) + "." + decode(pieces, link.group(3), base) + "." + decode(pieces, link.group(4), base) + "." + decode(pieces, link.group(5), base) + "/" + decode(pieces, link.group(6), base) + "/v." + decode(pieces, link.group(7), base);
         }
-
         return dllink;
     }
 
@@ -152,5 +142,4 @@ public class Turbovid extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
