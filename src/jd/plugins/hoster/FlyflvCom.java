@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "http://(?:www\\.)?flyflv\\.com/movies/\\d+/[A-Za-z0-9\\-_]+" })
 public class FlyflvCom extends PluginForHost {
-
     public FlyflvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,12 +39,10 @@ public class FlyflvCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -73,7 +69,7 @@ public class FlyflvCom extends PluginForHost {
         }
         dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("<source src=(?:'|\")([^<>'\"]*?)(?:'|\")").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
@@ -82,6 +78,7 @@ public class FlyflvCom extends PluginForHost {
             dllink = br.getRegex("var fileUrl[\t\n\r ]*?=[\t\n\r ]*?\"(http[^<>\"\\']+)\"").getMatch(0);
         }
         if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
