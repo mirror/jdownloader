@@ -17,7 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "turbovid.me" }, urls = { "http://turbovid\\.me/{a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "turbovid.me" }, urls = { "http://turbovid\\.me/[a-z0-9]{12}" })
 public class Turbovid extends PluginForHost {
 
     // this is xfilesharing/video why not use that established template?
