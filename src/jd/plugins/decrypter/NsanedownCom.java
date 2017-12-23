@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,14 +26,13 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nsanedown.com" }, urls = { "https?://(?:www\\.)?nsanedown\\.com/\\?request=\\d+" })
 public class NsanedownCom extends PluginForDecrypt {
-
     public NsanedownCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http:", "https:");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -57,8 +55,6 @@ public class NsanedownCom extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
-
 }
