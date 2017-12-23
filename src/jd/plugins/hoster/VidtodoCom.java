@@ -28,15 +28,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -58,18 +49,27 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?vidtodo\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?vidtodo\\.(?:com|me)/(?:embed\\-)?[a-z0-9]{12}" })
 public class VidtodoCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://vidtodo.com";
+    private static final String  COOKIE_HOST                        = "https://vidtodo.me";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(vidtodo\\.com)";
+    private static final String  DOMAINS                            = "(vidtodo\\.me)";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -84,8 +84,8 @@ public class VidtodoCom extends antiDDoSForHost {
     private final boolean        VIDEOHOSTER_2                      = true;
     private final boolean        VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = true;
     /*
-     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree will
-     * check for videohoster "next" Download/Ad- Form.
+     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
+     * will check for videohoster "next" Download/Ad- Form.
      */
     private final boolean        IMAGEHOSTER                        = false;
     private final boolean        SUPPORTS_HTTPS                     = true;
@@ -196,8 +196,8 @@ public class VidtodoCom extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             /*
-             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline. There are 2
-             * alternative ways to get this information anyways!
+             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
+             * There are 2 alternative ways to get this information anyways!
              */
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
@@ -242,16 +242,16 @@ public class VidtodoCom extends antiDDoSForHost {
         }
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
-             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add ".jpg"
-             * extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
+             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
+             * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
              */
             fileInfo[0] = this.fuid + ".jpg";
             link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (inValidate(fileInfo[0])) {
             /*
-             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin code needs
-             * to be updated in this case!
+             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
+             * code needs to be updated in this case!
              */
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -273,8 +273,8 @@ public class VidtodoCom extends antiDDoSForHost {
         link.setName(fileInfo[0]);
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
-             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that
-             * the file must be online!
+             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already
+             * know that the file must be online!
              */
             logger.info("Failed to find filesize --> Trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
@@ -318,6 +318,9 @@ public class VidtodoCom extends antiDDoSForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<title>(?:Watch )?([^<>]*?)(?: mp4)?</title>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -692,8 +695,8 @@ public class VidtodoCom extends antiDDoSForHost {
     }
 
     /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content [NOT
-     * html]).
+     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
+     * [NOT html]).
      */
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
@@ -743,8 +746,8 @@ public class VidtodoCom extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -1028,8 +1031,8 @@ public class VidtodoCom extends antiDDoSForHost {
         this.fuid = getFUIDFromURL(dl);
         if (this.fuid == null) {
             /*
-             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code has been
-             * changed an user still has old URLs in downloadlist --> These are usually offline.
+             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code
+             * has been changed an user still has old URLs in downloadlist --> These are usually offline.
              */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1062,8 +1065,8 @@ public class VidtodoCom extends antiDDoSForHost {
     }
 
     /**
-     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such as
-     * 403, 404 and 503.
+     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
+     * as 403, 404 and 503.
      */
     private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
@@ -1187,7 +1190,8 @@ public class VidtodoCom extends antiDDoSForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date error.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
+     * error.
      *
      * @param dl
      *            : The DownloadLink
