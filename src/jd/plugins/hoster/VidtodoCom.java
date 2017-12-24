@@ -296,7 +296,7 @@ public class VidtodoCom extends antiDDoSForHost {
                 if (inValidate(fileInfo[0])) {
                     fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                     if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                        fileInfo[0] = new Regex(br, "<h2>Watch (.*?)</h2>").getMatch(0);
                         /* traits from download1 page below */
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
