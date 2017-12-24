@@ -58,6 +58,7 @@ public class XvideosCom extends PluginForHost {
             user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Prefer HLS", "Prefer HLS?").setDefaultValue(false));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -143,7 +144,11 @@ public class XvideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // hls first ? seems to be working most reliable
-        dllink = getDllinkHtml5();
+        if (getPluginConfig().getBooleanProperty("Prefer HLS", true)) {
+            dllink = getDllinkHls();
+        } else {
+            dllink = getDllinkHtml5();
+        }
         if (dllink == null || !isValidVideoURL(link, dllink)) {
             dllink = getDllinkHls();
             if (dllink == null) {
