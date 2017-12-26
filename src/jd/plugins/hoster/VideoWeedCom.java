@@ -22,10 +22,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +41,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx" }, urls = { "https?://(?:www\\.)?bitvid\\.sx/file/[a-z0-9]+|https?://(?:www\\.)?videoweed\\.(?:com|es)/.+[a-z0-9]+" })
 public class VideoWeedCom extends PluginForHost {
@@ -77,6 +77,7 @@ public class VideoWeedCom extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     private final String DOMAIN = "bitvid.sx";
+    private String       dllink = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -118,6 +119,7 @@ public class VideoWeedCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         filename = removeDoubleExtensions(filename, "flv");
         downloadLink.setFinalFileName(filename);
+        getDllink(downloadLink, br);
         hasError = errorCheck(downloadLink);
         if (Boolean.FALSE.equals(hasError)) {
             return AvailableStatus.FALSE;
@@ -178,10 +180,6 @@ public class VideoWeedCom extends PluginForHost {
         }
     }
 
-    public static String getDllink(final Browser br) {
-        return br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
-    }
-
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -193,9 +191,11 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (downloadLink.getStringProperty(directlinkproperty) != null) { // To prevent nullify of dllink.
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
+        }
         if (dllink == null) {
-            dllink = getDllink(br);
+            dllink = getDllink(downloadLink, br);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -224,6 +224,53 @@ public class VideoWeedCom extends PluginForHost {
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            }
+        }
+        return dllink;
+    }
+
+    public String getDllink(final DownloadLink link, final Browser br) throws Exception {
+        String[] flinks = br.getRegex("<source src=\"([^<>\"]+)\"").getColumn(0);
+        for (String flink : flinks) {
+            if (flink.contains("s254")) {
+                continue;
+            }
+            checkSize(link, flink);
+            // logger.info("flink: " + flink);
+            // logger.info("dllink: " + dllink);
+            if (dllink != null) {
+                break;
+            }
+        }
+        if (dllink == null) {
+            flinks = br.getRegex("<a href=\"(/download[^<>\"]+)\"").getColumn(0);
+            for (String flink : flinks) {
+                checkSize(link, flink);
+                if (dllink != null) {
+                    break;
+                }
+            }
+        }
+        return dllink;
+    }
+
+    private String checkSize(final DownloadLink link, final String flink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openGetConnection(flink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = flink;
+            } else {
+                dllink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
             }
         }
         return dllink;

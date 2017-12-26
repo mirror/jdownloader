@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -50,7 +49,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" })
 public class AuroravidTo extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "auroravid.to", "novamov.com" };
@@ -61,7 +59,6 @@ public class AuroravidTo extends PluginForHost {
     private final String        TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
     private final String        TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
     private static final String DOMAIN                       = "auroravid.to";
-
     private String              dllink                       = "";
     private boolean             server_issues                = false;
 
@@ -101,7 +98,6 @@ public class AuroravidTo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         server_issues = false;
-
         br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -128,7 +124,7 @@ public class AuroravidTo extends PluginForHost {
                 }
             }
             /* Add correct extension */
-            dllink = jd.plugins.hoster.VideoWeedCom.getDllink(this.br);
+            dllink = getDllink(br);
             if (dllink != null) {
                 final String ext = dllink.substring(dllink.lastIndexOf("."));
                 filename += ext;
@@ -162,13 +158,14 @@ public class AuroravidTo extends PluginForHost {
                     server_issues = true;
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+            } catch (Throwable e) { // connect timed out
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             } finally {
                 try {
                     con.disconnect();
                 } catch (Throwable e) {
                 }
             }
-
         } else {
             // Onlinecheck für "nicht"-video Links
             String filename = br.getRegex("<h3><a href=\"#\"><h3>(.*?)</h3></a></h3>").getMatch(0);
@@ -182,7 +179,6 @@ public class AuroravidTo extends PluginForHost {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "")));
         }
-
         return AvailableStatus.TRUE;
     }
 
@@ -205,7 +201,7 @@ public class AuroravidTo extends PluginForHost {
         if (dllink == null) {
             if (downloadLink.getDownloadURL().contains("video")) {
                 accessMainURL(downloadLink);
-                dllink = jd.plugins.hoster.VideoWeedCom.getDllink(this.br);
+                dllink = getDllink(br);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -283,6 +279,10 @@ public class AuroravidTo extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    public static String getDllink(final Browser br) {
+        return br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
     }
 
     private static Object LOCK = new Object();
@@ -405,5 +405,4 @@ public class AuroravidTo extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_VideoHosting;
     }
-
 }
