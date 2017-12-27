@@ -24,9 +24,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,6 +31,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,9 +45,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=|embed/\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/(embed\\.php|embed/)\\?v=)[a-z0-9]+" })
 public class NowVideoEu extends PluginForHost {
-
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     // cloudtime.to and nowvideo are the same provider, finallink servers are identical hostnames!
     // note: avi containers are not converted to flv!
@@ -59,6 +59,7 @@ public class NowVideoEu extends PluginForHost {
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
     private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|ec|li|to)";
     private String                         filename           = null;
+    private String                         dllink             = null;
     private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
     // note: .ch parked
@@ -184,6 +185,7 @@ public class NowVideoEu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getContentUrl());
         checkForThis();
+        getDllink(link, br); // Same as videoweed.com (bitvid.sx) plugin.
         if (br.containsHTML(">This file no longer exists on our servers|>Possible reasons:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -223,6 +225,10 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (dllink != null) { // 2017-12-27
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl.startDownload();
+        }
         if (br.containsHTML(ISBEINGCONVERTED)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         }
@@ -326,6 +332,53 @@ public class NowVideoEu extends PluginForHost {
             return null;
         }
         return result;
+    }
+
+    public String getDllink(final DownloadLink link, final Browser br) throws Exception {
+        String[] flinks = br.getRegex("<source src=\"([^<>\"]+)\"").getColumn(0);
+        for (String flink : flinks) {
+            if (flink.contains("s254")) {
+                continue;
+            }
+            checkSize(link, flink);
+            // logger.info("flink: " + flink);
+            // logger.info("dllink: " + dllink);
+            if (dllink != null) {
+                break;
+            }
+        }
+        if (dllink == null) {
+            flinks = br.getRegex("<a href=\"(/download[^<>\"]+)\"").getColumn(0);
+            for (String flink : flinks) {
+                checkSize(link, flink);
+                if (dllink != null) {
+                    break;
+                }
+            }
+        }
+        return dllink;
+    }
+
+    private String checkSize(final DownloadLink link, final String flink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openGetConnection(flink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = flink;
+            } else {
+                dllink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
+        }
+        return dllink;
     }
 
     @Override
