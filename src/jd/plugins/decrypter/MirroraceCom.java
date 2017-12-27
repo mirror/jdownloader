@@ -64,7 +64,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                 if (captchaForm != null) {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                     captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    submitForm(captchaForm);
+                    submitForm(br, captchaForm);
                 }
             }
             final String finallink = br.getRegex("<a class=\"uk-button uk-button-primary\" href=\"(http[^<>\"]+)").getMatch(0);
