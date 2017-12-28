@@ -34,12 +34,12 @@ import jd.plugins.DownloadLink;
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|protecte-link\\.com|liens-telechargement\\.com)/\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com)/\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "protecte-link.com", "liens-telechargement.com" };
+        return new String[] { "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {
@@ -55,6 +55,20 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        {
+            // additional form
+            final Form continu = br.getFormBySubmitvalue("Continuer");
+            if (continu != null) {
+                submitForm(continu);
+                // test link had no magic/captcha
+                final String link = br.getRegex("<div class=\"lienet\"><a href=\"(.*?)\">").getMatch(0);
+                if (link != null) {
+                    final DownloadLink dl = createDownloadlink(link);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+            }
         }
         // some weird form that does jack
         final Form f = br.getFormbyProperty("class", "magic");
