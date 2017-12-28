@@ -57,7 +57,8 @@ public class BentBoxCo extends PluginForHost {
                     login.setAction("https://bentbox.co/signin_check");
                     login.put("email_address", Encoding.urlEncode(userName));
                     login.put("password", Encoding.urlEncode(account.getPass()));
-                    login.put("robot_check", "notarobot");
+                    // login.put("robot_check", "notarobot");
+                    login.put("robot_check", br.getRegex("robot_check=\"([^<>\"]+)\"").getMatch(0));
                     login.put("redirectURL", "?");
                     br.submitForm(login);
                     if (!isCookieSet(br, "userId") || !isCookieSet(br, "accessToken")) {
