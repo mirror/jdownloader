@@ -15,6 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,7 +31,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
@@ -60,9 +68,14 @@ import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
-    private final String                   NO_SOLVEMEDIA      = "1";
-    private String                         userretrys         = "10";
-    private static AtomicReference<String> LAST_USED_PASSWORD = new AtomicReference<String>();
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
+    private final String NO_SOLVEMEDIA = "1";
+    private String       userretrys    = "10";
 
     public FileCryptCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,7 +115,7 @@ public class FileCryptCc extends PluginForDecrypt {
         final int retry = Integer.parseInt(userretrys);
         final List<String> passwords = getPreSetPasswords();
         final HashSet<String> avoidRetry = new HashSet<String>();
-        final String lastUsedPassword = LAST_USED_PASSWORD.get();
+        final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password", null);
         if (StringUtils.isNotEmpty(lastUsedPassword)) {
             passwords.add(0, lastUsedPassword);
         }
@@ -147,7 +160,7 @@ public class FileCryptCc extends PluginForDecrypt {
             }
         }
         if (usedPassword != null) {
-            LAST_USED_PASSWORD.set(usedPassword);
+            this.getPluginConfig().setProperty("last_used_password", usedPassword);
         }
         if (counter == retry && containsPassword()) {
             throw new DecrypterException(DecrypterException.PASSWORD);
@@ -452,7 +465,7 @@ public class FileCryptCc extends PluginForDecrypt {
         return links;
     }
 
-    private final void getPage(final String page) throws IOException, PluginException {
+    private final void getPage(final String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -460,7 +473,7 @@ public class FileCryptCc extends PluginForDecrypt {
         cleanUpHTML();
     }
 
-    private final void postPage(final String url, final String post) throws IOException, PluginException {
+    private final void postPage(final String url, final String post) throws Exception {
         if (url == null || post == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
