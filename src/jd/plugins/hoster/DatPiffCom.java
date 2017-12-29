@@ -243,8 +243,8 @@ public class DatPiffCom extends PluginForHost {
         setBrowserExclusive();
         br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getRedirectLocation() == null) { // Should be /account if OK, or /login if failed.
-            for (int i = 1; i < 3; i++) { // Sometimes retry is needed, login page is displayed without redirect.
-                sleep(1000l, null);
+            for (int i = 0; i < 3; i++) { // Sometimes retry is needed, login page is displayed without redirect.
+                Thread.sleep(3 * 1000);
                 br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getRedirectLocation() != null) {
                     break;
