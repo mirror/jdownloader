@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -41,21 +40,17 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "" })
 public class ConexaomegaComBr extends antiDDoSForHost {
-
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-
     private static final String                            DOMAIN                       = "http://conexaomega.com.br/";
     private static final String                            NICE_HOST                    = "conexaomega.com.br";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
-
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String                                   default_UA                   = "JDownloader";
     private final String                                   html_loggedin                = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
-
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
@@ -123,7 +118,6 @@ public class ConexaomegaComBr extends antiDDoSForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = new Browser();
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -139,7 +133,6 @@ public class ConexaomegaComBr extends antiDDoSForHost {
                 }
             }
         }
-
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
@@ -249,7 +242,6 @@ public class ConexaomegaComBr extends antiDDoSForHost {
             }
             ai.setMultiHostSupport(this, supportedHosts);
         }
-
         return ai;
     }
 
@@ -263,17 +255,22 @@ public class ConexaomegaComBr extends antiDDoSForHost {
                 if (cookies != null) {
                     /* Re-use cookies whenever possible to avoid login captcha prompts. */
                     br.setCookies(getHost(), cookies);
-                    super.getPage(br, "https://www." + getHost() + "/planos");
-                    if (br.containsHTML(html_loggedin)) {
-                        account.saveCookies(br.getCookies(getHost()), "");
-                        return;
+                    for (int i = 0; i < 3; i++) { // Sometimes we get connect timed out
+                        try {
+                            super.getPage(br, "https://www." + getHost() + "/planos");
+                        } catch (Exception e) {
+                            Thread.sleep(10 * 1000);
+                        }
+                        if (br.containsHTML(html_loggedin)) {
+                            account.saveCookies(br.getCookies(getHost()), "");
+                            return;
+                        }
                     }
                     /* Clear cookies/headers to prevent unknown errors as we'll perform a full login below now. */
                     br = new Browser();
                 }
                 super.getPage(br, "https://www." + getHost() + "/login");
                 String postData = "lembrar=on&email=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
-
                 if (this.br.containsHTML("g\\-recaptcha")) {
                     /* Handle login captcha */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -287,13 +284,11 @@ public class ConexaomegaComBr extends antiDDoSForHost {
                     } else {
                         recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     }
-
                     if (dlinkbefore != null) {
                         this.setDownloadLink(dlinkbefore);
                     }
                     postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-
                 this.postAPISafe("/login", postData);
                 if (!this.br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -393,5 +388,4 @@ public class ConexaomegaComBr extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
