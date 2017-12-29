@@ -73,9 +73,30 @@ public class TunePk extends PluginForHost {
         // br.getPage(link.getDownloadURL().replace("http:", "https:"));
         /* 2017-04-27: apikey from website: 777750fea4d3bd585bf47dc1873619fc */
         br.getPage("https://" + this.getHost() + "/api_public/playerConfigs/?api_key=777750fea4d3bd585bf47dc1873619fc&id=" + fid + "&autoplay=yes&embed=true&country=de");
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"gotune\"|>Not available!<|Video does not exist")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"gotune\"|>Not available!<|Video does not exist")) {
             /* E.g. Woops,<br>this video has been deactivated <a href="//tune.pk" class="gotune" target="_blank">Goto tune.pk</a> */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("Unable to load player configurations")) {
+            br.getPage("https://embed." + getHost() + "/play/" + fid + "?autoplay=no&ssl=yes&inline=true");
+            if (br.containsHTML(">this video has been deactivated")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = br.getRegex("contentURL\" content=\"([^<>\"]+)\"").getMatch(0);
+            checkSize(link, dllink);
+            String filename = getTitleFromEmbedWebsite();
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            String ext = getFileNameExtensionFromString(dllink, default_Extension);
+            if (dllink != null && ext == null) {
+                ext = getFileNameExtensionFromString(dllink, default_Extension);
+                if (StringUtils.isEmpty(ext)) {
+                    ext = default_Extension;
+                }
+            }
+            link.setFinalFileName(filename);
+            return AvailableStatus.TRUE;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         String filename = (String) JavaScriptEngineFactory.walkJson(entries, "data/details/video/title");
@@ -190,6 +211,28 @@ public class TunePk extends PluginForHost {
             title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
         return title;
+    }
+
+    private String checkSize(final DownloadLink link, final String flink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openGetConnection(flink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = flink;
+            } else {
+                dllink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
+        }
+        return dllink;
     }
 
     @Override
