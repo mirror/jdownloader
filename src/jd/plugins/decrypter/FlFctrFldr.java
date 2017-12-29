@@ -29,14 +29,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com/(folder|f)/[\\w]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://[\\w\\.]*?filefactory\\.com/(folder|f)/[\\w]+" })
 public class FlFctrFldr extends PluginForDecrypt {
 
     public FlFctrFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -80,8 +79,6 @@ public class FlFctrFldr extends PluginForDecrypt {
             declinks.add(createDownloadlink(element));
         }
     }
-
-    // @Override
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
