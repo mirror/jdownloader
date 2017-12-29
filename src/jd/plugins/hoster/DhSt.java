@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +24,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "https?://(www\\.)?d-h\\.st/[A-Za-z0-9]+" })
 public class DhSt extends PluginForHost {
-
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         // doesn't support https at this time. redirects back to http.
@@ -144,6 +142,9 @@ public class DhSt extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.d-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]*?)\\1").getMatch(1);
         }
+        if (dllink == null) {
+            dllink = br.getRegex("downloadfile\".*?href=\"(.*?)\"").getMatch(0);
+        }
         return dllink;
     }
 
@@ -159,5 +160,4 @@ public class DhSt extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
