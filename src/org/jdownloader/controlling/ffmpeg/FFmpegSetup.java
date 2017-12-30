@@ -41,7 +41,7 @@ public interface FFmpegSetup extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            if (CrossSystem.isLinux()) {
+            if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final BinayPathValidator binaryPathValidator = new BinayPathValidator();
                 for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
                     try {
@@ -62,7 +62,7 @@ public interface FFmpegSetup extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            if (CrossSystem.isLinux()) {
+            if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final BinayPathValidator binaryPathValidator = new BinayPathValidator();
                 for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
                     try {
@@ -164,5 +164,4 @@ public interface FFmpegSetup extends ConfigInterface {
     String[] getDash2OggAudioCommand();
 
     void setDash2OggAudioCommand(String[] command);
-
 }
