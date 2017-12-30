@@ -123,21 +123,25 @@ public class NewgroundsCom extends antiDDoSForHost {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(videoPlayer.replace("\\", ""));
                     final String playerSrc = brc.getRegex("player\\.updateSrc\\((.*?)\\)").getMatch(0);
-                    final List<Object> items = JSonStorage.restoreFromString(playerSrc, TypeRef.LIST);
-                    Map<String, Object> best = null;
-                    for (final Object item : items) {
-                        if (item instanceof Map) {
-                            final Map<String, Object> map = (Map<String, Object>) item;
-                            if (best == null || ((Number) map.get("res")).longValue() > ((Number) best.get("res")).longValue()) {
-                                best = map;
+                    if (playerSrc != null) {
+                        final List<Object> items = JSonStorage.restoreFromString(playerSrc, TypeRef.LIST);
+                        Map<String, Object> best = null;
+                        for (final Object item : items) {
+                            if (item instanceof Map) {
+                                final Map<String, Object> map = (Map<String, Object>) item;
+                                if (best == null || ((Number) map.get("res")).longValue() > ((Number) best.get("res")).longValue()) {
+                                    best = map;
+                                }
                             }
                         }
-                    }
-                    if (best != null) {
-                        dllink = (String) best.get("src");
-                        if (filename != null) {
-                            filename += "_" + best.get("res");
+                        if (best != null) {
+                            dllink = (String) best.get("src");
+                            if (filename != null) {
+                                filename += "_" + best.get("res");
+                            }
                         }
+                    } else {
+                        dllink = brc.getRegex("src:\\s*\"([^\"]*)\"").getMatch(0);
                     }
                 }
                 if (dllink == null) {
