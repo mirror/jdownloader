@@ -519,6 +519,13 @@ public class FileflaresCom extends PluginForHost {
                     }
                     download1.put("method_free", Encoding.urlEncode(method_free_value));
                 }
+                String specialKey = br.getRegex("'([a-f0-9]{35})'").getMatch(0);
+                if (specialKey == null) {
+                    specialKey = br.getRegex("\\\"([a-f0-9]{35})\\\"").getMatch(0);
+                }
+                if (specialKey != null && !download1.hasInputFieldByName(specialKey)) {
+                    download1.put(specialKey, "1");
+                }
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(downloadLink, false);
@@ -643,14 +650,23 @@ public class FileflaresCom extends PluginForHost {
                     dlForm.remove("adblock_detected");
                     dlForm.put("adblock_detected", "0");
                 }
-                String randValue = br.getRegex("input\\[.+'([^']+)'\\);document").getMatch(0);
-                if (randValue == null) {
-                    randValue = br.getRegex("input\\[.+\"([^\"]+)\"\\);document").getMatch(0);
+                if (!dlForm.hasInputFieldByName("rand")) {
+                    String randValue = br.getRegex("input\\[.+'([^']+)'\\);document").getMatch(0);
                     if (randValue == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        randValue = br.getRegex("input\\[.+\"([^\"]+)\"\\);document").getMatch(0);
+                        if (randValue == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
+                    dlForm.put("rand", randValue);
                 }
-                dlForm.put("rand", randValue);
+                String specialKey = br.getRegex("'([a-f0-9]{35})'").getMatch(0);
+                if (specialKey == null) {
+                    specialKey = br.getRegex("\\\"([a-f0-9]{35})\\\"").getMatch(0);
+                }
+                if (specialKey != null && !dlForm.hasInputFieldByName(specialKey)) {
+                    dlForm.put(specialKey, "1");
+                }
                 if (!skipWaittime) {
                     waitTime(downloadLink, timeBefore);
                 }
