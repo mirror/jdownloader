@@ -22,6 +22,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -71,6 +72,14 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
             }
         } else {
             /* Single link */
+            {
+                // can contain some slider event.
+                final Form captcha = br.getFormbyKey("_token");
+                if (captcha != null) {
+                    captcha.put("Submit", "");
+                    submitForm(br, captcha);
+                }
+            }
             /* 2017-04-20: Server will always return 404 (fake 404)Server */
             final String finallink = br.getRegex("window\\.location\\s*?=\\s*?\"((?:https?:)?//[^<>\"]+)\";").getMatch(0);
             if (finallink == null && br.getHttpConnection().getResponseCode() == 404) {
