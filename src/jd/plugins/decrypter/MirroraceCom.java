@@ -47,6 +47,12 @@ public class MirroraceCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>\\s*(?:Download)?\\s*([^<]*?)\\s*(?:-\\s*MirrorAce)?\\s*</title>").getMatch(0);
+        // since mirrorace is single file response > many mirrors, results in package of compression parts all have there own package...
+        // which then results in extraction tasks failing...
+        final FilePackage fp = fpName != null && false ? FilePackage.getInstance() : null;
+        if (fp != null) {
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        }
         final String[] links = br.getRegex("\"(https?://mirrorace\\.com/m/[A-Za-z0-9]+/\\d+\\?t=[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -85,12 +91,10 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                 dl = createDownloadlink(finallink);
             }
             decryptedLinks.add(dl);
+            if (fp != null) {
+                fp.add(dl);
+            }
             distribute(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
