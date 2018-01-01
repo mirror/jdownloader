@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?(novamov\\.com|auroravid\\.to)/embed(\\.php|/)(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" })
 public class AuroravidTo extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
@@ -64,7 +64,7 @@ public class AuroravidTo extends PluginForHost {
 
     public AuroravidTo(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.auroravid.to/premium.php");
+        enablePremium("http://www.auroravid.to/premium.php");
     }
 
     @Override
@@ -77,7 +77,7 @@ public class AuroravidTo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String videoID = new Regex(link.getDownloadURL(), "/embed\\.php.*?v=([a-z0-9]+)$").getMatch(0);
+        final String videoID = new Regex(link.getDownloadURL(), "/embed(?:\\.php|/).*?v=([a-z0-9]+)$").getMatch(0);
         if (videoID != null) {
             link.setUrlDownload("http://www." + DOMAIN + "/video/" + videoID);
         }
@@ -102,7 +102,7 @@ public class AuroravidTo extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         accessMainURL(downloadLink);
-        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|/download\\.php\\?file=\"") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|/download\\.php\\?file=\"|<title>AuroaVid - Free|vidError") || br.getURL().contains("novamov.com/index.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
@@ -126,7 +126,7 @@ public class AuroravidTo extends PluginForHost {
             /* Add correct extension */
             dllink = getDllink(br);
             if (dllink == null) {
-                dllink = br.getRegex("<source src=\"([^<>\"]+mp4)\"").getMatch(0);
+                dllink = getDllink(downloadLink, br);
             }
             if (dllink != null) {
                 final String ext = dllink.substring(dllink.lastIndexOf("."));
@@ -187,7 +187,7 @@ public class AuroravidTo extends PluginForHost {
 
     private void accessMainURL(final DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
-        jd.plugins.hoster.VideoWeedCom.checkForContinueForm(this.br);
+        jd.plugins.hoster.VideoWeedCom.checkForContinueForm(br);
     }
 
     @Override
@@ -288,6 +288,53 @@ public class AuroravidTo extends PluginForHost {
         return br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
     }
 
+    public String getDllink(final DownloadLink link, final Browser br) throws Exception {
+        String[] flinks = br.getRegex("<source src=\"([^<>\"]+)\"").getColumn(0);
+        for (String flink : flinks) {
+            if (flink.contains("s254")) {
+                continue;
+            }
+            checkSize(link, flink);
+            // logger.info("flink: " + flink);
+            // logger.info("dllink: " + dllink);
+            if (dllink != null) {
+                break;
+            }
+        }
+        if (dllink == null) {
+            flinks = br.getRegex("<a href=\"(/download[^<>\"]+)\"").getColumn(0);
+            for (String flink : flinks) {
+                checkSize(link, flink);
+                if (dllink != null) {
+                    break;
+                }
+            }
+        }
+        return dllink;
+    }
+
+    private String checkSize(final DownloadLink link, final String flink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openGetConnection(flink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = flink;
+            } else {
+                dllink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
+        }
+        return dllink;
+    }
+
     private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
@@ -376,7 +423,7 @@ public class AuroravidTo extends PluginForHost {
         if (account.getBooleanProperty("free", false)) {
             doFree(link, true, 0, "account_free_directlink");
         } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
+            String dllink = checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://[^<>\"]*?)\" class=\"btn\">Download this video</a>").getMatch(0);
                 if (dllink == null) {
