@@ -125,6 +125,9 @@ public class AuroravidTo extends PluginForHost {
             }
             /* Add correct extension */
             dllink = getDllink(br);
+            if (dllink == null) {
+                dllink = br.getRegex("<source src=\"([^<>\"]+mp4)\"").getMatch(0);
+            }
             if (dllink != null) {
                 final String ext = dllink.substring(dllink.lastIndexOf("."));
                 filename += ext;
