@@ -72,7 +72,7 @@ public class FilestoreTo extends PluginForHost {
         }
         ai.setStatus("Free");
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(1);
+        account.setMaxSimultanDownloads(2);
         account.setConcurrentUsePossible(false);
         return ai;
     }
