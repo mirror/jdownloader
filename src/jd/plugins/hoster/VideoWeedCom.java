@@ -76,8 +76,9 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
-    private final String DOMAIN = "bitvid.sx";
-    private String       dllink = null;
+    private final String DOMAIN        = "bitvid.sx";
+    private String       dllink        = null;
+    private boolean      server_issues = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -196,6 +197,9 @@ public class VideoWeedCom extends PluginForHost {
         }
         if (dllink == null) {
             dllink = getDllink(downloadLink, br);
+            if (server_issues) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -249,6 +253,9 @@ public class VideoWeedCom extends PluginForHost {
                 if (dllink != null) {
                     break;
                 }
+            }
+            if (flinks.length != 0 && dllink == null) {
+                server_issues = true;
             }
         }
         return dllink;
