@@ -34,6 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/(gallery/[0-9A-Za-z_\\-/]+(\\.html)?|view/[0-9A-Za-z_\\-/]+(\\.html)?)" })
@@ -86,8 +87,10 @@ public class XHamsterGallery extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        final String urlWithoutPageParameter = this.br.getURL();
-        final String total_numberof_picsStr = this.br.getRegex("<h1 class=\"gr\">[^<>]+<small>\\[(\\d+) [^<>\"]+\\]</small>").getMatch(0);
+        final String urlWithoutPageParameter = br.getURL();
+        // final String total_numberof_picsStr = br.getRegex("<h1 class=\"gr\">[^<>]+<small>\\[(\\d+) [^<>\"]+\\]</small>").getMatch(0);
+        final String total_numberof_picsStr = br.getRegex("page-title__count\">(\\d+)<").getMatch(0);
+        logger.info("total_numberof_pics: " + total_numberof_picsStr);
         final int total_numberof_picsInt = total_numberof_picsStr != null ? Integer.parseInt(total_numberof_picsStr) : -1;
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster\\.com</title>").getMatch(0);
         if (fpname == null) {
@@ -106,19 +109,11 @@ public class XHamsterGallery extends PluginForDecrypt {
                 logger.info("Decryption aborted by user");
                 break;
             }
-            if (pageIndex > 1) {
-                br.getPage(urlWithoutPageParameter + "/" + pageIndex);
-                if (br.getHttpConnection().getResponseCode() == 452 || br.containsHTML(">Page Not Found<")) {
-                    break;
-                }
-                if (!br.containsHTML(">Next<")) {
-                    next = false;
-                }
-            }
             String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
                 allLinks = br.getRegex("id='imgSized'(.*?)gid='\\d+").getMatch(0);
             }
+            logger.info("Crawling page " + pageIndex);
             final String json_source = br.getRegex("\"photos\":(\\[\\{.*?\\}\\])").getMatch(0);
             // logger.info("json_source: " + json_source);
             if (json_source != null) {
@@ -138,6 +133,17 @@ public class XHamsterGallery extends PluginForDecrypt {
                         }
                     }
                 }
+            }
+            String nextPage = br.getRegex("data-page=\"next\" href=\"([^<>\"]*)\"").getMatch(0);
+            if (!StringUtils.isEmpty(nextPage) && nextPage != null) {
+                logger.info("Getting page " + nextPage);
+                // br.getPage(urlWithoutPageParameter + "/" + pageIndex);
+                br.getPage(nextPage);
+                if (br.getHttpConnection().getResponseCode() == 452 || br.containsHTML(">Page Not Found<")) {
+                    break;
+                }
+            } else {
+                next = false;
             }
             pageIndex++;
         }
