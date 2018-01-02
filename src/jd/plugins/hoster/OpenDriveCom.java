@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,9 +37,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files\\?[A-Za-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files\\?[A-Za-z0-9\\-_]+" })
 public class OpenDriveCom extends PluginForHost {
-
     public OpenDriveCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.opendrive.com/");
@@ -185,16 +183,19 @@ public class OpenDriveCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-
                 loginform.put("login_username", account.getUser());
                 loginform.put("login_password", account.getPass());
                 loginform.remove("remember_me");
                 loginform.put("remember_me", "on");
-
-                this.br.submitForm(loginform);
-
-                if (!this.br.containsHTML("\"user-controls-menu\"")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                for (int i = 0; i < 3; i++) { // Sometimes retry is needed, redirected to /login?ref=%2Ffiles&s=...
+                    br.submitForm(loginform);
+                    if (br.containsHTML(">Invalid  username or password<")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    if (br.containsHTML("\"user-controls-menu\"")) {
+                        break;
+                    }
+                    Thread.sleep(3 * 1000);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -284,5 +285,4 @@ public class OpenDriveCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
