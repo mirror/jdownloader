@@ -139,7 +139,7 @@ public class YouPornCom extends PluginForHost {
         String qualityTempStr;
         /* Must not be present */
         String filesize = null;
-        final String[] htmls = this.br.getRegex("class=\\'callBox downloadOption downloadVideoLink clearfix\\'(.*?)</span>").getColumn(0);
+        final String[] htmls = br.getRegex("class='callBox downloadOption[^~]*?downloadVideoLink clearfix'([^~]*?)</span>").getColumn(0);
         for (final String html : htmls) {
             qualityTempStr = new Regex(html, "(\\d+)p_\\d+k").getMatch(0);
             if (qualityTempStr == null) {
