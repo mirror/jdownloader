@@ -58,7 +58,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?vidtodo\\.(?:com|me)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?vids?todo\\.(?:com|me)/(?:embed\\-)?[a-z0-9]{12}" })
 public class VidtodoCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -294,9 +294,9 @@ public class VidtodoCom extends antiDDoSForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                    fileInfo[0] = new Regex(br, "<h2>Watch (.*?)</h2>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(br, "<h2>Watch (.*?)</h2>").getMatch(0);
+                        fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                         /* traits from download1 page below */
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
@@ -793,7 +793,9 @@ public class VidtodoCom extends antiDDoSForHost {
                 final String cryptedScripts[] = new Regex(correctedBR, "(function\\(p,.*?\\.split\\('\\|'\\)\\))").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
+                        // logger.info("Debug info: crypted: " + crypted);
                         dllink = decodeDownloadLink(crypted);
+                        logger.info("dllink: " + dllink);
                         if (dllink != null) {
                             break;
                         }
@@ -868,6 +870,7 @@ public class VidtodoCom extends antiDDoSForHost {
         }
         String finallink = null;
         if (decoded != null) {
+            logger.info("Debug info: decoded: " + decoded);
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
             finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
         }
