@@ -245,7 +245,7 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean parseNextPage(CryptedLink param) throws Exception {
-        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32})?)\\1>(▶|&#9654;|&#9658;)</a>").getMatch(1);
+        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}|\\?)?)\\1>(▶|&#9654;|&#9658;)</a>").getMatch(1);
         if (nextPage != null) {
             if (!getPage(nextPage, param)) {
                 return false;
