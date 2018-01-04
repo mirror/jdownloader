@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqcollect.me" }, urls = { "https?://(?:www\\.)?hqcollect\\.me/pack/[^/]+/[^/]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqcollect.me" }, urls = { "https?://(?:www\\.)?hqcollect\\.me/pack/[^/]+/(?!page)[^/]+/" })
 public class HqcollectMe extends PluginForHost {
-
     public HqcollectMe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +39,6 @@ public class HqcollectMe extends PluginForHost {
     // Tags:
     // protocol: https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
@@ -49,7 +46,6 @@ public class HqcollectMe extends PluginForHost {
     /* More chunks possible but often causes problems / disconnects! */
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
     private boolean              limit_reached     = false;
@@ -83,6 +79,9 @@ public class HqcollectMe extends PluginForHost {
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/mp4\">").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[^<>\"/]+\\.hqcollect\\.me/watch/[^<>\"/]+\\.mp4)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("<img class=\"u-full-width\" src=\"(.*?)\"").getMatch(0); // Picture from picture collection
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
