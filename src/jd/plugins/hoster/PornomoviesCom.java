@@ -84,6 +84,7 @@ public class PornomoviesCom extends PluginForHost {
         }
         if (dllink == null) {
             // dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("<source src=\"([^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
             // dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
