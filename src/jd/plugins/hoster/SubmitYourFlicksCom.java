@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "submityourflicks.com" }, urls = { "http://(www\\.)?submityourflicks\\.com/(\\d+[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "submityourflicks.com" }, urls = { "https?://(www\\.)?submityourflicks\\.com/(\\d+[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" })
 public class SubmitYourFlicksCom extends PluginForHost {
     /* Name of their old (removed) portal: submityourtapes.com */
     private String dllink = null;
@@ -66,7 +66,7 @@ public class SubmitYourFlicksCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com|>Content Removed<)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getURL().contains("utm_campaign")) {
             /* Advertising-redirect */
@@ -90,7 +90,11 @@ public class SubmitYourFlicksCom extends PluginForHost {
             final String clip = PluginJSonUtils.getJsonNested(br.toString(), "clip");
             dllink = new Regex((clip != null ? clip : ""), "url\\s*:\\s*'(.*?)'").getMatch(0);
         }
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
+        }
         if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
