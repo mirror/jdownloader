@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviefap.com" }, urls = { "http://(www\\.)?moviefap\\.com/(videos/[a-z0-9]+/[a-z0-9\\-_]+\\.html|embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviefap.com" }, urls = { "https?://(www\\.)?moviefap\\.com/(videos/[a-z0-9]+/[a-z0-9\\-_]+\\.html|embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+)" })
 public class MovieFapCom extends PluginForHost {
-
     public MovieFapCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +50,7 @@ public class MovieFapCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         privatevideo = false;
-        this.setBrowserExclusive();
+        setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         final String url_filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-_]+)(?:\\.html)?$").getMatch(0);
@@ -64,32 +62,35 @@ public class MovieFapCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("video does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (this.br.containsHTML("This video is set to private")) {
-                this.privatevideo = true;
+            if (br.containsHTML("This video is set to private")) {
+                privatevideo = true;
             }
             filename = br.getRegex("<div id=\"view_title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("id=\"title\" name=\"title\" value=\"([^<>\"]*?)\"").getMatch(0);
             }
-            dllink = br.getRegex("flashvars\\.config = escape\\(\"(http://[^<>\"]*?)\"\\);").getMatch(0);
-            if (!this.privatevideo && dllink != null) {
-                br.getPage(dllink);
+            String config = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"\\);").getMatch(0);
+            if (!privatevideo && config != null) {
+                br.getPage(config);
                 /* Video offline - not playable via browser either! */
-                if (this.br.toString().length() < 30) {
+                if (br.toString().length() < 30) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String[] vps = { "720p", "360p", "240p" }; // Vertical pixel
                 for (final String vp : vps) {
-                    dllink = br.getRegex("<res>" + vp + "</res>\\s*<videoLink>((http:)?//[^<>\"]*?)</videoLink>").getMatch(0);
+                    dllink = br.getRegex("<res>" + vp + "</res>\\s*<videoLink>((https?:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                     if (dllink != null) {
                         dllink = Encoding.htmlDecode(dllink);
                         break;
                     }
                 }
                 if (dllink == null) {
-                    dllink = br.getRegex("<videoLink>((?:http:)?//[^<>\"]*?)</videoLink>").getMatch(0);
+                    dllink = br.getRegex("<videoLink>((?:https?:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                 }
             }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename == null) {
             filename = url_filename;
@@ -130,7 +131,7 @@ public class MovieFapCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (this.privatevideo) {
+        if (privatevideo) {
             /* Account only */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
