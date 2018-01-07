@@ -25,11 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -45,14 +52,9 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.ZeveraApiTracker;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
+
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
@@ -60,7 +62,6 @@ public class ZeveraCom extends antiDDoSForHost {
     private static final String          mName             = "zevera.com";
     private static final String          NICE_HOSTproperty = mName.replaceAll("(\\.|\\-)", "");
     private static final String          mProt             = "http://";
-    private String                       mServ             = null;
     private static Object                LOCK              = new Object();
     private static MultiHosterManagement mhm               = new MultiHosterManagement("zevera.com");
     private static final String          NOCHUNKS          = "NOCHUNKS";
@@ -78,14 +79,7 @@ public class ZeveraCom extends antiDDoSForHost {
     }
 
     private synchronized String getMServ() {
-        if (mServ == null) {
-            mServ = mProt + API.get() + mName;
-        }
-        return mServ;
-    }
-
-    private synchronized void resetMServ() {
-        mServ = null;
+        return mProt + API.get() + mName;
     }
 
     @Override
@@ -319,27 +313,6 @@ public class ZeveraCom extends antiDDoSForHost {
         }
     }
 
-    private final void getApi(final String relative) throws Exception {
-        final String rel;
-        if (relative == null) {
-            rel = "/";
-        } else if (relative.startsWith("/")) {
-            rel = "/" + relative;
-        } else {
-            rel = relative;
-        }
-        try {
-            getPage(getMServ() + rel);
-            if (br.getHttpConnection().getResponseCode() == 500) {
-                resetMServ();
-                getPage(getMServ() + rel);
-            }
-        } catch (final BrowserException e) {
-            resetMServ();
-            getPage(getMServ() + rel);
-        }
-    }
-
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
@@ -446,7 +419,7 @@ public class ZeveraCom extends antiDDoSForHost {
                 }
             }
         }
-        final String traffic = br.getRegex(">Traffic Left:\\s*</span>(?:<[^>]+>\\s*){2,}(.*?)</a></span>").getMatch(0);
+        final String traffic = br.getRegex(">Traffic Left:\\s*</span>(?:<[^>]+>\\s*){2,}(.*?)</span>").getMatch(0);
         if (traffic != null) {
             if (StringUtils.equalsIgnoreCase(traffic, "UNLIMITED")) {
                 ai.setUnlimitedTraffic();
@@ -472,25 +445,52 @@ public class ZeveraCom extends antiDDoSForHost {
         return ai;
     }
 
-    private void postApiRaw(Browser br, final String relative, final String postData) throws Exception {
-        final String rel;
-        if (relative == null) {
-            rel = "/";
-        } else if (relative.startsWith("/")) {
-            rel = "/" + relative;
-        } else {
-            rel = relative;
-        }
-        try {
-            postPageRaw(br, getMServ() + rel, postData);
-            if (br.getHttpConnection().getResponseCode() == 500) {
-                resetMServ();
-                postPageRaw(br, getMServ() + rel, postData);
+    private final void getApi(final String relative) throws Exception {
+        boolean failure = false;
+        do {
+            try {
+                final String url = Request.getLocation(relative, br.createGetRequest(getMServ()));
+                getPage(url);
+                final int responseCode = br.getHttpConnection().getResponseCode();
+                if (responseCode == 500 || responseCode == 404) {
+                    if (failure) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    }
+                    API.setFailure();
+                    failure = true;
+                }
+            } catch (BrowserException e) {
+                if (failure) {
+                    throw e;
+                }
+                API.setFailure();
+                failure = true;
             }
-        } catch (BrowserException e) {
-            resetMServ();
-            postPageRaw(br, getMServ() + rel, postData);
-        }
+        } while (failure);
+    }
+
+    private void postApiRaw(Browser br, final String relative, final String postData) throws Exception {
+        boolean failure = false;
+        do {
+            try {
+                final String url = Request.getLocation(relative, br.createGetRequest(getMServ()));
+                postPageRaw(url, postData);
+                final int responseCode = br.getHttpConnection().getResponseCode();
+                if (responseCode == 500 || responseCode == 404) {
+                    if (failure) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    }
+                    API.setFailure();
+                    failure = true;
+                }
+            } catch (BrowserException e) {
+                if (failure) {
+                    throw e;
+                }
+                API.setFailure();
+                failure = true;
+            }
+        } while (failure);
     }
 
     private ArrayList<String> addThis() {
