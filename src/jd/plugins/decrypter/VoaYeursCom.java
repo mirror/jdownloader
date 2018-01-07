@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,9 +23,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voayeurs.com" }, urls = { "http://(www\\.)?voayeurs\\.com/(video_\\d+/.*?|.*?\\d+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voayeurs.com" }, urls = { "http://(www\\.)?voayeurs\\.com/(video_\\d+/.*?|.*?\\d+)\\.html" })
 public class VoaYeursCom extends PornEmbedParser {
-
     public VoaYeursCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -36,9 +34,15 @@ public class VoaYeursCom extends PornEmbedParser {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- Porno HD \\- VOAYEURS\\.COM</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\| VoAyeurs.com[^<>]*?</title>").getMatch(0);
+        logger.info("filename: " + filename);
         if (filename == null) {
-            filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+            filename = br.getRegex("<h1[^<>]*>([^<>\"]*?)</h1>").getMatch(0);
+            logger.info("filename: " + filename);
+        }
+        String reproductor = br.getRegex("src=\"(/reproductor/[^<>\"]*?)\"").getMatch(0);
+        if (reproductor != null) {
+            br.getPage(reproductor);
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.isEmpty()) {
@@ -51,5 +55,4 @@ public class VoaYeursCom extends PornEmbedParser {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

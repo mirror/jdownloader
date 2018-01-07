@@ -204,7 +204,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+)\"").getMatch(0);
+        externID = br.getRegex("\"((?:https?:)?/?/?(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
@@ -376,6 +376,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         // youporn.com handling 1
         externID = br.getRegex("youporn\\.com/embed/(\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add("//www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        // youporn.com handling 3 2018-01-07
+        externID = br.getRegex("ypncdn\\.com/[^/]+/[^/]+/(\\d+)/").getMatch(0);
         if (externID != null) {
             decryptedLinks.add("//www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
             if (!processAll) {
@@ -836,6 +844,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // 2018-01-07 hotmovs.com
+        externID = br.getRegex("src=\"https?://www.hotmovs.com/embed/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add("http://hotmovs.com/videos/" + externID + "/anything/");
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
@@ -921,6 +937,26 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             if (title != null) {
                 dl.setFinalFileName(title + ".mp4");
             }
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        // 2018-01-07 Unknown? - directHTTP
+        externID = br.getRegex("(https://cv.rdtcdn.com/[^\"]+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            dl.setFinalFileName(title + ".mp4");
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        // 2018-01-07 Can't convert back - directHTTP
+        externID = br.getRegex("(https://cdn[^/]+.xtube.com/[^\"]+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            dl.setFinalFileName(title + ".mp4");
             decryptedLinks.add(dl);
             if (!processAll) {
                 return decryptedLinks;
