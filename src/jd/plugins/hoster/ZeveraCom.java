@@ -453,17 +453,17 @@ public class ZeveraCom extends antiDDoSForHost {
                 getPage(url);
                 final int responseCode = br.getHttpConnection().getResponseCode();
                 if (responseCode == 500 || responseCode == 404) {
+                    API.setFailure();
                     if (failure) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     }
-                    API.setFailure();
                     failure = true;
                 }
             } catch (BrowserException e) {
+                API.setFailure();
                 if (failure) {
                     throw e;
                 }
-                API.setFailure();
                 failure = true;
             }
         } while (failure);
@@ -477,17 +477,17 @@ public class ZeveraCom extends antiDDoSForHost {
                 postPageRaw(url, postData);
                 final int responseCode = br.getHttpConnection().getResponseCode();
                 if (responseCode == 500 || responseCode == 404) {
+                    API.setFailure();
                     if (failure) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     }
-                    API.setFailure();
                     failure = true;
                 }
             } catch (BrowserException e) {
+                API.setFailure();
                 if (failure) {
                     throw e;
                 }
-                API.setFailure();
                 failure = true;
             }
         } while (failure);
