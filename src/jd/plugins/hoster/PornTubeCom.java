@@ -69,14 +69,19 @@ public class PornTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-        final String mediaID = getMediaid(this.br);
-        String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+        }
+        final String mediaID = getMediaid(br);
+        String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(1);
+        logger.info("availablequalities: " + availablequalities);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {
             availablequalities = "1080+720+480+360+240";
         }
         if (mediaID == null || filename == null) {
+            logger.info("mediaID: " + mediaID + ", filename: " + filename);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -89,31 +94,14 @@ public class PornTubeCom extends PluginForHost {
             br.postPage("https://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
         }
         // seems to be listed in order highest quality to lowest. 20130513
-        getDllink();
+        getDllink(downloadLink);
         String ext = "mp4";
         if (DLLINK.contains(".flv")) {
             ext = "flv";
         }
         filename = filename.endsWith(".") ? filename + ext : filename + "." + ext;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -125,23 +113,6 @@ public class PornTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private void getDllink() throws PluginException, IOException {
-        String finallink = null;
-        final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
-        for (final String quality : qualities) {
-            if (br.containsHTML("\"" + quality + "\"")) {
-                finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null && checkDirectLink(finallink) != null) {
-                    break;
-                }
-            }
-        }
-        if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = finallink;
     }
 
     public static String getMediaid(final Browser br) throws IOException {
@@ -158,23 +129,45 @@ public class PornTubeCom extends PluginForHost {
             final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
             if (embed != null) {
                 br.getPage(embed);
-                mediaID = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
+                mediaID = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0); // $.ajax(url,opts);}})(
             }
         }
         return mediaID;
     }
 
-    private String checkDirectLink(String directlink) {
-        if (directlink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(directlink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    directlink = null;
+    private void getDllink(final DownloadLink link) throws Exception {
+        String finallink = null;
+        final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
+        for (final String quality : qualities) {
+            if (br.containsHTML("\"" + quality + "\"")) {
+                finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink != null && checkDirectLink(link, finallink) != null) {
+                    break;
                 }
+            }
+        }
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = finallink;
+    }
+
+    private String checkDirectLink(final DownloadLink link, String directlink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openHeadConnection(directlink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+            } else {
+                directlink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
                 con.disconnect();
             } catch (final Exception e) {
-                directlink = null;
             }
         }
         return directlink;
