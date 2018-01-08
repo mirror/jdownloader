@@ -161,6 +161,13 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        externID = br.getRegex("madthumbscdn\\.com/videos/\\d+/(\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add("//www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         externID = br.getRegex("(\"|')((?:https?:)?//openload\\.co/embed/[A-Za-z0-9_\\-]+(/[^<>\"/]*?)?)\\1").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(externID);
@@ -852,6 +859,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // 2018-01-08 mcfucker.com
+        externID = br.getRegex("<iframe [^<>]+ src=\"([^\"]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
@@ -954,6 +969,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         // 2018-01-07 Can't convert back - directHTTP
         externID = br.getRegex("(https://cdn[^/]+.xtube.com/[^\"]+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("(https://cdn[^/]+.tnaflix.com/[^\"]+)\"").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             dl.setFinalFileName(title + ".mp4");
