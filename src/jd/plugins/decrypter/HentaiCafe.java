@@ -16,10 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.cafe" }, urls = { "https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.cafe" }, urls = { "https?://(?:www\\.)?hentai\\.cafe/(?:manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/|(?!artists/|78-2/|category/)[\\w\\-]+/$)" })
 public class HentaiCafe extends antiDDoSForDecrypt {
 
     public HentaiCafe(PluginWrapper wrapper) {
@@ -42,13 +43,20 @@ public class HentaiCafe extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String extension_fallback = ".jpg";
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        if (new URL(parameter).getPath().matches("/[\\w\\-]+/$")) {
+            final String ep = br.getRegex("https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/").getMatch(-1);
+            if (ep != null) {
+                decryptedLinks.add(createDownloadlink(ep));
+            }
+            return decryptedLinks;
+        }
+        final String extension_fallback = ".jpg";
         final Regex urlinfo = new Regex(parameter, "/manga/read/([^/]+)/[^/]+/\\d+/(\\d+)/");
         final String url_chapter = urlinfo.getMatch(0);
         final String url_name = urlinfo.getMatch(1);
