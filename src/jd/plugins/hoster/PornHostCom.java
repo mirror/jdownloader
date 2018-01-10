@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhostdecrypted\\.com/([0-9]+/[0-9]+\\.html|[0-9]+|embed/\\d+)" })
 public class PornHostCom extends PluginForHost {
-
     private String ending = null;
     private String dllink = null;
 
@@ -67,7 +65,10 @@ public class PornHostCom extends PluginForHost {
         if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>pornhost\\.com  \\- ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(?:pornhost.com - )?([^<>\"]*?)( - Pornhost)?</title>").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -107,7 +108,6 @@ public class PornHostCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
