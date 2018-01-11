@@ -220,7 +220,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         } else {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc\\.ru", ""));
         }
-        String[] links = br.getRegex("<a href='(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32}|\\?)?)#bp'>").getColumn(0);
+        final String[] links = br.getRegex("<a href='(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'>").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + parameter + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
         }
