@@ -50,9 +50,12 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (new URL(parameter).getPath().matches("/[\\w\\-]+/$")) {
-            final String ep = br.getRegex("https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/").getMatch(-1);
-            if (ep != null) {
-                decryptedLinks.add(createDownloadlink(ep));
+            // their can be multiples
+            final String[] eps = br.getRegex("https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/").getColumn(-1);
+            if (eps != null) {
+                for (final String ep : eps) {
+                    decryptedLinks.add(createDownloadlink(ep));
+                }
             }
             return decryptedLinks;
         }
