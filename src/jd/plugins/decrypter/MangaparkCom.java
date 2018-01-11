@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -29,18 +28,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" })
 public class MangaparkCom extends PluginForDecrypt {
     /**
      * @author raztoki & pspzockerscene
      */
-
     // DEV NOTES
     // protocol: no https
     // other: sister sites mangatank & mangawindows.
     // other: links are not nessairly transferable
     // other: regex is tight as possible, be very careful playing!
-
     private String HOST = "";
 
     public MangaparkCom(PluginWrapper wrapper) {
@@ -55,7 +52,7 @@ public class MangaparkCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://(?:www\\.)manga\\.(?:com|me)", "://http://mangapark.me");
+        String parameter = param.toString().replace("://(?:www\\.)manga\\.(?:com|me)", "://https://mangapark.me");
         HOST = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         prepBrowser();
         br.setFollowRedirects(true);
@@ -101,7 +98,6 @@ public class MangaparkCom extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         fp.setProperty("CLEANUP_NAME", false);
         fp.setName(fpName);
-
         final DecimalFormat df = new DecimalFormat("00");
         if (srv_link != null && extension != null) {
             for (int i = 1; i <= numberOfPages; i++) {
@@ -129,12 +125,13 @@ public class MangaparkCom extends PluginForDecrypt {
                     if (i > 1) {
                         this.br.getPage(parameter + "/" + i);
                     }
-                    url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"(https?://[^<>]+\\.(jpg|png)[^<>]*?)\"").getMatch(0);
+                    url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"((?:https?:)?//[^<>]+\\.(jpg|png)[^<>]*?)\"").getMatch(0);
                     if (url == null) {
                         return null;
+                    } else {
+                        url = br.getURL(url).toString();
                     }
                 }
-
                 link = createDownloadlink("directhttp://" + url);
                 extension = getFileNameExtensionFromURL(url);
                 link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
@@ -153,5 +150,4 @@ public class MangaparkCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
