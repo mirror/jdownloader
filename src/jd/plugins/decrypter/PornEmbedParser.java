@@ -860,7 +860,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // 2018-01-08 mcfucker.com
-        externID = br.getRegex("<iframe [^<>]+ src=\"([^\"]+)\"").getMatch(0);
+        externID = br.getRegex("<iframe [^<>]+ src=\"(https?://www.mcfucker.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
