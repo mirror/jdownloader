@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?perfectgirlsdecrypted\\.net/\\d+/.{0,1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?perfectgirlsdecrypted\\.net/gal/\\d+/.{0,1}" })
 public class PerfectGirlsNet extends PluginForHost {
-
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -71,7 +69,6 @@ public class PerfectGirlsNet extends PluginForHost {
             logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
