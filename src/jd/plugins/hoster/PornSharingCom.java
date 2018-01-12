@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.URL;
@@ -45,9 +44,8 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "https?://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" })
 public class PornSharingCom extends PluginForHost {
-
     public PornSharingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,7 +59,6 @@ public class PornSharingCom extends PluginForHost {
 
     /* Tags: TubeContext@Player */
     /* Sites using the same player: pornsharing.com, [definebabes.com, definebabe.com, definefetish.com] */
-
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -150,11 +147,9 @@ public class PornSharingCom extends PluginForHost {
      */
     private static String decryptRC4HexString(final String plainTextKey, final String hexStringCiphertext) throws Exception {
         String ret = "";
-
         try {
             Cipher rc4 = Cipher.getInstance("RC4");
             rc4.init(Cipher.DECRYPT_MODE, new SecretKeySpec(plainTextKey.getBytes(), "RC4"));
-
             ret = new String(rc4.doFinal(DatatypeConverter.parseHexBinary(hexStringCiphertext)));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -171,7 +166,6 @@ public class PornSharingCom extends PluginForHost {
         } catch (BadPaddingException e) {
             e.printStackTrace();
         }
-
         return ret;
     }
 
