@@ -30,8 +30,6 @@ iframe {
 }
 </style>
 
-<script src="/%%%namespace%%%/recaptcha/api.js?id=%%%session%%%&do=/recaptcha/api.js"></script>
-
 <script src='/resource?browserCaptcha.js?6783'></script>
 <script type="text/javascript">
     function success() {
@@ -85,26 +83,6 @@ iframe {
 	<div id=main>
 
 		<div class=wrap style="height: 350px">
-			<article style="display:%%%display%%%">
-				<h2>Please solve this Captcha challenge:</h2>
-				<div class="sample-form"">
-
-					<form name="send" method="POST">
-
-						<div class="">
-							<!-- BEGIN: ReCAPTCHA implementation example. -->
-							<div data-callback="success" id="rc" class="g-recaptcha"
-								data-sitekey="%%%sitekey%%%" %%%optionals%%%></div>
-							<!-- Optional noscript fallback. -->
-							<noscript>
-								<p>Javascript is required!</p>
-							</noscript>
-							<!-- END: ReCAPTCHA implementation example. -->
-						</div>
-
-					</form>
-				</div>
-			</article>
 			<article class="no_extension">
 				<h2>Important:</h2>
 					<div>%%%no_extension%%%</div>
