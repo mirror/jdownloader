@@ -13,15 +13,20 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import java.util.LinkedHashMap;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.cryptojs.CryptoJS;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,19 +37,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.IO;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.cryptojs.CryptoJS;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ozee.com" }, urls = { "https?://(?:www\\.)?ozee\\.com/(videos/[^/]+/|shows/[^/]+/video/)[a-z0-9\\-]+\\.html" })
 public class OzeeCom extends PluginForHost {
-
     public OzeeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -56,7 +53,6 @@ public class OzeeCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -80,11 +76,8 @@ public class OzeeCom extends PluginForHost {
             filename = url_filename;
         }
         final String result = processJS();
-        final String json_crypted = this.br.getRegex("pdplayurl\\s*?=\\s*?\\'([^<>\\']+)\\'").getMatch(0);
         if (result != null) {
-            /* TODO */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_crypted);
-            dllink = (String) entries.get("value_of_hls_url");
+            dllink = result;
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -97,6 +90,21 @@ public class OzeeCom extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
+        if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+            final HLSDownloader downloader = new HLSDownloader(link, br, this.dllink);
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (link.getBooleanProperty("encrypted")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+            }
+            if (streamInfo != null) {
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (link.getKnownDownloadSize() == -1) {
+                    link.setDownloadSize(estimatedSize);
+                } else {
+                    link.setDownloadSize(Math.max(link.getKnownDownloadSize(), estimatedSize));
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -117,10 +125,8 @@ public class OzeeCom extends PluginForHost {
     private String processJS() {
         String result = null;
         try {
-            final String json_crypted = this.br.getRegex("pdplayurl\\s*?=\\s*?\\'([^<>\\']+)\\'").getMatch(0);
-
+            final String json_crypted = this.br.getRegex("hlsplayurl\\s*?=\\s*?\\'([^<>\\']+)\\'").getMatch(0);
             String user = br.getRegex("var dailytoday\\s*?=\\s*?\"([^<>\"]+)\";").getMatch(0);
-            user = br.getRegex("var dailytoday\\s*?=\\s*?\\'([^<>\"]+)\\';").getMatch(0);
             if (user == null || json_crypted == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
