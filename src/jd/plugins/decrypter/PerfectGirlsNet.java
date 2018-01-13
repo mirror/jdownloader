@@ -34,7 +34,7 @@ public class PerfectGirlsNet extends PornEmbedParser {
         final String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/", "perfectgirls.net/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("No htmlCode read")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read")) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
