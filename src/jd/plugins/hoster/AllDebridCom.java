@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,13 +42,9 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
+
     public AllDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000l);
@@ -133,7 +134,7 @@ public class AllDebridCom extends antiDDoSForHost {
         return Integer.parseInt(error);
     }
 
-    private void handleErrors() throws PluginException {
+    private void handleErrors() throws PluginException, Exception {
         // 1 Invalid token.
         // 2 Invalid user or password.
         // 3 Geolock protection active, please login on the website.
@@ -146,7 +147,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-            // login related
+        // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
@@ -179,6 +180,10 @@ public class AllDebridCom extends antiDDoSForHost {
         case 31:
         case 39:
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        case 35: {
+            // {"error":"All servers are full for this host, please retry later","errorCode":35}
+            mhm.handleErrorGeneric(null, this.currDownloadLink, "No available slots for this host", 10, 5 * 60 * 1000l);
+        }
         }
     }
 
@@ -253,6 +258,7 @@ public class AllDebridCom extends antiDDoSForHost {
         if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
             final String host = Browser.getHost(link.getDownloadURL());
             final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+
                 @Override
                 public HashInfo getHashInfo() {
                     return null;
