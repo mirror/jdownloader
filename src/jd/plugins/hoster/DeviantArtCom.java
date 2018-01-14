@@ -145,7 +145,8 @@ public class DeviantArtCom extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            filename = Encoding.htmlDecode(filename.trim());
+            String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            filename = Encoding.htmlDecode(filename.trim()) + "_" + fid;
         }
         if (link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -282,6 +283,7 @@ public class DeviantArtCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         link.setDownloadSize(con.getLongContentLength());
+                        // link.setContentUrl("dlLink"); // Gives Oops, 404 not found after some time.
                     }
                 } finally {
                     try {
@@ -588,7 +590,7 @@ public class DeviantArtCom extends PluginForHost {
                     return;
                 }
                 br.getPage("https://www.deviantart.com/");
-                br.getPage("https://l.deviantart.com/");
+                br.getPage("https://www.deviantart.com/users/login/");
                 if (false && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
                     // disabled because perimeterx code is incomplete
                     final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
