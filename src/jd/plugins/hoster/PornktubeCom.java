@@ -13,15 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,25 +34,30 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornktube.com" }, urls = { "https?://(?:www\\.)?pornktube\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class PornktubeCom extends PluginForHost {
-
     public PornktubeCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "Preferred_format", FORMATS, "Preferred Format").setDefaultValue(0));
     }
 
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final boolean  free_resume       = true;
+    private static final int      free_maxchunks    = 0;
+    private static final int      free_maxdownloads = -1;
+    private String                dllink            = null;
+    private boolean               server_issues     = false;
+    private static final String[] FORMATS           = new String[] { "Best available", "1080p", "720p", "480p", "360p", "240p" };
 
     @Override
     public String getAGBLink() {
@@ -98,11 +103,37 @@ public class PornktubeCom extends PluginForHost {
                 }
             }
         }
-        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
         }
+        if (dllink == null) {
+            // String id = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+            // String data_s = br.getRegex("data-s=\"(\\d+)\"").getMatch(0);
+            final SubConfiguration cfg = getPluginConfig();
+            final int Preferred_format = cfg.getIntegerProperty("Preferred_format", 0);
+            logger.info("Debug info: Preferred_format: " + Preferred_format);
+            /* Preferred_format 0 = best, 1 = 1080p, 2 = 720p, 3 = 480p, 4 = 360p, 5 = 240p */
+            final String items[][] = br.getRegex("data-c=\"([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)").getMatches();
+            if (items != null && items.length > 0) {
+                for (final String item[] : items) {
+                    logger.info("Debug info: Preferred_format: " + Preferred_format + ", checking format: " + item[1]);
+                    dllink = "http://s" + item[7] + ".cdna.tv/svideo/?t=" + item[5] + "&k=" + item[6] + "&n=/13000/" + item[4] + "/" + item[4] + "_" + item[1] + ".mp4";
+                    logger.info("Debug info: checking dllink: " + dllink);
+                    checkDllink(link);
+                    if (dllink == null) {
+                        continue;
+                    } else if (dllink != null && Preferred_format == 0 || Preferred_format == 1 && item[1].equals("1080p") || Preferred_format == 2 && item[1].equals("720p") || Preferred_format == 3 && item[1].equals("480p") || Preferred_format == 4 && item[1].equals("360p") || Preferred_format == 5 && item[1].equals("240p")) {
+                        logger.info("Debug info: Preferred_format " + Preferred_format + ", found: " + item[1]);
+                        break;
+                    }
+                }
+            }
+        }
         if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -114,25 +145,30 @@ public class PornktubeCom extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
+        return AvailableStatus.TRUE;
+    }
+
+    private String checkDllink(final DownloadLink link) throws Exception {
         final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(dllink);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setProperty("directlink", dllink);
             } else {
-                server_issues = true;
+                dllink = null;
             }
-            return AvailableStatus.TRUE;
+        } catch (final Exception e) { // Connection problem
+            dllink = null;
         } finally {
             try {
                 con.disconnect();
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
             }
         }
+        return dllink;
     }
 
     @Override
