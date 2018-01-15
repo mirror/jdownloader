@@ -20,6 +20,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,12 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 /**
  *
  * @author raztoki
@@ -54,6 +54,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
+
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/premium.html");
@@ -227,8 +228,8 @@ public class Keep2ShareCc extends K2SApi {
     /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
     public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
         /*
-         * TODO: Add error handling here - filename might not be available or located in a different place for abused content or when a
-         * download limit is reached!
+         * TODO: Add error handling here - filename might not be available or located in a different place for abused content or when a download
+         * limit is reached!
          */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -256,8 +257,8 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /**
-     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on
-     * his IP and possibly offer the free download without having to enter another captcha.
+     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on his
+     * IP and possibly offer the free download without having to enter another captcha.
      */
     public boolean freeDownloadImmediatelyPossible() {
         return br.containsHTML(">To download this file with slow speed, use");
@@ -554,37 +555,45 @@ public class Keep2ShareCc extends K2SApi {
                     }
                 }
                 getPage(this.MAINPAGE + "/login.html");
-                String csrftoken = br.getRegex("value=\"([^<>\"\\']+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
-                if (StringUtils.isEmpty(csrftoken)) {
-                    csrftoken = br.getCookie(account.getHoster(), "YII_CSRF_TOKEN");
+                final Form login = br.getFormbyActionRegex("/login.html");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                if (csrftoken != null) {
-                    postData += "&YII_CSRF_TOKEN=" + Encoding.urlEncode(csrftoken);
-                }
+                login.put("LoginForm%5Busername%5D", Encoding.urlEncode(account.getUser()));
+                login.put("LoginForm%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
                 // Handle stupid login captcha
-                final String captchaLink = br.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
+                final String captchaLink = login.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
                 if (captchaLink != null) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
                     final String code = getCaptchaCode("https://" + br.getHost() + captchaLink, dummyLink);
-                    postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
-                } else {
-                    if (br.containsHTML("recaptcha/api/challenge") || br.containsHTML("Recaptcha.create")) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
-                        if (challenge == null) {
-                            challenge = br.getRegex("Recaptcha.create\\('(.*?)'").getMatch(0);
-                        }
-                        rc.setId(challenge);
-                        rc.load();
-                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                        postData = postData + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    login.put("LoginForm%5BverifyCode%5D=", Encoding.urlEncode(code));
+                } else if (login.containsHTML("recaptcha/api/challenge") || login.containsHTML("Recaptcha.create")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
+                    final Recaptcha rc = new Recaptcha(br, this);
+                    String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
+                    if (challenge == null) {
+                        challenge = br.getRegex("Recaptcha.create\\('(.*?)'").getMatch(0);
                     }
+                    rc.setId(challenge);
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                    login.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
+                    login.put("recaptcha_response_field", Encoding.urlEncode(c));
+                } else if (login.containsHTML("class=\"g-recaptcha\"")) {
+                    // recapthav2
+                    final DownloadLink original = this.getDownloadLink();
+                    if (original == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (original == null) {
+                        this.setDownloadLink(null);
+                    }
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                postPage("/login.html", postData);
+                sendForm(login);
                 if (br.containsHTML("Incorrect username or password")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
