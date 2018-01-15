@@ -2,9 +2,12 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -20,13 +23,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(www\\.)?premiumize\\.me/browsetorrent\\?hash=[a-f0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[A-Z0-9\\-_]+(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,15 +35,22 @@ public class PremiumizeMe extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (accs.size() > 0) {
             setBrowserExclusive();
-            final String hash = new Regex(parameter.getCryptedUrl(), "hash=([a-f0-9]+)").getMatch(0);
+            final String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(parameter.getCryptedUrl());
             final Account account = accs.get(0);
-            final Map<String, PremiumizeBrowseNode> nodes = getNodes(br, account, hash);
-            ret.addAll(convert(nodes, ""));
+            final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, cloudID);
+            /* Find path from previous craw process if available. */
+            String folderPath = new Regex(parameter.getCryptedUrl(), "folderpath=(.+)").getMatch(0);
+            if (folderPath != null) {
+                folderPath = Encoding.Base64Decode(folderPath);
+            } else {
+                folderPath = "0";
+            }
+            ret.addAll(convert(nodes, folderPath));
         }
         return ret;
     }
 
-    public static List<DownloadLink> convert(Map<String, PremiumizeBrowseNode> premiumizeNodes, String currentPath) {
+    public static List<DownloadLink> convert(ArrayList<PremiumizeBrowseNode> premiumizeNodes, String currentPath) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (premiumizeNodes == null || premiumizeNodes.size() == 0) {
             return ret;
@@ -62,43 +66,70 @@ public class PremiumizeMe extends PluginForDecrypt {
         } else {
             filePackage = null;
         }
-        for (final PremiumizeBrowseNode node : premiumizeNodes.values()) {
-            if (node._isFile()) {
-                final DownloadLink link = new DownloadLink(null, null, "premiumize.me", node.getUrl(), true);
-                if (node.getSize() >= 0) {
-                    link.setVerifiedFileSize(node.getSize());
+        for (final PremiumizeBrowseNode node : premiumizeNodes) {
+            final String itemName = node.getName();
+            final String nodeCloudID = node.getID();
+            if (node._isDirectory()) {
+                /* Folder */
+                final String path_for_next_crawl_level;
+                if (StringUtils.isEmpty(currentPath)) {
+                    path_for_next_crawl_level = itemName;
+                } else {
+                    path_for_next_crawl_level = currentPath + "/" + itemName;
                 }
-                link.setFinalFileName(node.getName());
+                final String folderURL = createFolderURL(nodeCloudID) + "&folderpath=" + Encoding.Base64Encode(path_for_next_crawl_level);
+                final DownloadLink folder = new DownloadLink(null, null, "premiumize.me", folderURL, true);
+                ret.add(folder);
+            } else {
+                /* File */
+                /** TODO: Maybe do not add .nzb and .torrent files (see comment in host class near PremiumizeMeConfigInterface)! */
+                final DownloadLink link = new DownloadLink(null, null, "premiumize.me", node.getUrl(), true);
+                setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
                 if (filePackage != null) {
                     filePackage.add(link);
                 }
-                link.setAvailable(true);
-                link.setLinkID("premiumizetorrent://" + Hash.getSHA256(currentPath + node.getName()) + node.getSize());
                 if (addPath) {
                     link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 }
                 ret.add(link);
-            } else if (node._isDirectory() && node.getChildren() != null) {
-                if (addPath) {
-                    ret.addAll(convert(node.getChildren(), currentPath + "/" + CrossSystem.alleviatePathParts(node.getName())));
-                } else {
-                    ret.addAll(convert(node.getChildren(), CrossSystem.alleviatePathParts(node.getName())));
-                }
             }
         }
         return ret;
     }
 
-    public static Map<String, PremiumizeBrowseNode> getNodes(Browser br, Account account, final String hash) throws IOException {
-        final String responseString = br.getPage("https://www.premiumize.me/api/torrent/browse?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&hash=" + hash);
-        final Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP, null);
+    private static String createFolderURL(final String cloudID) {
+        return String.format("https://www.premiumize.me/files?folder_id=%s", cloudID);
+    }
+
+    /* Sets info from PremiumizeBrowseNode --> On DownloadLink */
+    public static void setPremiumizeBrowserNodeInfoOnDownloadlink(final DownloadLink link, final PremiumizeBrowseNode node) {
+        if (node.getSize() >= 0) {
+            link.setVerifiedFileSize(node.getSize());
+        }
+        link.setFinalFileName(node.getName());
+        link.setAvailable(true);
+        link.setLinkID("premiumizecloud://" + node.getID());
+    }
+
+    public static ArrayList<PremiumizeBrowseNode> getNodes(Browser br, Account account, final String cloudID) throws IOException {
+        accessCloudItem(br, account, cloudID);
+        final Map<String, Object> responseMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
         final String status = (String) responseMap.get("status");
         if (StringUtils.equals("success", status)) {
-            final Map<String, Object> contentValue = (Map<String, Object>) responseMap.get("content");
-            final HashMap<String, PremiumizeBrowseNode> premiumizeNodes = JSonStorage.restoreFromString(JSonStorage.toString(contentValue), new TypeRef<HashMap<String, PremiumizeBrowseNode>>() {
-            }, null);
-            return premiumizeNodes;
+            final ArrayList<Object> folderContents = (ArrayList<Object>) responseMap.get("content");
+            final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
+            for (final Object jsonObject : folderContents) {
+                final Map<String, Object> folderObject = (Map<String, Object>) jsonObject;
+                browseNodes.add(JSonStorage.restoreFromString(JSonStorage.toString(folderObject), new TypeRef<PremiumizeBrowseNode>() {
+                }, null));
+            }
+            return browseNodes;
         }
         return null;
+    }
+
+    public static String accessCloudItem(final Browser br, final Account account, final String itemID) throws IOException {
+        br.getPage("https://www.premiumize.me/api/folder/list?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&id=" + itemID);
+        return br.toString();
     }
 }

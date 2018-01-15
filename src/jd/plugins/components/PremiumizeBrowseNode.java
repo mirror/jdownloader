@@ -24,7 +24,7 @@ public class PremiumizeBrowseNode implements Storable {
     }
 
     public String getUrl() {
-        return url;
+        return link;
     }
 
     public boolean _isFile() {
@@ -32,11 +32,11 @@ public class PremiumizeBrowseNode implements Storable {
     }
 
     public boolean _isDirectory() {
-        return "dir".equals(getType());
+        return "folder".equals(getType());
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setLink(String link) {
+        this.link = link;
     }
 
     public String getType() {
@@ -45,6 +45,14 @@ public class PremiumizeBrowseNode implements Storable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getID() {
+        return this.id;
+    }
+
+    public void setID(String id) {
+        this.id = id;
     }
 
     public Map<String, PremiumizeBrowseNode> getChildren() {
@@ -56,8 +64,9 @@ public class PremiumizeBrowseNode implements Storable {
     }
 
     private long                              size     = -1;
-    private String                            url      = null;
+    private String                            link     = null;
     private String                            type     = null;
+    private String                            id       = null;
     private Map<String, PremiumizeBrowseNode> children = null;
 
     public PremiumizeBrowseNode(/* Storable */) {
@@ -77,5 +86,4 @@ public class PremiumizeBrowseNode implements Storable {
         }
         return super.toString();
     }
-
 }
