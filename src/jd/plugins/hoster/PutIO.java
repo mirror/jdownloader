@@ -1,5 +1,15 @@
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.putio.PutIOFileWrapper;
+import org.jdownloader.plugins.components.putio.PutIOInfoWrapper;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -22,19 +32,11 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.putio.PutIOFileWrapper;
-import org.jdownloader.plugins.components.putio.PutIOInfoWrapper;
-
 // "https?://put\\.io/(?:file|v2/files)/\\d+" website link
 // actual downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://[a-z0-9\\-]+\\.put\\.io/(?:v2/files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
+
     private static final String REQUIRES_ACCOUNT = "requiresAccount";
     private static final String ACCESS_TOKEN     = "access_token";
     private static final String COOKIE_HOST      = "http://put.io";
@@ -82,11 +84,9 @@ public class PutIO extends PluginForHost {
             date_expire = TimeFormatter.getMilliSeconds(date_expire_str, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
         }
         if (date_expire - System.currentTimeMillis() > 0) {
-            ai.setStatus("Premium Account");
             ai.setValidUntil(date_expire);
             account.setType(AccountType.PREMIUM);
         } else {
-            ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         }
         account.setValid(true);
@@ -109,7 +109,7 @@ public class PutIO extends PluginForHost {
         br.setFollowRedirects(true);
         final String accessToken = getToken(link.getPluginPatternMatcher());
         if (StringUtils.isNotEmpty(accessToken)) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "https://put.io/v2/files/" + getID(link.getPluginPatternMatcher()) + "/download?token=" + accessToken, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, "https://put.io/v2/files/" + getID(link.getPluginPatternMatcher()) + "/download?token=" + accessToken, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -150,7 +150,7 @@ public class PutIO extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalLink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (dl.getConnection().getResponseCode() == 404) {
@@ -189,9 +189,9 @@ public class PutIO extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                br.postPage("https://put.io/login", new UrlQuery().append("next", "/v2/account/info?access_token=1&intercom=1&sharing=1", true).append("name", account.getUser(), true).append("password", account.getPass(), true));
-                final String location = this.br.getRequest().getResponseHeader("Location");
-                accessToken = new Regex(location, "access_token=([^\\&=]+)$").getMatch(0);
+                br.postPage("https://put.io/login", new UrlQuery().append("plain_login", "1", false).append("name", account.getUser(), true).append("password", account.getPass(), true));
+                final String location = br.getRequest().getResponseHeader("Location");
+                accessToken = new Regex(location, "[&\\?#]access_token=([^\\&=]+)").getMatch(0);
                 if (accessToken == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -202,11 +202,13 @@ public class PutIO extends PluginForHost {
                 });
                 if (map == null || map.getInfo() == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(COOKIE_HOST, SESSION_TOKEN_2) == null) {
+                }
+                final String cookie = br.getCookie(COOKIE_HOST, SESSION_TOKEN_2);
+                if (cookie == null || "deleted".equals(cookie)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.setProperty(ACCESS_TOKEN, accessToken);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
