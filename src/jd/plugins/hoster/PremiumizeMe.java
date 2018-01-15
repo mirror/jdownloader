@@ -102,7 +102,7 @@ public class PremiumizeMe extends UseNet {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "ssldownloadsenabled".equals(keyHandler.getKey());
+                return "ssldownloadsenabled".equals(keyHandler.getKey()) || "freeaccountsallowed".equals(keyHandler.getKey());
             }
 
             @Override
@@ -121,6 +121,10 @@ public class PremiumizeMe extends UseNet {
             public String getSSLDownloadsEnabled_label() {
                 return _JDT.T.lit_ssl_enabled();
             }
+
+            public String getFreeAccountsAllowed_label() {
+                return "Allow free accounts? Only use when you know what you're doing!";
+            }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
@@ -130,6 +134,12 @@ public class PremiumizeMe extends UseNet {
         boolean isSSLDownloadsEnabled();
 
         void setSSLDownloadsEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isFreeAccountsAllowed();
+
+        void setFreeAccountsAllowed(boolean b);
     };
 
     @Override
@@ -526,10 +536,12 @@ public class PremiumizeMe extends UseNet {
             ai.setProperty("connection_settings", response.get("connection_settings"));
         } else {
             /*
-             * Free/unknown account-type --> Users cannot download anything with such an account but we'll accept them and not show any
-             * error so if a free account changes to premium again, it will work without requiring a manual account refresh in JD by the
-             * user.
+             * Free/unknown account-type --> Users cannot download anything with such an account.
              */
+            if (!((PremiumizeMeConfigInterface) AccountJsonConfig.get(account)).isFreeAccountsAllowed()) {
+                ai.setExpired(true);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
         }
