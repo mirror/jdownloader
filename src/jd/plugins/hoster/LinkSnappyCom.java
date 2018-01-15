@@ -58,7 +58,6 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class LinkSnappyCom extends antiDDoSForHost {
-
     private static MultiHosterManagement mhm = new MultiHosterManagement("linksnappy.com");
 
     public LinkSnappyCom(PluginWrapper wrapper) {
@@ -116,9 +115,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
             }
             getPage("https://linksnappy.com/api/USERDETAILS");
             final String expire = PluginJSonUtils.getJsonValue(br, "expire");
-            if ("lifetime".equals(expire)) {
+            final String accPackage = PluginJSonUtils.getJsonValue(br, "package");
+            if ("lifetime".equalsIgnoreCase(expire) || "lifetime".equalsIgnoreCase(accPackage)) {
+                /* 2018-01-15: Lifetime accounts have an expire date near the max unix timestamp (thus we do not display it) */
                 currentAcc.setType(AccountType.LIFETIME);
-            } else if ("expired".equals(expire)) {
+            } else if ("expired".equalsIgnoreCase(expire)) {
                 /* Free account = also expired */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
@@ -556,22 +557,17 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     public static interface LinkSnappyComConfig extends PluginConfigInterface {
-
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
         public static class TRANSLATION {
-
             public String getClearDownloadHistory_label() {
                 return "Clear download history after each successful download?";
             }
-
         }
 
         @DefaultBooleanValue(false)
         boolean isClearDownloadHistoryEnabled();
 
         void setClearDownloadHistoryEnabled(boolean b);
-
     }
-
 }

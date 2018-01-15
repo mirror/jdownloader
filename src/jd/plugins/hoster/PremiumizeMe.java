@@ -72,7 +72,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/(torrentdl|dl)/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:dt\\d+|imaginaryblueogre\\-sto|dangerousclashknife\\-sto|punydragonhoard\\-sto)\\.energycdn\\.com/dl/.+" })
 public class PremiumizeMe extends UseNet {
     private static MultiHosterManagement mhm          = new MultiHosterManagement("premiumize.me");
     private static final String          SENDDEBUGLOG = "SENDDEBUGLOG";
@@ -111,6 +111,11 @@ public class PremiumizeMe extends UseNet {
         };
     }
 
+    /**
+     * TODO: Maybe add a setting to not add .nzb and .torrent files when adding cloud folders as JD will automatically add the contents of
+     * .nzb files after downloading them but in this case that makes no sense as when users add cloud URLs these will contain the
+     * downloaded- and extracted contents of .nzb(and .torrent) files already.
+     */
     public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
         public class Translation {
             public String getSSLDownloadsEnabled_label() {
@@ -190,6 +195,27 @@ public class PremiumizeMe extends UseNet {
         }
     }
 
+    // private void accessNode(final Account account, final DownloadLink link) throws Exception {
+    // jd.plugins.decrypter.PremiumizeMe.accessCloudItem(this.br, account, getCloudID(link.getDownloadURL()));
+    // final Map<String, Object> responseMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
+    // final String status = (String) responseMap.get("status");
+    // if (!StringUtils.equals("success", status)) {
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // }
+    // final ArrayList<Object> folderContents = (ArrayList<Object>) responseMap.get("content");
+    // if (folderContents.isEmpty()) {
+    // /* This should never happen */
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // }
+    // /* We know we have a file --> Grab first (should be the only one) item from the 'folder'. */
+    // this.node = JSonStorage.restoreFromString(JSonStorage.toString(folderContents.get(0)), new TypeRef<PremiumizeBrowseNode>() {
+    // }, null);
+    // jd.plugins.decrypter.PremiumizeMe.setPremiumizeBrowserNodeInfoOnDownloadlink(link, this.node);
+    // }
+    public static String getCloudID(final String url) {
+        return new Regex(url, "folder_id=([A-Z0-9\\-_]+)").getMatch(0);
+    }
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (StringUtils.equals(getHost(), downloadLink.getHost()) && account == null) {
@@ -248,7 +274,7 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        /* Directlink */
         requestFileInformation(link);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
@@ -442,24 +468,16 @@ public class PremiumizeMe extends UseNet {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        final String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
-        // free / expired accounts are pointless adding
-        if ("free".equalsIgnoreCase(type)) {
-            ai.setProperty("multiHostSupport", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
+        final String type = PluginJSonUtils.getJson(br, "type");
         String status = type;
         // https://secure.premiumize.me/<extuid>/<port>/proxy.pac
-        String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
+        String extuid = PluginJSonUtils.getJson(br, "extuid");
         account.setProperty("extuid", extuid);
         if (status == null) {
             status = "Unknown Account Type";
         }
-        String expire = br.getRegex("\"expires\":(\\d+)").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil((Long.parseLong(expire)) * 1000);
-        }
-        final String fairUse = br.getRegex("fairuse_left\":([\\d\\.]+)").getMatch(0);
+        final String expire = PluginJSonUtils.getJson(br, "expires");
+        final String fairUse = PluginJSonUtils.getJson(br, "fairuse_left");
         if (fairUse != null) {
             final double d = Double.parseDouble(fairUse);
             status = status + ": FairUsage " + (100 - ((int) (d * 100.0))) + "%";
@@ -471,37 +489,50 @@ public class PremiumizeMe extends UseNet {
             // 100));
         }
         ai.setStatus(status);
-        String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
-        if (trafficleft_bytes != null) {
-            if (trafficleft_bytes.contains(".")) {
-                trafficleft_bytes = trafficleft_bytes.replaceFirst("\\..+$", "");
-            }
-            ai.setTrafficMax(SizeFormatter.getSize("220 GByte", true, true));
-            if (Long.parseLong(trafficleft_bytes) <= 0) {
-                trafficleft_bytes = "0";
-            }
-            ai.setTrafficLeft(trafficleft_bytes);
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
-        handleAPIErrors(br, account, null);
-        HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
-        if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) {
-            response = new HashMap<String, Object>();
-        }
-        final String HostsJSON = PluginJSonUtils.getJsonArray(this.br, "tldlist");
-        final String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         if ("premium".equals(type)) {
+            /* Premium account --> Show supported hosts only for premium accounts */
             account.setType(AccountType.PREMIUM);
+            /* Set trafficleft & expiredate */
+            String trafficleft_bytes = PluginJSonUtils.getJson(br, "trafficleft_bytes");
+            if (trafficleft_bytes != null) {
+                if (trafficleft_bytes.contains(".")) {
+                    trafficleft_bytes = trafficleft_bytes.replaceFirst("\\..+$", "");
+                }
+                ai.setTrafficMax(SizeFormatter.getSize("220 GByte", true, true));
+                if (Long.parseLong(trafficleft_bytes) <= 0) {
+                    trafficleft_bytes = "0";
+                }
+                ai.setTrafficLeft(trafficleft_bytes);
+            } else {
+                ai.setUnlimitedTraffic();
+            }
+            if (expire != null) {
+                ai.setValidUntil((Long.parseLong(expire)) * 1000, br);
+            }
+            /* Find supported hosts */
+            br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
+            handleAPIErrors(br, account, null);
+            HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
+            if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) {
+                response = new HashMap<String, Object>();
+            }
+            final String HostsJSON = PluginJSonUtils.getJsonArray(this.br, "tldlist");
+            final String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             supportedHosts.add("usenet");
+            /* 2018-01-15: Why does this get added manually?? */
+            supportedHosts.add("daofile.com");
+            ai.setMultiHostSupport(this, supportedHosts);
+            ai.setProperty("connection_settings", response.get("connection_settings"));
         } else {
+            /*
+             * Free/unknown account-type --> Users cannot download anything with such an account but we'll accept them and not show any
+             * error so if a free account changes to premium again, it will work without requiring a manual account refresh in JD by the
+             * user.
+             */
             account.setType(AccountType.FREE);
+            ai.setTrafficLeft(0);
         }
-        supportedHosts.add("daofile.com");
-        ai.setMultiHostSupport(this, supportedHosts);
-        ai.setProperty("connection_settings", response.get("connection_settings"));
         return ai;
     }
 

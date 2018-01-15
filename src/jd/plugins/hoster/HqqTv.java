@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+" })
+@HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+|https?://waaw\\.tv/watch_video\\.php\\?v=[A-Za-z0-9]+" })
 public class HqqTv extends antiDDoSForHost {
     public HqqTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,8 +53,15 @@ public class HqqTv extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
-        final String url_name = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
+        final String videoURL;
+        if (link.getDownloadURL().matches(".+waaw\\.tv.+")) {
+            final String videoID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+            videoURL = "https://hqq.watch/player/embed_player.php?vid=" + videoID;
+        } else {
+            videoURL = link.getPluginPatternMatcher();
+        }
+        getPage(videoURL);
+        final String url_name = new Regex(videoURL, "https?://[^/]+/(.+)").getMatch(0);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         /* Set this temporary name so that offline URLs have 'ok'-names. */
         link.setName(url_name);
@@ -183,6 +190,7 @@ public class HqqTv extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
+        /* 404 errors might happen here for broken/offline streams */
         dl = new HLSDownloader(downloadLink, br, hls_downloadurl);
         dl.startDownload();
     }

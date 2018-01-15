@@ -430,6 +430,13 @@ public class Leech360Com extends PluginForHost {
         this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
         if (StringUtils.isEmpty(this.currAPIToken)) {
+            if ("Free members do not support API.".equalsIgnoreCase(PluginJSonUtils.getJson(br, "error_message"))) {
+                /*
+                 * 2018-01-15: Free accounts would get accepted via website but you cannot use them to download anything. API will
+                 * completely refuse them.
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             /* No matter why this token is empty, this should mean that our account is not valid. */
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
