@@ -73,7 +73,7 @@ public class FShareVn extends PluginForHost {
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l);
-        this.enablePremium("http://www.fshare.vn/buyacc.php");
+        this.enablePremium("https://www.fshare.vn/payment/package/?type=vip");
     }
 
     public void correctDownloadLink(DownloadLink link) {
