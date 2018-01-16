@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -33,9 +30,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+|(?:www\\.)?vsco\\.co/\\w+)" })
 public class VscoCo extends PluginForDecrypt {
-
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,6 +44,7 @@ public class VscoCo extends PluginForDecrypt {
         final String parameter = param.toString();
         final String username = getUsername(parameter);
         br.getPage(parameter);
+        br.followRedirect();
         final String cookie_vs = br.getCookie(this.getHost(), "vs");
         final String siteid = PluginJSonUtils.getJsonValue(br, "id");
         long amount_total = 0;
@@ -57,7 +56,6 @@ public class VscoCo extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
-
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
@@ -105,7 +103,6 @@ public class VscoCo extends PluginForDecrypt {
             }
             page++;
         } while (decryptedLinks.size() < amount_total);
-
         if (decryptedLinks.size() == 0 && !this.isAbort()) {
             return null;
         }
@@ -119,5 +116,4 @@ public class VscoCo extends PluginForDecrypt {
         }
         return username;
     }
-
 }
