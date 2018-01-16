@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
@@ -235,30 +236,33 @@ public class VideoWeedCom extends PluginForHost {
 
     public String getDllink(final DownloadLink link, final Browser br) throws Exception {
         String[] flinks = br.getRegex("<source src=\"([^<>\"]+)\"").getColumn(0);
-        for (String flink : flinks) {
-            if (flink.contains("s254")) {
-                continue;
-            }
-            checkSize(link, flink);
-            // logger.info("flink: " + flink);
-            // logger.info("dllink: " + dllink);
-            if (dllink != null) {
-                break;
-            }
-        }
-        if (dllink == null) {
-            flinks = br.getRegex("<a href=\"(/download[^<>\"]+)\"").getColumn(0);
+        final HashSet<String> dups = new HashSet<String>();
+        if (flinks != null) {
             for (String flink : flinks) {
-                checkSize(link, flink);
-                if (dllink != null) {
-                    break;
+                if (flink.contains("s254")) {
+                    continue;
+                }
+                if (dups.add(flink)) {
+                    checkSize(link, flink);
+                    if (dllink != null) {
+                        return dllink;
+                    }
                 }
             }
-            if (flinks.length != 0 && dllink == null) {
-                server_issues = true;
+        }
+        flinks = br.getRegex("<a href=\"(/download[^<>\"]+)\"").getColumn(0);
+        if (flinks != null) {
+            for (String flink : flinks) {
+                if (dups.add(flink)) {
+                    checkSize(link, flink);
+                    if (dllink != null) {
+                        return dllink;
+                    }
+                }
             }
         }
-        return dllink;
+        server_issues = true;
+        return null;
     }
 
     private String checkSize(final DownloadLink link, final String flink) throws Exception {
