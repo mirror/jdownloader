@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "https?://8tracksdecrypted\\.com/\\d+" })
 public class EightTracksCom extends antiDDoSForHost {
     public EightTracksCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,7 +50,7 @@ public class EightTracksCom extends antiDDoSForHost {
         return 1;
     }
 
-    private static final String  MAINPAGE                                          = "http://8tracks.com/";
+    private static final String  MAINPAGE                                          = "https://8tracks.com/";
     private static final String  NICE_HOST                                         = "8tracks.com";
     private static final String  NICE_HOSTproperty                                 = "8trackscom";
     // Waittimes

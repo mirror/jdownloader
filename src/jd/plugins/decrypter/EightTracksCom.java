@@ -34,13 +34,13 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "https?://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class EightTracksCom extends PluginForDecrypt {
     // NOTE: short link is within Rdrctr.
-    private static final String  MAINPAGE          = "http://8tracks.com/";
-    private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js|explore|auth|settings|mixes|developers|users|job)/.+|[\\w\\-]+/homepage|sets/new|collections/.+|sonos/.+)";
-    private static final String  TYPE_GENERAL      = "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
-    private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
+    private static final String  MAINPAGE          = "https://8tracks.com/";
+    private static final String  UNSUPPORTEDLINKS  = "https?://(www\\.)?8tracks\\.com/((assets_js|explore|auth|settings|mixes|developers|users|job)/.+|[\\w\\-]+/homepage|sets/new|collections/.+|sonos/.+)";
+    private static final String  TYPE_GENERAL      = "https?://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
+    private static final String  TYPE_SINGLE_TRACK = "https?://(www\\.)?8tracks\\.com/tracks/\\d+";
     private String               clipData;
     private static final String  TEMP_EXT          = ".mp3";
     private static final boolean TEST_MODE         = false;
@@ -55,7 +55,7 @@ public class EightTracksCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
         String parameter = param.toString();
-        final DownloadLink offline = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+        final DownloadLink offline = createDownloadlink("https://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
         offline.setName(new Regex(parameter, "8tracks\\.com/(.+)").getMatch(0));
         offline.setAvailable(false);
         offline.setProperty("offline", true);
@@ -179,7 +179,7 @@ public class EightTracksCom extends PluginForDecrypt {
                 if (temp_name == null) {
                     temp_name = fpName + "_track" + formatted_tracknumber;
                 }
-                final DownloadLink dl = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                final DownloadLink dl = createDownloadlink("https://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 dl.setName(temp_name.concat(TEMP_EXT));
                 dl.setProperty("playtoken", playToken);
                 dl.setProperty("mixid", mixid);
