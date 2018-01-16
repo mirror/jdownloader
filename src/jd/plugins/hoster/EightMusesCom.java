@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -33,7 +32,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" })
 public class EightMusesCom extends antiDDoSForHost {
-
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,7 +40,6 @@ public class EightMusesCom extends antiDDoSForHost {
     // Tags:
     // protocol: no https
     // other:
-
     private String dllink = null;
 
     @Override
@@ -63,9 +60,14 @@ public class EightMusesCom extends antiDDoSForHost {
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
-        String imageDir = br.getRegex("imageDir\" value=\"(/data/.{2}/)\"").getMatch(0);
-        String imageName = br.getRegex("imageName\" value=\"([^<>\"]*?)\"").getMatch(0);
-        dllink = imageDir + imageName;
+        final String imageDir = br.getRegex("imageDir\" value=\"(/data/.{2}/)\"").getMatch(0);
+        final String imageName = br.getRegex("imageName\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String imageHost = br.getRegex("imageHost\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (imageDir != null && imageName != null) {
+            dllink = imageDir + imageName;
+        } else if (imageHost != null && imageName != null) {
+            dllink = imageHost + "/image/fl/" + imageName;
+        }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
