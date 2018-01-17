@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -63,7 +62,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" })
 public class FlickrCom extends PluginForHost {
-
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
@@ -79,9 +77,7 @@ public class FlickrCom extends PluginForHost {
     private static final String CUSTOM_DATE                      = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME                  = "CUSTOM_FILENAME";
     private static final String CUSTOM_FILENAME_EMPTY_TAG_STRING = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
-
     private static final String MAINPAGE                         = "http://flickr.com";
-
     private static Object       LOCK                             = new Object();
     private String              dllink                           = null;
     private String              user                             = null;
@@ -146,7 +142,6 @@ public class FlickrCom extends PluginForHost {
             logger.info("No account available, continuing without account...");
         }
         br.setFollowRedirects(true);
-
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML(">This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -178,7 +173,6 @@ public class FlickrCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             apibr.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
-
             dllink = apibr.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -196,8 +190,8 @@ public class FlickrCom extends PluginForHost {
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
             dllink = getFinalLink();
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
+            if (dllink == null) { // 2018-01-17
+                dllink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -223,7 +217,6 @@ public class FlickrCom extends PluginForHost {
         downloadLink.setProperty("custom_filenames_allowed", true);
         filename = getFormattedFilename(downloadLink);
         downloadLink.setFinalFileName(filename);
-
         this.br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
@@ -390,9 +383,7 @@ public class FlickrCom extends PluginForHost {
                     process2Factor(br, entries);
                 }
                 // ok ?
-
                 // end of new code
-
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);
@@ -402,7 +393,6 @@ public class FlickrCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -434,13 +424,9 @@ public class FlickrCom extends PluginForHost {
             final Form travellingSomeWhereNew = br.getForm(0);
             // here you get selection of sms solutions to mobile phone numbers or send email to verified accounts (all solutions are partly
             // masked)...
-
             // show this html to the user in browser solver solution? and they choose selection?
-
             // disable account in jd.. and ask user to verify sms / email
-
             // then renable account in jd.
-
             System.out.println("winning");
         } catch (final Exception e) {
             e.printStackTrace();
@@ -556,7 +542,6 @@ public class FlickrCom extends PluginForHost {
                     }
                 }
             }
-
         }
         return finallink;
     }
@@ -619,12 +604,10 @@ public class FlickrCom extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         final String owner = cfg.getStringProperty("owner", customStringForEmptyTags);
-
         final String site_title = downloadLink.getStringProperty("title", customStringForEmptyTags);
         final String ext = downloadLink.getStringProperty("ext", defaultPhotoExt);
         final String username = downloadLink.getStringProperty("username", customStringForEmptyTags);
         final String photo_id = downloadLink.getStringProperty("photo_id", customStringForEmptyTags);
-
         final long date = downloadLink.getLongProperty("dateadded", 0l);
         String formattedDate = null;
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
@@ -638,7 +621,6 @@ public class FlickrCom extends PluginForHost {
                 formattedDate = defaultCustomStringForEmptyTags;
             }
         }
-
         formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
@@ -648,7 +630,6 @@ public class FlickrCom extends PluginForHost {
         if (!formattedFilename.contains("*extension*") || (!formattedFilename.contains("*photo_id*") && !formattedFilename.contains("*date*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*owner*"))) {
             formattedFilename = defaultCustomFilename;
         }
-
         formattedFilename = formattedFilename.replace("*photo_id*", photo_id);
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
         formattedFilename = formattedFilename.replace("*extension*", ext);
