@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -48,12 +47,10 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class DownloaderGuru extends PluginForHost {
-
     private static final String                            API_ENDPOINT         = "http://www.downloader.guru/";
     private static final String                            NICE_HOST            = "downloader.guru";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
@@ -63,12 +60,10 @@ public class DownloaderGuru extends PluginForHost {
     private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
-
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 20;
     private static final int                               defaultMAXCHUNKS     = 0;
     private static final boolean                           defaultRESUME        = true;
-
     private static Object                                  CTRLLOCK             = new Object();
     private int                                            statuscode           = 0;
     private Account                                        currAcc              = null;
@@ -149,7 +144,6 @@ public class DownloaderGuru extends PluginForHost {
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
             }
         }
-
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
         /* Then check if we got an individual host limit. */
@@ -161,7 +155,6 @@ public class DownloaderGuru extends PluginForHost {
                 }
             }
         }
-
         if (hostResumeMap != null) {
             final String thishost = link.getHost();
             synchronized (hostResumeMap) {
@@ -176,7 +169,6 @@ public class DownloaderGuru extends PluginForHost {
         if (!resume) {
             maxChunks = 1;
         }
-
         final DownloadLinkDownloadable downloadable;
         if (link.getName().matches(".+(rar|r\\d+)$")) {
             final Browser brc = br.cloneBrowser();
@@ -194,12 +186,10 @@ public class DownloaderGuru extends PluginForHost {
                 con.disconnect();
             }
             downloadable = new DownloadLinkDownloadable(link) {
-
                 @Override
                 public boolean isHashCheckEnabled() {
                     return false;
                 }
-
             };
         } else {
             downloadable = new DownloadLinkDownloadable(link);
@@ -237,7 +227,6 @@ public class DownloaderGuru extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBR(this.br);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -253,7 +242,6 @@ public class DownloaderGuru extends PluginForHost {
                 }
             }
         }
-
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
@@ -266,7 +254,6 @@ public class DownloaderGuru extends PluginForHost {
         }
         this.setConstants(account, link);
         login(false);
-
         handleDL(account, link);
     }
 
@@ -323,15 +310,12 @@ public class DownloaderGuru extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-
         this.setConstants(account, null);
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
-
         login(false);
         /* As long as we always perform a full login, this call is never needed as full login will return account type and expire date too. */
         // accessUserInfo();
-
         final ArrayList<String> supportedhostslist = new ArrayList();
         final ArrayList<String> supportedhostslistTables = new ArrayList();
         final String trafficleft = this.br.getRegex("Traffic: <span style=\"[^\"]+\">(\\d+[^<>\"]+)</span>").getMatch(0);
@@ -356,13 +340,11 @@ public class DownloaderGuru extends PluginForHost {
              */
             ai.setTrafficLeft(0);
         }
-
         /* Find- and add free table - this is of course always available (free + premium). */
         final String supportedhostslistTableFree = this.br.getRegex("<table id=\"MainContent_DLFreeHosters\"(.*?)</table>").getMatch(0);
         if (supportedhostslistTableFree != null) {
             supportedhostslistTables.add(supportedhostslistTableFree);
         }
-
         for (final String supportedhostslistTable : supportedhostslistTables) {
             final String[] supportedHostsOfCurrentTable = new Regex(supportedhostslistTable, ">([^<>\"]+)(</b>\\s*)?</td>").getColumn(0);
             for (String domain : supportedHostsOfCurrentTable) {
@@ -374,14 +356,12 @@ public class DownloaderGuru extends PluginForHost {
                 final int maxdownloads = defaultMAXDOWNLOADS;
                 final int maxchunks = defaultMAXCHUNKS;
                 boolean resumable = defaultRESUME;
-
                 hostMaxchunksMap.put(domain, maxchunks);
                 hostMaxdlsMap.put(domain, maxdownloads);
                 hostResumeMap.put(domain, resumable);
                 supportedhostslist.add(domain);
             }
         }
-
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
@@ -459,7 +439,7 @@ public class DownloaderGuru extends PluginForHost {
     private void getAPISafe(final String url) throws IOException, PluginException {
         this.br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         updatestatuscode();
         handleAPIErrors(this.br);
@@ -534,5 +514,4 @@ public class DownloaderGuru extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
