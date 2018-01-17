@@ -733,18 +733,37 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         final int jump = Math.max(1, segs.length / 10);
         int segments = 0;
         long size = 0;
+        boolean lastFlag = false;
         for (int i = 1; i < segs.length; i += jump) {
             final String url = segs[i].toLowerCase(Locale.ENGLISH).startsWith("http") ? segs[i] : (base + segs[i]);
-            br.openRequestConnection(new HeadRequest(url)).disconnect();
-            final URLConnectionAdapter con = br.getHttpConnection();
-            if (con.getResponseCode() == 200) {
-                segments++;
-                size += con.getLongContentLength();
-            } else {
-                return -1;
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openRequestConnection(new HeadRequest(url));
+                if (con.getResponseCode() == 200) {
+                    lastFlag = true;
+                    segments++;
+                    size += con.getLongContentLength();
+                } else {
+                    if (lastFlag) {
+                        lastFlag = false;
+                    } else {
+                        return -1;
+                    }
+                }
+            } catch (final IOException e) {
+                logger.log(e);
+                if (lastFlag) {
+                    lastFlag = false;
+                } else {
+                    return -1;
+                }
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        if (segments > 0) {
+        if (segments > 0 && segs.length > 1) {
             // first segment is a init segment and has only ~802 bytes
             return (segs.length - 1) * (size / segments) + 802;
         } else {
