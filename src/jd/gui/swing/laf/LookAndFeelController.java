@@ -301,7 +301,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     }
 
     private void initWindowManager() {
-        WindowManager wm = WindowManager.getInstance();
+        final WindowManager wm = WindowManager.getInstance();
         if (wm instanceof WindowsWindowManager && CrossSystem.isWindows()) {
             final WindowsWindowManager wwm = (WindowsWindowManager) wm;
             wwm.setAltWorkaroundEnabled(CFG_GUI.CFG.isWindowsWindowManagerAltKeyWorkaroundEnabled());
@@ -337,7 +337,7 @@ public class LookAndFeelController implements LAFManagerInterface {
 
                 @Override
                 public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                    wwm.setAltWorkaroundEnabled(CFG_GUI.CFG.isWindowsWindowManagerAltKeyWorkaroundEnabled());
+                    wwm.setAltWorkaroundEnabled(Boolean.TRUE.equals(newValue));
                 }
             });
             CFG_GUI.WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI.getEventSender().addListener(new GenericConfigEventListener<int[]>() {
