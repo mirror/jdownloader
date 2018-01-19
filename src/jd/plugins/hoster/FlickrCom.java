@@ -496,8 +496,8 @@ public class FlickrCom extends PluginForHost {
         String finallink = null;
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
-        picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
-        // picSource = br.getRegex("main\":(\\{\"photo-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
+        // picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
+        picSource = br.getRegex("main\":(\\{\"photo-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
         if (picSource != null) {
             /* json handling */
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
