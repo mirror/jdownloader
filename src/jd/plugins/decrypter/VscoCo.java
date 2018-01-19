@@ -16,7 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,8 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+|(?:www\\.)?vsco\\.co/\\w+)" })
 public class VscoCo extends PluginForDecrypt {
@@ -66,7 +67,7 @@ public class VscoCo extends PluginForDecrypt {
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             ajax.getPage("/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             if (page == 1 || page > 1) {
                 amount_total = JavaScriptEngineFactory.toLong(entries.get("total"), 0);
                 if (page == 1 && amount_total == 0) {
@@ -77,9 +78,9 @@ public class VscoCo extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            final ArrayList<Object> ressources = (ArrayList) entries.get("media");
-            for (final Object ressource : ressources) {
-                entries = (LinkedHashMap<String, Object>) ressource;
+            final List<Object> resources = (List) entries.get("media");
+            for (final Object resource : resources) {
+                entries = (Map<String, Object>) resource;
                 final String fid = (String) entries.get("_id");
                 if (fid == null) {
                     return null;
@@ -98,7 +99,7 @@ public class VscoCo extends PluginForDecrypt {
                 fp.add(dl);
                 distribute(dl);
             }
-            if (ressources.size() < max_count_per_page) {
+            if (resources.size() < max_count_per_page) {
                 /* Fail safe */
                 break;
             }
