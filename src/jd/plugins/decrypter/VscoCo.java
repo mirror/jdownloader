@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+|(?:www\\.)?vsco\\.co/\\w+)" })
 public class VscoCo extends PluginForDecrypt {
@@ -111,10 +111,11 @@ public class VscoCo extends PluginForDecrypt {
     }
 
     private String getUsername(final String parameter) {
-        String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
+        final String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
         if (username == null) {
-            username = new Regex(parameter, "vsco\\.co/([a-zA-Z0-9]+)").getMatch(0);
+            return new Regex(parameter, "vsco\\.co/([a-zA-Z0-9]+)").getMatch(0);
+        } else {
+            return username;
         }
-        return username;
     }
 }
