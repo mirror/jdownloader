@@ -15,7 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,10 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "avgle.com" }, urls = { "https?://(?:www\\.)?avgle\\.com/video/\\d+" })
 public class AvgleCom extends PluginForHost {
@@ -70,13 +75,16 @@ public class AvgleCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        /* 2017-07-21: Files are usually hosted on Googlevideo */
-        dllink = PluginJSonUtils.getJson(this.br, "s3");
-        if (dllink != null) {
-            dllink = Encoding.Base64Decode(dllink);
-        }
-        if (dllink != null && !dllink.startsWith("http")) {
-            dllink = null;
+        dllink = decodeKode();
+        if (dllink == null) {
+            /* 2017-07-21: Files are usually hosted on Googlevideo */
+            dllink = PluginJSonUtils.getJson(this.br, "s3");
+            if (dllink != null) {
+                dllink = Encoding.Base64Decode(dllink);
+            }
+            if (dllink != null && !dllink.startsWith("http")) {
+                dllink = null;
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -107,6 +115,32 @@ public class AvgleCom extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String decodeKode() throws Exception {
+        String kode = br.getRegex("(var kode=\".+?\"),").getMatch(0);
+        if (kode == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(kode);
+        sb.append(";");
+        sb.append("for(;-1===kode.indexOf(\"getElementById('K_ID')\");)eval(kode);");
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval(sb.toString());
+            kode = (String) engine.get("kode");
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        String[] videoInfo = new Regex(kode, "data-hash=\\\\\"(.+?)\\\\\" data-ts=\\\\\"(.+?)\\\\\" data-vid=\\\\\"(.+?)\\\\\"").getRow(0);
+        if (videoInfo == null || videoInfo.length != 3) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Browser ajax = br.cloneBrowser();
+        ajax.getPage("/video-url.php?hash=" + videoInfo[0] + "&ts=" + videoInfo[1] + "&vid=" + videoInfo[2]);
+        return PluginJSonUtils.getJson(ajax, "url");
     }
 
     @Override
