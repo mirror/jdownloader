@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+|(?:www\\.)?vsco\\.co/\\w+)" })
 public class VscoCo extends PluginForDecrypt {
     public VscoCo(PluginWrapper wrapper) {
@@ -43,17 +43,18 @@ public class VscoCo extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String username = getUsername(parameter);
-        br.getPage(parameter);
-        br.followRedirect();
+        br.setCurrentURL("https://vsco.co/" + username + "/images/1");
+        br.getPage("https://vsco.co/content/Static/userinfo");
         final String cookie_vs = br.getCookie(this.getHost(), "vs");
+        br.getPage("https://vsco.co/ajxp/" + cookie_vs + "/2.0/sites?subdomain=" + username);
         final String siteid = PluginJSonUtils.getJsonValue(br, "id");
+        if (cookie_vs == null || siteid == null) {
+            return null;
+        }
         long amount_total = 0;
         /* More than 500 possible */
         int max_count_per_page = 500;
         int page = 1;
-        if (cookie_vs == null || siteid == null) {
-            return null;
-        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         do {
