@@ -2,6 +2,7 @@ package jd.plugins;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -149,7 +150,10 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                 @Override
                 protected void runInEDT() {
                     updateAccountSettings(event.getAccount().getPlugin());
-                    ((JComponent) getParent()).revalidate();
+                    final Container parent = getParent();
+                    if (parent != null && parent instanceof JComponent) {
+                        ((JComponent) parent).revalidate();
+                    }
                 }
             };
             break;

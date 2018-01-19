@@ -9,6 +9,7 @@ import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -80,9 +81,11 @@ public class UsenextCom extends UseNet {
             if (br.getCookie(getHost(), "SNUUID") == null) {
                 account.clearCookies("");
                 br.getPage("https://www.usenext.com/");
-                final Form login = br.getFormbyActionRegex(".*/Account/LogInAjax");
+                final Form login = br.getFormbyKey("__RequestVerificationToken");
+                login.setMethod(MethodType.POST);
                 login.put("Username", Encoding.urlEncode(account.getUser()));
                 login.put("Password", Encoding.urlEncode(account.getPass()));
+                login.setAction("https://www.usenext.com/en-US/Account/LogInAjax");
                 br.submitForm(login);
                 final String url = br.getRegex("\"url\"\\s*:\\s*\"(https?.*?)\"").getMatch(0);
                 if (url != null) {
