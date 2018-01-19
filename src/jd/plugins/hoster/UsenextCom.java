@@ -89,8 +89,7 @@ public class UsenextCom extends UseNet {
                 br.submitForm(login);
                 final String url = br.getRegex("\"url\"\\s*:\\s*\"(https?.*?)\"").getMatch(0);
                 if (url != null) {
-                    final String url2 = Encoding.unicodeDecode(url);
-                    br.getPage(url2);
+                    br.getPage(Encoding.unicodeDecode(url));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
