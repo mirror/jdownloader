@@ -190,9 +190,6 @@ public class FlickrCom extends PluginForHost {
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
             dllink = getFinalLink();
-            if (dllink == null) { // 2018-01-17
-                dllink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
-            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -500,6 +497,7 @@ public class FlickrCom extends PluginForHost {
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
         picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
+        // picSource = br.getRegex("main\":(\\{\"photo-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
         if (picSource != null) {
             /* json handling */
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
@@ -520,22 +518,23 @@ public class FlickrCom extends PluginForHost {
             }
         } else {
             /* Site handling */
-            br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/o");
-            picSource = br.getRegex("<ol class=\"sizes\\-list\">(.*?)<div id=\"allsizes\\-photo\">").getMatch(0);
             /*
-             * Fast way to get finallink via site as we always try to access the "o" (original) quality, page will redirect us to the max
-             * available quality!
+             * Fast way to get finallink via site as we always try to access the "o" (original) quality. Page might be redirected!
              */
-            final String maxQuality = new Regex(br.getURL(), "/sizes/([a-z0-9]+)/").getMatch(0);
-            if (maxQuality != null) {
-                finallink = br.getRegex("<div id=\"allsizes\\-photo\">[\t\n\r ]+<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http[^<>\"]*?)\">").getMatch(0);
+            br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/o");
+            if (br.getURL().contains("sizes/o")) { // Not redirected
+                finallink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*(Dieses Foto im Originalformat|Download the Original)").getMatch(0);
             }
-            if (finallink == null) {
+            if (finallink == null) { // Redirected if download original is not allowed
+                /*
+                 * If it is redirected, get the highest available quality
+                 */
+                picSource = br.getRegex("<ol class=\"sizes-list\">(.*?)<div id=\"allsizes-photo\">").getMatch(0);
                 for (final String size : sizes) {
-                    finallink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
-                    if (finallink != null) {
-                        br.getPage("https://www.flickr.com" + finallink);
-                        finallink = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"").getMatch(0);
+                    String allsizeslink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
+                    if (allsizeslink != null) {
+                        br.getPage("https://www.flickr.com" + allsizeslink);
+                        finallink = br.getRegex("id=\"allsizes-photo\">[^~]*?<img src=\"(http[^<>\"]*?)\"").getMatch(0);
                     }
                     if (finallink != null) {
                         break;
