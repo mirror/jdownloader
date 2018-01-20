@@ -296,12 +296,7 @@ public class RealDebridCom extends PluginForHost {
                 return host;
             }
         };
-        final boolean resume;
-        if ("mega.co.nz".equals(link.getHost())) {
-            resume = false;
-        } else {
-            resume = true;
-        }
+        final boolean resume = true;
         final Browser br2 = br.cloneBrowser();
         br2.setAllowedResponseCodes(new int[0]);
         boolean increment = false;
