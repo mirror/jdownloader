@@ -130,7 +130,7 @@ public class AvgleCom extends PluginForHost {
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval(sb.toString());
-            kode = (String) engine.get("kode");
+            kode = engine.get("kode").toString();
         } catch (final Exception e) {
             e.printStackTrace();
         }
