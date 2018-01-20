@@ -96,6 +96,10 @@ public class NewgroundsCom extends antiDDoSForHost {
                 dllink = br.getRegex("\"<img src=\\\\\"(https?:[^<>\"]*?)\\\\\"").getMatch(0);
                 if (dllink != null) {
                     dllink = dllink.replace("\\", "");
+                    final String id = new Regex(dllink, "images/\\d+/(\\d+)").getMatch(0);
+                    if (filename != null && id != null) {
+                        filename = filename + "_" + id;
+                    }
                 }
             }
         } else {
@@ -137,7 +141,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                         if (best != null) {
                             dllink = (String) best.get("src");
                             if (filename != null) {
-                                filename += "_" + best.get("res");
+                                filename += "_" + best.get("res") + "p";
                             }
                         }
                     } else {
