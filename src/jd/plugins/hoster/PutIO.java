@@ -8,7 +8,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
 
 import java.util.Locale;
 
@@ -19,6 +18,8 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -188,8 +189,23 @@ public class PutIO extends PluginForHost {
                     setAccessTokenHeader(this.accessToken);
                     return;
                 }
+                br = new Browser();
+                br.setFollowRedirects(true);
+                br.getPage("https://put.io/");
+                // login page maybe we should look and open this request
+                // this request will redirect
+                br.getPage("https://api.put.io/v2/oauth2/authenticate?client_id=1&response_type=token&redirect_uri=https://app.put.io/");
+                // should be a form.
+                final Form login = br.getForm(0);
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("name", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
                 br.setFollowRedirects(false);
-                br.postPage("https://put.io/login", new UrlQuery().append("plain_login", "1", false).append("name", account.getUser(), true).append("password", account.getPass(), true));
+                br.submitForm(login);
+                // second redirect is the token
+                br.followRedirect(false);
                 final String location = br.getRequest().getResponseHeader("Location");
                 accessToken = new Regex(location, "[&\\?#]access_token=([^\\&=]+)").getMatch(0);
                 if (accessToken == null) {
