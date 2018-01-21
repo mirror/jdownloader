@@ -590,7 +590,7 @@ public class DeviantArtCom extends PluginForHost {
                     return;
                 }
                 br.getPage("https://www.deviantart.com/");
-                br.getPage("https://www.deviantart.com/users/login/");
+                br.getPage("https://l.deviantart.com/"); // Not allowed to go directly to /users/login/
                 if (false && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
                     // disabled because perimeterx code is incomplete
                     final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
