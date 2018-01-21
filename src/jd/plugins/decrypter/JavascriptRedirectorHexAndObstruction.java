@@ -16,15 +16,16 @@
 
 package jd.plugins.decrypter;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-
-import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.envjs.EnvJSBrowser;
 import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
 import org.jdownloader.scripting.envjs.PermissionFilter;
 import org.jdownloader.scripting.envjs.XHRResponse;
+
+import org.appwork.utils.StringUtils;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -40,7 +41,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jerkplanet.org" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jerkplanet.org", "superload.me" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+", "(?:http://(www\\.)?superload\\.me|https://(?:www\\.)?superload\\.me(?:443)?)/file/[0-9a-zA-Z]+" })
 public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
 
     public JavascriptRedirectorHexAndObstruction(PluginWrapper wrapper) {
@@ -52,6 +53,7 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString();
         final EnvJSBrowser envJs = new EnvJSBrowser(br) {
+
             @Override
             public String onBeforeSourceCompiling(String source, net.sourceforge.htmlunit.corejs.javascript.Evaluator compiler, net.sourceforge.htmlunit.corejs.javascript.ErrorReporter compilationErrorReporter, String sourceName, int lineno, Object securityDomain) {
                 if (this.isInitDone() && StringUtils.isNotEmpty(source)) {
@@ -116,5 +118,10 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
 
         return decryptedLinks;
     }
+
+    // @Override
+    // public SiteTemplate siteTemplateType() {
+    // return SiteTemplate.Unknown_JavascriptRedirectorHexAndObstruction;
+    // }
 
 }
