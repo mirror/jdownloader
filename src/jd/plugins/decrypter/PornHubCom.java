@@ -69,6 +69,11 @@ public class PornHubCom extends PluginForDecrypt {
             if (br.containsHTML("href=\"/login\"")) {
                 jd.plugins.hoster.PornHubCom.login(br, aa, true);
             }
+            br.getPage(parameter); // For testing
+            if (br.containsHTML("href=\"/login\"")) {
+                logger.info("Debug info: href= /login is found");
+                jd.plugins.hoster.PornHubCom.login(br, aa, true);
+            }
         }
         br.getPage(parameter);
         if (parameter.matches(".+/users/.+")) {
