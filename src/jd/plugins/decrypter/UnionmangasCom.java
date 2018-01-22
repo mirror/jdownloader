@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(?:com|net)/(?:leitor/[^/]+/[a-z0-9\\.]+[^/\\s]*|manga/[a-z0-9\\-\\.]+)" })
 public class UnionmangasCom extends antiDDoSForDecrypt {
-
     public UnionmangasCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,15 +51,16 @@ public class UnionmangasCom extends antiDDoSForDecrypt {
             final String chapter_str = urlinfo.getMatch(1);
             url_name = urlinfo.getMatch(0);
             url_fpname = Encoding.urlDecode(url_name + "_chapter_" + chapter_str, false);
-
-            final String[] links = this.br.getRegex("data\\-lazy=\"(http[^<>\"]+)\"").getColumn(0);
-
+            String[] links = this.br.getRegex("data\\-lazy=\"(http[^<>\"]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = this.br.getRegex("<img\\s*src=\"(.*?\\.(jpe?g|png|gif))\"").getColumn(0);
+            }
             if (links == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-
-            for (final String url : links) {
+            for (String url : links) {
+                url = br.getURL(url).toString();
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + Encoding.urlEncode_light(url), false);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -78,12 +77,9 @@ public class UnionmangasCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(chapterUrl));
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_fpname);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
