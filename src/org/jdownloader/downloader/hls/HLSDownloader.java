@@ -190,7 +190,7 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     public long getEstimatedSize() {
-        return M3U8Playlist.getEstimatedSize(m3u8Playlists);
+        return M3U8Playlist.getEstimatedSize(getPlayLists());
     }
 
     public boolean isEncrypted() {
@@ -1058,13 +1058,20 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                                 return true;
                             } finally {
-                                if (segment != null && (connection.getResponseCode() == 200 || connection.getResponseCode() == 206)) {
-                                    segment.setSize(Math.max(length, fileBytesMap.getSize()));
+                                try {
+                                    if (segment != null) {
+                                        requestLogger.info("Segment:" + segment.getUrl() + "|Loaded:" + segment.isLoaded());
+                                    }
+                                    requestLogger.info(fileBytesMap.toString());
+                                    if (segment != null && (connection.getResponseCode() == 200 || connection.getResponseCode() == 206)) {
+                                        segment.setSize(Math.max(length, fileBytesMap.getSize()));
+                                    }
+                                    if (instanceBuffer) {
+                                        HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
+                                    }
+                                } finally {
+                                    connection.disconnect();
                                 }
-                                if (instanceBuffer) {
-                                    HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
-                                }
-                                connection.disconnect();
                             }
                         }
                     }

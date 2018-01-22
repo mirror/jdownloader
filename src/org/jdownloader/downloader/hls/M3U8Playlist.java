@@ -124,8 +124,8 @@ public class M3U8Playlist {
             return -1;
         }
 
-        private final String url;
-        private boolean      isLoaded = false;
+        private final String     url;
+        private volatile boolean isLoaded = false;
 
         public boolean isLoaded() {
             return isLoaded;
@@ -155,7 +155,7 @@ public class M3U8Playlist {
             return duration;
         }
 
-        private long duration;
+        private volatile long duration;
 
         private void setDuration(long duration) {
             this.duration = duration;
