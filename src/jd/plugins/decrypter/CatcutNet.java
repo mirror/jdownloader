@@ -20,7 +20,10 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -42,9 +45,21 @@ public class CatcutNet extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String finallink = this.br.getRegex("<span  id=\"noCaptchaBlock\"[^<>]+>\\s*?<a href=\"(http[^<>\"]+)\"").getMatch(0);
+        String finallink = br.getRegex("<span  id=\"noCaptchaBlock\"[^<>]+>\\s*?<a href=\"(http[^<>\"]+)\"").getMatch(0);
         if (finallink == null) {
-            return null;
+            // now within base64 element
+            String go_url = br.getRegex("var go_url\\s*=\\s*decodeURIComponent\\('(.*?)'\\)").getMatch(0);
+            if (go_url != null) {
+                // under the a value
+                go_url = Encoding.urlDecode(go_url, true);
+                final String a = new Regex(go_url, "a=([a-zA-Z0-9_/\\+\\=\\-%]+)&?").getMatch(0);
+                if (a != null) {
+                    finallink = Encoding.Base64Decode(a);
+                }
+            }
+            if (finallink == null) {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
         }
 
         decryptedLinks.add(createDownloadlink(finallink));
