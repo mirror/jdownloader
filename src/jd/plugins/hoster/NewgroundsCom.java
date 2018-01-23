@@ -44,6 +44,7 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_by", "Choose file name + by?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Add id to file name?").setDefaultValue(true));
     }
 
     /* DEV NOTES */
@@ -74,6 +75,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(downloadLink.getDownloadURL());
+        final boolean addID2Filename = getPluginConfig().getBooleanProperty("Filename_id", true);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This entry was")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,7 +99,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 if (dllink != null) {
                     dllink = dllink.replace("\\", "");
                     final String id = new Regex(dllink, "images/\\d+/(\\d+)").getMatch(0);
-                    if (filename != null && id != null) {
+                    if (addID2Filename && filename != null && id != null) {
                         filename = filename + "_" + id;
                     }
                 }
@@ -113,7 +115,10 @@ public class NewgroundsCom extends antiDDoSForHost {
             // filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
                 if (filename != null) {
-                    filename = Encoding.htmlDecode(filename).trim();// + "_" + fid;
+                    filename = Encoding.htmlDecode(filename).trim();
+                    if (addID2Filename) {
+                        filename = filename + "_" + fid;
+                    }
                 }
                 dllink = "https://www." + this.getHost() + "/audio/download/" + fid;
                 ext = ".mp3";
@@ -158,6 +163,9 @@ public class NewgroundsCom extends antiDDoSForHost {
                         dllink = dllink.replace("\\", "");
                         dllink = Encoding.htmlDecode(dllink);
                     }
+                }
+                if (addID2Filename && filename != null && fid != null) {
+                    filename = filename + "_" + fid;
                 }
             }
         }

@@ -27,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio|movies|games)/" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
@@ -67,6 +69,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                     view_url = "https:" + view_url;
                 }
                 final DownloadLink dl = createDownloadlink(view_url);
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
                 dl.setAvailable(true); // <---
                 decryptedLinks.add(dl);
             }
@@ -81,6 +84,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                     view_url = "https:" + view_url;
                 }
                 final DownloadLink dl = createDownloadlink(view_url);
+                dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                 decryptedLinks.add(dl);
             }
         }
