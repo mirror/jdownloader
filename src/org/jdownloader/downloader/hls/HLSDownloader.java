@@ -1012,9 +1012,12 @@ public class HLSDownloader extends DownloadInterface {
                                 long position = fileBytesMap.getMarkedBytes();
                                 boolean writeToOutputStream = true;
                                 while (true) {
-                                    int len = -1;
+                                    final int len;
                                     try {
                                         len = meteredThrottledInputStream.read(readWriteBuffer);
+                                        if (segment != null) {
+                                            segment.setLoaded(true);
+                                        }
                                     } catch (IOException e) {
                                         requestLogger.log(e);
                                         if (fileBytesMap.getFinalSize() > 0) {
@@ -1037,9 +1040,6 @@ public class HLSDownloader extends DownloadInterface {
                                                     writeToOutputStream = false;
                                                 }
                                             }
-                                        }
-                                        if (segment != null) {
-                                            segment.setLoaded(true);
                                         }
                                         fileBytesMap.mark(position, len);
                                         position += len;
