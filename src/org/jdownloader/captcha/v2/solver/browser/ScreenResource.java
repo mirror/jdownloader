@@ -10,15 +10,15 @@ import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 
-import jd.nutils.Colors;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 
+import jd.nutils.Colors;
+
 public abstract class ScreenResource {
     protected int     x;
-    private final int blockSize = 200;
+    private final int blockSize = 100;
 
     public ScreenResource(int x, int y, int width, int height) {
         this.x = x;
@@ -125,7 +125,7 @@ public abstract class ScreenResource {
                     }
                 }
                 Rectangle ret = new Rectangle(this.x + point.x, this.y + point.y, width, height);
-                // showImage(getRobot().createScreenCapture(ret));
+                // showImage(getRobot().createScreenCapture(ret), null);
                 System.out.println("Found Rectangle in " + (System.currentTimeMillis() - start) + "ms");
                 return ret;
             }
@@ -145,6 +145,7 @@ public abstract class ScreenResource {
     private Point scanBlock(Block block, int rgb, double tollerance, int xstart, int ystart) {
         try {
             // block.image = null;
+            // showImage(block.getImage(), block.x + "-" + block.toString());
             int pixelRadius = 0;
             while (true) {
                 pixelRadius++;
@@ -156,11 +157,15 @@ public abstract class ScreenResource {
                 Point px = null;
                 Point py = null;
                 for (int x = 0; x <= xmax; x++) {
-                    int pixelColor = block.getImage().getRGB(x, ymax);
+                    int pixelColor = block.getImage().getRGB(x, ymax) & 0x0000000000ffffff;
+                    // block.getImage().setRGB(x, ymax, Color.RED.getRGB());
+                    // System.out.println(Long.toHexString(pixelColor) + "-" + Long.toHexString(rgb));
+                    // if (block.x == 100 && block.y == 200 && x > 40 && x < 60) {
+                    // showImage(block.getImage(), block.toString());
+                    // }
                     double dif = Colors.getColorDifference(rgb, pixelColor);
                     // System.out.println(Long.toHexString(pixelColor) + "\r\n" + x + "\tx\t" + ymax + "\t " + dif);
                     // if (rgb == 0xcccccc) {
-                    // block.getImage().setRGB(x, ymax, 0x00ff00);
                     // }
                     if (dif < tollerance) {
                         // if (rgb == 0xcccccc) {
@@ -172,6 +177,7 @@ public abstract class ScreenResource {
                         try {
                             if (checkColor(rgb, tollerance, block.x + x + scale(1), block.y + ymax) && checkColor(rgb, tollerance, block.x + x + scale(48), block.y + ymax)) {
                                 if (checkColor(rgb, tollerance, block.x + x, block.y + ymax + scale(1)) && checkColor(rgb, tollerance, block.x + x, block.y + ymax + scale(48))) {
+                                    // showImage(block.getImage(), block.toString());
                                     px = new Point(block.x + x, block.y + ymax);
                                     break;
                                 }
@@ -183,8 +189,10 @@ public abstract class ScreenResource {
                 for (int y = 0; y < ymax; y++) {
                     int pixelColor = block.getImage().getRGB(xmax, y);
                     double dif = Colors.getColorDifference(rgb, pixelColor);
+                    // block.getImage().setRGB(xmax, y, Color.YELLOW.getRGB());
                     // if (rgb == 0xcccccc) {
-                    // block.getImage().setRGB(xmax, y, 0X00fff0);
+                    //
+                    // showImage(block.getImage(), xmax + "-" + y);
                     // }
                     // System.out.println(xmax + "\tx\t" + y + "\t " + dif);
                     if (dif < tollerance) {
@@ -192,11 +200,12 @@ public abstract class ScreenResource {
                         // block.getImage().setRGB(xmax, y, 0Xff0000);
                         // }
                         // if (rgb == 0xcccccc) {
-                        // showImage(block.getImage());
+                        //
                         // }
                         try {
                             if (checkColor(rgb, tollerance, block.x + xmax + scale(1), block.y + y) && checkColor(rgb, tollerance, block.x + xmax + scale(48), block.y + y)) {
                                 if (checkColor(rgb, tollerance, block.x + xmax, block.y + y + scale(1)) && checkColor(rgb, tollerance, block.x + xmax, block.y + y + scale(48))) {
+                                    // showImage(block.getImage(), block.toString());
                                     px = new Point(block.x + xmax, block.y + y);
                                     break;
                                 }
@@ -276,8 +285,11 @@ public abstract class ScreenResource {
 
         private BufferedImage updateImage() {
             final Rectangle rec = new Rectangle(ScreenResource.this.x + this.x, ScreenResource.this.y + y, blockSize, blockSize);
-            final BufferedImage img = getRobot().createScreenCapture(rec);
-            System.out.println("Create screenshot: " + rec);
+            BufferedImage img = getRobot().createScreenCapture(rec);
+            // BufferedImage img2 = IconIO.createEmptyImage(blockSize, blockSize);
+            // img2.getGraphics().drawImage(img, 0, 0, null);
+            // img = img2;
+            // System.out.println("Create screenshot: " + rec);
             if (System.getProperty("rc2debug") != null) {
                 showImage(img, rec.toString());
             }

@@ -154,7 +154,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            rect = screenResource.getRectangleByColor(0xFF9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
+            rect = screenResource.getRectangleByColor(0xFF9900, 0, 0, 50, elementBounds.x, elementBounds.y);
             if (rect == null) {
                 sleep *= 2;
                 continue;
