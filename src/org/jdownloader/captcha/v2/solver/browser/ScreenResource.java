@@ -17,8 +17,8 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 public abstract class ScreenResource {
-    protected int x;
-    private int   blockSize = 100;
+    protected int     x;
+    private final int blockSize = 200;
 
     public ScreenResource(int x, int y, int width, int height) {
         this.x = x;
@@ -61,7 +61,7 @@ public abstract class ScreenResource {
             Point point = null;
             step: while (true) {
                 blockRadius++;
-                if (blockRadius * blockSize > 300) {
+                if (blockRadius * blockSize > 600) {
                     break;
                 }
                 int xblockmax = xstartBlock + blockRadius - 1;
