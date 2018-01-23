@@ -72,7 +72,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            final String[] links = br.getRegex("(/prof-video-click/(?:upload|pornstar)/[^/]+/\\d+(/[^/\"\\']+)?)").getColumn(0);
+            final String[] links = br.getRegex("(/prof-video-click/(?:upload|pornstar)/[^/]+/\\d+((?:/THUMBNUM)?/[^/\"\\']+)?)").getColumn(0);
             if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort") && (links == null || links.length == 0)) {
                 if (pornStar) {
                     logger.info("This user does not have any videos");
@@ -95,7 +95,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 /* Only add new URLs */
                 if (!dupeList.contains(linkid)) {
                     singleLink = "http://www." + this.getHost() + singleLink;
-                    final String url_name = new Regex(singleLink, "/\\d+/(.+)").getMatch(0);
+                    final String url_name = new Regex(singleLink, "/\\d+/(?:THUMBNUM/)?(.+)").getMatch(0);
                     final String name_temp;
                     final DownloadLink dl = createDownloadlink(singleLink);
                     /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
@@ -103,7 +103,11 @@ public class XvideosComProfile extends PluginForDecrypt {
                     fp.add(dl);
                     dl.setLinkID(linkid);
                     if (url_name != null) {
-                        name_temp = linkid + "_" + url_name;
+                        String clean = url_name.replaceAll("(watch_)?(free_)?(live_)?camgirls_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
+                        clean = clean.replaceAll("(watch_)?free_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
+                        clean = clean.replaceAll("(watch_)?full_video_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
+                        clean = clean.replaceAll("\\.*_*$", "");
+                        name_temp = linkid + "_" + clean;
                     } else {
                         name_temp = linkid;
                     }
