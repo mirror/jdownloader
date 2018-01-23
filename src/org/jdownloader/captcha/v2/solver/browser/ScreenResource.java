@@ -10,15 +10,15 @@ import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 
+import jd.nutils.Colors;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 
-import jd.nutils.Colors;
-
 public abstract class ScreenResource {
-    protected int     x;
-    private final int blockSize = 100;
+    protected int       x;
+    protected final int blockSize = 100;
 
     public ScreenResource(int x, int y, int width, int height) {
         this.x = x;
@@ -49,7 +49,7 @@ public abstract class ScreenResource {
     protected int    y;
     protected int    width;
     protected int    height;
-    private Robot    robot;
+    protected Robot  robot;
     protected double scale = 1d;
 
     public Rectangle getRectangleByColor(int rgb, int wmin, int hmin, double tollerance, int xstart, int ystart) {
@@ -245,8 +245,8 @@ public abstract class ScreenResource {
     }
 
     public class Block {
-        private int                          x;
-        private int                          y;
+        private final int                    x;
+        private final int                    y;
         private SoftReference<BufferedImage> image;
 
         public Block(int x, int y) {
@@ -272,12 +272,12 @@ public abstract class ScreenResource {
         }
 
         public BufferedImage getImage() {
-            BufferedImage img;
             if (image == null) {
                 return updateImage();
             }
+            final BufferedImage img;
             if ((img = image.get()) == null) {
-                System.out.println("Threw away");
+                // System.out.println("Threw away");
                 return updateImage();
             }
             return img;
@@ -285,11 +285,7 @@ public abstract class ScreenResource {
 
         private BufferedImage updateImage() {
             final Rectangle rec = new Rectangle(ScreenResource.this.x + this.x, ScreenResource.this.y + y, blockSize, blockSize);
-            BufferedImage img = getRobot().createScreenCapture(rec);
-            // BufferedImage img2 = IconIO.createEmptyImage(blockSize, blockSize);
-            // img2.getGraphics().drawImage(img, 0, 0, null);
-            // img = img2;
-            // System.out.println("Create screenshot: " + rec);
+            final BufferedImage img = getRobot().createScreenCapture(rec);
             if (System.getProperty("rc2debug") != null) {
                 showImage(img, rec.toString());
             }
@@ -301,14 +297,14 @@ public abstract class ScreenResource {
          */
     }
 
-    private HashMap<Integer, HashMap<Integer, Block>> blocks = new HashMap<Integer, HashMap<Integer, Block>>();
+    private volatile HashMap<Integer, HashMap<Integer, Block>> blocks = new HashMap<Integer, HashMap<Integer, Block>>();
 
     private int getRGB(int x, int y) throws NoBlockException {
         Block block = getBlock(x, y);
         return block.getRGB(x, y);
     }
 
-    public void showImage(BufferedImage img, String title) {
+    protected void showImage(BufferedImage img, String title) {
         ConfirmDialog d = new ConfirmDialog(0, title, "", new ImageIcon(img), null, null);
         d.setTimeout(5000);
         UIOManager.I().show(null, d);
