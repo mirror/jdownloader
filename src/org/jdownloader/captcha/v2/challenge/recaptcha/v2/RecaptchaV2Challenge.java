@@ -8,10 +8,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -41,6 +37,10 @@ import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -154,7 +154,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
+            rect = screenResource.getRectangleByColor(0xFF9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
             if (rect == null) {
                 sleep *= 2;
                 continue;
