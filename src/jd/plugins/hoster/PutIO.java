@@ -35,7 +35,7 @@ import jd.plugins.download.HashInfo.TYPE;
 
 // "https?://put\\.io/(?:file|v2/files)/\\d+" website link
 // actual downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://[a-z0-9\\-]+\\.put\\.io/(?:v2/files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
 
     private static final String REQUIRES_ACCOUNT = "requiresAccount";
@@ -110,7 +110,7 @@ public class PutIO extends PluginForHost {
         br.setFollowRedirects(true);
         final String accessToken = getToken(link.getPluginPatternMatcher());
         if (StringUtils.isNotEmpty(accessToken)) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, "https://put.io/v2/files/" + getID(link.getPluginPatternMatcher()) + "/download?token=" + accessToken, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, "https://api.put.io/v2/files/" + getID(link.getPluginPatternMatcher()) + "/download?oauth_token=" + accessToken, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -168,7 +168,7 @@ public class PutIO extends PluginForHost {
         } else if (token == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            return "https://put.io/v2/files/" + id + "/download?token=" + token;
+            return "https://api.put.io/v2/files/" + id + "/download?oauth_token=" + token;
         }
     }
 
@@ -272,7 +272,7 @@ public class PutIO extends PluginForHost {
                     }
                 } else {
                     final String id = getID(url);
-                    final String infoJson = br.getPage("https://put.io/v2/files/" + id + "?mp4_size=1&start_from=1&stream_url=1");
+                    final String infoJson = br.getPage("https://api.put.io/v2/files/" + id + "?mp4_size=1&start_from=1&stream_url=1");
                     if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
