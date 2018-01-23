@@ -1418,13 +1418,16 @@ public class YoutubeHelper {
         Browser apiBrowser = null;
         boolean apiRequired = br.getRegex(REGEX_FMT_MAP_FROM_JSPLAYER_SETUP).getMatch(0) == null;
         apiBrowser = br.cloneBrowser();
-        // sts=17141 <<<... bypass age check
-        apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&el=info&ps=default&eurl=&gl=US&hl=en&sts=17141");
+        String sts = apiBrowser.getRegex("\"sts\"\\s*:\\s*(\\d+)").getMatch(0);
+        if (StringUtils.isEmpty(sts)) {
+            sts = "";
+        }
+        apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&gl=US&hl=en&sts=" + sts);
         collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
         if (apiRequired) {
             apiBrowser = br.cloneBrowser();
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
-            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=16511");
+            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=" + sts);
             if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
                 // StatsManager.I().track("youtube/vInfo1");
                 apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
