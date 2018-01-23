@@ -17,7 +17,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 public abstract class ScreenResource {
-
     protected int x;
     private int   blockSize = 100;
 
@@ -26,7 +25,6 @@ public abstract class ScreenResource {
         this.y = y;
         this.width = width;
         this.height = height;
-
     }
 
     public ScreenResource() {
@@ -55,14 +53,11 @@ public abstract class ScreenResource {
     protected double scale = 1d;
 
     public Rectangle getRectangleByColor(int rgb, int wmin, int hmin, double tollerance, int xstart, int ystart) {
-
         long start = System.currentTimeMillis();
         int xstartBlock = xstart / blockSize;
         int ystartBlock = ystart / blockSize;
-
         int blockRadius = 0;
         try {
-
             Point point = null;
             step: while (true) {
                 blockRadius++;
@@ -74,51 +69,40 @@ public abstract class ScreenResource {
                 boolean hasBlock = false;
                 Block block;
                 for (int xblock = xstartBlock; xblock <= xblockmax; xblock++) {
-
                     block = getBlock(xblock * blockSize, yblockmax * blockSize);
                     // showImage(block.getImage(), blockRadius + ":" + xblock + "x" + yblockmax + "=" + block);
                     if (block != null) {
                         hasBlock = true;
-
                     } else {
                         break;
                     }
                     point = scanBlock(block, rgb, tollerance, xstart, ystart);
                     if (point != null) {
-
                         break step;
                     }
                 }
                 for (int yblock = ystartBlock; yblock < yblockmax; yblock++) {
-
                     block = getBlock(xblockmax * blockSize, yblock * blockSize);
                     // showImage(block.getImage(), blockRadius + ":" + xblockmax + "x" + yblock + "=" + block);
                     if (block != null) {
                         hasBlock = true;
-
                     } else {
                         break;
                     }
                     point = scanBlock(block, rgb, tollerance, xstart, ystart);
                     if (point != null) {
-
                         break step;
                     }
                 }
                 if (!hasBlock) {
                     break;
-
                 }
-
             }
             int width = 0;
             int height = 0;
             if (point != null) {
-
                 BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, getWidth() - point.x, 1));
-
                 // showImage(xStrip, null);
-
                 for (int x = wmin; x < xStrip.getWidth(); x++) {
                     int col = xStrip.getRGB(x, 0);
                     double dif = Colors.getColorDifference(rgb, col);
@@ -128,11 +112,8 @@ public abstract class ScreenResource {
                         width = x + 1;
                     }
                 }
-
                 BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, getHeight() - point.y));
-
                 // showImage(yStrip, null);
-
                 for (int y = hmin; y < yStrip.getHeight(); y++) {
                     int col = yStrip.getRGB(0, y);
                     double dif = Colors.getColorDifference(rgb, col);
@@ -144,13 +125,10 @@ public abstract class ScreenResource {
                     }
                 }
                 Rectangle ret = new Rectangle(this.x + point.x, this.y + point.y, width, height);
-
                 // showImage(getRobot().createScreenCapture(ret));
-
                 System.out.println("Found Rectangle in " + (System.currentTimeMillis() - start) + "ms");
                 return ret;
             }
-
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
@@ -165,7 +143,6 @@ public abstract class ScreenResource {
     }
 
     private Point scanBlock(Block block, int rgb, double tollerance, int xstart, int ystart) {
-
         try {
             // block.image = null;
             int pixelRadius = 0;
@@ -179,7 +156,6 @@ public abstract class ScreenResource {
                 Point px = null;
                 Point py = null;
                 for (int x = 0; x <= xmax; x++) {
-
                     int pixelColor = block.getImage().getRGB(x, ymax);
                     double dif = Colors.getColorDifference(rgb, pixelColor);
                     // System.out.println(Long.toHexString(pixelColor) + "\r\n" + x + "\tx\t" + ymax + "\t " + dif);
@@ -195,25 +171,17 @@ public abstract class ScreenResource {
                         // }
                         try {
                             if (checkColor(rgb, tollerance, block.x + x + scale(1), block.y + ymax) && checkColor(rgb, tollerance, block.x + x + scale(48), block.y + ymax)) {
-
                                 if (checkColor(rgb, tollerance, block.x + x, block.y + ymax + scale(1)) && checkColor(rgb, tollerance, block.x + x, block.y + ymax + scale(48))) {
-
                                     px = new Point(block.x + x, block.y + ymax);
                                     break;
-
                                 }
-
                             }
                         } catch (NoBlockException e) {
-
                         }
-
                     }
                 }
-
                 for (int y = 0; y < ymax; y++) {
                     int pixelColor = block.getImage().getRGB(xmax, y);
-
                     double dif = Colors.getColorDifference(rgb, pixelColor);
                     // if (rgb == 0xcccccc) {
                     // block.getImage().setRGB(xmax, y, 0X00fff0);
@@ -227,23 +195,16 @@ public abstract class ScreenResource {
                         // showImage(block.getImage());
                         // }
                         try {
-
                             if (checkColor(rgb, tollerance, block.x + xmax + scale(1), block.y + y) && checkColor(rgb, tollerance, block.x + xmax + scale(48), block.y + y)) {
                                 if (checkColor(rgb, tollerance, block.x + xmax, block.y + y + scale(1)) && checkColor(rgb, tollerance, block.x + xmax, block.y + y + scale(48))) {
-
                                     px = new Point(block.x + xmax, block.y + y);
                                     break;
-
                                 }
-
                             }
                         } catch (NoBlockException e) {
-
                         }
-
                     }
                 }
-
                 if (px != null) {
                     if (py == null) {
                         return px;
@@ -259,7 +220,6 @@ public abstract class ScreenResource {
             }
         } catch (Throwable e) {
             e.printStackTrace();
-
             return null;
         }
         return null;
@@ -276,7 +236,6 @@ public abstract class ScreenResource {
     }
 
     public class Block {
-
         private int                          x;
         private int                          y;
         private SoftReference<BufferedImage> image;
@@ -284,7 +243,6 @@ public abstract class ScreenResource {
         public Block(int x, int y) {
             this.x = x;
             this.y = y;
-
         }
 
         public int getHeight() {
@@ -317,30 +275,28 @@ public abstract class ScreenResource {
         }
 
         private BufferedImage updateImage() {
-            Rectangle rec;
-            BufferedImage img = getRobot().createScreenCapture(rec = new Rectangle(ScreenResource.this.x + this.x, ScreenResource.this.y + y, blockSize, blockSize));
-            System.out.println("Create Screen shot " + rec);
-            // showImage(img);
+            final Rectangle rec = new Rectangle(ScreenResource.this.x + this.x, ScreenResource.this.y + y, blockSize, blockSize);
+            final BufferedImage img = getRobot().createScreenCapture(rec);
+            System.out.println("Create screenshot: " + rec);
+            if (System.getProperty("rc2debug") != null) {
+                showImage(img, rec.toString());
+            }
             image = new SoftReference<BufferedImage>(img);
             return img;
         }
-
         /**
          * @param img
          */
-
     }
 
     private HashMap<Integer, HashMap<Integer, Block>> blocks = new HashMap<Integer, HashMap<Integer, Block>>();
 
     private int getRGB(int x, int y) throws NoBlockException {
-
         Block block = getBlock(x, y);
         return block.getRGB(x, y);
     }
 
     public void showImage(BufferedImage img, String title) {
-
         ConfirmDialog d = new ConfirmDialog(0, title, "", new ImageIcon(img), null, null);
         d.setTimeout(5000);
         UIOManager.I().show(null, d);
@@ -380,5 +336,4 @@ public abstract class ScreenResource {
         }
         return robot;
     }
-
 }
