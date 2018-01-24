@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toukoucity.to" }, urls = { "http://(www\\.)?toukoucity\\.to/video/[A-Za-z0-9]+" })
 public class ToukouCityTo extends PluginForHost {
-
     public ToukouCityTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,11 +50,14 @@ public class ToukouCityTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("span>([^<>\"]*?)</h2>").getMatch(0);
-        dllink = br.getRegex("\\(\\'file\\',\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        dllink = br.getRegex("\\(\\'file\\',\\'(https?://[^<>\"]*?)\\'\\)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("").getMatch(0);
+            dllink = br.getRegex("\"file\"\\s*:\\s*\"(https?://[^<>\"]+)").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
