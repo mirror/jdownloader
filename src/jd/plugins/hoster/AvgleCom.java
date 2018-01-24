@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -135,29 +139,43 @@ public class AvgleCom extends PluginForHost {
             e.printStackTrace();
         }
         String[] videoInfo = new Regex(kode, "data-ohash=\\\\\"(.+?)\\\\\" data-ts=\\\\\"(.+?)\\\\\" data-vid=\\\\\"(.+?)\\\\\"").getRow(0);
+        Browser ajax = br.cloneBrowser();
         if (videoInfo == null || videoInfo.length != 3) {
             videoInfo = new Regex(kode, "data-hash=\\\\\"(.+?)\\\\\" data-ts=\\\\\"(.+?)\\\\\" data-vid=\\\\\"(.+?)\\\\\"").getRow(0);
             if (videoInfo == null || videoInfo.length != 3) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            videoInfo[0] = decodeHash(videoInfo[0]);
+            String mainAhUrl = br.getRegex("src\\s*=\\s*\"([^\"]+avgle-main-ah\\.js[^\"]*)").getMatch(0);
+            if (mainAhUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            ajax.getPage(mainAhUrl);
+            String salt = ajax.getRegex("var _0x[0-9a-f]+=\\[([x0-9a-f,]+)\\]").getMatch(0);
+            if (salt == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            videoInfo[0] = decodeHash(videoInfo[0], salt);
         }
-        Browser ajax = br.cloneBrowser();
         ajax.getPage("/video-url.php?hash=" + videoInfo[0] + "&ts=" + videoInfo[1] + "&vid=" + videoInfo[2]);
         return PluginJSonUtils.getJson(ajax, "url");
     }
 
-    private String decodeHash(String ohash) {
+    private String decodeHash(final String ohash, final String salt) {
         String decoded = Encoding.Base64Decode(ohash);
         char[] decodedArray = decoded.toCharArray();
-        int[] salt = { 0x1d, 0x17, 0x13, 0x11, 0xd, 0xb, 0x7, 0x5, 0x3, 0x2 };
+        String[] saltString = salt.split(",");
+        List<Integer> saltList = new ArrayList<>();
+        for (String s : saltString) {
+            saltList.add(Integer.decode(s));
+        }
+        Collections.reverse(saltList);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < decoded.length(); i++) {
             int mask = -1;
-            for (int j = 0; j < salt.length; j++) {
-                if (i > salt[j] && i % salt[j] == 0) {
-                    mask = i / salt[j];
+            for (int s : saltList) {
+                if (i > s && i % s == 0) {
+                    mask = i / s;
                     break;
                 }
             }
