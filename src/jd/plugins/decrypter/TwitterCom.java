@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,6 +33,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
@@ -225,7 +225,7 @@ public class TwitterCom extends PornEmbedParser {
                     maxid = br.getRegex("\"min_position\"\\s*?:\\s*?\"(\\d+)").getMatch(0);
                 }
                 int addedlinks_all = 0;
-                final String[] tweetsources = br.getRegex("li class=\"js\\-stream\\-item stream\\-item stream\\-item([^の]+?)ProfileTweet\\-actionCount").getColumn(0);
+                final String[] tweetsources = br.getRegex("li class=\"js\\-stream\\-item stream\\-item stream\\-item(.*?)ProfileTweet\\-actionCount").getColumn(0);
                 if (tweetsources == null || tweetsources.length == 0) {
                     logger.info("tweetsources == null || tweetsources.length == 0, regex is broken eventually");
                     break;
