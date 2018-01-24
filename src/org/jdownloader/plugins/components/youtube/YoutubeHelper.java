@@ -850,10 +850,10 @@ public class YoutubeHelper {
     private LinkedHashSet<StreamMap>                 mpdUrls;
     private HashMap<String, String>                  videoInfo;
     private boolean                                  loggedIn;
-    private boolean                                  hlsEnabled          = true;
-    private boolean                                  dashMpdEnabled      = true;
-    private boolean                                  adaptiveFmtsEnabled = true;
-    private boolean                                  fmtMapEnabled       = true;
+    private final boolean                            hlsEnabled          = true;
+    private final boolean                            dashMpdEnabled      = true;
+    private final boolean                            adaptiveFmtsEnabled = true;
+    private final boolean                            fmtMapEnabled       = true;
     private String                                   html5PlayerJs;
     private YoutubeClipData                          vid;
     private String                                   html5PlayerSource;
@@ -1416,18 +1416,17 @@ public class YoutubeHelper {
         this.handleContentWarning(br);
         collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
         Browser apiBrowser = null;
-        boolean apiRequired = br.getRegex(REGEX_FMT_MAP_FROM_JSPLAYER_SETUP).getMatch(0) == null;
         apiBrowser = br.cloneBrowser();
         String sts = apiBrowser.getRegex("\"sts\"\\s*:\\s*(\\d+)").getMatch(0);
         if (StringUtils.isEmpty(sts)) {
             sts = "";
         }
-        apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&gl=US&hl=en&sts=" + sts);
+        apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&html5=1&gl=US&hl=en&sts=" + sts);
         collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
-        if (apiRequired) {
+        if (fmtMaps.size() == 0) {
             apiBrowser = br.cloneBrowser();
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
-            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=" + sts);
+            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&html5=1&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=" + sts);
             if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
                 // StatsManager.I().track("youtube/vInfo1");
                 apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
@@ -1474,98 +1473,65 @@ public class YoutubeHelper {
             if (unavailableReason.contains("This video is private")) {
                 // id=TY1LpddyWvs, date=20170903, author=raztoki
                 // id=Vs4IJuhZ_1E, date=20170903, author=raztoki
-                logger.warning("Private Video");
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            }
-            if (unavailableReason.startsWith("This video does not exist")) {
-                logger.warning(unavailableReason);
+            } else if (unavailableReason.startsWith("This video does not exist")) {
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            }
-            if (unavailableReason.startsWith("This video has been removed")) {
+            } else if (unavailableReason.startsWith("This video has been removed")) {
                 // currently covering
                 // This video has been removed by the user. .:. ab4U0RwrOTI
                 // This video has been removed because its content violated YouTube&#39;s Terms of Service. .:. 7RA4A-4QqHU
-                logger.warning(unavailableReason);
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            }
-            if (unavailableReason.contains("account associated with this video has been")) {
+            } else if (unavailableReason.contains("account associated with this video has been")) {
                 // currently covering
                 // This video is no longer available because the YouTube account associated with this video has been closed.
                 // id=wBVhciYW9Og, date=20141222, author=raztoki
-                logger.warning(unavailableReason);
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            }
-            if ("This live event has ended.".equalsIgnoreCase(unavailableReason)) {
+            } else if ("This live event has ended.".equalsIgnoreCase(unavailableReason)) {
                 // currently covering
                 // This live event has ended.
                 // id=qEJwOuvDf7I, date=20150412, author=raztoki
-                logger.warning(unavailableReason);
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            }
-            {
-                final String copyrightClaim = "This video is no longer available due to a copyright claim";
-                if (unavailableReason.contains(copyrightClaim)) {
-                    // currently covering
-                    // "One Monkey saves another Mo..."
-                    // This video is no longer available due to a copyright claim by ANI Media Pvt Ltd.
-                    // id=l8nBcj8ul7s, date=20141224, author=raztoki
-                    // id=6cER1kK3Qwg, date=20170903, author=raztoki
-                    // filename is shown in error.
-                    vid.title = new Regex(unavailableReason, "\"(.*?(?:\\.\\.\\.)?)\"\\n").getMatch(0);
-                    logger.warning(copyrightClaim);
-                    vid.error = copyrightClaim;
-                    return;
-                }
-            }
-            if (unavailableReason.startsWith("This video contains content from ") && unavailableReason.contains("who has blocked it in your country on copyright grounds")) {
+            } else if (unavailableReason.contains("This video is no longer available due to a copyright claim")) {
+                // currently covering
+                // "One Monkey saves another Mo..."
+                // This video is no longer available due to a copyright claim by ANI Media Pvt Ltd.
+                // id=l8nBcj8ul7s, date=20141224, author=raztoki
+                // id=6cER1kK3Qwg, date=20170903, author=raztoki
+                // filename is shown in error.
+                vid.title = new Regex(unavailableReason, "\"(.*?(?:\\.\\.\\.)?)\"\\n").getMatch(0);
+                logger.warning("Abort Error:" + unavailableReason);
+                vid.error = "This video is no longer available due to a copyright claim";
+                return;
+            } else if (unavailableReason.startsWith("This video contains content from ") && unavailableReason.contains("who has blocked it in your country on copyright grounds")) {
                 // not quite as the same as above.
                 // This video contains content from Beta Film GmbH, who has blocked it in your country on copyright grounds.
                 // id=cr8tgceA2qk, date=20170708, author=raztoki
                 final String error = "Geo Blocked due to copyright grounds";
-                logger.warning(error);
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = error;
                 return;
-            }
-            if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
+            } else if (unavailableReason.equals("This video is unavailable.") || unavailableReason.equals(/* 15.12.2014 */"This video is not available.")) {
                 // currently covering
                 // Sorry about that. .:. 7BN5H7AVHUIE8 invalid uid.
-                logger.warning(unavailableReason);
+                logger.warning("Abort Error:" + unavailableReason);
                 vid.error = unavailableReason;
                 return;
-            }
-            if (true) {
-                // this should not happen, we have unsupported error handling
-                // statserv post this fileuid ???
-                logger.warning("Unsupported error!");
-                vid.error = unavailableReason;
-                return;
+            } else {
+                logger.warning("Continue Error:" + unavailableReason);
             }
         }
         doFeedScan();
         doUserAPIScan();
-        // String html5_fmt_map;
-        // String dashFmt;
-        // String dashmpd;
-        // if (apiRequired) {
-        // // age check bypass active
-        //
-        // html5_fmt_map = apiBrowser.getRegex("url_encoded_fmt_stream_map\\s*=\\s*(.*?)(&|$)").getMatch(0);
-        // html5_fmt_map = Encoding.htmlDecode(html5_fmt_map);
-        //
-        // dashFmt = apiBrowser.getRegex("adaptive_fmts\\s*=\\s*(.*?)(&|$)").getMatch(0);
-        // dashFmt = Encoding.htmlDecode(dashFmt);
-        //
-        // dashmpd = apiBrowser.getRegex("dashmpd\\s*=\\s*(.*?)(&|$)").getMatch(0);
-        // dashmpd = Encoding.htmlDecode(dashmpd);
-        //
-        // } else {
-        // regular url testlink: http://www.youtube.com/watch?v=4om1rQKPijI
-        // }
         fmtLoop: for (StreamMap fmt : fmtMaps) {
             boolean fmtChecked = false;
             for (final String line : fmt.mapData.split(",")) {
@@ -1690,6 +1656,15 @@ public class YoutubeHelper {
                     infos.put("stacktrace", Exceptions.getStackTrace(e));
                     StatsManager.I().track(0, null, "loadVideo/Exception", infos, CollectionName.PLUGINS);
                 }
+            }
+        }
+        if (unavailableReason != null) {
+            if (ret.size() == 0) {
+                logger.warning("Abort Error:" + unavailableReason);
+                vid.error = unavailableReason;
+                return;
+            } else {
+                logger.warning("Ignore Error:" + unavailableReason);
             }
         }
         for (YoutubeStreamData sd : loadThumbnails()) {
