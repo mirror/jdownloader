@@ -280,6 +280,9 @@ public class HulkLoadCom extends PluginForHost {
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("class=\"fa fa-file\"></i>([^<>\"]*?)<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("class=\"dfilename\">([^<>\"]*?)</").getMatch(0);
         }
         // standard traits from base page
