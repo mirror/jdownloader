@@ -22,11 +22,6 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "avgle.com" }, urls = { "https?://(?:www\\.)?avgle\\.com/video/\\d+" })
 public class AvgleCom extends PluginForHost {
@@ -165,12 +165,12 @@ public class AvgleCom extends PluginForHost {
         String decoded = Encoding.Base64Decode(ohash);
         char[] decodedArray = decoded.toCharArray();
         String[] saltString = salt.split(",");
-        List<Integer> saltList = new ArrayList<>();
+        final List<Integer> saltList = new ArrayList<Integer>();
         for (String s : saltString) {
             saltList.add(Integer.decode(s));
         }
         Collections.reverse(saltList);
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < decoded.length(); i++) {
             int mask = -1;
             for (int s : saltList) {
