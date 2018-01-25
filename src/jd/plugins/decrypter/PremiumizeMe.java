@@ -94,7 +94,7 @@ public class PremiumizeMe extends PluginForDecrypt {
                 if (filePackage != null) {
                     filePackage.add(link);
                 }
-                if (addPath) {
+                if (addPath && StringUtils.isNotEmpty(currentPath)) {
                     link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 }
                 ret.add(link);
