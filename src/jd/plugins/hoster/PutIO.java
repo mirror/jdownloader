@@ -1,14 +1,5 @@
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.putio.PutIOFileWrapper;
-import org.jdownloader.plugins.components.putio.PutIOInfoWrapper;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -33,11 +24,18 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.putio.PutIOFileWrapper;
+import org.jdownloader.plugins.components.putio.PutIOInfoWrapper;
+
 // "https?://put\\.io/(?:file|v2/files)/\\d+" website link
 // actual downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
-
     private static final String REQUIRES_ACCOUNT = "requiresAccount";
     private static final String ACCESS_TOKEN     = "access_token";
     private static final String COOKIE_HOST      = "http://put.io";
@@ -204,9 +202,9 @@ public class PutIO extends PluginForHost {
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.setFollowRedirects(false);
                 br.submitForm(login);
+                final String location = br.getRequest().getResponseHeader("Location");
                 // second redirect is the token
                 br.followRedirect(false);
-                final String location = br.getRequest().getResponseHeader("Location");
                 accessToken = new Regex(location, "[&\\?#]access_token=([^\\&=]+)").getMatch(0);
                 if (accessToken == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
