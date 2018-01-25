@@ -676,7 +676,7 @@ public class TwitchTv extends PluginForHost {
                                 recaptcha = true;
                                 continue;
                             }
-                            if ("Incorrect username or password.".equals(message)) {
+                            if ("Incorrect username or password.".equals(message) || "Benutzername oder Passwort fehlerhaft.".equals(message)) {
                                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                                 } else {
