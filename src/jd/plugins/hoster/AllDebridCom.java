@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -42,9 +37,13 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
-
     public AllDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000l);
@@ -147,7 +146,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-        // login related
+            // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
@@ -177,6 +176,10 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         case 32:
             mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "Down for maintance");
+        case 33:
+            // {"error":"You have reached the free trial limit (7 days \/\/ 25GB downloaded or host uneligible for free
+            // trial)","errorCode":33}
+            throw new AccountInvalidException("You have reached the free trial limit!");
         case 31:
         case 39:
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
@@ -225,7 +228,7 @@ public class AllDebridCom extends antiDDoSForHost {
         synchronized (accLock) {
             final boolean cache = loadToken(account, link);
             logger.info("Cached 'token' = " + String.valueOf(cache));
-            final String unlock = api + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getPluginPatternMatcher());
+            final String unlock = api + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             getPage(unlock + "&token=" + token);
             if (11 == parseError()) {
                 loadToken(account, link);
@@ -258,7 +261,6 @@ public class AllDebridCom extends antiDDoSForHost {
         if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
             final String host = Browser.getHost(link.getDownloadURL());
             final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-
                 @Override
                 public HashInfo getHashInfo() {
                     return null;
