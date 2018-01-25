@@ -66,16 +66,25 @@ public class PornHubCom extends PluginForDecrypt {
         aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
         if (aa != null) {
             jd.plugins.hoster.PornHubCom.login(br, aa, false);
-            if (br.containsHTML("href=\"/login\"")) {
-                jd.plugins.hoster.PornHubCom.login(br, aa, true);
-            }
-            br.getPage(parameter); // For testing
-            if (br.containsHTML("href=\"/login\"")) {
-                logger.info("Debug info: href= /login is found");
-                jd.plugins.hoster.PornHubCom.login(br, aa, true);
-            }
         }
         br.getPage(parameter);
+        // jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        if (br.containsHTML("class=\"g-recaptcha\"")) {
+            // logger.info("Debug info: captcha handling is required");
+            throw new DecrypterException("Decrypter broken, captcha handling is required");
+        }
+        if (br.containsHTML(">Sorry, but this video is private") && br.containsHTML("href=\"/login\"") && aa != null) {
+            logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
+            jd.plugins.hoster.PornHubCom.login(br, aa, true);
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            if (br.containsHTML("href=\"/login\"")) {
+                logger.info("Debug info: href= /login is found for registered user, re-login failed?");
+            }
+            if (br.containsHTML("class=\"g-recaptcha\"")) {
+                // logger.info("Debug info: captcha handling is required now!");
+                throw new DecrypterException("Decrypter broken, captcha handling is required now!");
+            }
+        }
         if (parameter.matches(".+/users/.+")) {
             decryptAllVideosOfAUser();
         } else {
@@ -148,7 +157,7 @@ public class PornHubCom extends PluginForDecrypt {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
-        jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
+        // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
         if (isOffline(br)) {
             final DownloadLink dl = this.createOfflinelink(parameter);
