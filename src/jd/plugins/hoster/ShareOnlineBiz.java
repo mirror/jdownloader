@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -791,9 +790,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         String url = Encoding.Base64Decode(dlINFO);
         if (captcha) {
             /* recaptcha handling */
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
-            rc.load();
             long last = -1;
             int imax = 15;
             final long sessionTimeout = startWait + 300 * 1000l;
@@ -805,16 +801,15 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                      */
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+                final CaptchaHelperHostPluginRecaptchaV2 rc = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdnPkIUAAAAABqC_ITR9-LTJKSdyR_Etj1Sf-Xi");
+                final String recaptchaV2Response = rc.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 getLogger().info("Captcha Try " + (20 - imax));
                 if (System.currentTimeMillis() - last < 2000) {
                     // antiddos
                     sleep(2000 - (System.currentTimeMillis() - last), downloadLink);
-                }
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                if (StringUtils.isEmpty(c)) {
-                    rc.reload();
-                    continue;
                 }
                 if (wait != null) {
                     long gotWait = Integer.parseInt(wait) * 500l;
@@ -824,10 +819,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         this.sleep(gotWait, downloadLink);
                     }
                 }
-                postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+                postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(recaptchaV2Response));
                 url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
                 if ("0".equals(url)) {
-                    rc.reload();
                     continue;
                 } else {
                     break;
