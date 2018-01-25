@@ -79,7 +79,7 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
+        {
             put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
             put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
             put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
@@ -506,7 +506,9 @@ public class PornHubCom extends PluginForHost {
                 }
                 saveCookies(br, account);
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }

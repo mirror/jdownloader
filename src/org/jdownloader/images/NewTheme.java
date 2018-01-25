@@ -47,7 +47,6 @@ public class NewTheme extends Theme {
             return new IdentifierImageIcon(((ImageIcon) ret).getImage(), relativePath);
         }
         return new IdentifierWrapperIcon(ret, relativePath);
-
     };
 
     /**
@@ -77,16 +76,15 @@ public class NewTheme extends Theme {
     public Icon getIcon(String relativePath, int size) {
         if ("compress".equals(relativePath)) {
             return super.getIcon(IconKey.ICON_EXTRACT, size);
+        } else {
+            return super.getIcon(relativePath, size);
         }
-        return super.getIcon(relativePath, size);
     }
 
     protected String getCacheKey(final Object... objects) {
-
         if (objects != null) {
             if (objects.length == 1 && objects[0] != null) {
                 return objects[0].toString();
-
             }
             final StringBuilder sb = new StringBuilder();
             for (final Object o : objects) {
@@ -104,26 +102,21 @@ public class NewTheme extends Theme {
 
     @Override
     public Image getImage(String key, int size, boolean useCache) {
-
         Icon ico = this.getIcon(key, size, useCache);
         if (ico instanceof IdentifierWrapperIcon) {
             return IconIO.toBufferedImage(((IdentifierWrapperIcon) ico).getIcon());
         }
         return IconIO.toBufferedImage(ico);
-
     }
 
     public static void main(String[] args) {
         long t = System.currentTimeMillis();
         for (int i = 1000; i >= 0; i--) {
-
             IconIO.getImageIcon(NewTheme.class.getResource("/themes/flat/org/jdownloader/images/add.svg"), 32);
         }
         System.out.println(System.currentTimeMillis() - t);
-
         t = System.currentTimeMillis();
         for (int i = 1000; i >= 0; i--) {
-
             IconIO.getImageIcon(NewTheme.class.getResource("/themes/standard/org/jdownloader/images/add.png"), 32);
         }
         System.out.println(System.currentTimeMillis() - t);
@@ -161,11 +154,9 @@ public class NewTheme extends Theme {
                 } else {
                     BufferedImage img = IconIO.toBufferedImage(checkBox);
                     Graphics2D g2 = (Graphics2D) img.getGraphics();
-
                     Point2D center = new Point2D.Float(img.getWidth() / 2 - 1, img.getHeight() / 2 - 1);
                     float radius = img.getWidth() / (float) 2;
                     float[] dist = { 0.4f, 1.0f };
-
                     Color[] colors = { new Color(red.getRed(), red.getGreen(), red.getBlue(), red.getAlpha()), new Color(red.getRed(), red.getGreen(), red.getBlue(), 0) };
                     RadialGradientPaint p = new RadialGradientPaint(center, radius, dist, colors, CycleMethod.NO_CYCLE);
                     g2.setPaint(p);
@@ -173,13 +164,10 @@ public class NewTheme extends Theme {
                     g2.dispose();
                     checkBox = new ImageIcon(img);
                 }
-
             }
-
             ret = new ImageIcon(ImageProvider.merge(back, checkBox, 3, 0, 0, back.getIconHeight() - checkBox.getIconHeight() + 2));
             cache(ret, key);
         }
         return ret;
     }
-
 }

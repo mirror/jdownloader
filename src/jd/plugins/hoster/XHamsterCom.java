@@ -419,7 +419,7 @@ public class XHamsterCom extends PluginForHost {
                 dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("flashvars.*?file=(http%3.*?)&").getMatch(0);
+                dllink = br.getRegex("flashvars.*?file=(https?%3.*?)&").getMatch(0);
             }
             if (dllink == null && flashvars != null) {
                 /* E.g. 4753816 */
@@ -427,7 +427,7 @@ public class XHamsterCom extends PluginForHost {
                 flashvars = flashvars.replace("\\", "");
                 final String[] qualities2 = { "1080p", "720p", "480p", "360p", "240p" };
                 for (final String quality : qualities2) {
-                    dllink = new Regex(flashvars, "\"" + quality + "\":\\[\"(http[^<>\"]*?)\"\\]").getMatch(0);
+                    dllink = new Regex(flashvars, "\"" + quality + "\":\\[\"(https?[^<>\"]*?)\"\\]").getMatch(0);
                     if (dllink != null) {
                         break;
                     }
@@ -532,7 +532,7 @@ public class XHamsterCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://xhamster.com";
+    private static final String MAINPAGE = "https://xhamster.com";
     private static Object       LOCK     = new Object();
 
     public void login(final Account account, final boolean force) throws Exception {

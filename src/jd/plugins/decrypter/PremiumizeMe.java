@@ -2,12 +2,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -23,7 +20,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[A-Z0-9\\-_]+(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,9 +44,19 @@ public class PremiumizeMe extends PluginForDecrypt {
             if (folderPath != null) {
                 folderPath = Encoding.Base64Decode(folderPath);
             } else {
-                folderPath = "0";
+                folderPath = "";
             }
             ret.addAll(convert(nodes, folderPath));
+        }
+        return ret;
+    }
+
+    private static FilePackage getFilePackage(Map<String, FilePackage> filePackages, PremiumizeBrowseNode node) {
+        FilePackage ret = filePackages.get(node._getParentID());
+        if (ret == null && StringUtils.isNotEmpty(node._getParentName())) {
+            ret = FilePackage.getInstance();
+            ret.setName(node._getParentName());
+            filePackages.put(node._getParentID(), ret);
         }
         return ret;
     }
@@ -59,13 +70,7 @@ public class PremiumizeMe extends PluginForDecrypt {
             currentPath = "";
         }
         final boolean addPath = StringUtils.isNotEmpty(currentPath);
-        final FilePackage filePackage;
-        if (addPath) {
-            filePackage = FilePackage.getInstance();
-            filePackage.setName(currentPath);
-        } else {
-            filePackage = null;
-        }
+        final Map<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
             final String itemName = node.getName();
             final String nodeCloudID = node.getID();
@@ -85,6 +90,7 @@ public class PremiumizeMe extends PluginForDecrypt {
                 /** TODO: Maybe do not add .nzb and .torrent files (see comment in host class near PremiumizeMeConfigInterface)! */
                 final DownloadLink link = new DownloadLink(null, null, "premiumize.me", node.getUrl(), true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
+                final FilePackage filePackage = getFilePackage(filePackages, node);
                 if (filePackage != null) {
                     filePackage.add(link);
                 }
@@ -117,11 +123,18 @@ public class PremiumizeMe extends PluginForDecrypt {
         final String status = (String) responseMap.get("status");
         if (StringUtils.equals("success", status)) {
             final ArrayList<Object> folderContents = (ArrayList<Object>) responseMap.get("content");
+            final String folderName = (String) responseMap.get("name");
+            final String parentID = (String) responseMap.get("parent_id");
             final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
             for (final Object jsonObject : folderContents) {
                 final Map<String, Object> folderObject = (Map<String, Object>) jsonObject;
-                browseNodes.add(JSonStorage.restoreFromString(JSonStorage.toString(folderObject), new TypeRef<PremiumizeBrowseNode>() {
-                }, null));
+                PremiumizeBrowseNode node = JSonStorage.restoreFromString(JSonStorage.toString(folderObject), new TypeRef<PremiumizeBrowseNode>() {
+                }, null);
+                if (node != null) {
+                    node._setParentName(folderName);
+                    node._setParentID(parentID);
+                    browseNodes.add(node);
+                }
             }
             return browseNodes;
         }

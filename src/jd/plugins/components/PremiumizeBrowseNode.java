@@ -3,7 +3,25 @@ package jd.plugins.components;
 import org.appwork.storage.Storable;
 
 public class PremiumizeBrowseNode implements Storable {
-    private String name = null;
+    private String name       = null;
+    private String parentName = null;
+    private String parentID   = null;
+
+    public String _getParentID() {
+        return parentID;
+    }
+
+    public void _setParentID(String parentID) {
+        this.parentID = parentID;
+    }
+
+    public String _getParentName() {
+        return parentName;
+    }
+
+    public void _setParentName(String parentName) {
+        this.parentName = parentName;
+    }
 
     public String getName() {
         return name;
