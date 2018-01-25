@@ -28,27 +28,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountJsonConfig;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -71,6 +50,27 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountJsonConfig;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:dt\\d+|imaginaryblueogre\\-sto|dangerousclashknife\\-sto|punydragonhoard\\-sto)\\.energycdn\\.com/dl/.+" })
 public class PremiumizeMe extends UseNet {
@@ -223,7 +223,7 @@ public class PremiumizeMe extends UseNet {
     // jd.plugins.decrypter.PremiumizeMe.setPremiumizeBrowserNodeInfoOnDownloadlink(link, this.node);
     // }
     public static String getCloudID(final String url) {
-        return new Regex(url, "folder_id=([A-Z0-9\\-_]+)").getMatch(0);
+        return new Regex(url, "folder_id=([a-zA-Z0-9\\-_]+)").getMatch(0);
     }
 
     @Override
