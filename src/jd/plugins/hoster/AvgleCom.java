@@ -22,6 +22,11 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,11 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "avgle.com" }, urls = { "https?://(?:www\\.)?avgle\\.com/video/\\d+" })
 public class AvgleCom extends PluginForHost {
@@ -139,7 +139,6 @@ public class AvgleCom extends PluginForHost {
             e.printStackTrace();
         }
         String[] videoInfo = new Regex(kode, "data-ohash=\\\\\"(.+?)\\\\\" data-ts=\\\\\"(.+?)\\\\\" data-vid=\\\\\"(.+?)\\\\\"").getRow(0);
-        Browser ajax = br.cloneBrowser();
         if (videoInfo == null || videoInfo.length != 3) {
             videoInfo = new Regex(kode, "data-hash=\\\\\"(.+?)\\\\\" data-ts=\\\\\"(.+?)\\\\\" data-vid=\\\\\"(.+?)\\\\\"").getRow(0);
             if (videoInfo == null || videoInfo.length != 3) {
@@ -150,18 +149,25 @@ public class AvgleCom extends PluginForHost {
             if (mainAhUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final Browser ajax = br.cloneBrowser();
             ajax.getPage(mainAhUrl);
             String salt = ajax.getRegex("var _0x[0-9a-f]+=\\[([x0-9a-f,]+)\\]").getMatch(0);
             if (salt == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            videoInfo[0] = decodeHash(videoInfo[0], salt);
+            int maskIdx = 0;
+            String maskIdxString = ajax.getRegex("%_0x[0-9a-f]+===(0x[0-9a-f]+)\\)").getMatch(0);
+            if (maskIdxString != null) {
+                maskIdx = Integer.decode(maskIdxString);
+            }
+            videoInfo[0] = decodeHash(videoInfo[0], salt, maskIdx);
         }
+        final Browser ajax = br.cloneBrowser();
         ajax.getPage("/video-url.php?hash=" + videoInfo[0] + "&ts=" + videoInfo[1] + "&vid=" + videoInfo[2]);
         return PluginJSonUtils.getJson(ajax, "url");
     }
 
-    private String decodeHash(final String ohash, final String salt) {
+    private String decodeHash(final String ohash, final String salt, final int maskIdx) {
         String decoded = Encoding.Base64Decode(ohash);
         char[] decodedArray = decoded.toCharArray();
         String[] saltString = salt.split(",");
@@ -174,7 +180,7 @@ public class AvgleCom extends PluginForHost {
         for (int i = 0; i < decoded.length(); i++) {
             int mask = -1;
             for (int s : saltList) {
-                if (i > s && i % s == 0) {
+                if (i > s && i % s == maskIdx) {
                     mask = i / s;
                     break;
                 }
