@@ -16,6 +16,8 @@
 
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -30,9 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "linx.2ddl.link", "protect.dmd247.com" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?linx\\.(?:2ddl|twoddl)\\.(?:[a-z]+)/(?:[;\\.A-Za-z0-9]+|%27)+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "linx.2ddl.link", "protect.dmd247.com" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?linx\\.(?:2ddl|twoddl|tddl)\\.(?:[a-z]+)/(?:[;\\.A-Za-z0-9]+|%27)+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
 
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
