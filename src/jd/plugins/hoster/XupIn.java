@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.((in|to)/dl,\\d+/?.+?|raidrush\\.ws/ndl_[a-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "https?://[\\w\\.]*?xup\\.((in|to)/dl,\\d+/?.+?|raidrush\\.ws/ndl_[a-z0-9]+)" })
 public class XupIn extends PluginForHost {
-
     private static final String AGB_LINK = "http://www.xup.in/terms/";
 
     public XupIn(PluginWrapper wrapper) {
@@ -129,7 +127,6 @@ public class XupIn extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
-
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -139,7 +136,6 @@ public class XupIn extends PluginForHost {
 
     @Override
     public void reset() {
-
     }
 
     @Override
@@ -149,5 +145,4 @@ public class XupIn extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
