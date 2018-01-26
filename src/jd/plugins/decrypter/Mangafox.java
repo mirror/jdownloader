@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 public class Mangafox extends PluginForDecrypt {
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
-        Browser.setRequestIntervalLimitGlobal("mangafox.me", 500);
+        Browser.setRequestIntervalLimitGlobal("mangafox.la", 500);
     }
 
     @Override
@@ -65,9 +65,14 @@ public class Mangafox extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         int skippedPics = 0;
+        br.addAllowedResponseCodes(503);
         for (int i = 1; i <= numberOfPages; i++) {
             if (i != 1) {
                 br.getPage(i + ".html");
+                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+                    sleep(2000, parameter);
+                    br.getPage(i + ".html");
+                }
             }
             if (isAbort()) {
                 break;
@@ -85,6 +90,7 @@ public class Mangafox extends PluginForDecrypt {
             String extension = unformattedSource[1];
             final DownloadLink link = createDownloadlink("directhttp://" + source);
             link.setFinalFileName(title + " – page " + df_page.format(i) + extension);
+            link.setAvailable(true);
             fp.add(link);
             distribute(link);
             decryptedLinks.add(link);
