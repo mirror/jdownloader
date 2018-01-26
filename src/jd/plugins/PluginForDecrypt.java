@@ -233,6 +233,9 @@ public abstract class PluginForDecrypt extends Plugin {
      * @author raztoki
      */
     protected DownloadLink createOfflinelink(final String link, final String filename, final String message) {
+        if (logger != null) {
+            logger.log(new Exception("createOfflinelink:" + link + "|name:" + filename + "|message:" + message));
+        }
         final DownloadLink dl = new DownloadLink(null, null, getHost(), "directhttp://" + Encoding.urlDecode(link, true), true);
         dl.setProperty("OFFLINE", true);
         dl.setAvailable(false);
