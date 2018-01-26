@@ -92,7 +92,7 @@ public class PornHubCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public PornHubCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.pornhub.com/create_account");
+        this.enablePremium("https://www.pornhub.com/create_account");
         Browser.setRequestIntervalLimitGlobal(getHost(), 333);
         this.setConfigElements();
     }
@@ -103,9 +103,9 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static String correctAddedURL(final String input) {
-        String output = input.replaceAll("https://", "http://");
-        output = input.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "http://www.");
-        output = input.replaceAll("/embed/", "/view_video.php?viewkey=");
+        String output = input.replaceAll("http://", "https://");
+        output = output.replaceAll("^https?://(www\\.)?([a-z]{2}\\.)?", "https://www.");
+        output = output.replaceAll("/embed/", "/view_video.php?viewkey=");
         return output;
     }
 
