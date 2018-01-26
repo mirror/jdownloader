@@ -15,6 +15,13 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,15 +51,9 @@ import jd.plugins.PluginException;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
+
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
 
     private final String                                       noChunks                       = "noChunks";
@@ -182,7 +183,7 @@ public class PremiumTo extends UseNet {
             login(account, false);
             String url = link.getDownloadURL();
             // allow resume and up to 10 chunks
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -10);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, -10);
             if (dl.getConnection().getResponseCode() == 403) {
                 /*
                  * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
@@ -338,7 +339,7 @@ public class PremiumTo extends UseNet {
             } else {
                 downloadable = new DownloadLinkDownloadable(link);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(finalURL), true, connections);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
@@ -366,10 +367,15 @@ public class PremiumTo extends UseNet {
                     // we can not trust multi-hoster file not found returns, they could be wrong!
                     // jiaz new handling to dump to next download candidate.
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-                if (br.toString().matches("File hosting service not supported")) {
+                } else if (br.toString().matches("File hosting service not supported")) {
                     tempUnavailableHoster(account, link, 60 * 60 * 1000);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if ("Not enough traffic".equals(br.toString())) {
+                    /*
+                     * With our special traffic it's a bit complicated. When you still have a little Special Traffic but you have enough
+                     * standard traffic, it will show you "Not enough traffic" for the filehost Uploaded.net for example.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
                 /*
                  * after x retries we disable this host and retry with normal plugin
