@@ -35,13 +35,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 /**
  * @keywords hex, 'var link', 'var _0xdc0b'
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jerkplanet.org", "superload.me" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+", "(?:http://(www\\.)?superload\\.me|https://(?:www\\.)?superload\\.me(?:443)?)/file/[0-9a-zA-Z]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jerkplanet.org", "superload.me", "topcookbox.com" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+", "(?:http://(www\\.)?superload\\.me|https://(?:www\\.)?superload\\.me(?:443)?)/file/[0-9a-zA-Z]+", "https?://(?:www\\.)?topcookbox\\.com/file/[0-9a-zA-Z]+" })
 public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
 
     public JavascriptRedirectorHexAndObstruction(PluginWrapper wrapper) {
@@ -119,9 +120,9 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-    // public SiteTemplate siteTemplateType() {
-    // return SiteTemplate.Unknown_JavascriptRedirectorHexAndObstruction;
-    // }
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_JavascriptRedirectorHexAndObstruction;
+    }
 
 }
