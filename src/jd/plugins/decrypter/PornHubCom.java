@@ -35,8 +35,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -59,15 +57,14 @@ public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister-host plugin */
-        final PluginForHost pornhubHosterPlugin = JDUtilities.getPluginForHost(DOMAIN);
         parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
-        aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
+        aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             jd.plugins.hoster.PornHubCom.login(br, aa, false);
         }
-        br.getPage(parameter);
+        jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.containsHTML("class=\"g-recaptcha\"")) {
             // logger.info("Debug info: captcha handling is required");
