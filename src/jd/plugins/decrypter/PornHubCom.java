@@ -125,7 +125,7 @@ public class PornHubCom extends PluginForDecrypt {
             for (final String viewkey : viewkeys) {
                 if (dups.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
-                    final DownloadLink dl = createDownloadlink("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
+                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
@@ -216,7 +216,7 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     private DownloadLink getDecryptDownloadlink() {
-        return this.createDownloadlink("http://pornhubdecrypted" + new Random().nextInt(1000000000));
+        return this.createDownloadlink("https://pornhubdecrypted" + new Random().nextInt(1000000000));
     }
 
     public int getMaxConcurrentProcessingInstances() {
