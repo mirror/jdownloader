@@ -194,6 +194,9 @@ public class UnknownPornScript5 extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
+        }
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
