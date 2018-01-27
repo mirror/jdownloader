@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.lang.reflect.Field;
@@ -44,20 +43,16 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "https?://[\\w]+\\.superdown\\.com\\.br/(?:superdown/)?\\w+/[a-zA-Z0-9]+/\\d+/\\S+" })
 public class SuperdownComBr extends antiDDoSForHost {
-
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-
     private static final String                            DOMAIN             = "https://superdown.com.br/";
     private static final String                            NICE_HOST          = "superdown.com.br";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private final String                                   html_loggedin      = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
     private static Object                                  LOCK               = new Object();
-    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Turbobit", "turbobit.net" },
-            { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uptobox", "uptobox.com" } };
+    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Turbobit", "turbobit.net" }, { "uploadable", "uploadable.ch" },
+            { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uptobox", "uptobox.com" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,7 +74,6 @@ public class SuperdownComBr extends antiDDoSForHost {
             prepBr.setFollowRedirects(true);
         }
         return prepBr;
-
     }
 
     @Override
@@ -217,12 +211,10 @@ public class SuperdownComBr extends antiDDoSForHost {
             /* This may happen if the downloads stops at 99,99% - a few retries usually help in this case */
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
-
                 logger.info("DOWNLOAD_INCOMPLETE -> Maybe re-trying with only 1 chunk");
                 /* unknown error, we disable multiple chunks */
                 disableChunkload(link);
                 logger.info("DOWNLOAD_INCOMPLETE -> Retry with 1 chunk did not solve the problem");
-
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 5) {
@@ -327,7 +319,6 @@ public class SuperdownComBr extends antiDDoSForHost {
             }
             throw new AccountUnavailableException("Download limit reached", 1 * 60 * 60 * 1000l);
         }
-
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -435,7 +426,6 @@ public class SuperdownComBr extends antiDDoSForHost {
                 }
                 getPage("https://www." + this.getHost() + "/login");
                 String postData = "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
-
                 if (br.containsHTML("g-recaptcha")) {
                     /* Handle login captcha */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -443,20 +433,17 @@ public class SuperdownComBr extends antiDDoSForHost {
                         this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-
                         @Override
                         public String getSiteKey(String source) {
                             final String siteKey = new Regex(source, "var key\\s*=\\s*\"([\\w-]+)\";").getMatch(0);
                             return StringUtils.isEmpty(siteKey) ? super.getSiteKey(source) : siteKey;
                         };
-
                     }.getToken();
                     if (dlinkbefore != null) {
                         this.setDownloadLink(dlinkbefore);
                     }
                     postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-
                 postPage("/login", postData);
                 if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

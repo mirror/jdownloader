@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -20,10 +24,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
@@ -34,20 +34,22 @@ public class PremiumizeMe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (accs.size() > 0) {
-            setBrowserExclusive();
-            final String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(parameter.getCryptedUrl());
-            final Account account = accs.get(0);
-            final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, cloudID);
-            /* Find path from previous craw process if available. */
-            String folderPath = new Regex(parameter.getCryptedUrl(), "folderpath=(.+)").getMatch(0);
-            if (folderPath != null) {
-                folderPath = Encoding.Base64Decode(folderPath);
-            } else {
-                folderPath = "";
-            }
-            ret.addAll(convert(nodes, folderPath));
+        if (accs.size() == 0) {
+            logger.info("Cannot add cloud URLs without account");
+            return ret;
         }
+        setBrowserExclusive();
+        final String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(parameter.getCryptedUrl());
+        final Account account = accs.get(0);
+        final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, cloudID);
+        /* Find path from previous craw process if available. */
+        String folderPath = new Regex(parameter.getCryptedUrl(), "folderpath=(.+)").getMatch(0);
+        if (folderPath != null) {
+            folderPath = Encoding.Base64Decode(folderPath);
+        } else {
+            folderPath = "";
+        }
+        ret.addAll(convert(nodes, folderPath));
         return ret;
     }
 

@@ -19,11 +19,16 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -58,7 +63,6 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class LinkSnappyCom extends antiDDoSForHost {
-
     private static MultiHosterManagement mhm = new MultiHosterManagement("linksnappy.com");
 
     public LinkSnappyCom(PluginWrapper wrapper) {
@@ -71,16 +75,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
         return "https://linksnappy.com/tos";
     }
 
-    private static final String USE_API                = "USE_API";
-    private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
-    private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
-    private int                 i                      = 1;
-    private DownloadLink        currentLink            = null;
-    private Account             currentAcc             = null;
-    private boolean             resumes                = true;
-    private int                 chunks                 = 0;
-    private String              dllink                 = null;
-    protected static Object     ACCLOCK                = new Object();
+    private static final int MAX_DOWNLOAD_ATTEMPTS = 10;
+    private int              i                     = 1;
+    private DownloadLink     currentLink           = null;
+    private Account          currentAcc            = null;
+    private boolean          resumes               = true;
+    private int              chunks                = 0;
+    private String           dllink                = null;
+    protected static Object  ACCLOCK               = new Object();
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -97,7 +99,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 final Cookies cookies = currentAcc.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    getPage("https://linksnappy.com/api/USERDETAILS");
+                    getPage("https://" + this.getHost() + "/api/USERDETAILS");
                     boolean error = "ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"));
                     final String message = PluginJSonUtils.getJsonValue(br, "error");
                     // invalid username is shown when 2factorauth is required o_O.
@@ -106,15 +108,16 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     } else if (error) {
                         throw new AccountInvalidException(message);
                     } else {
-                        // cached login successful
+                        logger.info("cached login successful");
                     }
                 } else {
                     login();
                 }
             } else {
+                /* Full login is enforced */
                 login();
             }
-            getPage("https://linksnappy.com/api/USERDETAILS");
+            getPage("https://" + this.getHost() + "/api/USERDETAILS");
             final String expire = PluginJSonUtils.getJsonValue(br, "expire");
             final String accPackage = PluginJSonUtils.getJsonValue(br, "package");
             if ("lifetime".equalsIgnoreCase(expire) || "lifetime".equalsIgnoreCase(accPackage)) {
@@ -122,7 +125,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 currentAcc.setType(AccountType.LIFETIME);
             } else if ("expired".equalsIgnoreCase(expire)) {
                 /* Free account = also expired */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                currentAcc.setType(AccountType.FREE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your account is a paid(premium) account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 ac.setValidUntil(Long.parseLong(expire) * 1000);
                 currentAcc.setType(AccountType.PREMIUM);
@@ -130,9 +134,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* Find traffic left */
             final String trafficLeft = PluginJSonUtils.getJsonValue(br, "trafficleft");
             final String maxtraffic = PluginJSonUtils.getJsonValue(br, "maxtraffic");
-            if ("unlimited".equals(trafficLeft)) {
+            if ("unlimited".equalsIgnoreCase(trafficLeft)) {
                 ac.setUnlimitedTraffic();
-            } else {
+            } else if (!StringUtils.isEmpty(trafficLeft)) {
                 /* Also check for negative traffic */
                 if (trafficLeft.contains("-")) {
                     ac.setTrafficLeft(0);
@@ -142,9 +146,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 if (maxtraffic != null) {
                     ac.setTrafficMax(Long.parseLong(maxtraffic));
                 }
+            } else {
+                logger.info("Failed to find trafficLeft");
             }
             /* now it's time to get all supported hosts */
-            getPage("https://linksnappy.com/api/FILEHOSTS");
+            getPage("https://" + this.getHost() + "/api/FILEHOSTS");
             if ("ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                 final String message = PluginJSonUtils.getJsonValue(br, "error");
                 if ("Account has exceeded the daily quota".equals(message)) {
@@ -153,52 +159,69 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}").getMatch(0);
-            if (hostText == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final ArrayList<String> supportedHosts = new ArrayList<String>();
-            // connection info map
+            /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
-            String[] hosts = new Regex(hostText, "([a-z0-9\\-]+\\.){1,}([a-z]{2,4})[^\\}]+\\}").getColumn(-1);
-            for (final String hostInfo : hosts) {
-                HashMap<String, Object> e = new HashMap<String, Object>();
-                final String host = new Regex(hostInfo, "[^\"]+").getMatch(-1);
-                if (hosts == null) {
+            LinkedHashMap<String, Object> hosterInformation;
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("return");
+            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Object> entry = it.next();
+                hosterInformation = (LinkedHashMap<String, Object>) entry.getValue();
+                final String host = entry.getKey();
+                if (StringUtils.isEmpty(host)) {
                     continue;
                 }
-                final String status = PluginJSonUtils.getJsonValue(hostInfo, "Status");
-                String quota = PluginJSonUtils.getJsonValue(hostInfo, "Quota");
-                if (quota != null) {
-                    if (quota.matches("\\d+")) {
-                        e.put("quota", Long.parseLong(quota));
-                    } else if ("unlimited".equalsIgnoreCase(quota)) {
+                HashMap<String, Object> e = new HashMap<String, Object>();
+                final long status = JavaScriptEngineFactory.toLong(hosterInformation.get("Status"), 0);
+                final Object quotaO = hosterInformation.get("Quota");
+                final long quota;
+                boolean hostHasUnlimitedQuota;
+                if (quotaO != null && quotaO instanceof String) {
+                    if ("unlimited".equalsIgnoreCase((String) quotaO)) {
+                        hostHasUnlimitedQuota = true;
                         e.put("quota", -1);
                     } else {
-                        // this should not happen.
+                        /* this should not happen */
+                        hostHasUnlimitedQuota = false;
                         logger.warning("Possible plugin defect!");
                     }
+                    quota = -1;
+                } else {
+                    hostHasUnlimitedQuota = false;
+                    quota = (Long) quotaO;
                 }
-                String usage = PluginJSonUtils.getJsonValue(hostInfo, "Usage");
-                if (usage != null) {
-                    e.put("usage", Long.parseLong(usage));
+                // final long noretry = JavaScriptEngineFactory.toLong(hosterInformation.get("noretry"), 0);
+                final long canDownload = JavaScriptEngineFactory.toLong(hosterInformation.get("canDownload"), 0);
+                final long usage = JavaScriptEngineFactory.toLong(hosterInformation.get("Usage"), 0);
+                final long resume = JavaScriptEngineFactory.toLong(hosterInformation.get("resume"), 0);
+                final Object connlimit = hosterInformation.get("connlimit");
+                e.put("usage", usage);
+                if (resume == 1) {
+                    e.put("resumes", true);
+                } else {
+                    e.put("resumes", false);
                 }
-                final String resumes = PluginJSonUtils.getJsonValue(hostInfo, "resume");
-                if (resumes != null) {
-                    e.put("resumes", (resumes.matches("\\d+") && Integer.parseInt(resumes) == 1 ? true : false));
+                if (connlimit != null) {
+                    e.put("chunks", JavaScriptEngineFactory.toLong(connlimit, 1));
                 }
-                final String connlimit = PluginJSonUtils.getJsonValue(hostInfo, "connlimit");
-                e.put("chunks", (connlimit != null && connlimit.matches("\\d+") ? Integer.parseInt(connlimit) : 0));
+                if (canDownload != 1) {
+                    logger.info("Skipping host as it is because API says download is not possible (canDownload!=1): " + host);
+                    continue;
+                } else if (status != 1) {
+                    /* Host is currently not working or disabled for this MOCH --> Do not add it to the list of supported hosts */
+                    logger.info("Skipping host as it is not available at the moment (status!=1): " + host);
+                    continue;
+                } else if (!hostHasUnlimitedQuota && quota - usage <= 0) {
+                    /* User does not have any traffic left for this host */
+                    logger.info("Skipping host as account has no quota left for it: " + host);
+                    continue;
+                }
                 if (!e.isEmpty()) {
                     con.put(host, e);
                 }
-                if (!"1".equals(status)) {
-                    continue;
-                } else if ((usage != null && quota != null && !"unlimited".equals(quota)) && (Long.parseLong(quota) - Long.parseLong(usage)) <= 0) {
-                    continue;
-                } else if (host != null) {
-                    supportedHosts.add(host);
-                }
+                supportedHosts.add(host);
             }
             currentAcc.setProperty("accountProperties", con);
             ac.setMultiHostSupport(this, supportedHosts);
@@ -245,7 +268,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 tt = a;
             }
         }
-        // typically downloading generated links do not require login session!
+        /* typically downloading generated links do not require login session! */
         dllink = link.getStringProperty("linksnappycomdirectlink", null);
         if (dllink != null) {
             dllink = (attemptDownload() ? dllink : null);
@@ -266,7 +289,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             setDownloadConstants();
             /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
             link.setProperty("linksnappycomdirectlink", Property.NULL);
-            final String genLinks = "https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}");
+            final String genLinks = "https://" + this.getHost() + "/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}");
             for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                 getPage(genLinks);
                 final String message = PluginJSonUtils.getJsonValue(br, "error");
@@ -300,14 +323,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             } else {
                 /*
-                 * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via account - also
-                 * make sure we get no exception as our download was successful NOTE: Even failed downloads will appear in the download history - but they
-                 * will also be cleared once you have one successful download.
+                 * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via
+                 * account - also make sure we get no exception as our download was successful NOTE: Even failed downloads will appear in
+                 * the download history - but they will also be cleared once you have one successful download.
                  */
                 if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                     boolean history_deleted = false;
                     try {
-                        getPage("https://linksnappy.com/api/DELETELINK?type=filehost&hash=all");
+                        getPage("https://" + this.getHost() + "/api/DELETELINK?type=filehost&hash=all");
                         if ("OK".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "status"))) {
                             history_deleted = true;
                         }
@@ -338,8 +361,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     /**
-     * We have already retried 10 times before this method is called, their is zero point to additional retries too soon. It should be minimum
-     * of 5 minutes and above!
+     * We have already retried 10 times before this method is called, their is zero point to additional retries too soon. It should be
+     * minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -418,8 +441,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
                         mhm.putError(currentAcc, currentLink, 5 * 60 * 1000l, "Multihoster issue");
                     } else if (new Regex(err, "Invalid file URL format\\.").matches()) {
                         /*
-                         * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is online but the link format is
-                         * not added on linksnappy.
+                         * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is
+                         * online but the link format is not added on linksnappy.
                          */
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported URL format.");
                     } else if (new Regex(err, "File not found").matches()) {
@@ -435,7 +458,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
             dllink = PluginJSonUtils.getJsonValue(br, "generated");
-            if (dllink == null || "false".equals(dllink)) {
+            if (dllink == null || StringUtils.isEmpty(dllink) || "false".equals(dllink)) {
                 logger.info("Direct downloadlink not found");
                 mhm.handleErrorGeneric(currentAcc, currentLink, "dllinkmissing", 2, 5 * 60 * 1000l);
             }
@@ -473,8 +496,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
             dailyLimitReached();
         } else if (dlResponseCode == 401) {
             /*
-             * claimed ip session changed mid session. not physically possible in JD... but user could have load balancing software or router or isps'
-             * also can do this. a full retry should happen
+             * claimed ip session changed mid session. not physically possible in JD... but user could have load balancing software or
+             * router or isps' also can do this. a full retry should happen
              */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Your ip has been changed. Please retry");
         }
@@ -487,7 +510,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         synchronized (ACCLOCK) {
             br = new Browser();
             br.setCookiesExclusive(true);
-            getPage("https://linksnappy.com/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(currentAcc.getUser()) + "&password=" + Encoding.urlEncode(currentAcc.getPass()));
+            getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(currentAcc.getUser()) + "&password=" + Encoding.urlEncode(currentAcc.getPass()));
             if (br.getHttpConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
             }
@@ -558,11 +581,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     public static interface LinkSnappyComConfig extends PluginConfigInterface {
-
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
         public static class TRANSLATION {
-
             public String getClearDownloadHistory_label() {
                 return "Clear download history after each successful download?";
             }
