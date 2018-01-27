@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -55,13 +54,11 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class MobilismOrg extends antiDDoSForHost {
-
     /* Tags: Script vinaget.us */
     private static final String                   DOMAIN               = "http://mblservices.org";
     private static final String                   NICE_HOST            = "mobilism.org";
     private static final String                   NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                   NORESUME             = NICE_HOSTproperty + "NORESUME";
-
     private static MultiHosterManagement          mhm                  = new MultiHosterManagement("mobilism.org");
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Boolean>       hostResumeMap        = new HashMap<String, Boolean>();
@@ -71,12 +68,10 @@ public class MobilismOrg extends antiDDoSForHost {
     private static HashMap<String, Integer>       hostMaxdlsMap        = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger> hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
-
     /* Last updated: 31.03.15 */
     private static final int                      defaultMAXDOWNLOADS  = 20;
     private static final int                      defaultMAXCHUNKS     = 0;
     private static final boolean                  defaultRESUME        = true;
-
     private static Object                         CTRLLOCK             = new Object();
     private static AtomicInteger                  maxPrem              = new AtomicInteger(1);
     private Account                               currAcc              = null;
@@ -174,7 +169,6 @@ public class MobilismOrg extends antiDDoSForHost {
                 }
             }
         }
-
         if (hostResumeMap != null) {
             final String thishost = link.getHost();
             synchronized (hostResumeMap) {
@@ -223,8 +217,8 @@ public class MobilismOrg extends antiDDoSForHost {
         br = new Browser();
         final boolean forceNewLinkGeneration = true;
         /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-         * needed to get the individual host limits.
+         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is needed to
+         * get the individual host limits.
          */
         synchronized (CTRLLOCK) {
             if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
@@ -235,27 +229,20 @@ public class MobilismOrg extends antiDDoSForHost {
             }
         }
         this.setConstants(account, link);
-
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null || forceNewLinkGeneration) {
             /* request creation of downloadlink */
             br = new Browser();
             br.setFollowRedirects(true);
             login(account, false);
-            getPage("http://mblservices.org/amember/downloader/manual/?");
+            getPage("https://mblservices.org/amember/downloader/downloader/app/index.php?dl=" + link.getPluginPatternMatcher());
             // form
-            final String urlInputFieldName = "add_to_url";
-            final Form d1 = br.getFormByInputFieldKeyValue(urlInputFieldName, "");
-            if (d1 == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            d1.put(urlInputFieldName, Encoding.urlEncode(link.getDownloadURL()));
-            submitForm(d1);
-            // another form effectively
             final Form d2 = br.getFormbyProperty("name", "transload");
             if (d2 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String urlInputFieldName = "link";
+            d2.put(urlInputFieldName, Encoding.urlEncode(link.getDownloadURL()));
             d2.put("premium_acc", "on");
             submitForm(d2);
             final Form d3 = br.getFormbyAction("/amember/downloader/downloader/app/index.php");
@@ -372,8 +359,8 @@ public class MobilismOrg extends antiDDoSForHost {
                     }
                 }
                 /*
-                 * 2016-01-24: When logged in and want to download it leads us to: http://mblservices.org/amember/login --> Here our initial
-                 * login data does not work ...
+                 * 2016-01-24: When logged in and want to download it leads us to: http://mblservices.org/amember/login --> Here our initial login data does
+                 * not work ...
                  */
                 /*
                  * 20160201: above statement is no longer valid.. website login works in via browser (tested in chrome)
@@ -387,7 +374,7 @@ public class MobilismOrg extends antiDDoSForHost {
                 }
                 // this will redirect.
                 br.setFollowRedirects(true);
-                getPage("http://mblservices.org/amember/downloader/manual/");
+                getPage("http://mblservices.org/amember/login");
                 final Form login = br.getFormbyProperty("name", "login");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -431,8 +418,8 @@ public class MobilismOrg extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -470,5 +457,4 @@ public class MobilismOrg extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
