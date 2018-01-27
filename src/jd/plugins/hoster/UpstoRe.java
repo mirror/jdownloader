@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +29,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -55,6 +54,7 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
+
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
         if ("upstore.net".equals(getHost())) {
@@ -176,9 +176,9 @@ public class UpstoRe extends antiDDoSForHost {
              */
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
                 /*
-                 * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
-                 * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
-                 * download using the same free accounts after performing a reconnect!
+                 * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he tries to start
+                 * more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download using the same free accounts
+                 * after performing a reconnect!
                  */
                 long lastdownload = getPluginSavedLastDownloadTimestamp();
                 long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
@@ -191,18 +191,9 @@ public class UpstoRe extends antiDDoSForHost {
             final Form captcha = br.getFormBySubmitvalue("Get+download+link");
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
-            final String rcID = br.getRegex("Recaptcha\\.create\\('([^<>\"]*?)'").getMatch(0);
-            if (rcID != null && captcha != null) {
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.setId(rcID);
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = null;
-                try {
-                    c = getCaptchaCode("recaptcha", cf, downloadLink);
-                } catch (final Throwable e) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
+            if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 int wait = 60;
                 String waittime = br.getRegex("var sec = (\\d+)").getMatch(0);
                 if (waittime != null) {
@@ -214,8 +205,6 @@ public class UpstoRe extends antiDDoSForHost {
                     sleep(wait * 1000l, downloadLink);
                 }
                 final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
-                captcha.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
-                captcha.put("recaptcha_response_field", Encoding.urlEncode(c));
                 // some javascript crapola
                 final String antispam = Encoding.urlEncode(getSoup());
                 captcha.put("antispam", antispam);
@@ -266,8 +255,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     private void handleErrorsJson() throws PluginException {
         /*
-         * Example error json:
-         * {"errors":["Sorry, download server with your file is temporary unavailable... Try again later or contact support."]}
+         * Example error json: {"errors":["Sorry, download server with your file is temporary unavailable... Try again later or contact support."]}
          */
         if (this.br.containsHTML("Sorry, download server with your file is temporary unavailable")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
@@ -640,8 +628,8 @@ public class UpstoRe extends antiDDoSForHost {
             final long timestamp_download_started;
             if (remaining_reconnect_wait > 0) {
                 /*
-                 * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp. Add
-                 * 1 minute to make sure that we wait long enough!
+                 * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp. Add 1 minute to make
+                 * sure that we wait long enough!
                  */
                 long timePassed = FREE_RECONNECTWAIT - remaining_reconnect_wait - FREE_RECONNECTWAIT_ADDITIONAL;
                 /* Errorhandling for invalid values */
