@@ -16,10 +16,10 @@
 
 package jd.plugins.decrypter;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import java.net.URL;
 import java.util.ArrayList;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,7 +28,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -45,7 +44,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        plugin = JDUtilities.getPluginForHost("depfile.com");
+        final PluginForHost plugin = JDUtilities.getPluginForHost("depfile.com");
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
@@ -56,7 +55,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
         ((jd.plugins.hoster.DepfileCom) plugin).prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        handleErrors();
+        ((jd.plugins.hoster.DepfileCom) plugin).handleErrors();
         // mass adding links from folders can cause exceptions and high server loads. when possible best practice to set all info, a full
         // linkcheck happens prior to download which can correct any false positives by doing the following..
         final String[] links = br.getRegex("<tr><td[^>]+><input[^>]+>.*?</td></tr>").getColumn(-1);
@@ -65,7 +64,8 @@ public class DepfileComDecrypter extends PluginForDecrypt {
             for (String link : links) {
                 final String l = new Regex(link, "https?://(?:d[ei]pfile\\.com|depfile\\.us)/[A-Za-z0-9]+|https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32}").getMatch(-1);
                 final String f = new Regex(link, "title=(\"|')(.*?)\\1").getMatch(1);
-                final String s = new Regex(link, ">(\\d+(\\.\\d+)? [a-z]{2})<").getMatch(0);
+                final String s = new Regex(link, ">(\\d+(\\.\\d+)?\\s*[a-z]{2})<").getMatch(0);
+                final boolean folder = new Regex(link, "<input type='text' class='view state_0 folder'").matches();
                 if (l != null && !l.contains(folder_id) && !new URL(l).getPath().equals("/downloads")) {
                     final DownloadLink d = createDownloadlink(l);
                     if (f != null) {
@@ -74,7 +74,10 @@ public class DepfileComDecrypter extends PluginForDecrypt {
                     if (s != null) {
                         d.setDownloadSize(SizeFormatter.getSize(s));
                     }
-                    d.setAvailable(true);
+                    if (!folder) {
+                        // cant set true as we need to re-enter.
+                        d.setAvailable(true);
+                    }
                     decryptedLinks.add(d);
                 }
             }
@@ -96,19 +99,6 @@ public class DepfileComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(param.toString()));
         }
         return decryptedLinks;
-    }
-
-    private PluginForHost plugin = null;
-
-    private void handleErrors() throws Exception {
-        try {
-            ((jd.plugins.hoster.DepfileCom) plugin).setBrowser(br);
-            ((jd.plugins.hoster.DepfileCom) plugin).handleErrors();
-        } catch (final Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
     }
 
     /* NO OVERRIDE!! */
