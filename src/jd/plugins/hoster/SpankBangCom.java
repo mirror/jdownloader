@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -35,7 +34,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
 public class SpankBangCom extends antiDDoSForHost {
-
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
@@ -50,10 +48,10 @@ public class SpankBangCom extends antiDDoSForHost {
     private final static String FASTLINKCHECK = "FASTLINKCHECK";
     private final static String ALLOW_BEST    = "ALLOW_BEST";
     private final static String ALLOW_240p    = "ALLOW_240p";
+    private final static String ALLOW_320p    = "ALLOW_320p";
     private final static String ALLOW_480p    = "ALLOW_480p";
     private final static String ALLOW_720p    = "ALLOW_720p";
     private final static String ALLOW_1080p   = "ALLOW_1080p";
-
     private String              dllink        = null;
     private boolean             server_issues = false;
 
@@ -79,7 +77,6 @@ public class SpankBangCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
-
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -166,6 +163,7 @@ public class SpankBangCom extends antiDDoSForHost {
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.SpankBangCom.ALLOW_BEST", "Always only grab best available resolution?")).setDefaultValue(true);
         getConfig().addEntry(cfg);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_240p", "Grab 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_320p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_320p", "Grab 320p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_480p", "Grab 480p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_720p", "Grab 720p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_1080p", "Grab 1080p?")).setDefaultValue(true));
@@ -183,5 +181,4 @@ public class SpankBangCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

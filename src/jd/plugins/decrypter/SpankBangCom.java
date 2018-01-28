@@ -49,6 +49,7 @@ public class SpankBangCom extends PluginForDecrypt {
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
     private static final String           ALLOW_BEST     = "ALLOW_BEST";
     private static final String           ALLOW_240p     = "ALLOW_240p";
+    private static final String           ALLOW_320p     = "ALLOW_320p";
     private static final String           ALLOW_480p     = "ALLOW_480p";
     private static final String           ALLOW_720p     = "ALLOW_720p";
     private static final String           ALLOW_1080p    = "ALLOW_1080p";
@@ -96,12 +97,14 @@ public class SpankBangCom extends PluginForDecrypt {
         /* Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         boolean q240p = cfg.getBooleanProperty(ALLOW_240p, true);
+        boolean q320p = cfg.getBooleanProperty(ALLOW_320p, true);
         boolean q480p = cfg.getBooleanProperty(ALLOW_480p, true);
         boolean q720p = cfg.getBooleanProperty(ALLOW_720p, true);
         boolean q1080p = cfg.getBooleanProperty(ALLOW_1080p, true);
-        if (!q240p && !q480p && !q720p && !q1080p) {
+        if (!q240p && !q320p && !q480p && !q720p && !q1080p) {
             // user has made error and disabled them all, so we will treat as all enabled.
             q240p = true;
+            q320p = true;
             q480p = true;
             q720p = true;
             q1080p = true;
@@ -116,6 +119,9 @@ public class SpankBangCom extends PluginForDecrypt {
         }
         if (q480p) {
             selectedQualities.add("480p");
+        }
+        if (q320p) {
+            selectedQualities.add("320p");
         }
         if (q240p) {
             selectedQualities.add("240p");
@@ -158,7 +164,8 @@ public class SpankBangCom extends PluginForDecrypt {
         final String fid = getFid(source_url);
         final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
         // qualities 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript
-        String[] qualities = br.getRegex("class=\"q_(\\w+)\"").getColumn(0);
+        // String[] qualities = br.getRegex("class=\"q_(\\w+)\"").getColumn(0);
+        String[] qualities = { "1080p", "720p", "480p", "320p", "240p" };
         if (qualities == null || qualities.length == 0) {
             // this is typically within <source
             final String source = br.getRegex("<source src=\"(.*?)\"").getMatch(0);
@@ -174,8 +181,14 @@ public class SpankBangCom extends PluginForDecrypt {
         }
         for (final String q : qualities) {
             final String quality = getQuality(q);
-            final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
-            foundQualities.put(quality, directlink);
+            // final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
+            final String directlink = br.getRegex("var stream_url_" + quality + "  = '(.*?)'").getMatch(0);
+            if (directlink == null) {
+                continue;
+            }
+            if (!directlink.equals("")) {
+                foundQualities.put(quality, directlink);
+            }
         }
         return foundQualities;
     }
@@ -215,13 +228,15 @@ public class SpankBangCom extends PluginForDecrypt {
      * @throws DecrypterException
      */
     public static String getQuality(final String q) throws DecrypterException {
-        if ("super".equalsIgnoreCase(q)) {
+        if ("super".equalsIgnoreCase(q) || "1080p".equalsIgnoreCase(q)) {
             return "1080p";
-        } else if ("high".equalsIgnoreCase(q)) {
+        } else if ("high".equalsIgnoreCase(q) || "720p".equalsIgnoreCase(q)) {
             return "720p";
-        } else if ("medium".equalsIgnoreCase(q)) {
+        } else if ("medium".equalsIgnoreCase(q) || "480p".equalsIgnoreCase(q)) {
             return "480p";
-        } else if ("low".equalsIgnoreCase(q)) {
+        } else if ("320p".equalsIgnoreCase(q)) {
+            return "320p";
+        } else if ("low".equalsIgnoreCase(q) || "240p".equalsIgnoreCase(q)) {
             return "240p";
         }
         throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
