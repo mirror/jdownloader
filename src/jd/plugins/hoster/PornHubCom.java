@@ -61,7 +61,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|https://pornhubdecrypted\\d+" })
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
@@ -79,13 +79,13 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-        }
-    });
+                                                                                {
+                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                }
+                                                                            });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -456,10 +456,10 @@ public class PornHubCom extends PluginForHost {
                         return;
                     }
                 }
-                getPage(br, "http://www." + account.getHoster());
-                getPage(br, "http://www." + account.getHoster() + "/login");
+                getPage(br, "https://www." + account.getHoster());
+                getPage(br, "https://www." + account.getHoster() + "/login");
                 if (br.containsHTML("Sorry we couldn't find what you were looking for")) {
-                    getPage(br, "http://www." + account.getHoster() + "/login");
+                    getPage(br, "https://www." + account.getHoster() + "/login");
                 }
                 final Form loginform = br.getFormbyKey("username");
                 // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -732,7 +732,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static String getProtocolFree() {
-        return "http://";
+        return "https://";
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
