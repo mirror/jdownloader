@@ -15,10 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -55,7 +55,8 @@ public class HitomiLa extends antiDDoSForDecrypt {
         }
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
         // get the image host.
-        final String imghost = "la";// + getImageHost(guid);
+        // retval = subdomain_from_galleryid(g) + retval;
+        final String imghost = getImageHost(guid) + "a";
         final String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -88,7 +89,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
      */
     private String getImageHost(final String guid) throws DecrypterException {
         // number of subdmains.
-        final int i = 6;
+        final int i = 2;
         // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
         final String subdomain = Character.toString((char) (97 + (Integer.parseInt(guid) % i)));
         return subdomain;
