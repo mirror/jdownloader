@@ -166,7 +166,7 @@ public class VimeoCom extends PluginForHost {
         br = prepBrGeneral(downloadLink, new Browser());
         br.setFollowRedirects(true);
         if (usePrivateHandling(downloadLink)) {
-            br.getPage("http://player.vimeo.com/video/" + ID);
+            br.getPage("https://player.vimeo.com/video/" + ID);
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -174,14 +174,14 @@ public class VimeoCom extends PluginForHost {
             br.getPage("https://vimeo.com/" + ID);
             /* Workaround for User from Iran */
             if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
-                br.getPage("http://player.vimeo.com/config/" + ID);
+                br.getPage("https://player.vimeo.com/config/" + ID);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /* 2016-12-26: Workaround related for forum report 72025 */
-                br.getPage("http://player.vimeo.com/video/" + ID);
+                br.getPage("https://player.vimeo.com/video/" + ID);
             }
             if (br.containsHTML(containsPass)) {
                 handlePW(downloadLink, br, "https://vimeo.com/" + ID + "/password");
@@ -488,9 +488,9 @@ public class VimeoCom extends PluginForHost {
                 gq.getPage(configURL);
                 json = gq.toString();
             } else {
-                json = ibr.getRegex("a=(\\{\"cdn_url\".*?);if\\(a\\.request\\)").getMatch(0);
+                json = ibr.getRegex("a=(\\{\"cdn_url\".*?);if\\(\\!?a\\.request\\)").getMatch(0);
                 if (json == null) {
-                    json = ibr.getRegex("t=(\\{\"cdn_url\".*?);if\\(\\!t\\.request\\)").getMatch(0);
+                    json = ibr.getRegex("t=(\\{\"cdn_url\".*?);if\\(\\!?t\\.request\\)").getMatch(0);
                 }
             }
             /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
