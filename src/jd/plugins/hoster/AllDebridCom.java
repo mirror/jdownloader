@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,13 +42,9 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
+
     public AllDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000l);
@@ -146,7 +147,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-            // login related
+        // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
@@ -172,7 +173,10 @@ public class AllDebridCom extends antiDDoSForHost {
         // 39 Generic unlocking error.
         case 30: {
             // tested by placing url in thats on a provider not in the supported host map. returns error 30. -raz
-            mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "Host provider not supported");
+            // mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "Host provider not supported");
+            // can't use the above in the situation where one link format is allowed and another is not... will result in the whole host been removed
+            // from the supported map for 30minutes.
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported link", 30 * 60 * 1000l);
         }
         case 32:
             mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "Down for maintance");
@@ -261,6 +265,7 @@ public class AllDebridCom extends antiDDoSForHost {
         if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
             final String host = Browser.getHost(link.getDownloadURL());
             final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+
                 @Override
                 public HashInfo getHashInfo() {
                     return null;
