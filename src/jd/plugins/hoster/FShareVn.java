@@ -108,7 +108,7 @@ public class FShareVn extends PluginForHost {
         br.setFollowRedirects(false);
         // enforce english
         br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage("https://www.fshare.vn/location/en");
+        br.getPage("https://www.fshare.vn/site/location?lang=en");
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
             final boolean follows_redirects = br.isFollowingRedirects();
@@ -152,7 +152,7 @@ public class FShareVn extends PluginForHost {
             filename = br.getRegex("<i class=\"fa fa\\-file[^\"]*?\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<title>Fshare \\- (.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(?:Fshare - )?(.*?)(?: - Fshare)?</title>").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("<i class=\"fa fa\\-file\\-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
@@ -198,13 +198,13 @@ public class FShareVn extends PluginForHost {
                 if (br.containsHTML(IPBLOCKED)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
                 }
-                // we want fs_csrf token
-                final String csrf = br.getRegex("fs_csrf\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
+                // we want _csrf token
+                final String csrf = br.getRegex("_csrf-app\" value=\"([a-z0-9]+)\"").getMatch(0);
                 final Browser ajax = br.cloneBrowser();
                 ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                final String postdata = "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" + getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
+                final String postdata = "_csrf-app=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" + getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
                 ajax.postPage("/download/get", postdata);
                 if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "please try again later")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -426,10 +426,10 @@ public class FShareVn extends PluginForHost {
                 final boolean isFollowingRedirects = br.isFollowingRedirects();
                 br.setFollowRedirects(true);
                 // enforce English
-                br.getHeaders().put("Referer", "https://www.fshare.vn/login");
-                br.getPage("https://www.fshare.vn/location/en");
-                final String fs_csrf = br.getRegex("value=\"([a-z0-9]+)\" name=\"fs_csrf\"").getMatch(0);
-                if (fs_csrf == null) {
+                br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
+                br.getPage("https://www.fshare.vn/site/location?lang=en");
+                final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
+                if (csrf == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -437,7 +437,7 @@ public class FShareVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("/login", "fs_csrf=" + fs_csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&yt0=%C4%90%C4%83ng+nh%E1%BA%ADp");
+                br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
                 if (br.containsHTML("class=\"errorMessage\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -473,7 +473,7 @@ public class FShareVn extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        br.getPage("/account/infoaccount");
+        br.getPage("/account/profile");
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil == null) {
             validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
@@ -482,7 +482,8 @@ public class FShareVn extends PluginForHost {
                 if (validUntil == null) {
                     validUntil = br.getRegex("Hạn dùng:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
                     if (validUntil == null) {
-                        validUntil = br.getRegex("Expire:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
+                        // validUntil = br.getRegex("Expire:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
+                        validUntil = br.getRegex("Expire:</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
                     }
                 }
             }
