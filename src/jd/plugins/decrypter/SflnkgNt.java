@@ -16,10 +16,10 @@
 
 package jd.plugins.decrypter;
 
+import org.jdownloader.plugins.components.abstractSafeLinking;
+
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.abstractSafeLinking;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,7 +39,7 @@ public class SflnkgNt extends abstractSafeLinking {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "linkvault.pro", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "jessica.suyalynx.com", "linkler.us", "links.sceper.ws", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "safe.linkninja.net", "safelinking.net", "safelinking.com", "safelinking.mobi", "vault.vhsclub.com", "yls.re", "sflk.in" };
+        return new String[] { "linkvault.pw", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "jessica.suyalynx.com", "linkler.us", "links.sceper.ws", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "safe.linkninja.net", "safelinking.net", "safelinking.com", "safelinking.mobi", "vault.vhsclub.com", "yls.re", "sflk.in" };
         // add new domains at the beginning of the array, not the END
     }
 
