@@ -141,7 +141,7 @@ public class FShareVn extends PluginForHost {
                 br.setFollowRedirects(follows_redirects);
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("content=\"Error 404\"") || br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<|>\\s*Your requested file does not existed\\.\\s*<|>The file has been deleted by the user\\.<)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("content=\"Error 404\"|<title>Not Found - Fshare<|<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<|>\\s*Your requested file does not existed\\.\\s*<|>The file has been deleted by the user\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("file\" title=\"(.*?)\">").getMatch(0);
@@ -427,7 +427,7 @@ public class FShareVn extends PluginForHost {
                 br.setFollowRedirects(true);
                 // enforce English
                 br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
-                br.getPage("https://www.fshare.vn/site/location?lang=en");
+                br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en");
                 final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
                 if (csrf == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -483,7 +483,7 @@ public class FShareVn extends PluginForHost {
                     validUntil = br.getRegex("Hạn dùng:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
                     if (validUntil == null) {
                         // validUntil = br.getRegex("Expire:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
-                        validUntil = br.getRegex("Expire:</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
+                        validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
                     }
                 }
             }
