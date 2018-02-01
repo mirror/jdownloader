@@ -63,6 +63,7 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class LinkSnappyCom extends antiDDoSForHost {
+
     private static MultiHosterManagement mhm = new MultiHosterManagement("linksnappy.com");
 
     public LinkSnappyCom(PluginWrapper wrapper) {
@@ -190,7 +191,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     quota = -1;
                 } else {
                     hostHasUnlimitedQuota = false;
-                    quota = (Long) quotaO;
+                    quota = JavaScriptEngineFactory.toLong(quotaO, 0);
                 }
                 // final long noretry = JavaScriptEngineFactory.toLong(hosterInformation.get("noretry"), 0);
                 final long canDownload = JavaScriptEngineFactory.toLong(hosterInformation.get("canDownload"), 0);
@@ -323,9 +324,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             } else {
                 /*
-                 * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via
-                 * account - also make sure we get no exception as our download was successful NOTE: Even failed downloads will appear in
-                 * the download history - but they will also be cleared once you have one successful download.
+                 * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via account - also
+                 * make sure we get no exception as our download was successful NOTE: Even failed downloads will appear in the download history - but they
+                 * will also be cleared once you have one successful download.
                  */
                 if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                     boolean history_deleted = false;
@@ -361,8 +362,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     /**
-     * We have already retried 10 times before this method is called, their is zero point to additional retries too soon. It should be
-     * minimum of 5 minutes and above!
+     * We have already retried 10 times before this method is called, their is zero point to additional retries too soon. It should be minimum
+     * of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -441,8 +442,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
                         mhm.putError(currentAcc, currentLink, 5 * 60 * 1000l, "Multihoster issue");
                     } else if (new Regex(err, "Invalid file URL format\\.").matches()) {
                         /*
-                         * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is
-                         * online but the link format is not added on linksnappy.
+                         * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is online but the link format is
+                         * not added on linksnappy.
                          */
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported URL format.");
                     } else if (new Regex(err, "File not found").matches()) {
@@ -496,8 +497,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
             dailyLimitReached();
         } else if (dlResponseCode == 401) {
             /*
-             * claimed ip session changed mid session. not physically possible in JD... but user could have load balancing software or
-             * router or isps' also can do this. a full retry should happen
+             * claimed ip session changed mid session. not physically possible in JD... but user could have load balancing software or router or isps'
+             * also can do this. a full retry should happen
              */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Your ip has been changed. Please retry");
         }
@@ -581,9 +582,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     public static interface LinkSnappyComConfig extends PluginConfigInterface {
+
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
         public static class TRANSLATION {
+
             public String getClearDownloadHistory_label() {
                 return "Clear download history after each successful download?";
             }
