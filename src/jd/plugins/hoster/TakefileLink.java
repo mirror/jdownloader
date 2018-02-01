@@ -16,6 +16,16 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +34,6 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -45,98 +54,86 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "takefile.link" }, urls = { "https?://(?:www\\.)?takefile\\.link/(?:embed\\-)?[a-z0-9]{12}" })
-public class TakefileLink extends PluginForHost {
+public class TakefileLink extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
+    private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "https://takefile.link";
-    private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                        = "https://takefile.link";
+    private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(takefile\\.link)";
+    private static final String  DOMAINS                            = "(takefile\\.link)";
 
     /* Errormessages inside URLs */
-    private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
+    private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
 
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private final boolean                  AUDIOHOSTER                        = false;
+    private final boolean        AUDIOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private final boolean                  VIDEOHOSTER                        = false;
+    private final boolean        VIDEOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private final boolean                  VIDEOHOSTER_2                      = false;
-    private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
+    private final boolean        VIDEOHOSTER_2                      = false;
+    private final boolean        VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
     /*
      * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
      * will check for videohoster "next" Download/Ad- Form.
      */
-    private final boolean                  IMAGEHOSTER                        = false;
+    private final boolean        IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
-    private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
-    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
-    /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
-    private final boolean                  ENABLE_RANDOM_UA                   = false;
+    private final boolean        SUPPORTS_HTTPS                     = false;
+    private final boolean        SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
+
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = true;
 
     /* Pre-Download waittime stuff */
-    private final boolean                  WAITFORCED                         = false;
-    private final int                      WAITSECONDSMIN                     = 3;
-    private final int                      WAITSECONDSMAX                     = 100;
-    private final int                      WAITSECONDSFORCED                  = 5;
+    private final boolean        WAITFORCED                         = false;
+    private final int            WAITSECONDSMIN                     = 3;
+    private final int            WAITSECONDSMAX                     = 100;
+    private final int            WAITSECONDSFORCED                  = 5;
 
     /* Supported linktypes */
-    private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private final String         TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private final String         TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
     /* Texts displayed to the user in some errorcases */
-    private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
-    private final String                   USERTEXT_MAINTENANCE               = "This server is under maintenance";
-    private final String                   USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
+    private final String         USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
+    private final String         USERTEXT_MAINTENANCE               = "This server is under maintenance";
+    private final String         USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
 
     /* Properties */
-    private final String                   PROPERTY_DLLINK_FREE               = "freelink";
-    private final String                   PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
-    private final String                   PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
-    private final String                   PROPERTY_PASS                      = "pass";
+    private final String         PROPERTY_DLLINK_FREE               = "freelink";
+    private final String         PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
+    private final String         PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
+    private final String         PROPERTY_PASS                      = "pass";
 
     /* Used variables */
-    private String                         correctedBR                        = "";
-    private String                         fuid                               = null;
-    private String                         passCode                           = null;
+    private String               correctedBR                        = "";
+    private String               fuid                               = null;
+    private String               passCode                           = null;
 
-    private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                            = new AtomicInteger(1);
-    private static Object                  LOCK                               = new Object();
+    private static AtomicInteger maxFree                            = new AtomicInteger(1);
+    private static Object        LOCK                               = new Object();
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
@@ -181,14 +178,13 @@ public class TakefileLink extends PluginForHost {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
         correctDownloadLink(link);
-        prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        altbr = this.br.cloneBrowser();
+        altbr = br.cloneBrowser();
 
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
@@ -201,7 +197,7 @@ public class TakefileLink extends PluginForHost {
             }
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
-        } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+        } else if (br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             /*
              * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
              * There are 2 alternative ways to get this information anyways!
@@ -494,7 +490,7 @@ public class TakefileLink extends PluginForHost {
             checkErrors(downloadLink, false);
             Form imghost_next_form = null;
             do {
-                imghost_next_form = this.br.getFormbyKey("next");
+                imghost_next_form = br.getFormbyKey("next");
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
@@ -511,7 +507,7 @@ public class TakefileLink extends PluginForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
-            final Form download1 = this.br.getFormByInputFieldKeyValue("op", "download1");
+            final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 /*
@@ -749,17 +745,14 @@ public class TakefileLink extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
-        /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setFollowRedirects(true);
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(this.COOKIE_HOST, "lang", "english");
         }
+        return prepBr;
     }
 
     /**
@@ -906,27 +899,29 @@ public class TakefileLink extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(String page) throws Exception {
+    @Override
+    protected void getPage(String page) throws Exception {
         page = correctProtocol(page);
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        br.getPage(page);
+        super.getPage(br, page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(String page, final String postdata) throws Exception {
+    @Override
+    protected void postPage(String page, final String postdata) throws Exception {
         page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        br.postPage(page, postdata);
+        super.postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
@@ -953,12 +948,13 @@ public class TakefileLink extends PluginForHost {
         return url;
     }
 
-    private void submitForm(final Form form) throws Exception {
+    @Override
+    protected void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        br.submitForm(form);
+        super.submitForm(br, form);
         if (correctBr) {
             correctBR();
         }
@@ -1007,22 +1003,6 @@ public class TakefileLink extends PluginForHost {
             sleep(wait * 1000l, downloadLink);
         } else {
             logger.info("Found no waittime");
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -1198,7 +1178,7 @@ public class TakefileLink extends PluginForHost {
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
-        checkResponseCodeErrors(this.br.getHttpConnection());
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -1316,15 +1296,14 @@ public class TakefileLink extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                this.br.setCookiesExclusive(true);
-                prepBrowser(this.br);
+                br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 getPage(COOKIE_HOST + "/user_login");
-                final Form loginform = this.br.getFormbyProperty("name", "FL");
+                final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
@@ -1337,7 +1316,7 @@ public class TakefileLink extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1346,7 +1325,7 @@ public class TakefileLink extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!this.br.getURL().contains("/?op=my_account")) {
+                if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
@@ -1354,7 +1333,7 @@ public class TakefileLink extends PluginForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -1376,11 +1355,11 @@ public class TakefileLink extends PluginForHost {
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
-                this.br.setFollowRedirects(false);
+                br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Form dlform = this.br.getFormbyProperty("name", "F1");
+                    final Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
@@ -1398,11 +1377,11 @@ public class TakefileLink extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
-                this.br.followConnection();
+                br.followConnection();
                 correctBR();
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
