@@ -108,7 +108,7 @@ public class FShareVn extends PluginForHost {
         br.setFollowRedirects(false);
         // enforce english
         br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage("https://www.fshare.vn/site/location?lang=en");
+        br.getPage("https://www.fshare.vn/site/location?lang=vi"); // en - English version is having problems in version 3
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
             final boolean follows_redirects = br.isFollowingRedirects();
@@ -199,13 +199,29 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
                 }
                 // we want _csrf token
-                final String csrf = br.getRegex("_csrf-app\" value=\"([a-z0-9]+)\"").getMatch(0);
+                final String csrf = br.getRegex("_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
                 final Browser ajax = br.cloneBrowser();
                 ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                final String postdata = "_csrf-app=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" + getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
-                ajax.postPage("/download/get", postdata);
+                // final String postdata = "_csrf-app=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" +
+                // getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
+                // ajax.postPage("/download/get", postdata);
+                Form form = br.getFormbyAction("/download/get");
+                for (int i = 1; i < 3; i++) {
+                    ajax.submitForm(form);
+                    if (ajax.containsHTML("url")) {
+                        break;
+                    }
+                    if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                        sleep(10 * 1001l, downloadLink);
+                    }
+                }
+                if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
+                } else if (ajax.containsHTML("\"errors\":")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ajax.toString(), 3 * 60 * 1000l);
+                }
                 if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "please try again later")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                 }
@@ -339,7 +355,21 @@ public class FShareVn extends PluginForHost {
                     }
                     dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        final String page = getDllink();
+                        String page = getDllink(); // <---
+                        for (int i = 1; i < 3; i++) {
+                            if (page.contains("url")) {
+                                break;
+                            }
+                            if (page.contains("Too many download sessions") || page.contains("Quá nhiều phiên tải")) {
+                                sleep(10 * 1001l, link);
+                                page = getDllink(); // <---
+                            }
+                        }
+                        if (page.contains("Too many download sessions") || page.contains("Quá nhiều phiên tải")) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
+                        } else if (page.contains("\"errors\":")) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, page, 3 * 60 * 1000l);
+                        }
                         dllink = PluginJSonUtils.getJsonValue(page, "url");
                         if (dllink == null) {
                             final String msg = PluginJSonUtils.getJsonValue(page, "msg");
