@@ -28,18 +28,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?mangafox\\.(com|me|mobi|la)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" })
 public class Mangafox extends PluginForDecrypt {
+
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
-        Browser.setRequestIntervalLimitGlobal("mangafox.la", 500);
+        Browser.setRequestIntervalLimitGlobal("fanfox.net", 500);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String url = parameter.toString().replaceAll("://[\\w\\.]*?mangafox\\.(com|me|mobi)/", "://mangafox.la/");
+        String url = parameter.toString().replaceAll("://[\\w\\.]*?mangafox\\.(com|me|mobi|la)/", "://fanfox.net/");
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
