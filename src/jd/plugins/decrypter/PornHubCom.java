@@ -28,6 +28,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -38,6 +40,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/(?:view_video\\.php\\?viewkey=|embed/)[a-z0-9]+" })
 public class PornHubCom extends PluginForDecrypt {
@@ -65,10 +68,12 @@ public class PornHubCom extends PluginForDecrypt {
             jd.plugins.hoster.PornHubCom.login(br, aa, false);
         }
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-        // jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.containsHTML("class=\"g-recaptcha\"")) {
-            // logger.info("Debug info: captcha handling is required");
-            throw new DecrypterException("Decrypter broken, captcha handling is required");
+            final Form form = br.getFormByInputFieldKeyValue("captchaType", "1");
+            logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(form);
         }
         if (br.containsHTML(">Sorry, but this video is private") && br.containsHTML("href=\"/login\"") && aa != null) {
             logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
@@ -173,6 +178,7 @@ public class PornHubCom extends PluginForDecrypt {
             return;
         }
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(br);
+        logger.info("Debug info: foundLinks_all: " + foundLinks_all);
         if (foundLinks_all == null) {
             throw new DecrypterException("Decrypter broken");
         }
@@ -198,6 +204,7 @@ public class PornHubCom extends PluginForDecrypt {
                 if (fastlinkcheck) {
                     dl.setAvailable(true);
                 }
+                logger.info("Creating " + qualityInfo + "p link.");
                 decryptedLinks.add(dl);
                 if (bestonly) {
                     /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
