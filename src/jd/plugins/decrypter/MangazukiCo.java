@@ -22,13 +22,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangazuki.co" }, urls = { "https?://(?:www\\.|raws\\.)?mangazuki\\.co/read/[^/]+/\\d+(?:\\.\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangazuki.co" }, urls = { "https?://(?:www\\.|raws\\.)?mangazuki\\.co/(?:read|manga)/[^/]+/\\d+(?:\\.\\d+)?" })
 public class MangazukiCo extends antiDDoSForDecrypt {
     public MangazukiCo(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,23 +40,28 @@ public class MangazukiCo extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/read")) {
+        getPage(parameter + "/1");
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/manga")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "/read/([^/]+)/(.+)");
+        final String fpname = br.getRegex("<title>\\s*(.*?) - Page \\d+\\s*</title>").getMatch(0);
+        final Regex urlinfo = new Regex(parameter, "/manga/([^/]+)/(.+)");
         final String url_name = urlinfo.getMatch(0);
         final String url_chapter = urlinfo.getMatch(1);
         String ext = null;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(url_chapter + "_" + url_name);
-        final String[] images = this.br.getRegex("<img src=\"http[^<>\"]+\" data\\-src=\"(https?://[^<>\"]+)\"").getColumn(0);
+        if (fpname != null) {
+            fp.setName(fpname);
+        } else {
+            fp.setName(url_name + "_Chapter_" + url_chapter);
+        }
+        final String[] images = br.getRegex("<img .*?data-src=' (https?://[^<>']+) '").getColumn(0);
         if (images == null || images.length == 0) {
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         final int padLength = getPadLength(images.length);
-        int page = 0;
+        int page = 1;
         for (final String url_image : images) {
             if (this.isAbort()) {
                 return decryptedLinks;
@@ -65,13 +71,19 @@ public class MangazukiCo extends antiDDoSForDecrypt {
                 /* No general extension given? Get it from inside the URL. */
                 ext = getFileNameExtensionFromURL(url_image, ".jpg");
             }
-            final String filename = url_chapter + "_" + url_name + "_" + page_formatted + ext;
-            final DownloadLink dl = this.createDownloadlink(url_image);
+            String filename = null;
+            if (fpname != null) {
+                filename = fpname + "_" + page_formatted + ext;
+            } else {
+                filename = url_name + "_Chapter_" + url_chapter + "_" + page_formatted + ext;
+            }
+            DownloadLink dl = createDownloadlink(url_image);
             dl._setFilePackage(fp);
             dl.setFinalFileName(filename);
             // dl.setContentUrl(page_url);
             dl.setLinkID(filename);
             dl.setAvailable(true);
+            // logger.info("Debug info: Creating: " + url_image);
             decryptedLinks.add(dl);
             distribute(dl);
             page++;
