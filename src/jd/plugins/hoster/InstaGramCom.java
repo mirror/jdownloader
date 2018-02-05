@@ -106,6 +106,18 @@ public class InstaGramCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         dllink = downloadLink.getStringProperty("directurl", null);
+        /*
+         * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
+         * higher than before then but it can also get smaller - which is okay as it is the original content.
+         */
+        final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
+        if (resolution_inside_url != null) {
+            String drlink = dllink.replace(resolution_inside_url, "/");
+            drlink = checkLink(drlink);
+            if (drlink != null) {
+                dllink = drlink;
+            }
+        }
         if (dllink == null) {
             String getlink = downloadLink.getDownloadURL().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
             if (!getlink.endsWith("/")) {
@@ -130,13 +142,17 @@ public class InstaGramCom extends PluginForHost {
             }
             String ext = ".mp4";
             dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
-            // Maybe we have a picture
             if (dllink == null) {
+                // Maybe we have a picture
                 ext = null;
                 dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
                 String remove = new Regex(dllink, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
                 if (remove != null) {
-                    dllink = dllink.replace(remove, "/");
+                    String flink = dllink.replace(remove, "/");
+                    flink = checkLink(flink);
+                    if (flink != null) {
+                        dllink = flink;
+                    }
                 }
                 downloadLink.setContentUrl(dllink);
             }
@@ -178,6 +194,25 @@ public class InstaGramCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String checkLink(String flink) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openHeadConnection(flink);
+            if (con.getContentType().contains("text")) {
+                flink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
+        }
+        return flink;
     }
 
     public static void setReleaseDate(final DownloadLink dl, final long date) {

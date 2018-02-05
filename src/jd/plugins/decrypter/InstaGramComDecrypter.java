@@ -310,10 +310,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
              * 2017-04-28: By removing the resolution inside the URL, we can download the original image - usually, resolution will be
              * higher than before then but it can also get smaller - which is okay as it is the original content.
              */
-            final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
-            if (resolution_inside_url != null) {
-                dllink = dllink.replace(resolution_inside_url, "/");
-            }
+            // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
+            // if (resolution_inside_url != null) {
+            // dllink = dllink.replace(resolution_inside_url, "/"); // Invalid URL signature 2018-01-17
+            // } Moved to hoster plugin
         }
         if (!StringUtils.isEmpty(dllink)) {
             try {
