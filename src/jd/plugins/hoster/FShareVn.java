@@ -19,16 +19,19 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -46,12 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -104,11 +101,10 @@ public class FShareVn extends PluginForHost {
         br = new Browser();
         this.setBrowserExclusive();
         correctDownloadLink(link);
-        prepBrowser();
         br.setFollowRedirects(false);
         // enforce english
         br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage("https://www.fshare.vn/site/location?lang=vi"); // en - English version is having problems in version 3
+        prepBrowser(this.br);
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
             final boolean follows_redirects = br.isFollowingRedirects();
@@ -123,12 +119,7 @@ public class FShareVn extends PluginForHost {
                     }
                 } else {
                     link.setName(getFileNameFromHeader(con));
-                    try {
-                        // @since JD2
-                        link.setVerifiedFileSize(con.getLongContentLength());
-                    } catch (final Throwable t) {
-                        link.setDownloadSize(con.getLongContentLength());
-                    }
+                    link.setVerifiedFileSize(con.getLongContentLength());
                     // lets also set dllink
                     dllink = br.getURL();
                     return AvailableStatus.TRUE;
@@ -286,16 +277,17 @@ public class FShareVn extends PluginForHost {
         dl.startDownload();
     }
 
-    private void prepBrowser() {
+    /** Sets required headers and required language */
+    public static void prepBrowser(final Browser br) throws IOException {
         // Sometime the page is extremely slow!
         br.setReadTimeout(120 * 1000);
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
-        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.setCustomCharset("utf-8");
+        br.getPage("https://www.fshare.vn/site/location?lang=vi"); // en - English version is having problems in version 3
     }
 
     @Override
@@ -334,7 +326,7 @@ public class FShareVn extends PluginForHost {
             doFree(link, account);
         } else {
             final String directlinkproperty = "directlink_account";
-            // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
+            /* English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login. */
             login(account, true);
             dllink = this.checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
@@ -405,7 +397,7 @@ public class FShareVn extends PluginForHost {
     public String getDllink() throws Exception {
         final Form dlfast = br.getFormbyAction("/download/get");
         if (dlfast != null) {
-            // Fix form
+            /* Fix form */
             if (!dlfast.hasInputFieldByName("ajax")) {
                 dlfast.put("ajax", "download-form");
             }
@@ -414,6 +406,7 @@ public class FShareVn extends PluginForHost {
             }
             dlfast.remove("DownloadForm%5Bpwd%5D");
             dlfast.put("DownloadForm[pwd]", "");
+            dlfast.put("fcode5", "");
             // button base download here,
             final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -430,28 +423,19 @@ public class FShareVn extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                prepBrowser();
-                /** Load cookies */
+                prepBrowser(this.br);
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(this.getHost(), key, value);
-                        }
-                        return;
-                    }
+                /**
+                 * TODO: 2018-02-05: Re-use cookies whenever possible and do not use the long session cookies --> This might help solving
+                 * the account download issues ...
+                 */
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 final boolean isFollowingRedirects = br.isFollowingRedirects();
                 br.setFollowRedirects(true);
@@ -459,7 +443,8 @@ public class FShareVn extends PluginForHost {
                 br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
                 br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en");
                 final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
-                if (csrf == null) {
+                final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app");
+                if (csrf == null || cookie_fshare_app_old == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -467,8 +452,9 @@ public class FShareVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
-                if (br.containsHTML("class=\"errorMessage\"")) {
+                br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
+                final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app");
+                if (cookie_fshare_app_new == null || cookie_fshare_app_new.equalsIgnoreCase(cookie_fshare_app_old)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -482,18 +468,10 @@ public class FShareVn extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(this.getHost()), "");
                 br.setFollowRedirects(isFollowingRedirects);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -504,24 +482,8 @@ public class FShareVn extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         br.getPage("/account/profile");
-        String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
-        if (validUntil == null) {
-            validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
-            if (validUntil == null) {
-                validUntil = br.getRegex("<dt>Hạn dùng</dt>[\t\n\r ]+<dd><b>([^<>\"]*?)</b></dd>").getMatch(0);
-                if (validUntil == null) {
-                    validUntil = br.getRegex("Hạn dùng:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
-                    if (validUntil == null) {
-                        // validUntil = br.getRegex("Expire:\\s*([^<>\"]*?)(?:</a>)?</p></li>").getMatch(0);
-                        validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
-                    }
-                }
-            }
-        }
-        String accountType = br.getRegex("<dt>Account type</dt>.*?member\">\\s*(.*?)\\s*<").getMatch(0);
-        if (accountType != null) {
-            accountType = br.getRegex("<dt>>Loại tài khoản</dt>.*?member\">\\s*(.*?)\\s*<").getMatch(0);
-        }
+        final String validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
+        final String accountType = br.getRegex("(?:Account type|Loại tài khoản)</a>\\s*?<span>([^<>\"]+)</span>").getMatch(0);
         if (StringUtils.equalsIgnoreCase(accountType, "VIP")) {
             ai.setStatus("VIP Account");
             account.setType(AccountType.PREMIUM);
