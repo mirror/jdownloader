@@ -13,14 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -39,9 +35,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
-public class EvilAngelCom extends antiDDoSForHost {
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p/mp4|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
+public class EvilAngelCom extends antiDDoSForHost {
     public EvilAngelCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.evilangel.com/en/join");
@@ -68,7 +66,6 @@ public class EvilAngelCom extends antiDDoSForHost {
     public static final long    trust_cookie_age           = 300000l;
     private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
     public static final String  LOGIN_PAGE                 = "http://members.evilangel.com/en";
-
     private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[A-Za-z]{2}/[A-Za-z0-9\\-_]+/film/\\d+";
     private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+";
 
@@ -158,7 +155,6 @@ public class EvilAngelCom extends antiDDoSForHost {
                 } catch (Throwable e) {
                 }
             }
-
         } else {
             link.getLinkStatus().setStatusText("Links can only be checked and downloaded via account!");
             return AvailableStatus.UNCHECKABLE;
@@ -283,12 +279,10 @@ public class EvilAngelCom extends antiDDoSForHost {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login!", getHost(), getHost(), true);
                         this.setDownloadLink(dummyLink);
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-
                             @Override
                             public String getSiteKey() {
                                 return getSiteKey(login.getHtmlCode());
                             }
-
                         }.getToken();
                         login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     } finally {
