@@ -13,7 +13,6 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 
 public class FileArchiveFile implements ArchiveFile {
-
     private final File                     file;
     private final String                   name;
     private final String                   filePath;
@@ -50,8 +49,7 @@ public class FileArchiveFile implements ArchiveFile {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj != null) {
+        } else if (obj != null) {
             if (obj instanceof FileArchiveFile) {
                 return getFile().equals(((FileArchiveFile) obj).getFile());
             } else if (obj instanceof File) {
@@ -135,5 +133,4 @@ public class FileArchiveFile implements ArchiveFile {
     public String getArchiveID() {
         return archiveID;
     };
-
 }

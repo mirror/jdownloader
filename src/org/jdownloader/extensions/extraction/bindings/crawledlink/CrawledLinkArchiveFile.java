@@ -21,14 +21,11 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class CrawledLinkArchiveFile implements ArchiveFile {
-
     private final List<CrawledLink>        links;
-
     private final String                   name;
     private volatile long                  size;
     private final AtomicReference<Boolean> exists                = new AtomicReference<Boolean>(null);
     private final int                      hashCode;
-
     private boolean                        fileArchiveFileExists = false;
 
     public boolean isFileArchiveFileExists() {
@@ -65,10 +62,9 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj != null) {
+        } else if (obj != null) {
             if (obj instanceof CrawledLinkArchiveFile) {
-                for (CrawledLink dl : ((CrawledLinkArchiveFile) obj).getLinks()) {
+                for (final CrawledLink dl : ((CrawledLinkArchiveFile) obj).getLinks()) {
                     if (getLinks().contains(dl)) {
                         return true;
                     }

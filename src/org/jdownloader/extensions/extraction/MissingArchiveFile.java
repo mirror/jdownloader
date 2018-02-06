@@ -2,10 +2,10 @@ package org.jdownloader.extensions.extraction;
 
 import java.awt.Color;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 
 public class MissingArchiveFile implements ArchiveFile {
-
     private final String name;
     private final String filePath;
     private String       archiveID = null;
@@ -32,6 +32,17 @@ public class MissingArchiveFile implements ArchiveFile {
 
     @Override
     public void deleteFile(DeleteOption option) {
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (obj instanceof MissingArchiveFile) {
+            return StringUtils.equals(getName(), ((MissingArchiveFile) obj).getName());
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -90,5 +101,4 @@ public class MissingArchiveFile implements ArchiveFile {
     public String getArchiveID() {
         return archiveID;
     }
-
 }
