@@ -467,9 +467,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 *
+                 * 
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 *
+                 * 
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -1105,19 +1105,18 @@ public class JavaScriptEngineFactory {
      * 2. Our parser decides whether to use Long or Integer but most times we need Long also we always need more code to ensure to get the
      * connect data type. This makes it easier.
      */
-    public static long toLong(final Object o, final long defaultvalue) {
-        long lo = defaultvalue;
+    public static long toLong(final Object value, final long defaultvalue) {
         try {
-            if (o instanceof String) {
-                lo = Long.parseLong((String) o);
-            } else if (o instanceof Long) {
-                lo = ((Long) o).longValue();
+            if (value instanceof String) {
+                return Long.parseLong((String) value);
+            } else if (value instanceof Number) {
+                return ((Number) value).longValue();
             } else {
-                lo = ((Integer) o).intValue();
+                return defaultvalue;
             }
         } catch (final Throwable e) {
+            return defaultvalue;
         }
-        return lo;
     }
 
     /**

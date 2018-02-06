@@ -33,7 +33,6 @@ import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
-
     private final List<DownloadLink>       downloadLinks;
     private final String                   name;
     private final String                   filePath;
@@ -77,10 +76,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj != null) {
+        } else if (obj != null) {
             if (obj instanceof DownloadLinkArchiveFile) {
-                for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).getDownloadLinks()) {
+                for (final DownloadLink dl : ((DownloadLinkArchiveFile) obj).getDownloadLinks()) {
                     if (getDownloadLinks().contains(dl)) {
                         return true;
                     }
@@ -222,7 +220,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             switch (cleanup) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final List<DownloadLink> ask = new ArrayList<DownloadLink>();
@@ -251,7 +248,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 break;
             case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final HashSet<FilePackage> fps = new HashSet<FilePackage>();
@@ -266,7 +262,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                         invalidateExists();
                         return null;
                     }
-
                 });
                 break;
             case CLEANUP_ONCE_AT_STARTUP:
@@ -287,7 +282,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                     hasOldPasswords = true;
                 }
             }
-
             if (hasOldPasswords) {
                 List<String> existingPws = archive.getSettings().getPasswords();
                 if (existingPws == null) {
@@ -412,5 +406,4 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         }
         return ret;
     }
-
 }

@@ -21,7 +21,6 @@ import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.logging.LogController;
 
 public enum SplitType {
-
     /**
      * Multipart XtremSplit Archive (.001.xtm, .002.xtm ...), 000-999 -> max 1000 parts
      */
@@ -74,9 +73,7 @@ public enum SplitType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + "." + String.format(Locale.US, "%0" + partStringLength + "d", partIndex) + ".xtm";
         }
-
     },
-
     /**
      * Multipart Unix-Split Archive (.aa, .ab ...), aa-zz -> max 676 parts
      */
@@ -164,9 +161,7 @@ public enum SplitType {
             }
             return false;
         }
-
     },
-
     /**
      * Multipart HJ-Split Archive (.001, .002 ...), 000-999 -> max 1000 parts
      */
@@ -222,17 +217,39 @@ public enum SplitType {
 
         @Override
         protected boolean looksLikeAnArchive(BitSet bitset) {
-            int count = 0;
+            int below10Count = 0;
+            int below100Count = 0;
+            int below1000Count = 0;
             for (int index = 0; index < bitset.length(); index++) {
                 if (bitset.get(index)) {
-                    if (++count == 2) {
-                        return true;
+                    if (index < 10) {
+                        below10Count++;
+                    }
+                    if (index < 100) {
+                        below100Count++;
+                    }
+                    if (index < 1000) {
+                        below1000Count++;
                     }
                 } else {
-                    count = 0;
+                    if (index < 10 && below10Count <= 2) {
+                        below10Count = 0;
+                    }
+                    if (index < 100 && below100Count <= 2) {
+                        below100Count = 0;
+                    }
+                    if (index < 1000 && below1000Count <= 2) {
+                        below1000Count = 0;
+                    }
                 }
             }
-            return false;
+            if (bitset.length() < 10) {
+                return below10Count >= 2;
+            } else if (bitset.length() < 100) {
+                return below10Count >= 2 && below100Count >= 2;
+            } else {
+                return below10Count >= 2 && below100Count >= 2 && below1000Count >= 2;
+            }
         }
 
         @Override
@@ -272,12 +289,12 @@ public enum SplitType {
             return true;
         }
     },
-
     /**
      * Multipart Hacha-Split Archive (.0, .1 ...), 0-999 -> max 1000 parts
      */
     HACHA_SPLIT {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d{1,3})$");
+        // 0-9,10-99,100-999, no leading 0
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d|[1-9][0-9]{1,2})$");
 
         @Override
         public boolean matches(String filePathOrName) {
@@ -286,7 +303,7 @@ public enum SplitType {
 
         @Override
         protected String buildIDPattern(String[] matches) {
-            return "\\.\\d{1,3}";
+            return "\\.(\\d|[1-9][0-9]{1,2})";
         }
 
         @Override
@@ -309,9 +326,11 @@ public enum SplitType {
         @Override
         public int getPartNumber(String partNumberString) {
             if (partNumberString.startsWith("0") && partNumberString.length() > 1) {
+                // (.0, .1 ...), 0-999 -> max 1000 parts
                 return -1;
+            } else {
+                return Integer.parseInt(partNumberString);
             }
-            return Integer.parseInt(partNumberString);
         }
 
         @Override
@@ -331,28 +350,50 @@ public enum SplitType {
 
         @Override
         protected boolean looksLikeAnArchive(BitSet bitset) {
-            int count = 0;
+            int below10Count = 0;
+            int below100Count = 0;
+            int below1000Count = 0;
             for (int index = 0; index < bitset.length(); index++) {
                 if (bitset.get(index)) {
-                    if (++count == 2) {
-                        return true;
+                    if (index < 10) {
+                        below10Count++;
+                    }
+                    if (index < 100) {
+                        below100Count++;
+                    }
+                    if (index < 1000) {
+                        below1000Count++;
                     }
                 } else {
-                    count = 0;
+                    if (index < 10 && below10Count <= 2) {
+                        below10Count = 0;
+                    }
+                    if (index < 100 && below100Count <= 2) {
+                        below100Count = 0;
+                    }
+                    if (index < 1000 && below1000Count <= 2) {
+                        below1000Count = 0;
+                    }
                 }
             }
-            return false;
+            if (bitset.length() < 10) {
+                return below10Count >= 2;
+            } else if (bitset.length() < 100) {
+                return below10Count >= 2 && below100Count >= 2;
+            } else {
+                return below10Count >= 2 && below100Count >= 2 && below1000Count >= 2;
+            }
         }
 
         @Override
         protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
             if (partIndex == 0 && archiveFile.exists()) {
                 return HachaSplit.parseHachaHeader(archiveFile) != null;
+            } else {
+                return true;
             }
-            return true;
         }
     };
-
     protected String escapeRegex(String input) {
         if (input.length() == 0) {
             return "";
@@ -504,5 +545,4 @@ public enum SplitType {
         }
         return null;
     }
-
 }
