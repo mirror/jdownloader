@@ -423,25 +423,28 @@ public class FShareVn extends PluginForHost {
         return false;
     }
 
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("class =\"user__profile\"");
+    }
+
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 prepBrowser(this.br);
                 br.setCookiesExclusive(true);
-                /**
-                 * TODO: 2018-02-05: Re-use cookies whenever possible and do not use the long session cookies --> This might help solving
-                 * the account download issues ...
-                 */
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    return;
+                    br.getPage("https://www." + this.getHost() + "/file/manager");
+                    if (isLoggedinHTML()) {
+                        return;
+                    }
+                    br.clearCookies(br.getHost());
                 }
                 final boolean isFollowingRedirects = br.isFollowingRedirects();
                 br.setFollowRedirects(true);
-                // enforce English
                 br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
-                br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en");
+                br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
                 final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
                 final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app");
                 if (csrf == null || cookie_fshare_app_old == null) {
@@ -452,6 +455,10 @@ public class FShareVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                /*
+                 * 2018-02-06: Do NOT use the long session cookies as that could cause "Too many sessions"(or similar) error when trying to
+                 * start downloads!
+                 */
                 br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
                 final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app");
                 if (cookie_fshare_app_new == null || cookie_fshare_app_new.equalsIgnoreCase(cookie_fshare_app_old)) {
