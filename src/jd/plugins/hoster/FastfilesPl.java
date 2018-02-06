@@ -18,11 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -241,22 +243,9 @@ public class FastfilesPl extends PluginForHost {
             ai.setStatus("Registered (free) account");
         }
         ai.setTrafficLeft(trafficleft);
-        /** TODO: 2018-02-05: Wait for admin to make API call for this */
-        final ArrayList<String> supportedhostslist = new ArrayList();
-        supportedhostslist.add("rapidu.net");
-        supportedhostslist.add("catshare.net");
-        supportedhostslist.add("dailyfiles.net");
-        supportedhostslist.add("pobierz.to");
-        supportedhostslist.add("turobbit.net");
-        supportedhostslist.add("uploaded.net");
-        supportedhostslist.add("fileshark.pl");
-        // LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
-        // for (final Object hostinfoo : ressourcelist) {
-        // entries = (LinkedHashMap<String, Object>) hostinfoo;
-        // final String host = ((String) entries.get("domain")).toLowerCase();
-        // supportedhostslist.add(host);
-        // }
+        this.getAPISafe(API_BASE + "?request=hostlist&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<String> supportedhostslist = (ArrayList<String>) entries.get("supported_hosts");
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);

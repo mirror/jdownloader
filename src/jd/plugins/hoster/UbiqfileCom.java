@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -62,24 +62,18 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ubiqfile.com" }, urls = { "https?://(?:www\\.)?ubiqfile\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+public class UbiqfileCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
-    private final boolean        SUPPORTS_HTTPS                     = false;
+    private final boolean        SUPPORTS_HTTPS                     = true;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = "http://ForDevsToPlayWith.com".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = "http://ubiqfile.com".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private final static String  DOMAINS                            = "(?:ForDevsToPlayWith\\.com)";
+    private final static String  DOMAINS                            = "(?:ubiqfile\\.com)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
@@ -134,7 +128,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
@@ -151,7 +145,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: reCaptchaV2<br />
      * other:<br />
      */
     @Override
@@ -182,9 +176,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public UbiqfileCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "unused" })
@@ -442,7 +436,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -549,6 +543,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
+            /* 2018-02-06: Special: Always check for errors here */
+            checkErrors(downloadLink, false);
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
@@ -1316,8 +1312,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        /* Traffic can also be negative! */
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -1362,7 +1357,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 getPage(COOKIE_HOST + "/login.html");
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    /* Required for some XFS setups. */
                     getPage(COOKIE_HOST + "/login");
                 }
                 final Form loginform = br.getFormbyProperty("name", "FL");
@@ -1412,7 +1406,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {

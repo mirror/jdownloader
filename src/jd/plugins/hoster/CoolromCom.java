@@ -17,59 +17,67 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onecloud.media" }, urls = { "https?://(?:www\\.)?onecloud\\.media/file/([a-f0-9]{16}\\-[a-f0-9]{16}|[a-zA-Z0-9]+)" })
-public class OnecloudMedia extends PluginForHost {
-    public OnecloudMedia(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coolrom.com" }, urls = { "https?://(?:www\\.)?coolrom\\.com/roms/[^/]+/\\d+/[^/]+\\.php" })
+public class CoolromCom extends PluginForHost {
+    public CoolromCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://onecloud.media/";
+        return "http://coolrom.com/privacy.php";
     }
 
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS = 3;
 
+    // private static final boolean ACCOUNT_FREE_RESUME = true;
+    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
+    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
+    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    //
+    // /* don't touch the following! */
+    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        br.followRedirect();
-        if (true) {
-            /* 2018-02-06: Temp code - website offline */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("removed.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Tệp tin kh")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String url_name = new Regex(link.getDownloadURL(), "/([^/]+)\\.php$").getMatch(0);
+        String filename = br.getRegex("<b>Dateiname:</b> ([^<>\"]+)<br>").getMatch(0);
+        if (filename == null) {
+            /* Fallback */
+            filename = url_name;
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        String filesize = br.getRegex("class=\"glyphicon glyphicon\\-hdd\"></span>([^<>\"]+)<").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        String filesize = br.getRegex("<b>Dateigröße:</b>([^<>\"]+)<").getMatch(0);
         filename = Encoding.htmlDecode(filename).trim();
-        /* 2016-12-06: Important! Server sends crappy filenames! */
-        link.setFinalFileName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -82,49 +90,28 @@ public class OnecloudMedia extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String xcsrftoken = this.br.getRegex("name=\"csrf\\-token\" content=\"([^<>\"]+)\"").getMatch(0);
-            if (xcsrftoken != null) {
-                this.br.getHeaders().put("X-CSRF-Token", xcsrftoken);
-            }
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            /* Important request! */
-            String additionalPostdata = "";
-            if (this.br.containsHTML("g\\-recaptcha")) {
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                additionalPostdata = "&reCapcha=" + Encoding.urlEncode(recaptchaV2Response);
-            }
-            this.br.postPage(this.br.getURL(), "type=file_check" + additionalPostdata);
-            handleErrors();
-            this.br.postPage(this.br.getURL(), "type=file_download" + additionalPostdata);
-            handleErrors();
-            /* Usually directurl to file hosted on googleusercontent.com. */
-            dllink = PluginJSonUtils.getJsonValue(this.br, "msg");
-            if (dllink == null || !dllink.startsWith("http")) {
+            final String romID = new Regex(downloadLink.getDownloadURL(), "/roms/[^/]+/(\\d+)/").getMatch(0);
+            br.getPage("/dlpop.php?id=" + romID);
+            dllink = br.getRegex("(https?://[A-Za-z0-9]+\\.coolrom\\.com/dli?/\\d+/[^<>\"]+)").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* Skip waittime here (~ 15 seconds) */
         }
+        /* Website does POST with 0 parameters on that URL but GET works fine as well. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - too many connections", 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
-    }
-
-    private void handleErrors() throws PluginException {
-        final String msg = PluginJSonUtils.getJsonValue(this.br, "msg");
-        if (msg != null) {
-            if (msg.contains("Tệp tin chưa sẵn sàng")) {
-                /* E.g. "Tệp tin chưa sẵn sàng, vui lòng thử lại sau" */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary server issue");
-            }
-        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
