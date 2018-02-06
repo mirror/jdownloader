@@ -182,7 +182,7 @@ public class InstaGramCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 server_issues = true;
@@ -202,14 +202,17 @@ public class InstaGramCom extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openHeadConnection(flink);
-            if (con.getContentType().contains("text")) {
+            if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
                 flink = null;
             }
         } catch (final Exception e) {
+            logger.log(e);
         } finally {
-            try {
-                con.disconnect();
-            } catch (final Exception e) {
+            if (con != null) {
+                try {
+                    con.disconnect();
+                } catch (final Exception e) {
+                }
             }
         }
         return flink;
@@ -252,7 +255,7 @@ public class InstaGramCom extends PluginForHost {
             maxchunks = MAXCHUNKS_videos;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
