@@ -56,13 +56,14 @@ public class ImgChiliCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String fpName = br.getRegex("<title>imgChili \\&raquo; ([^<>\"]*?)</title>").getMatch(0);
-            final String[] thumbs = br.getRegex("<img src=\"(http://t\\d+\\.imgchili\\.net/\\d+/[A-Za-z0-9\\-_\\.\\(\\)%\\-]+\\.jpg)\"").getColumn(0);
-            if (thumbs == null || thumbs.length == 0) {
+            final String sn = br.getRegex("<img src=\"http://t(\\d+)\\.imgchili\\.net/\\d+/[A-Za-z0-9\\-_\\.\\(\\)%\\-]+\\.jpg\"").getMatch(0);
+            final String[] pics = br.getRegex("<a href=\"show(.*?)\"").getColumn(0);
+            if (pics == null || pics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : thumbs) {
-                singleLink = "directhttp://" + singleLink.replace("http://t", "http://i");
+            for (String singleLink : pics) {
+                singleLink = "directhttp://http://i" + sn + ".imgchili.net" + singleLink;
                 final DownloadLink dl = createDownloadlink(singleLink);
                 dl.setProperty("Referer", parameter);
                 dl.setAvailable(true);
