@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.config;
 
 import java.io.File;
@@ -35,7 +34,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
-import org.jdownloader.logging.LogController;
 
 @Deprecated
 /**
@@ -44,29 +42,23 @@ import org.jdownloader.logging.LogController;
  *
  */
 public class SubConfiguration extends Property implements Serializable {
-
     private static final long                                   serialVersionUID = 7803718581558607222L;
     protected String                                            name;
     protected transient boolean                                 valid            = false;
     protected transient final File                              file;
-
     private final AtomicLong                                    setMark          = new AtomicLong(0);
     private final AtomicLong                                    writeMark        = new AtomicLong(0);
     protected static volatile HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
     protected static final HashMap<String, AtomicInteger>       LOCKS            = new HashMap<String, AtomicInteger>();
     protected static final byte[]                               KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
     protected static final DelayedRunnable                      SAVEDELAYER      = new DelayedRunnable(5000, 30000) {
-
-                                                                                     @Override
-                                                                                     public void delayedrun() {
-                                                                                         saveAll();
-                                                                                     }
-                                                                                 };
-
+        @Override
+        public void delayedrun() {
+            saveAll();
+        }
+    };
     static {
-
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
             @Override
             public long getMaxDuration() {
                 return 0;
@@ -115,23 +107,25 @@ public class SubConfiguration extends Property implements Serializable {
                 }
                 setProperties(load);
             } catch (final Throwable e) {
-                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         } else {
-            writeMark.set(-1);
             /* import old DataBase if existing */
             try {
                 final Object props = JDUtilities.getDatabaseConnector().getData(name);
                 if (props != null && props instanceof Map) {
-                    Map<String, Object> tmp = (Map<String, Object>) props;
+                    final Map<String, Object> tmp = (Map<String, Object>) props;
                     /* remove obsolet variables from old stable (09581) */
                     tmp.remove("USE_PLUGIN");
                     tmp.remove("AGB_CHECKED");
-                    setProperties(tmp);
+                    if (tmp.size() > 0) {
+                        writeMark.set(-1);
+                        setProperties(tmp);
+                    }
                 }
             } catch (final NoOldJDDataBaseFoundException e) {
             } catch (final Throwable e) {
-                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         }
         valid = !importOnly;
@@ -142,11 +136,10 @@ public class SubConfiguration extends Property implements Serializable {
             long lastSetMark = setMark.get();
             if (writeMark.getAndSet(lastSetMark) != lastSetMark) {
                 try {
-                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
                     final byte[] json = JSonStorage.getMapper().objectToByteArray(getProperties());
                     writeMark.set(setMark.get());
                     final Runnable run = new Runnable() {
-
                         @Override
                         public void run() {
                             JSonStorage.saveTo(file, false, KEY, json);
@@ -154,7 +147,7 @@ public class SubConfiguration extends Property implements Serializable {
                     };
                     StorageHandler.enqueueWrite(run, file.getAbsolutePath(), true);
                 } catch (final Throwable e) {
-                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
             }
         }
@@ -242,5 +235,4 @@ public class SubConfiguration extends Property implements Serializable {
     public static SubConfiguration getConfig(final String name) {
         return getConfig(name, false);
     }
-
 }
