@@ -344,7 +344,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         String hostplugin_url = "instagrammdecrypted://" + linkid_main;
         if (!StringUtils.isEmpty(shortcode)) {
-            hostplugin_url += "/" + shortcode;
+            // hostplugin_url += "/" + shortcode; // Refresh directurl will fail
         }
         final DownloadLink dl = this.createDownloadlink(hostplugin_url);
         final String linkid;

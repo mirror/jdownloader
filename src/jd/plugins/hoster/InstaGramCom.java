@@ -117,6 +117,8 @@ public class InstaGramCom extends PluginForHost {
             if (drlink != null) {
                 dllink = drlink;
             }
+        } else {
+            dllink = checkLink(dllink);
         }
         if (dllink == null) {
             String getlink = downloadLink.getDownloadURL().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
