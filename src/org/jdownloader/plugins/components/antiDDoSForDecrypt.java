@@ -19,17 +19,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -50,6 +39,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 /**
  *
  * @author raztoki
@@ -57,7 +57,6 @@ import jd.plugins.components.UserAgents.BrowserName;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
-
     public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -589,11 +588,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                                 final Form cf = cloudflare;
                                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
-
-                                    {
-                                        boundToDomain = true;
-                                    }
-
                                     @Override
                                     public String getSiteKey() {
                                         return getSiteKey(cf.getHtmlCode());
@@ -742,7 +736,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 // active browser wont be a head request at this time. but request might not be followed yet due to open connections above.
                 if (request != null) {
                     ibr.followConnection();
-        }
+                }
                 if (ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
                     final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
                     if (phishing == null) {
@@ -1285,5 +1279,4 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         } while (wait > 15000 && wait < 500);
         return wait;
     }
-
 }

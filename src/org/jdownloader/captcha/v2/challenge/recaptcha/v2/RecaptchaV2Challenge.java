@@ -8,6 +8,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -38,10 +42,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
@@ -49,9 +49,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     private volatile BasicCaptchaChallenge basicChallenge;
     private final String                   siteDomain;
     private final String                   secureToken;
-    private final boolean                  localhost;
-    private final boolean                  boundToDomain;
-    private final boolean                  sameOrigin;
+    private final boolean                  localhost   = true;
 
     public String getSiteKey() {
         return siteKey;
@@ -87,25 +85,30 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             this.contextUrl = contextUrl;
         }
 
-        private String  siteKey;
-        private String  contextUrl;
-        private boolean boundToDomain;
-        private boolean sameOrigin;
+        private String siteKey;
+        private String contextUrl;
+        private String siteUrl;
+
+        public String getSiteUrl() {
+            return siteUrl;
+        }
+
+        public void setSiteUrl(String siteUrl) {
+            this.siteUrl = siteUrl;
+        }
 
         public boolean isSameOrigin() {
-            return sameOrigin;
+            return true;
         }
 
         public void setSameOrigin(boolean sameOrigin) {
-            this.sameOrigin = sameOrigin;
         }
 
         public boolean isBoundToDomain() {
-            return boundToDomain;
+            return true;
         }
 
         public void setBoundToDomain(boolean boundToDomain) {
-            this.boundToDomain = boundToDomain;
         }
     }
 
@@ -130,6 +133,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             final RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
             ret.setSiteKey(getSiteKey());
             ret.setContextUrl("http://" + getSiteDomain());
+            ret.setSiteUrl(getSiteUrl());
             ret.setStoken(getSecureToken());
             ret.setBoundToDomain(isBoundToDomain());
             ret.setSameOrigin(isSameOrigin());
@@ -173,31 +177,26 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
-    public RecaptchaV2Challenge(final String siteKey, final String secureToken, final boolean boundToDomain, final Boolean sameOrigin, Plugin pluginForHost, Browser br, String siteDomain) {
+    public RecaptchaV2Challenge(final String siteKey, final String secureToken, Plugin pluginForHost, Browser br, String siteDomain) {
         super(RECAPTCHAV2, pluginForHost, br);
         this.secureToken = secureToken;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
-        this.boundToDomain = boundToDomain;
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
-        }
-        localhost = true;
-        if (sameOrigin != null) {
-            this.sameOrigin = sameOrigin.booleanValue();
-        } else if (br != null && br.getRequest() != null) {
-            this.sameOrigin = br.getRequest().getResponseHeader("X-Frame-Options") != null;
-        } else {
-            this.sameOrigin = false;
         }
     }
 
     public boolean isBoundToDomain() {
-        return boundToDomain;
+        return true;
     }
 
     public boolean isSameOrigin() {
-        return sameOrigin;
+        return true;
+    }
+
+    public String getSiteUrl() {
+        return null;
     }
 
     public String getSecureToken() {
@@ -577,8 +576,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         try {
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
-            html = html.replace("%%%siteDomain%%%", siteDomain);
-            html = html.replace("%%%sitekey%%%", siteKey);
+            html = html.replace("%%%siteDomain%%%", getSiteDomain());
+            html = html.replace("%%%sitekey%%%", getSiteKey());
+            html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             if (isBoundToDomain()) {
                 html = html.replace("%%%display%%%", "none");
                 html = html.replace("%%%no_extension%%%", _GUI.T.extension_required());
@@ -587,10 +587,11 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 html = html.replace("%%%no_extension%%%", _GUI.T.extension_recommended());
             }
             html = html.replace("%%%session%%%", id);
+            html = html.replace("%%%challengeId%%%", Long.toString(getId().getID()));
             html = html.replace("%%%namespace%%%", getHttpPath());
             html = html.replace("%%%boundToDomain%%%", String.valueOf(isBoundToDomain()));
             html = html.replace("%%%sameOrigin%%%", String.valueOf(isSameOrigin()));
-            String stoken = getSecureToken();
+            final String stoken = getSecureToken();
             if (StringUtils.isNotEmpty(stoken)) {
                 html = html.replace("%%%sToken%%%", stoken);
                 html = html.replace("%%%optionals%%%", "data-stoken=\"" + stoken + "\"");
@@ -629,8 +630,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public boolean validateResponse(AbstractResponse<String> response) {
         if (response.getPriority() <= 0) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override

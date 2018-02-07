@@ -48,13 +48,22 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         this(plugin, br, null);
     }
 
+    protected RecaptchaV2Challenge createChallenge() {
+        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
+            @Override
+            public String getSiteUrl() {
+                return CaptchaHelperHostPluginRecaptchaV2.this.getSiteUrl();
+            }
+        };
+    }
+
     public String getToken() throws PluginException, InterruptedException {
         runDdosPrevention();
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
-        final PluginForHost plugin = this.plugin;
-        final DownloadLink link = getPlugin().getDownloadLink();
+        final PluginForHost plugin = getPlugin();
+        final DownloadLink link = plugin.getDownloadLink();
         if (siteKey == null) {
             siteKey = getSiteKey();
             if (siteKey == null) {
@@ -74,7 +83,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 link.addPluginProgress(progress);
             }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, isBoundToDomain(), isSameOrigin(), plugin, br, getSiteDomain());
+            final RecaptchaV2Challenge c = createChallenge();
             try {
                 c.setTimeout(plugin.getCaptchaTimeout());
                 if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
@@ -186,7 +195,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     }
                     break;
                 case TIMEOUT:
-                    getPlugin().onCaptchaTimeout(link, e.getChallenge());
+                    plugin.onCaptchaTimeout(link, e.getChallenge());
                     // TIMEOUT may fallthrough to SINGLE
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));

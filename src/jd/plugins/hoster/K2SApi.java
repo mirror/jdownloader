@@ -23,13 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -55,6 +48,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -1708,10 +1708,6 @@ public abstract class K2SApi extends PluginForHost {
                         this.setDownloadLink(dllink);
                         final Form cf = cloudflare;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-                            {
-                                boundToDomain = true;
-                            }
-
                             @Override
                             public String getSiteKey() {
                                 return getSiteKey(cf.getHtmlCode());

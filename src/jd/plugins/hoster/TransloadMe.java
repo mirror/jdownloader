@@ -20,10 +20,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,6 +39,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "" })
 public class TransloadMe extends PluginForHost {
@@ -321,10 +321,6 @@ public class TransloadMe extends PluginForHost {
                     setDownloadLink(new DownloadLink(this, "Account", getHost(), WEB_BASE, true));
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-                    {
-                        boundToDomain = true;
-                    }
-
                     @Override
                     public String getSiteKey() {
                         return getSiteKey(login.getHtmlCode());
