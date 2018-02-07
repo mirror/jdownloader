@@ -442,7 +442,8 @@ public class OffCloudCom extends PluginForHost {
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
          * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =
          * site offline or their plugin is completely broken, Limited = There are special daily limits for a host but it should work (even
-         * though it is marked RED on the site)
+         * though it is marked RED on the site), Awaiting Demand = Host is unsupported but is shown in that list so if a lot of users try
+         * URLs of such hosts, Offcloud will see that there is demand and maybe add it to the list of supported hosts.
          */
         cloudOnlyHosts.clear();
         for (final Object domaininfo_o : ressourcelist) {

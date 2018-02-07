@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,19 +38,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-
     private static final String                            NICE_HOST          = "filebit.pl";
     private static final String                            NICE_HOSTproperty  = "filebitpl";
     private static final String                            APIKEY             = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
     private static String                                  SESSIONID          = null;
-
     /* Default value is 10 */
     private static AtomicInteger                           maxPrem            = new AtomicInteger(10);
 
@@ -110,14 +105,7 @@ public class FileBitPl extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         br.setCurrentURL(null);
-        int maxChunks = -10;
-        maxChunks = (int) account.getLongProperty("maxconnections", 1);
-        if (maxChunks > 20) {
-            maxChunks = 0;
-        }
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
+        final int maxChunks = (int) account.getLongProperty("maxconnections", 1);
         link.setProperty("filebitpldirectlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -163,29 +151,7 @@ public class FileBitPl extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(FileBitPl.NOCHUNKS, false) == false) {
-                    link.setProperty(FileBitPl.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FileBitPl.NOCHUNKS, false) == false) {
-                link.setProperty(FileBitPl.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        this.dl.startDownload();
     }
 
     @Override
@@ -195,7 +161,6 @@ public class FileBitPl extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -211,7 +176,6 @@ public class FileBitPl extends PluginForHost {
                 }
             }
         }
-
         this.br = newBrowser();
         showMessage(link, "Task 1: Generating Link");
         String dllink = checkDirectLink(link, "filebitpldirectlink");
@@ -440,5 +404,4 @@ public class FileBitPl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
