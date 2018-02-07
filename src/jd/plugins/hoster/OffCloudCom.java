@@ -383,48 +383,61 @@ public class OffCloudCom extends PluginForHost {
          * Basically, at the moment we got 3 account types: Premium, Free account with generate-links feature, Free Account without
          * generate-links feature (used free account, ZERO traffic)
          */
-        String userpackage = null;
-        final String jsonarraypackages = br.getRegex("\"data\": \\[(.*?)\\]").getMatch(0);
-        final String[] packages = jsonarraypackages.split("\\},([\t\r\n ]+)?\\{");
-        if (packages.length == 1) {
-            userpackage = packages[0];
-        } else {
-            for (final String singlepackage : packages) {
-                final String type = PluginJSonUtils.getJsonValue(singlepackage, "type");
-                if (type.contains("link-unlimited")) {
-                    userpackage = singlepackage;
-                    break;
-                }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
+        String packagetype = null;
+        String activeTill = null;
+        boolean foundPackage = false;
+        for (final Object packageO : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) packageO;
+            packagetype = (String) entries.get("type");
+            activeTill = (String) entries.get("activeTill");
+            /*
+             * 2018-02-07: For some reason, the 'link-unlimited' package (if available) will always expire 1 month after the
+             * "premium-downloading" package which is why we get our data from here. At this stage I have no idea whether this applies for
+             * all accounts or only our test account as some years ago, they had different addons you could purchase and nowdays this is all
+             * a lot simpler.
+             */
+            if ("premium-downloading".equalsIgnoreCase(packagetype)) {
+                foundPackage = true;
+                break;
             }
         }
-        final String packagetype = PluginJSonUtils.getJsonValue(userpackage, "type");
-        if ((userpackage == null && br.containsHTML("-increase")) || userpackage.equals("") || packagetype.equals("premium-link-increase")) {
+        if (ressourcelist.size() == 0 || "premium-link-increase".equalsIgnoreCase(packagetype)) {
+            /* Free usually only has 1 package with packageType "premium-link-increase" */
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /* Important: If we found our package, get the remaining links count from there as the other one might be wrong! */
-            if ("premium-link-increase".equals(packagetype)) {
-                remaininglinksnum = PluginJSonUtils.getJsonValue(userpackage, "remainingLinksCount");
+            if ("premium-link-increase".equalsIgnoreCase(packagetype)) {
+                remaininglinksnum = Long.toString(JavaScriptEngineFactory.toLong(entries.get("remainingLinksCount"), 0));
             }
             account.setProperty("accinfo_linksleft", remaininglinksnum);
             if (remaininglinksnum.equals("0")) {
-                /* No links downloadable anymore --> No traffic left --> Free account limit reached */
+                /*
+                 * No links downloadable (anymore) --> No traffic left --> Free account limit reached --> At this stage the user cannot use
+                 * the account for anything
+                 */
                 ai.setTrafficLeft(0);
             }
-        } else {
+        } else if (foundPackage) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             ai.setUnlimitedTraffic();
-            String expiredate = PluginJSonUtils.getJsonValue(userpackage, "activeTill");
-            expiredate = expiredate.replaceAll("Z$", "+0000");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd'T'HH:mm:ss.S", Locale.ENGLISH), this.br);
+            activeTill = activeTill.replaceAll("Z$", "+0000");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(activeTill, "yyyy-MM-dd'T'HH:mm:ss.S", Locale.ENGLISH), this.br);
             account.setProperty("accinfo_linksleft", remaininglinksnum);
+        } else {
+            /* This should never happen */
+            account.setType(AccountType.UNKNOWN);
+            account.setValid(false);
+            return ai;
         }
         account.setValid(true);
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("fs");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        ressourcelist = (ArrayList) entries.get("fs");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
          * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =

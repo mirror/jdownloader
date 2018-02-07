@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -33,22 +35,21 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_docviewer    = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
-    private final String        type_primaryURLs  = "https?://(?:www\\.)?(((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+)";
-    private final String        type_shortURLs_d  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+(/[^/]+){0,}";
-    private final String        type_shortURLs_i  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
-    private final String        type_yadi_sk_mail = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
-    private final String        DOWNLOAD_ZIP      = "DOWNLOAD_ZIP_2";
-    private static final String OFFLINE_TEXT      = "class=\"not\\-found\\-public__caption\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
-    private static final String JSON_TYPE_DIR     = "dir";
+    private static final String type_docviewer     = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
+    private final String        type_primaryURLs   = "https?://(?:www\\.)?(((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+)";
+    private final String        type_shortURLs_d   = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+(/[^/]+){0,}";
+    private final String        type_shortURLs_i   = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
+    private final String        type_yadi_sk_mail  = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
+    private final String        type_yadi_sk_album = "https?://(www\\.)?yadi\\.sk/a/[A-Za-z0-9\\-_]+";
+    private final String        DOWNLOAD_ZIP       = "DOWNLOAD_ZIP_2";
+    private static final String OFFLINE_TEXT       = "class=\"not\\-found\\-public__caption\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
+    private static final String JSON_TYPE_DIR      = "dir";
 
     /** Using API: https://tech.yandex.ru/disk/api/reference/public-docpage/ */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -63,6 +64,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String mainhashID = null;
         String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
         boolean is_part_of_a_folder = false;
+        boolean parameter_correct = false;
+        final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         if (path_main == null) {
             path_main = "/";
         }
@@ -85,19 +88,31 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         } else if (parameter.matches(type_yadi_sk_mail)) {
             mainhashID = regexHashFromURL(parameter);
             parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
-        } else {
-            parameter = parameter.replace("#", "?hash=");
-            mainhashID = regexHashFromURL(parameter);
-        }
-        boolean parameter_correct = false;
-        final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-        if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
+        } else if (parameter.matches(type_yadi_sk_album)) {
+            /* 2018-02-07: Not yet supported */
+            if (true) {
+                return null;
+            }
             getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
-                main.setAvailable(false);
-                main.setProperty("offline", true);
+                final DownloadLink offline = this.createOfflinelink(parameter);
                 main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
-                decryptedLinks.add(main);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            mainhashID = PluginJSonUtils.getJsonValue(br, "public_key");
+            if (mainhashID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
+            parameter_correct = true;
+        } else if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
+            getPage(parameter);
+            if (br.containsHTML(OFFLINE_TEXT)) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             mainhashID = PluginJSonUtils.getJsonValue(br, "hash");
@@ -107,6 +122,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
             parameter_correct = true;
+        } else {
+            parameter = parameter.replace("#", "?hash=");
+            mainhashID = regexHashFromURL(parameter);
         }
         hash_decoded = Encoding.htmlDecode(mainhashID);
         if (hash_decoded.contains(":/")) {
