@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -32,10 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videoboxdecrypted\\.com/decryptedscene/\\d+" })
 public class VideoBoxCom extends PluginForHost {
@@ -140,9 +140,9 @@ public class VideoBoxCom extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://www." + account.getUser() + "/login");
+                br.getPage("https://www." + account.getHoster() + "/login");
                 String postData = "login-page=login-page&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true&x=0&y=0";
-                /* TODO: Fix this */
+                /* TODO: 20187-02-07: Fix this (status unclear but login without captcha should work fine) */
                 if (false) {
                     if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
@@ -152,7 +152,10 @@ public class VideoBoxCom extends PluginForHost {
                     postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
                 br.postPage(br.getURL(), postData);
-                if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null || br.getURL().contains("videobox.com/auth-fail")) {
+                if (br.containsHTML("Your account expired on")) {
+                    account.getAccountInfo().setExpired(true);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null || br.getURL().contains("videobox.com/auth-fail")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
