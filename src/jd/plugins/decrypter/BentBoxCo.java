@@ -107,9 +107,9 @@ public class BentBoxCo extends PluginForDecrypt {
         if (title != null || author != null) {
             final FilePackage fp = FilePackage.getInstance();
             if (title != null && author != null) {
-                fp.setName(author + "-" + title);
+                fp.setName(author + "-" + Encoding.htmlDecode(title));
             } else if (title != null) {
-                fp.setName(title);
+                fp.setName(Encoding.htmlDecode(title));
             } else {
                 fp.setName(author);
             }

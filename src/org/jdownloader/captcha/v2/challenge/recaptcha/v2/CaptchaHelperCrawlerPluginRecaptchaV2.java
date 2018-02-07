@@ -55,7 +55,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             // non fatal if secureToken is null.
         }
         final PluginForDecrypt plugin = getPlugin();
-        final RecaptchaV2Challenge c = createChallenge(plugin);
+        final RecaptchaV2Challenge c = createChallenge();
         c.setTimeout(plugin == null ? 60000 : plugin.getCaptchaTimeout());
         if (plugin != null) {
             plugin.invalidateLastChallengeResponse();
@@ -167,7 +167,12 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         }
     }
 
-    protected RecaptchaV2Challenge createChallenge(final PluginForDecrypt plugin) {
-        return new RecaptchaV2Challenge(siteKey, secureToken, isBoundToDomain(), isSameOrigin(), plugin, br, getSiteDomain());
+    protected RecaptchaV2Challenge createChallenge() {
+        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
+            @Override
+            public String getSiteUrl() {
+                return CaptchaHelperCrawlerPluginRecaptchaV2.this.getSiteUrl();
+            }
+        };
     }
 }

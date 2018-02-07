@@ -1,7 +1,11 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -9,25 +13,23 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
-    protected T            plugin;
-    protected LogInterface logger;
-    protected Browser      br;
-    protected String       siteKey;
-    protected String       secureToken;
-    protected boolean      boundToDomain;
+    protected final T       plugin;
+    protected LogInterface  logger;
+    protected final Browser br;
+    protected String        siteKey;
+    protected String        secureToken;
 
     public String getSecureToken() {
         return getSecureToken(br != null ? br.toString() : null);
     }
 
     public String getSecureToken(final String source) {
-        if (secureToken != null) {
-            return secureToken;
-        }
-        // from fallback url
-        secureToken = new Regex(source, "&stoken=([^\"]+)").getMatch(0);
         if (secureToken == null) {
-            secureToken = new Regex(source, "data-stoken\\s*=\\s*\"\\s*([^\"]+)").getMatch(0);
+            // from fallback url
+            secureToken = new Regex(source, "&stoken=([^\"]+)").getMatch(0);
+            if (secureToken == null) {
+                secureToken = new Regex(source, "data-stoken\\s*=\\s*\"\\s*([^\"]+)").getMatch(0);
+            }
         }
         return secureToken;
     }
@@ -36,24 +38,42 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         this.secureToken = secureToken;
     }
 
-    protected boolean isBoundToDomain() {
-        if (true) {
-            return true;
-        } else {
-            return boundToDomain;
-        }
-    }
-
-    protected Boolean isSameOrigin() {
-        if (true) {
-            return Boolean.TRUE;
-        } else {
-            return null;
-        }
-    }
-
     public String getSiteDomain() {
         return siteDomain;
+    }
+
+    protected String getSiteUrl() {
+        String siteURL = null;
+        if (plugin != null) {
+            if (plugin instanceof PluginForHost) {
+                final DownloadLink downloadLink = ((PluginForHost) plugin).getDownloadLink();
+                if (downloadLink != null) {
+                    siteURL = downloadLink.getPluginPatternMatcher();
+                }
+            } else if (plugin instanceof PluginForDecrypt) {
+                final CrawledLink crawledLink = ((PluginForDecrypt) plugin).getCurrentLink();
+                if (crawledLink != null) {
+                    siteURL = crawledLink.getURL();
+                }
+            }
+        }
+        if (siteURL != null) {
+            if (br != null && br.getRequest() != null) {
+                if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
+                    siteURL = siteURL.replaceAll("^(?i)(https?://)", "https://");
+                } else {
+                    siteURL = siteURL.replaceAll("^(?i)(https?://)", "http://");
+                }
+            }
+            siteURL = siteURL.replaceAll("(#.+)", "");
+            return siteURL;
+        } else {
+            if (br != null && br.getRequest() != null) {
+                return br.getURL();
+            } else {
+                return "http://" + getSiteDomain();
+            }
+        }
     }
 
     private final String siteDomain;
@@ -71,7 +91,6 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         }
         this.siteKey = siteKey;
         this.secureToken = secureToken;
-        this.boundToDomain = boundToDomain;
     }
 
     protected void createFallbackLogger() {

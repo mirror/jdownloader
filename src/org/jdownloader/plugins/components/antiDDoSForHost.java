@@ -1,13 +1,5 @@
 package org.jdownloader.plugins.components;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,11 +18,6 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -51,6 +38,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 /**
  *
  * @author raztoki
@@ -58,7 +56,6 @@ import jd.plugins.components.UserAgents.BrowserName;
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForHost extends PluginForHost {
-
     public antiDDoSForHost(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -590,11 +587,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 this.setDownloadLink(dllink);
                                 final Form cf = cloudflare;
                                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-
-                                    {
-                                        boundToDomain = true;
-                                    }
-
                                     @Override
                                     public String getSiteKey() {
                                         return getSiteKey(cf.getHtmlCode());
