@@ -6,6 +6,7 @@ config_toolbarbutton=工具栏按钮可见
 gui_config_jdshutdown_close=关闭 JDownloader
 gui_config_jdshutdown_forceshutdown=强制关机(并不适用所有操作系统)
 gui_config_jdshutdown_hibernate=休眠(并不适用所有操作系统)
+gui_config_jdshutdown_logoff=注销
 gui_config_jdshutdown_mode=模式:
 gui_config_jdshutdown_shutdown=关机
 gui_config_jdshutdown_standby=待机(并不适用所有操作系统)

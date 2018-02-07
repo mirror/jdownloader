@@ -5,6 +5,7 @@ action_captcha_service=服务
 action_disableAccount=禁用账户
 action_enableAccount=启用账户
 action_pauseDownloads=暂停下载
+action_setConnections=设置续传下载
 action_setDownloadspeed=设置下载速度
 action_setSopMark=设置停止标记
 action_startDownload=开始下载
