@@ -142,7 +142,7 @@ public class VideoBoxCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("https://www." + account.getHoster() + "/login");
                 String postData = "login-page=login-page&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true&x=0&y=0";
-                /* TODO: 20187-02-07: Fix this (status unclear but login without captcha should work fine) */
+                /* TODO: 2018-02-07: Fix this (status unclear but login without captcha should work fine) */
                 if (false) {
                     if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
