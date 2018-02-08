@@ -14,6 +14,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveme.com" }, urls = { "https?://(?:www\\.)?liveme\\.com/(?:media/play/\\?videoid=\\d+|media/liveshort/dist/\\?videoid=\\d+&.*?|live\\.html\\?videoid=\\d+.*?)" })
 public class LiveMeCom extends PluginForDecrypt {
@@ -32,8 +33,11 @@ public class LiveMeCom extends PluginForDecrypt {
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
         final Map<String, Object> video_info = (Map<String, Object>) data.get("video_info");
+        final Map<String, Object> user_info = (Map<String, Object>) data.get("user_info");
         final String title = (String) video_info.get("title");
+        final String desc = (String) user_info.get("desc");
         final String url = (String) video_info.get("videosource");
+        final Object videosize = video_info.get("videosize");
         final DownloadLink link;
         if (StringUtils.endsWithCaseInsensitive(url, "m3u8")) {
             link = createDownloadlink("m3u8" + url.substring(4));
@@ -42,8 +46,15 @@ public class LiveMeCom extends PluginForDecrypt {
         } else {
             return ret;
         }
-        if (title != null) {
+        if (videosize != null) {
+            link.setDownloadSize(JavaScriptEngineFactory.toLong(videosize, -1));
+        }
+        if (StringUtils.isAllNotEmpty(title, desc)) {
+            link.setFinalFileName(desc + "_" + title + ".mp4");
+        } else if (StringUtils.isNotEmpty(title)) {
             link.setFinalFileName(title + ".mp4");
+        } else if (StringUtils.isNotEmpty(desc)) {
+            link.setFinalFileName(desc + ".mp4");
         }
         link.setContentUrl(param.getCryptedUrl());
         ret.add(link);
