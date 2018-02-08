@@ -13,14 +13,16 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.DefaultAuthenticanFactory;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,12 +34,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidturk.com" }, urls = { "https?://(?:www\\.)?rapidturk\\.com/files/[A-Za-z0-9]+\\.html" })
 public class RapidturkCom extends Ftp {
-
     public RapidturkCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.rapidturk.com/premium/get");
@@ -93,13 +95,17 @@ public class RapidturkCom extends Ftp {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
+            try {
+                br.followConnection();
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -196,14 +202,39 @@ public class RapidturkCom extends Ftp {
                 dllink = this.br.getRegex("class=\"download\\-button\\-orange\" onclick=\"location\\.href=\\'([^<>\"\\']+)\\'").getMatch(0);
             }
             if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!dllink.startsWith("ftp://")) {
+            if (!dllink.startsWith("ftp://") && !dllink.startsWith("http")) {
                 /* 2017-02-03: New */
                 dllink = "ftp://" + dllink;
             }
-            download(dllink, link, true);
+            if (dllink.startsWith("http")) {
+                final String auth = new Regex(dllink, "https?://([^/]+)@").getMatch(0);
+                if (auth == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String username = new Regex(auth, "(.*?):").getMatch(0);
+                final String password = new Regex(auth, ":(.+)").getMatch(0);
+                dllink = dllink.replaceFirst(Pattern.quote(auth) + "@", "");
+                br.setCustomAuthenticationFactory(new DefaultAuthenticanFactory(Browser.getHost(dllink), null, username, password));
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
+                    try {
+                        br.followConnection();
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.startDownload();
+            } else {
+                download(dllink, link, true);
+            }
         }
     }
 
@@ -219,5 +250,4 @@ public class RapidturkCom extends Ftp {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
