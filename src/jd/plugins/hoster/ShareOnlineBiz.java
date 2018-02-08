@@ -473,6 +473,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             } else {
                 ai.setValidUntil(-1);
             }
+            ai.setSpecialTraffic(userTrafficWorkaround());
             if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP")) {
                 /* VIP do not have traffic usage available via api */
                 final int chosenTrafficLimit = getPluginConfig().getIntegerProperty(TRAFFIC_LIMIT, 0);
@@ -496,10 +497,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 } else {
                     // Penalty-Premium needs TrafficLeft > 0 (TrafficWorkaround, throttled accounts)
                     if (userTrafficWorkaround()) {
-                        ai.setSpecialTraffic(true);
                         ai.setTrafficLeft(1024 * 1024);
                     } else {
-                        ai.setSpecialTraffic(false);
                         ai.setTrafficLeft(Math.max(0, freeDay));
                     }
                 }
