@@ -32,6 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -43,8 +44,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     }
 
     public static final String  BUILD            = "release-33-1.201603012259";
-    /* Max .zip filesize = 4 GB */
-    private static final double MAX_ZIP_FILESIZE = 4194304;
+    /* Max .zip filesize = 4 GB - 2018: 10 MB */
+    private static final double MAX_ZIP_FILESIZE = 10485760;
     private static String       DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
     private static final String TYPE_APIV2       = "https?://(www\\.)?cloud\\.mail\\.ru/(?:files/)?[A-Z0-9]{32}";
     private String              json;
@@ -58,6 +59,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         if (parameter.endsWith("/")) {
             parameter = parameter.substring(0, parameter.lastIndexOf("/"));
         }
+        br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+        final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
         String id;
         final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
         if (parameter.matches(TYPE_APIV2)) {
@@ -73,13 +76,15 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-            json = br.toString();
         } else {
             id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
             main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
             final String id_url_encoded = Encoding.urlEncode(id);
-            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
-            json = br.toString();
+            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
+            String nfolders = PluginJSonUtils.getJsonValue(br.toString(), "folders");
+            String nfiles = PluginJSonUtils.getJsonValue(br.toString(), "files");
+            String limit = nfolders + nfiles;
+            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
@@ -89,7 +94,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         }
         main.setProperty("plain_request_id", id);
         main.setProperty("mainlink", parameter);
-        String mainName = new Regex(json, "\"body\":\\{\"count\":\\{\"folders\":\\d+,\"files\":\\d+\\},\"name\":\"([^<>\"]*?)\"").getMatch(0);
+        json = br.toString();
+        String fsize = PluginJSonUtils.getJsonValue(json, "size");
+        String mainName = PluginJSonUtils.getJsonValue(json, "name");
         if (mainName == null) {
             mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
         }
@@ -97,7 +104,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             mainName = id;
         }
         mainName = Encoding.htmlDecode(mainName.trim());
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
         entries = (LinkedHashMap<String, Object>) entries.get("body");
         // final String title_json = (String)entries.get("name");
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
@@ -105,8 +112,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
-        final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
         long totalSize = 0;
         boolean folderContainsSubfolder = false;
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
@@ -191,11 +196,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 decryptedLinks.addAll(downloadLinks);
             }
         }
-        if (decryptedLinks.size() > 1 && totalSize <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+        if (decryptedLinks.size() > 1 && Double.valueOf(fsize) <= MAX_ZIP_FILESIZE && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final String main_name = mainName + ".zip";
             main.setProperty("plain_name", main_name);
-            main.setProperty("plain_size", Long.toString(totalSize));
+            // main.setProperty("plain_size", Long.toString(totalSize));
+            main.setProperty("plain_size", fsize);
             main.setProperty("complete_folder", true);
             decryptedLinks.add(main);
         }
