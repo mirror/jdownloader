@@ -1,16 +1,12 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.awt.Rectangle;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import javax.imageio.ImageIO;
-import javax.swing.Icon;
 
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +23,6 @@ import org.appwork.utils.IO;
 import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
@@ -584,18 +578,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             String html = IO.readURLToString(url);
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
-            final Icon favIcon = getDomainInfo().getFavIcon();
-            final String favIconDataUrl;
-            if (favIcon != null) {
-                final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                final Base64OutputStream b64os = new Base64OutputStream(bos);
-                ImageIO.write(IconIO.convertIconToBufferedImage(favIcon), "png", b64os);
-                b64os.close();
-                favIconDataUrl = ("data:image/png;base64," + new String(bos.toByteArray(), "UTF-8"));
-            } else {
-                favIconDataUrl = "";
-            }
-            html = html.replace("%%%favIcon%%%", StringUtils.valueOrEmpty(favIconDataUrl));
             html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             if (isBoundToDomain()) {
                 html = html.replace("%%%display%%%", "none");
