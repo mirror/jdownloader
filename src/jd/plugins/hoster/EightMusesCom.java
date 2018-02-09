@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -28,9 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/picture/.+" })
 public class EightMusesCom extends antiDDoSForHost {
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +67,9 @@ public class EightMusesCom extends antiDDoSForHost {
             dllink = imageDir + imageName;
         } else if (imageHost != null && imageName != null) {
             dllink = imageHost + "/image/fl/" + imageName;
+        } else if (imageName != null) {
+            /* 2018-02-09 */
+            dllink = "https://www.8muses.com/image/fl/" + imageName;
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

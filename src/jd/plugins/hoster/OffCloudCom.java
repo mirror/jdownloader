@@ -29,6 +29,7 @@ import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -359,6 +360,7 @@ public class OffCloudCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
+        final OffCloudComPluginConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.OffCloudCom.OffCloudComPluginConfigInterface.class);
         final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago();
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
@@ -436,6 +438,14 @@ public class OffCloudCom extends PluginForHost {
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final ArrayList<String> supportedHostStates = new ArrayList<String>();
+        supportedHostStates.add("cloud only");
+        supportedHostStates.add("healthy");
+        supportedHostStates.add("fragile");
+        supportedHostStates.add("limited");
+        if (cfg.isShowHostersWithStatusAwaitingDemand()) {
+            supportedHostStates.add("awaiting demand");
+        }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         ressourcelist = (ArrayList) entries.get("fs");
         /**
@@ -448,15 +458,17 @@ public class OffCloudCom extends PluginForHost {
         cloudOnlyHosts.clear();
         for (final Object domaininfo_o : ressourcelist) {
             final LinkedHashMap<String, Object> domaininfo = (LinkedHashMap<String, Object>) domaininfo_o;
-            final String status = (String) domaininfo.get("isActive");
+            String status = (String) domaininfo.get("isActive");
             String realhost = (String) domaininfo.get("displayName");
             if (realhost == null || status == null) {
                 continue;
             }
+            status = status.toLowerCase();
             realhost = realhost.toLowerCase();
-            boolean active = Arrays.asList("cloud only", "Cloud only", "healthy", "Healthy", "fragile", "Fragile", "limited", "Limited").contains(status);
+            Arrays.asList(supportedHosts);
+            final boolean addToArrayOfSupportedHosts = supportedHostStates.contains(status);
             logger.info("offcloud.com status of host " + realhost + ": " + status);
-            if (active) {
+            if (addToArrayOfSupportedHosts) {
                 supportedHosts.add(realhost);
                 if (status.equals("cloud only")) {
                     cloudOnlyHosts.add(realhost);
@@ -468,10 +480,10 @@ public class OffCloudCom extends PluginForHost {
         ai.setMultiHostSupport(this, supportedHosts);
         getAndSetChunklimits();
         /* Let's handle some settings stuff. */
-        if (this.getPluginConfig().getBooleanProperty(CLEAR_ALLOWED_IP_ADDRESSES, default_clear_allowed_ip_addresses)) {
+        if (cfg.isClearAllowedIpAddressesEnabled()) {
             this.clearAllowedIPAddresses();
         }
-        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT, default_clear_download_history_complete_instant) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
+        if (cfg.isDeleteDownloadHistoryCompleteInstantEnabled()) {
             /*
              * Go in here if user wants to have it's history deleted && last deletion was before DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL
              * or never executed (0).
@@ -479,7 +491,7 @@ public class OffCloudCom extends PluginForHost {
             this.deleteCompleteDownloadHistory(PROPERTY_DOWNLOADTYPE_instant);
             account.setProperty("last_time_deleted_history", System.currentTimeMillis());
         }
-        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD, default_clear_download_history_complete_instant) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
+        if (cfg.isDeleteDownloadHistoryCompleteCloudEnabled()) {
             /*
              * Go in here if user wants to have it's history deleted && last deletion was before DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL
              * or never executed (0).
@@ -1145,6 +1157,14 @@ public class OffCloudCom extends PluginForHost {
             public String getClearAllowedIpAddressesEnabled_description() {
                 return "<html>Activate 'Confirm IP' workaround?\r\nIn case you often get E-Mails from offcloud to confirm your current IP address, this setting may help.\r\nThis will always delete all of your allowed IPs except your current IP from your offcloud account.\r\n<html><p style=\"color:#F62817\">WARNING: Do NOT use this function in case you\r\n-Use multiple internet connections (IPs) at the same time\r\n-Share your offcloud account with friends\r\n-Use one or more proxies (or VPNs)</p></html>";
             }
+
+            public String getShowHostersWithStatusAwaitingDemand_label() {
+                return "<html>Show hosts with status 'Awaiting Demand' in hostlist?</html>";
+            }
+
+            public String getShowHostersWithStatusAwaitingDemand_description() {
+                return "<html>Keep in mind that such hosts are not (yet) supported by Offcloud; the only purpose of this is that when users try to download from such hosts via JDownloader, Offcloud can see that there is demand and might add them to the list of supported hosts in the future.<html>";
+            }
         }
 
         public static final Translation TRANSLATION = new Translation();
@@ -1176,6 +1196,12 @@ public class OffCloudCom extends PluginForHost {
         boolean isClearAllowedIpAddressesEnabled();
 
         void setClearAllowedIpAddressesEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        boolean isShowHostersWithStatusAwaitingDemand();
+
+        void setShowHostersWithStatusAwaitingDemand(boolean b);
     }
 
     // public void setConfigElements() {

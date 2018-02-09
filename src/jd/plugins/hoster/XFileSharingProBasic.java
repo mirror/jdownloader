@@ -140,7 +140,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.6.4<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.6.6<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -389,6 +389,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
+            /**
+             * TODO: 2018-02-09: Current XFS versions may all use 'check_files' inside URL AND querry parameter instead of 'checkfiles'!
+             * Maybe add a logic to check this via html code so we do not waste attempts / implement both versions.
+             */
             if (SUPPORTS_AVAILABLECHECK_ALT_FAST) {
                 postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
             } else {
@@ -575,7 +579,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 /* Captcha START */
                 if (correctedBR.contains("class=\"g-recaptcha\"")) {
-                    waitTime(downloadLink, timeBefore);
+                    /*
+                     * 2017-12-07: New - solve- and check reCaptchaV2 here via ajax call, then wait- and submit the main downloadform. This
+                     * might as well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges.
+                     */
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -693,9 +700,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         skipWaittime = false;
                     }
                     /* Captcha END */
-                    if (!skipWaittime) {
-                        waitTime(downloadLink, timeBefore);
-                    }
+                }
+                if (!skipWaittime) {
+                    waitTime(downloadLink, timeBefore);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
@@ -1350,6 +1357,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return ai;
     }
 
+    private Form findLoginform(final Browser br) {
+        Form loginform = br.getFormbyProperty("name", "FL");
+        if (loginform == null) {
+            /* More complicated way to find loginform ... */
+            final Form[] allForms = this.br.getForms();
+            for (final Form aForm : allForms) {
+                final InputField inputFieldOP = aForm.getInputFieldByName("op");
+                if (inputFieldOP != null && "login".equalsIgnoreCase(inputFieldOP.getValue())) {
+                    loginform = aForm;
+                    break;
+                }
+            }
+        }
+        return loginform;
+    }
+
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -1365,7 +1388,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     /* Required for some XFS setups. */
                     getPage(COOKIE_HOST + "/login");
                 }
-                final Form loginform = br.getFormbyProperty("name", "FL");
+                Form loginform = findLoginform(this.br);
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
@@ -1378,7 +1401,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                /* Missing login cookies or we still have the loginform --> Login failed */
+                final boolean loginCookieOkay = br.getCookie(COOKIE_HOST, "login") != null || br.getCookie(COOKIE_HOST, "xfss") == null;
+                final boolean loginFormOkay = findLoginform(this.br) == null;
+                final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
+                if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {

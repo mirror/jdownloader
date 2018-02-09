@@ -26,6 +26,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,14 +56,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.co" }, urls = { "https?://(www\\.)?rockfile\\.(co|eu)/(embed\\-)?[a-z0-9]{12}\\.html" })
-public class RockFileEu extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.co" }, urls = { "https?://(www\\.)?rockfile\\.(?:co|eu)/(?:embed\\-)?[a-z0-9]{12}\\.html" })
+public class RockFileCo extends antiDDoSForHost {
     private String               correctedBR                   = "";
     private String               passCode                      = null;
     private static final String  PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
@@ -138,7 +138,7 @@ public class RockFileEu extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public RockFileEu(PluginWrapper wrapper) {
+    public RockFileCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
