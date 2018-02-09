@@ -29,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|io|me|pw)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|io|me|pw)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)|https?://[a-z0-9\\-]+\\.libgen\\.pw/download/book/[a-f0-9]+" })
 public class LibGenInfo extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
