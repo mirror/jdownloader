@@ -77,6 +77,7 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -219,13 +220,16 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     public LogInterface initLogger(final DownloadLink link) {
-        PluginForHost plg = link.getLivePlugin();
+        final PluginForHost plg = link.getLivePlugin();
         LogInterface log = null;
         if (plg != null) {
             log = plg.getLogger();
         }
         if (log == null && sourceBrowser != null) {
             log = sourceBrowser.getLogger();
+        }
+        if (log == null) {
+            log = LogController.TRASH;
         }
         return log;
     }
