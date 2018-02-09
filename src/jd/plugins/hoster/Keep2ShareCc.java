@@ -554,7 +554,7 @@ public class Keep2ShareCc extends K2SApi {
                     }
                 }
                 getPage(this.MAINPAGE + "/login.html");
-                final Form login = br.getFormbyActionRegex("/login.html");
+                Form login = br.getFormbyActionRegex("/login.html");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -627,6 +627,10 @@ public class Keep2ShareCc extends K2SApi {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password field cannot be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                login = br.getFormbyActionRegex("/login.html");
+                if (login != null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(account.getHoster());
@@ -638,7 +642,9 @@ public class Keep2ShareCc extends K2SApi {
                 account.setProperty(cookiesProperty, cookies);
                 return cookies;
             } catch (final PluginException e) {
-                account.setProperty(cookiesProperty, Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty(cookiesProperty, Property.NULL);
+                }
                 throw e;
             }
         }
@@ -655,12 +661,7 @@ public class Keep2ShareCc extends K2SApi {
         if (useAPI()) {
             ai = super.fetchAccountInfo(account);
         } else {
-            try {
-                login(account, true, MAINPAGE);
-            } catch (final PluginException e) {
-                account.setValid(false);
-                throw e;
-            }
+            login(account, false, MAINPAGE);
             getPage("/site/profile.html");
             account.setValid(true);
             final String accountType = br.getRegex("<span>Account type: </span>\\s*<strong>\\s*(.*?)\\s*<").getMatch(0);
