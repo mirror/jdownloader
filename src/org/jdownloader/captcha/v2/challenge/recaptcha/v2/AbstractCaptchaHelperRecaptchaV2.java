@@ -57,7 +57,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                 }
             }
         }
-        if (siteURL != null) {
+        if (siteURL != null && (StringUtils.startsWithCaseInsensitive(siteURL, "https://") || StringUtils.startsWithCaseInsensitive(siteURL, "http://"))) {
             if (br != null && br.getRequest() != null) {
                 if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
                     siteURL = siteURL.replaceAll("^(?i)(https?://)", "https://");
@@ -67,12 +67,11 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             }
             siteURL = siteURL.replaceAll("(#.+)", "");
             return siteURL;
+        }
+        if (br != null && br.getRequest() != null) {
+            return br.getURL();
         } else {
-            if (br != null && br.getRequest() != null) {
-                return br.getURL();
-            } else {
-                return "http://" + getSiteDomain();
-            }
+            return "http://" + getSiteDomain();
         }
     }
 

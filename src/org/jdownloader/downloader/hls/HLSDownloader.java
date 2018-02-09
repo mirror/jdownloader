@@ -220,10 +220,14 @@ public class HLSDownloader extends DownloadInterface {
 
     public LogInterface initLogger(final DownloadLink link) {
         PluginForHost plg = link.getLivePlugin();
-        if (plg == null) {
-            plg = link.getDefaultPlugin();
+        LogInterface log = null;
+        if (plg != null) {
+            log = plg.getLogger();
         }
-        return plg == null ? null : plg.getLogger();
+        if (log == null && sourceBrowser != null) {
+            log = sourceBrowser.getLogger();
+        }
+        return log;
     }
 
     protected void terminate() {

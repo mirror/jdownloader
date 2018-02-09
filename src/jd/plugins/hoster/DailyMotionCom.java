@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,11 +20,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -47,9 +41,13 @@ import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
-
     public static String getVideosource(final Browser br) {
         return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(br);
     }
@@ -74,10 +72,8 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  ALLOW_OTHERS           = "ALLOW_OTHERS";
     private static final String  ALLOW_AUDIO            = "ALLOW_AUDIO";
     private static final String  ALLOW_HDS              = "ALLOW_HDS";
-
     private static final String  CUSTOM_DATE            = "CUSTOM_DATE";
     private static final String  CUSTOM_FILENAME        = "CUSTOM_FILENAME";
-
     private final static String  defaultCustomFilename  = "*videoname*_*quality**ext*";
     private final static String  defaultCustomDate      = "dd.MM.yyyy";
     private final static boolean defaultAllowAudio      = true;
@@ -190,11 +186,9 @@ public class DailyMotionCom extends PluginForHost {
             dllink = getDirectlink(downloadLink);
             logger.info("dllink: " + dllink);
             if (dllink == null) {
-
             } else {
                 // System.out.println("DLink FOund");
             }
-
             /* .m4a links have wrong internal directlinks --> Size check not possible */
             if (!downloadLink.getName().contains(".m4a")) {
                 if (!checkDirectLink(downloadLink) || dllink == null) {
@@ -208,7 +202,6 @@ public class DailyMotionCom extends PluginForHost {
                     }
                 }
             }
-
         }
         downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
         return AvailableStatus.TRUE;
@@ -240,7 +233,6 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     protected void downloadDirect(DownloadLink downloadLink) throws Exception {
-
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
         downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
@@ -339,7 +331,6 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.dailymotion.com/de/legal/terms";
-
     }
 
     @Override
@@ -419,11 +410,9 @@ public class DailyMotionCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "ff", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-
         br.setAllowedResponseCodes(new int[] { 410 });
         return br;
     }
@@ -465,9 +454,7 @@ public class DailyMotionCom extends PluginForHost {
                 }
                 final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
                 SimpleDateFormat formatter = null;
-
                 Date theDate = new Date(Long.parseLong(tag_data));
-
                 if (userDefinedDateFormat != null) {
                     try {
                         formatter = new SimpleDateFormat(userDefinedDateFormat);
@@ -549,5 +536,4 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

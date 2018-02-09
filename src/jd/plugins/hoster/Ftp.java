@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -57,10 +56,8 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 // DEV NOTES:
 // - ftp filenames can contain & characters!
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/[^\"\r\n ]+" })
 public class Ftp extends PluginForHost {
-
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -119,12 +116,12 @@ public class Ftp extends PluginForHost {
         };
     }
 
-    public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {
-        final URL url = new URL(ftpurl);
+    public void download(String downloadUrl, final DownloadLink downloadLink, boolean throwException) throws Exception {
+        final URL url = new URL(downloadUrl);
         final SimpleFTP ftp = createSimpleFTP(url);
         try {
             /* cut off all ?xyz at the end */
-            final String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
+            final String filePath = new Regex(downloadUrl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
             final String downloadFilePath = checkFile(ftp, downloadLink, filePath);
             dl = new SimpleFTPDownloadInterface(ftp, downloadLink, downloadFilePath);
@@ -245,7 +242,6 @@ public class Ftp extends PluginForHost {
     }
 
     private final String                            MAX_FTP_CONNECTIONS    = "MAX_FTP_CONNECTIONS";
-
     private static WeakHashMap<DomainInfo, Integer> MAX_FTP_CONNECTION_MAP = new WeakHashMap<DomainInfo, Integer>();
 
     @Override
