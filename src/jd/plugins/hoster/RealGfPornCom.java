@@ -59,15 +59,18 @@ public class RealGfPornCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)( - Real Girlfriend Porn)?</title>").getMatch(0);
         }
-        dllink = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+        dllink = br.getRegex("<source src='(.*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\\'(http://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
+            dllink = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\\&file=(http://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
+                dllink = br.getRegex("\\'(http://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("<param name=\"filename\" value=\"(http://.*?)\"").getMatch(0);
+                    dllink = br.getRegex("\\&file=(http://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("file\\s*:\\s*(\"|'|)(https?://.*?)\\1").getMatch(1);
+                        dllink = br.getRegex("<param name=\"filename\" value=\"(http://.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("file\\s*:\\s*(\"|'|)(https?://.*?)\\1").getMatch(1);
+                        }
                     }
                 }
             }
@@ -88,7 +91,7 @@ public class RealGfPornCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); // We often get 403 here but download is possible
             }
             return AvailableStatus.TRUE;
         } finally {
