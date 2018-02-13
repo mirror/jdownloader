@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -91,6 +92,9 @@ public class ExtremeTubeCom extends PluginForHost {
             if (dllink != null) {
                 break;
             }
+        }
+        if (dllink == null) {
+            dllink = PluginJSonUtils.getJsonValue(json, "video_url");
         }
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
