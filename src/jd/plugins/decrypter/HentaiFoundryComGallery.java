@@ -106,7 +106,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-            next = br.getRegex("class=\"next\"><a href=\"(/pictures/user/[A-Za-z0-9\\-_]+/page/\\d+)\"").getMatch(0);
+            next = br.getRegex("class=\"next\"><a href=\"(/pictures/user/.*?/page/\\d+)\">Next").getMatch(0);
             page++;
         } while (next != null);
         FilePackage fp = FilePackage.getInstance();
