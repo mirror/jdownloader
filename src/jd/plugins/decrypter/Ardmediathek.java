@@ -26,18 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -49,6 +37,18 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.Type;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -676,7 +676,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return newMap;
     }
 
-    /** Returns videos' width. Do not remove parts of thise code without understanding them - this code is crucial for the plugin! */
+    /** Returns videos' width. Do not remove parts of this code without understanding them - this code is crucial for the plugin! */
     private int getWidth(final String width_str, final int width_given, final int quality_number) {
         final int width;
         if (width_given > 0) {
