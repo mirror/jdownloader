@@ -26,7 +26,6 @@ import org.jdownloader.gui.translate._GUI;
  *
  */
 public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
-
     /**
      *
      */
@@ -35,16 +34,13 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
     public EnabledDisabledColumn() {
         super(_GUI.T.EnabledDisabledColumn_EnabledDisabledColumn());
-
         iconYes = new CheckBoxIcon(true, true);
         iconNo = new CheckBoxIcon(false, true);
-
         /**
          * Custom sorting for this type of ExtIconColumn We need custom sorting as the usual implementation only sorts links within packages
          * but does not sort the packages. The custom sort allows disabled links to be moved to the top of the download list.
          */
         super.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
-
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 if (o1 instanceof AbstractPackageNode && o2 instanceof AbstractPackageNode) {
@@ -63,7 +59,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
              *            Cell in download list
              * @return 1,0,-1 depending on output of sort
              */
-            private int sortPackages(final AbstractPackageNode o1, final AbstractPackageNode o2) {
+            private final int sortPackages(final AbstractPackageNode o1, final AbstractPackageNode o2) {
                 int h1 = 0;
                 int h2 = 0;
                 ModifyLock lock = o1.getModifyLock();
@@ -75,6 +71,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
                         } else {
                             h1 = 1;
                         }
+                        break;
                     }
                 } finally {
                     lock.readUnlock(readL);
@@ -88,6 +85,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
                         } else {
                             h2 = 1;
                         }
+                        break;
                     }
                 } finally {
                     lock.readUnlock(readL);
@@ -104,8 +102,8 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
              *            Cell in download list
              * @return 1,0,-1 depending on output of sort
              */
-            private int sortLinks(final AbstractNode o1, final AbstractNode o2) {
-                return finalDecision(o1.isEnabled() ? 1 : 0, o1.isEnabled() ? 1 : 0);
+            private final int sortLinks(final AbstractNode o1, final AbstractNode o2) {
+                return finalDecision(o1.isEnabled() ? 1 : 0, o2.isEnabled() ? 1 : 0);
             }
 
             /**
@@ -115,18 +113,16 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
              * @param h2
              * @return
              */
-            private int finalDecision(int h1, int h2) {
+            private final int finalDecision(int h1, int h2) {
                 if (h1 == h2) {
                     return 0;
-                }
-                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                } else if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                     return h1 > h2 ? -1 : 1;
                 } else {
                     return h2 > h1 ? -1 : 1;
                 }
             }
         });
-
     }
 
     /**
@@ -142,9 +138,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
     }
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
         final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
