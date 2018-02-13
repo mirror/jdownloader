@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -33,9 +30,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" })
 public class EuroShareEu extends antiDDoSForHost {
-
     /** API documentation: http://euroshare.eu/euroshare-api/ */
     /**
      * Possible undocumented API responses: <br />
@@ -66,6 +64,7 @@ public class EuroShareEu extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         String filename;
         // start of password handling crapola
         String pass = downloadLink.getStringProperty("pass");
@@ -94,7 +93,6 @@ public class EuroShareEu extends antiDDoSForHost {
             }
         }
         // end of password handling
-
         filename = PluginJSonUtils.getJsonValue(this.br, "file_name");
         final String description = PluginJSonUtils.getJsonValue(this.br, "file_description");
         if (description != null && downloadLink.getComment() == null) {
@@ -106,7 +104,6 @@ public class EuroShareEu extends antiDDoSForHost {
         downloadLink.setDownloadSize(Long.parseLong(filesize));
         downloadLink.setMD5Hash(md5);
         return AvailableStatus.TRUE;
-
     }
 
     private void handlePassword(DownloadLink downloadLink) throws Exception {
@@ -212,7 +209,6 @@ public class EuroShareEu extends antiDDoSForHost {
             if (br.containsHTML("Z Vasej IP uz prebieha stahovanie")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max simultan free downloads-limit reached!", 5 * 60 * 1000l);
             }
-
             // HTTP/1.1 403 Forbidden
             // Server: nginx/1.2.5
             // Date: Thu, 03 Apr 2014 07:08:04 GMT
@@ -231,7 +227,6 @@ public class EuroShareEu extends antiDDoSForHost {
                 /* 403 Forbidden<br><br>Z Vasej IP uz prebieha stahovanie. Ako free uzivatel mozete stahovat iba jeden subor. */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "403 Too many free downloads active, try again later", 5 * 60 * 1000l);
             }
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
@@ -278,5 +273,4 @@ public class EuroShareEu extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
