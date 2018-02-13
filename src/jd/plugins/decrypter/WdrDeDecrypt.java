@@ -42,7 +42,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.WdrDeMediathek.WdrDeConfigInterface;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de", "sportschau.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html" })
 public class WdrDeDecrypt extends PluginForDecrypt {
     private static final String Q_LOW               = "Q_LOW";
     private static final String Q_MEDIUM            = "Q_MEDIUM";
@@ -70,7 +70,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = fixVideourl(param.toString());
         final String url_name = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
-        final String tvStationName = new Regex(parameter, "https?://(?:www\\.)?([^\\.]+)\\.").getMatch(0);
+        final String tvStationName = new Regex(parameter, "https?://(?:www(?:\\d+)?\\.)?([^\\.]+)\\.").getMatch(0);
         br.setFollowRedirects(true);
         if (parameter.matches(TYPE_ROCKPALAST)) {
             final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
@@ -96,7 +96,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         String date = null;
         String sendung = null;
         String episode_name = null;
-        if (parameter.matches(".+wdr\\.de/.+")) {
+        if (parameter.matches(".+(wdr\\.de|sportschau\\.de)/.+")) {
             final Regex inforegex = br.getRegex("(\\d{2}\\.\\d{2}\\.\\d{4}) \\| ([^<>]*?) \\| Das Erste</p>");
             date = inforegex.getMatch(0);
             sendung = br.getRegex("<strong>([^<>]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
@@ -134,19 +134,24 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             sendung = einsfestivalGetTitleSubtitleWithErrorhandlingFromVideoSrc(thisvideo_src);
             json_api_url = new Regex(thisvideo_src, "adaptivePath\\s*?:\\s*?\\'(http://[^<>\"\\']+)\\'").getMatch(0);
         }
-        if (sendung == null) {
-            /* Finally fallback to url-information */
-            sendung = url_name.replace(".html", "");
+        if (sendung != null) {
+            sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
         }
-        sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
         String plain_name = null;
         if (episode_name != null) {
             episode_name = Encoding.htmlDecode(episode_name).trim();
             episode_name = encodeUnicode(episode_name);
             if (sendung != null) {
                 plain_name = sendung + " - " + episode_name;
+            } else {
+                plain_name = episode_name;
             }
         } else {
+            if (sendung == null) {
+                /* Finally fallback to url-information */
+                sendung = url_name.replace(".html", "");
+                sendung = encodeUnicode(sendung);
+            }
             plain_name = sendung;
         }
         if (json_api_url == null) {
@@ -247,7 +252,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 /* Old */
                 // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
                 /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
-                String final_url = "http://ondemand-ww.wdr.de/medp/";
+                /* 2018-02-13: new e.g. http://wdrmedien-a.akamaihd.net/medp/ondemand/de/fsk0/158/1580248/1580248_18183304.mp4 */
+                String final_url = "http://wdrmedien-a.akamaihd.net/medp/ondemand/" + region + "/";
                 final_url += fsk_url + "/";
                 final String linkid = qualities[counter];
                 final String resolution = resolutionsInOrder[counter];
