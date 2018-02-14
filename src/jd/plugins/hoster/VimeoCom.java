@@ -658,7 +658,7 @@ public class VimeoCom extends PluginForHost {
         return v;
     }
 
-    public static VimeoVideoContainer getVimeoVideoContainer(final DownloadLink downloadLink) throws Exception {
+    public static VimeoVideoContainer getVimeoVideoContainer(final DownloadLink downloadLink, final boolean allowNull) throws Exception {
         synchronized (downloadLink) {
             final Object value = downloadLink.getProperty(VVC, null);
             if (value instanceof VimeoVideoContainer) {
@@ -672,14 +672,22 @@ public class VimeoCom extends PluginForHost {
                 downloadLink.setProperty(VVC, ret);
                 return ret;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (allowNull) {
+                    return null;
+                } else {
+                    if (value != null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, new Exception(value.getClass().getSimpleName()));
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
             }
         }
     }
 
     @SuppressWarnings("deprecation")
     public String getFormattedFilename(final DownloadLink downloadLink) throws Exception {
-        final VimeoVideoContainer vvc = getVimeoVideoContainer(downloadLink);
+        final VimeoVideoContainer vvc = getVimeoVideoContainer(downloadLink, true);
         String videoTitle = downloadLink.getStringProperty("videoTitle", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
