@@ -921,8 +921,8 @@ public class HLSDownloader extends DownloadInterface {
                                 } catch (IOException e) {
                                     requestLogger.log(e);
                                     onSegmentException(connection, e);
-                                    if (connection == null || connection.getResponseCode() == 504 || connection.getResponseCode() == 999) {
-                                        Thread.sleep(250 + (retry * 50));
+                                    if (connection == null || connection.getResponseCode() == 504 || connection.getResponseCode() == 502 || connection.getResponseCode() == 999) {
+                                        Thread.sleep(250 + (retry * 250));
                                         continue retryLoop;
                                     } else {
                                         return false;
@@ -1080,6 +1080,9 @@ public class HLSDownloader extends DownloadInterface {
                                             requestLogger.info("Segment:" + segment.getUrl() + "|Loaded:" + segment.isLoaded());
                                             if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
                                                 segment.setSize(Math.max(length, fileBytesMap.getSize()));
+                                            }
+                                            if (segment.isLoaded() == false) {
+                                                System.out.println("WTF");
                                             }
                                         }
                                         requestLogger.info(fileBytesMap.toString());
