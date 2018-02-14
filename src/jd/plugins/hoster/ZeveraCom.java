@@ -54,7 +54,6 @@ import jd.plugins.components.ZeveraApiTracker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
-
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
@@ -458,6 +457,8 @@ public class ZeveraCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     }
                     failure = true;
+                } else {
+                    failure = false;
                 }
             } catch (BrowserException e) {
                 API.setFailure();
@@ -558,7 +559,12 @@ public class ZeveraCom extends antiDDoSForHost {
                 }
                 br.setFollowRedirects(true);
                 getApi("/");
+                // zevera redirects to Location: /member/GetOrExtendPremium.aspx?code= after successful login. Location:
+                // /member/GetOrExtendPremium.aspx?code= then returns an error. We do not need this redirect anyway as long as the cookies
+                // are available
+                br.setFollowRedirects(false);
                 getApi("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.setFollowRedirects(true);
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
                     // they can make more steps here.
                     final Form more = getMoreForm(account);
