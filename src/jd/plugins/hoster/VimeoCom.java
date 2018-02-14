@@ -83,6 +83,7 @@ public class VimeoCom extends PluginForHost {
     public static final String  P_1080             = "P_1080";
     public static final String  P_1440             = "P_1440";
     public static final String  P_2560             = "P_2560";
+    public static final String  ASK_REF            = "ASK_REF";
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -854,6 +855,8 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), P_1080, JDL.L("plugins.hoster.vimeo.108p", "1080p")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), P_1440, JDL.L("plugins.hoster.vimeo.1440p", "1440p")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), P_2560, JDL.L("plugins.hoster.vimeo.2560p", "2560p")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ASK_REF, JDL.L("plugins.hoster.vimeo.askref", "Ask for referer")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customise filename"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.vimeocom.customdate", "Define date:")).setDefaultValue(defaultCustomDate));

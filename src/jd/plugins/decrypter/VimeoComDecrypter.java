@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
 
@@ -56,7 +58,7 @@ import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
 public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
-    private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
+    private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?)forced_referer=[A-Za-z0-9=]+)?";
     private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?)forced_referer=[A-Za-z0-9=]+";
     public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+.+";
 
@@ -171,7 +173,16 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             final String vimeo_forced_referer_url_part = new Regex(parameter, "(\\&forced_referer=.+)").getMatch(0);
             if (vimeo_forced_referer_url_part != null) {
                 parameter = parameter.replace(vimeo_forced_referer_url_part, "");
-                vimeo_forced_referer = Encoding.Base64Decode(new Regex(vimeo_forced_referer_url_part, "forced_referer=(.+)").getMatch(0));
+                final String forced_referer = new Regex(vimeo_forced_referer_url_part, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
+                if (forced_referer != null) {
+                    if (forced_referer.matches("^[a-fA-F0-9]+$") && forced_referer.length() % 2 == 0) {
+                        final byte[] bytes = HexFormatter.hexToByteArray(forced_referer);
+                        vimeo_forced_referer = bytes != null ? new String(bytes) : null;
+                    }
+                    if (vimeo_forced_referer == null) {
+                        vimeo_forced_referer = Encoding.Base64Decode(forced_referer);
+                    }
+                }
             }
             final boolean new_way_allowed = true;
             final String videoID = new Regex(parameter, "/(\\d+)").getMatch(0);
@@ -198,7 +209,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 br.getPage("https://player.vimeo.com/video/" + videoID);
                 if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
                     CrawledLink check = getCurrentLink().getSourceLink();
-                    while (true) {
+                    while (check != null) {
                         vimeo_forced_referer = check.getURL();
                         if (check == check.getSourceLink() || !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
                             break;
@@ -209,6 +220,19 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     if (!StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
                         br.getHeaders().put("Referer", vimeo_forced_referer);
                         br.getPage("https://player.vimeo.com/video/" + videoID);
+                    }
+                    if (br.getHttpConnection().getResponseCode() == 403) {
+                        if (SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
+                            try {
+                                vimeo_forced_referer = getUserInput("Please enter referer for this link", param);
+                            } catch (DecrypterException e) {
+                                vimeo_forced_referer = null;
+                            }
+                            if (StringUtils.isNotEmpty(vimeo_forced_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
+                                br.getHeaders().put("Referer", vimeo_forced_referer);
+                                br.getPage("https://player.vimeo.com/video/" + videoID);
+                            }
+                        }
                     }
                 }
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
@@ -601,8 +625,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return pwForm;
     }
 
-    public static String createPrivateVideoUrlWithReferer(final String vimeo_video_id, final String referer_url) {
-        final String private_vimeo_url = "https://player.vimeo.com/video/" + vimeo_video_id + "&forced_referer=" + Encoding.Base64Encode(referer_url);
+    public static String createPrivateVideoUrlWithReferer(final String vimeo_video_id, final String referer_url) throws IOException {
+        final String private_vimeo_url = "https://player.vimeo.com/video/" + vimeo_video_id + "?forced_referer=" + HexFormatter.byteArrayToHex(referer_url.getBytes("UTF-8"));
         return private_vimeo_url;
     }
 

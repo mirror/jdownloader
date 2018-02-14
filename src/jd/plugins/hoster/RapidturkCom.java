@@ -217,7 +217,7 @@ public class RapidturkCom extends Ftp {
                 final String password = new Regex(auth, ":(.+)").getMatch(0);
                 dllink = dllink.replaceFirst(Pattern.quote(auth) + "@", "");
                 br.setCustomAuthenticationFactory(new DefaultAuthenticanFactory(Browser.getHost(dllink), null, username, password));
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
                     try {
                         br.followConnection();
