@@ -427,7 +427,7 @@ public class SuperdownComBr extends antiDDoSForHost {
                 }
                 getPage("https://www." + this.getHost() + "/login");
                 String postData = "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("g-recaptcha")) {
+                if (new Regex(br.toString().replaceAll("<!--.*?-->", ""), "class=\"g-recaptcha\"").matches()) {
                     /* Handle login captcha */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
