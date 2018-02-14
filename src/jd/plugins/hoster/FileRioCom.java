@@ -169,6 +169,7 @@ public class FileRioCom extends PluginForHost {
             if (correctedBR.contains("\"download1\"")) {
                 postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
+                checkServerErrors();
             }
             dllink = getDllink();
         }
