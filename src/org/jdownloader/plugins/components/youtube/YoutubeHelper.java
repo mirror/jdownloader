@@ -922,7 +922,7 @@ public class YoutubeHelper {
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
             String html5PlayerSource = ensurePlayerSource();
-            descrambler = new Regex(html5PlayerSource, "set\\(\"signature\",([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
+            descrambler = new Regex(html5PlayerSource, "\"signature\"\\s*,\\s*([\\$\\w]+)\\([\\$\\w\\.]+\\)\\);").getMatch(0);
             final String func = Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}";
             des = new Regex(html5PlayerSource, Pattern.compile(func, Pattern.DOTALL)).getMatch(1);
             all = new Regex(html5PlayerSource, Pattern.compile(Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?", Pattern.DOTALL)).getMatch(-1);
@@ -1421,12 +1421,12 @@ public class YoutubeHelper {
         if (StringUtils.isEmpty(sts)) {
             sts = "";
         }
-        apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&html5=1&gl=US&hl=en&sts=" + sts);
+        apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US");
         collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
         if (fmtMaps.size() == 0) {
             apiBrowser = br.cloneBrowser();
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
-            apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&html5=1&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=" + sts);
+            apiBrowser.getPage(this.base + "/get_video_info?ps=default&el=embedded&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID));
             if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
                 // StatsManager.I().track("youtube/vInfo1");
                 apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
@@ -1443,7 +1443,7 @@ public class YoutubeHelper {
                 throw new Exception("Paid Video");
             }
             final String errorcode = apiBrowser.getRegex("errorcode=(\\d+)").getMatch(0);
-            String reason = apiBrowser.getRegex("reason=([^\\&]+)").getMatch(0);
+            String reason = apiBrowser.getRegex("(?<!encoded_ad_safety_)reason=([^\\&]+)").getMatch(0);
             if ("150".equals(errorcode)) {
                 // http://www.youtube.com/watch?v=xxWHMmiOTVM
                 // reason=This video contains content from WMG. It is restricted from playback on certain sites.<br/><u><a
