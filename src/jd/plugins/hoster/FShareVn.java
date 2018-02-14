@@ -23,12 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,6 +44,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
     private final String         SERVERERROR                  = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -70,11 +70,12 @@ public class FShareVn extends PluginForHost {
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         this.enablePremium("https://www.fshare.vn/payment/package/?type=vip");
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("mega.1280.com", "fshare.vn"));
+        link.setUrlDownload(link.getDownloadURL().replace("mega.1280.com", "fshare.vn").replace("http://", "https://"));
         if (link.getSetLinkID() == null) {
             final String uid = getUID(link);
             if (uid != null) {
