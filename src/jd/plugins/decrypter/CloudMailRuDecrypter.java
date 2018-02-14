@@ -25,6 +25,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -58,6 +59,14 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
         if (parameter.endsWith("/")) {
             parameter = parameter.substring(0, parameter.lastIndexOf("/"));
+        }
+        final CrawledLink source = getCurrentLink().getSourceLink();
+        final String subfolder;
+        if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
+            final DownloadLink downloadLink = source.getDownloadLink();
+            subfolder = downloadLink.getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+        } else {
+            subfolder = null;
         }
         br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
         final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
@@ -128,7 +137,17 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 folderContainsSubfolder = true;
                 weblink = Encoding.htmlDecode(weblink);
                 weblink = "https://cloud.mail.ru/public/" + weblink;
-                decryptedLinks.add(createDownloadlink(weblink));
+                final DownloadLink folderLink = createDownloadlink(weblink);
+                if (StringUtils.isNotEmpty(item_name)) {
+                    final String folder_path;
+                    if (subfolder != null) {
+                        folder_path = subfolder + "/" + item_name;
+                    } else {
+                        folder_path = "/" + item_name;
+                    }
+                    folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
+                }
+                decryptedLinks.add(folderLink);
             } else {
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 /* Cut that */
@@ -169,6 +188,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 }
                 dl.setContentUrl(browserurl);
                 dl.setAvailable(true);
+                if (subfolder != null) {
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+                }
                 result.add(dl);
             }
         }
