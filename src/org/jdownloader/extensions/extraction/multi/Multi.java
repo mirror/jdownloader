@@ -252,6 +252,34 @@ public class Multi extends IExtraction {
         return false;
     }
 
+    private Set<String> filter(Set<String> values) {
+        final Set<String> ret = new LinkedHashSet<String>();
+        for (final String value : values) {
+            final OperatingSystem os = CrossSystem.getOS();
+            switch (os.getFamily()) {
+            case MAC:
+                if (!StringUtils.startsWithCaseInsensitive(value, "Mac-")) {
+                    continue;
+                }
+                break;
+            case LINUX:
+                if (!StringUtils.startsWithCaseInsensitive(value, "Linux-")) {
+                    continue;
+                }
+                break;
+            case WINDOWS:
+                if (!StringUtils.startsWithCaseInsensitive(value, "Windows-")) {
+                    continue;
+                }
+                break;
+            default:
+                break;
+            }
+            ret.add(value);
+        }
+        return ret;
+    }
+
     private boolean hasLibrarySupport(final ExtractionExtension extractionExtension) {
         final String customLibID = System.getProperty("sevenzipLibID");
         if (StringUtils.isNotEmpty(customLibID)) {
@@ -263,7 +291,7 @@ public class Multi extends IExtraction {
             }
             return false;
         } else {
-            final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
+            final Set<String> libIDs = new LinkedHashSet<String>();
             final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
             if (StringUtils.isNotEmpty(lastWorkingLibID)) {
                 libIDs.add(lastWorkingLibID);
@@ -356,7 +384,7 @@ public class Multi extends IExtraction {
                 // Not supported
                 break;
             }
-            return checkLibraries(extractionExtension, libIDs);
+            return checkLibraries(extractionExtension, filter(libIDs));
         }
     }
 
