@@ -391,7 +391,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
                 String fpName = "";
-                if (channelName != null) {
+                if (StringUtils.isNotEmpty(channelName)) {
                     fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
                 }
                 if (date != null) {
@@ -408,7 +408,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         LogSource.exception(logger, e);
                     }
+                }
+                if (StringUtils.isNotEmpty(title)) {
                     fpName += title;
+                }
+                if (StringUtils.isNotEmpty(fpName)) {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(fpName);
                     fp.addLinks(decryptedLinks);
