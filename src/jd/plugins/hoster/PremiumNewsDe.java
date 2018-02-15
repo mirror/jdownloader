@@ -36,7 +36,8 @@ public class PremiumNewsDe extends UseNet {
             verifyUseNetLogins(account);
             final AccountInfo ai = new AccountInfo();
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-            account.setMaxSimultanDownloads(8);// no way to check account type (silber(8)/gold(20)/platin(20+))
+            account.setMaxSimultanDownloads(20);// no way to check account type (silber(8)/gold(20)/platin(20+))
+            account.setConcurrentUsePossible(true);
             account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
             return ai;
         } catch (InvalidAuthException e) {
