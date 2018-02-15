@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -57,6 +58,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" })
 public class UpToBoxCom extends antiDDoSForHost {
+
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
     private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
@@ -393,8 +395,8 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -439,7 +441,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             return getDllink();
         }
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(?:https?://[\\w\\.]*adf\\.ly/\\d+/)?(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/((files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/|[a-zA-Z0-9_\\-]{100,}/)[^<>\"/]*?)\\1").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(?:https?://[\\w\\.]*adf\\.ly/\\d+/)?(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/((files|d|cgi\\-bin/dl\\.cgi|dl)/(\\d+/)?[a-z0-9]+/|[a-zA-Z0-9_\\-]{100,}/)[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "product_download_url=(https?://[^<>\"]*?)\"").getMatch(0);
             }
@@ -456,8 +458,8 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         /*
-         * Special: Usually it is a bad idea to change the protocol of final downloadlinks but in this case it is fine plus this helps to
-         * avoid gouvernment/ISP blocks!
+         * Special: Usually it is a bad idea to change the protocol of final downloadlinks but in this case it is fine plus this helps to avoid
+         * gouvernment/ISP blocks!
          */
         if (dllink != null) {
             dllink = fixLinkSSL(dllink);
@@ -665,7 +667,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(account, false);
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
             ai.setUsedSpace(space[0][0] + " " + space[0][1]);
@@ -736,19 +738,40 @@ public class UpToBoxCom extends antiDDoSForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
+                            br.setCookie(COOKIE_HOST, key, value);
                         }
-                        return;
+                        // check
+                        getPage("https://uptobox.com/?op=my_account");
+                        if (isCookieSessionValid()) {
+                            return;
+                        }
+                        br = new Browser();
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage("https://login.uptobox.com/");
+                getPage("https://uptobox.com/?op=login");
                 ipBlock();
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Accept", "*/*");
-                br.setCookie("login.uptobox.com", "lang", "english");
-                postPage("/logarithme", "op=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("\\{\"success\"\\s*:\\s*\"OK\"")) {
+                final Form login = br.getFormbyKey("password");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("login", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                // there can be recaptchav2 here
+                if (login.containsHTML("class=(?:'|\")g-recaptcha")) {
+                    // recapthav2
+                    final DownloadLink original = this.getDownloadLink();
+                    if (original == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", "uptobox.com", "http://uptobox.com", true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (original == null) {
+                        this.setDownloadLink(null);
+                    }
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                submitForm(login);
+                if (!isCookieSessionValid()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -757,7 +780,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                getPage(COOKIE_HOST + "/?op=my_account");
+                getPage("/?op=my_account");
                 if (!new Regex(correctedBR, "class=\"premium_time\"").matches()) {
                     account.setType(AccountType.FREE);
                 } else {
@@ -774,6 +797,18 @@ public class UpToBoxCom extends antiDDoSForHost {
                 isLogin = false;
             }
         }
+    }
+
+    private boolean isCookieSessionValid() {
+        final boolean login = br.getCookie(COOKIE_HOST, "login") != null && !"deleted".equalsIgnoreCase(br.getCookie(COOKIE_HOST, "login"));
+        if (login) {
+            return login;
+        }
+        final boolean xfss = br.getCookie(COOKIE_HOST, "xfss") != null && !"deleted".equalsIgnoreCase(br.getCookie(COOKIE_HOST, "xfss"));
+        if (xfss) {
+            return xfss;
+        }
+        return false;
     }
 
     @SuppressWarnings("deprecation")
@@ -885,11 +920,11 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private static boolean checkSsl() {
-        return SubConfiguration.getConfig("uptobox.com").getBooleanProperty(SSL_CONNECTION, false);
+        return SubConfiguration.getConfig("uptobox.com").getBooleanProperty(SSL_CONNECTION, true);
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.UpToBox.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.UpToBox.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(true));
     }
 
     @Override
