@@ -259,7 +259,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             for (int i = 0; i <= 3; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
-                boolean skipWaittime = true; // Wait time is not always needed.
+                boolean skipWaittime = false; // Wait time is not always needed.
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     logger.info("The downloadlink seems to be password protected.");
                     passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -905,6 +905,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
         String regexed_wait = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*seconds").getMatch(0);
+        if (regexed_wait == null) {
+            regexed_wait = new Regex(correctedBR, "time-remaining' data-remaining-time='(\\d+)'").getMatch(0);
+        }
         if (regexed_wait == null && forceWait) {
             wait = 50;
         } else if (regexed_wait != null) {
