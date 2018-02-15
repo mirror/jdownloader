@@ -15,7 +15,6 @@ import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.win32.StdCallLibrary;
 
 public class WindowsClipboardChangeDetector extends ClipboardMonitoring.ClipboardChangeDetector {
-
     private interface User32 extends StdCallLibrary {
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms649042%28v=vs.85%29.aspx
         int GetClipboardSequenceNumber();
@@ -38,12 +37,12 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
         int GetModuleFileNameExA(Pointer process, Pointer hModule, byte[] lpString, int nMaxCount);
     };
 
-    private final User32    user32;
-    private Integer         lastClipboardSequenceNumber = null;
-    private final psapi     psapi;
-    private final Kernel32  kernel32;
-    private final Pattern[] blackListPatterns;
-    private final boolean   isProcessBlacklisted;
+    private final User32     user32;
+    private volatile Integer lastClipboardSequenceNumber = null;
+    private final psapi      psapi;
+    private final Kernel32   kernel32;
+    private final Pattern[]  blackListPatterns;
+    private final boolean    isProcessBlacklisted;
 
     protected WindowsClipboardChangeDetector(final AtomicReference<AtomicBoolean> skipChangeFlag, final LogSource logger) {
         super(skipChangeFlag);
@@ -105,6 +104,16 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     @Override
     protected int getCurrentWaitTimeout() {
         return 100;
+    }
+
+    @Override
+    protected void restart() {
+        super.restart();
+    }
+
+    @Override
+    protected void reset() {
+        lastClipboardSequenceNumber = null;
     }
 
     private final boolean isChangeBlacklisted() {

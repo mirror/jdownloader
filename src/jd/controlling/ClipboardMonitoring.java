@@ -24,14 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
@@ -45,6 +37,13 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControl
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
@@ -235,6 +234,9 @@ public class ClipboardMonitoring {
             return 200;
         }
 
+        protected void reset() {
+        }
+
         protected CHANGE_FLAG hasChanges() {
             final CHANGE_FLAG ret;
             if (isSkipFlagSet()) {
@@ -281,9 +283,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
-    private static final DataFlavor                                                          URLFLAVOR;
-    private static final DataFlavor                                                          URILISTFLAVOR;
+    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
+    private static final DataFlavor          URLFLAVOR;
+    private static final DataFlavor          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -394,6 +396,7 @@ public class ClipboardMonitoring {
                     @Override
                     public void run() {
                         try {
+                            clipboardChangeDetector.reset();
                             while (Thread.currentThread() == ClipboardMonitoring.this.monitoringThread.get()) {
                                 final CHANGE_FLAG changeFlag = clipboardChangeDetector.waitForClipboardChanges();
                                 if (Thread.currentThread() != ClipboardMonitoring.this.monitoringThread.get()) {
