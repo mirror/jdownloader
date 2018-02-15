@@ -190,13 +190,21 @@ public class AbstractFFmpegBinary {
             if (timeoutReached.get()) {
                 throw new InterruptedException("Timeout!");
             }
-            stdoutThread.join();
-            stderrThread.join();
+            if (stdoutThread.isAlive()) {
+                stdoutThread.join(1000);
+            }
+            if (stderrThread.isAlive()) {
+                stderrThread.join(1000);
+            }
             return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
         } else {
             logger.info("ExitCode2: " + process.waitFor());
-            stdoutThread.join();
-            stderrThread.join();
+            if (stdoutThread.isAlive()) {
+                stdoutThread.join(1000);
+            }
+            if (stderrThread.isAlive()) {
+                stderrThread.join(1000);
+            }
             return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
         }
     }
