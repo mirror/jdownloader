@@ -359,6 +359,14 @@ public class UpToBoxCom extends antiDDoSForHost {
                 dllink = getDllink();
                 if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
+                    if (dlForm == null) {
+                        for (Form form : br.getForms()) {
+                            if (form.containsHTML("waitingToken")) {
+                                dlForm = form;
+                                break;
+                            }
+                        }
+                    }
                     continue;
                 } else if (dllink == null && !br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
