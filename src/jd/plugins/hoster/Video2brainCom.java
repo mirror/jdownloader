@@ -496,15 +496,23 @@ public class Video2brainCom extends PluginForHost {
         String statustext = "";
         String abonnement = null;
         String accessGroup = null;
+        String nextPayDate = null;
         boolean isPremium = false;
         long validUntil = -1;
         if (abonements_url != null) {
             /* This url should only be available for premium accounts --> Then we can RegEx the expire date. */
             this.br.getPage(abonements_url);
             if (StringUtils.containsIgnoreCase(abonements_url, "mein-abonnement")) {
+                /**
+                 * 2018-02-15: Also valid but not implemented as I'am not sure whether this is also possible for test accounts:
+                 * "video2brain-Trainingsabo monatlich" <br />
+                 * Other possible Strings: "Abonnement Premium monatlich"
+                 */
                 abonnement = br.getRegex("<div><b>Abonnement:</b>\\s*(.*?)\\s*</div>").getMatch(0);
                 accessGroup = br.getRegex("<div><b>Zugangsgruppe:</b>\\s*(.*?)\\s*</div>").getMatch(0);
-                isPremium = StringUtils.containsIgnoreCase(abonnement, "Premium");
+                nextPayDate = br.getRegex("Ihr Abonnement verlängert sich automatisch\\. Die nächste Laufzeit startet am (\\d{1,2}\\.\\d{1,2}\\.\\d{4})").getMatch(0);
+                /* 2018-02-15: User definitly has a premium account or account has a next pay-date --> Premium = true */
+                isPremium = StringUtils.containsIgnoreCase(abonnement, "Premium") || nextPayDate != null;
                 final String expiredate = this.br.getRegex("<div><b>Gültig bis:</b>\\s*([0-9\\. ]+)\\s*</div>").getMatch(0);
                 validUntil = TimeFormatter.getMilliSeconds(expiredate, "dd'.'MM'.'yyyy", Locale.GERMAN);
                 if (isPremium) {
