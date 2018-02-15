@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -160,7 +161,12 @@ public class LinkifierCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, resume, maxChunks);
             if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
-                br.followConnection();
+                try {
+                    br.setAllowedResponseCodes(dl.getConnection().getResponseCode());
+                    br.followConnection();
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!dl.getConnection().isContentDisposition()) {
