@@ -358,8 +358,9 @@ public class HLSDownloader extends DownloadInterface {
     private void runConcat() throws IOException, PluginException {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
-                protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
-                };
+                @Override
+                protected void parseLine(boolean isStdout, String line) {
+                }
             };
             processID = new UniqueAlltimeID().getID();
             initPipe(ffmpeg);
@@ -490,7 +491,8 @@ public class HLSDownloader extends DownloadInterface {
             final AtomicLong completeTime = new AtomicLong(0);
             final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
-                protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
+                @Override
+                protected void parseLine(boolean isStdout, String line) {
                     try {
                         final String trimmedLine = line.trim();
                         if (trimmedLine.startsWith("Duration:")) {
