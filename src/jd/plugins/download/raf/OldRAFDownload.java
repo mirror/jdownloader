@@ -1118,12 +1118,15 @@ public class OldRAFDownload extends DownloadInterface {
             final RandomAccessFile loutputPartFileRaf = outputPartFileRaf.getAndSet(null);
             if (loutputPartFileRaf != null) {
                 try {
-                    loutputPartFileRaf.getChannel().force(true);
-                } catch (final IOException e) {
-                    logger.log(e);
+                    try {
+                        loutputPartFileRaf.getChannel().force(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    logger.info("Close File. Let AV programs run");
+                } finally {
+                    loutputPartFileRaf.close();
                 }
-                logger.info("Close File. Let AV programs run");
-                loutputPartFileRaf.close();
             }
         } catch (Throwable e) {
             LogSource.exception(logger, e);
