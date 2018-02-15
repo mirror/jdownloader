@@ -337,7 +337,9 @@ public class Video2brainCom extends PluginForHost {
                 boolean success = false;
                 /**
                  * Each country/language may have individual logins - we could request this in the login mask or we simply go through all of
-                 * them.
+                 * them. <br/>
+                 * 2018-02-15: TODO: Maybe add code to first try language of users' system (if 'unsupported', use english) as we now have to
+                 * enter a captcha for each first login-attempt!
                  */
                 for (final String language : languages) {
                     /* Ignore previously saved given language - if it worked fine we would not have to re-login anyways! */
