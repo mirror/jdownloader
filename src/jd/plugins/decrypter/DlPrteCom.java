@@ -15,31 +15,31 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com)/\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com|dl-protect\\.top)/\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com" };
+        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {
@@ -49,6 +49,11 @@ public class DlPrteCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        String go = new Regex(parameter, "go\\.php\\?url=(aHR.+)").getMatch(0);
+        if (go != null) {
+            final DownloadLink dl = createDownloadlink(go);
+            decryptedLinks.add(dl);
+        }
         br.setFollowRedirects(true);
         getPage(parameter);
         /* Error handling */
@@ -68,11 +73,20 @@ public class DlPrteCom extends antiDDoSForDecrypt {
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
+                go = br.getRegex("go\\.php\\?url=(https?.*?|aHR.+)\"").getMatch(0);
+                if (go != null) {
+                    final DownloadLink dl = createDownloadlink(go);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
             }
         }
         // some weird form that does jack
         final Form f = br.getFormbyProperty("class", "magic");
         if (f == null) {
+            if (decryptedLinks.size() > 0) {
+                return decryptedLinks;
+            }
             throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
         }
         // insert some magic
