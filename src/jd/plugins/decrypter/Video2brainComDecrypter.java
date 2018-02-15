@@ -49,7 +49,7 @@ public class Video2brainComDecrypter extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(hosterplugin);
         if (aa != null) {
             try {
-                jd.plugins.hoster.Video2brainCom.login(this.br, aa);
+                ((jd.plugins.hoster.Video2brainCom) hosterplugin).login(this.br, aa);
                 loggedIN = true;
             } catch (final Throwable e) {
             }

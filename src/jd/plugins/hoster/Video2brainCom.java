@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,7 +51,7 @@ import jd.utils.locale.JDL;
 public class Video2brainCom extends PluginForHost {
     public Video2brainCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.video2brain.com/en/support/faq");
+        this.enablePremium("https://www.video2brain.com/de/registrierung");
         setConfigElements();
     }
 
@@ -303,13 +304,14 @@ public class Video2brainCom extends PluginForHost {
 
     private static Object LOCK = new Object();
 
-    public static void login(Browser br, final Account account) throws Exception {
+    public void login(Browser br, final Account account) throws Exception {
         synchronized (LOCK) {
             try {
                 br = newBrowser(br);
                 br.setCookiesExclusive(true);
                 String account_language = getAccountLanguage(account);
                 final Cookies cookies = account.loadCookies("");
+                /* 2018-02-15: Avoid full login whenever possible as they now have a login captcha! */
                 if (cookies != null && account_language != null) {
                     br.setCookies(domain, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
@@ -382,6 +384,20 @@ public class Video2brainCom extends PluginForHost {
                         /* Add logindata */
                         loginform.put("email", Encoding.urlEncode(account.getUser()));
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        String reCaptchaKey = br.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
+                        if (reCaptchaKey == null) {
+                            /* 2018-02-15: Fallback-key */
+                            reCaptchaKey = "6LfAjzEUAAAAALbkVTbsN080kPgKP_lZlyEqy8Fy";
+                        }
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        loginform.put("captcha_response_token", Encoding.urlEncode(recaptchaV2Response));
                         loginform.put("set_cookie", "true");
                         /* Prepare Headers */
                         prepAjaxHeaders(br);
