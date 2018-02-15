@@ -246,6 +246,14 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
+                for (Form form : br.getForms()) {
+                    if (form.containsHTML("waitingToken")) {
+                        dlForm = form;
+                        break;
+                    }
+                }
+            }
+            if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (int i = 0; i <= 3; i++) {
