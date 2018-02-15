@@ -270,7 +270,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     private String findPostBody() {
-        final String postBody = br.getRegex("<section id=\"posts\" class=\"content clearfix.*?</section>\\s*<section class=\"related-posts-wrapper\">").getMatch(-1);
+        final String postBody = br.getRegex("<section id=\"posts\" class=\"content clearfix.*?</(section|article)>\\s*<section class=\"related-posts-wrapper\">").getMatch(-1);
         return postBody;
     }
 
@@ -307,6 +307,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(externID.replace("/v/", "/video/video.php?v="));
             decryptedLinks.add(dl);
             return decryptedLinks;
+        }
+        externID = new Regex(string, "\"(https?://(www\\.)?instagram\\.com/p/[A-Za-z0-9_-]+[^\"]*)\"").getMatch(0);
+        if (externID != null) {
+            http://mb2fbbs.tumblr.com/post/160564305991/hypermusclehaven-looks-like-bakhar-has-some
+                final DownloadLink dl = createDownloadlink(externID);
+        decryptedLinks.add(dl);
+        return decryptedLinks;
         }
         externID = new Regex(string, "(?:id|name)=\"twitter:player\" (?:src|content)=\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\\&").getMatch(0);
         if (externID != null) {
