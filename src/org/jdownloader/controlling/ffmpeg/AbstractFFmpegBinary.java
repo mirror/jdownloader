@@ -1,10 +1,9 @@
 package org.jdownloader.controlling.ffmpeg;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -141,33 +140,33 @@ public class AbstractFFmpegBinary {
         if (runin != null) {
             pb.directory(runin);
         }
-        final StringBuilder inputStream = new StringBuilder();
-        final StringBuilder errorStream = new StringBuilder();
         final Process process = pb.start();
-        final Thread reader1 = new Thread("ffmpegReader") {
+        final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();
+        final AccessibleByteArrayOutputStream stderr = new AccessibleByteArrayOutputStream();
+        final Thread stdoutThread = new Thread("ffmpegReader:stdout") {
             public void run() {
                 try {
-                    readInputStreamToString(inputStream, process.getInputStream(), true);
+                    readInputStreamToString(stdout, process.getInputStream(), true);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
             }
         };
-        final Thread reader2 = new Thread("ffmpegReader") {
+        final Thread stderrThread = new Thread("ffmpegReader:stderr") {
             public void run() {
                 try {
-                    readInputStreamToString(errorStream, process.getErrorStream(), false);
+                    readInputStreamToString(stderr, process.getErrorStream(), false);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
             }
         };
         if (CrossSystem.isWindows()) {
-            reader1.setPriority(Thread.NORM_PRIORITY + 1);
-            reader2.setPriority(Thread.NORM_PRIORITY + 1);
+            stdoutThread.setPriority(Thread.NORM_PRIORITY + 1);
+            stderrThread.setPriority(Thread.NORM_PRIORITY + 1);
         }
-        reader1.start();
-        reader2.start();
+        stdoutThread.start();
+        stderrThread.start();
         if (timeout > 0) {
             final AtomicBoolean timeoutReached = new AtomicBoolean(false);
             final AtomicBoolean processAlive = new AtomicBoolean(true);
@@ -191,62 +190,83 @@ public class AbstractFFmpegBinary {
             if (timeoutReached.get()) {
                 throw new InterruptedException("Timeout!");
             }
-            reader1.join();
-            reader2.join();
-            return new String[] { inputStream.toString(), errorStream.toString() };
+            stdoutThread.join();
+            stderrThread.join();
+            return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
         } else {
             logger.info("ExitCode2: " + process.waitFor());
-            reader1.join();
-            reader2.join();
-            return new String[] { inputStream.toString(), errorStream.toString() };
+            stdoutThread.join();
+            stderrThread.join();
+            return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
         }
     }
 
-    private String readInputStreamToString(StringBuilder ret, final InputStream fis, boolean b) throws IOException {
-        BufferedReader f = null;
+    protected final class AccessibleByteArrayOutputStream extends ByteArrayOutputStream {
+        public AccessibleByteArrayOutputStream(final int size) {
+            super(size);
+        }
+
+        public AccessibleByteArrayOutputStream() {
+            super();
+        }
+
+        public final synchronized byte[] getBuf() {
+            return this.buf;
+        }
+    }
+
+    private void readInputStreamToString(final AccessibleByteArrayOutputStream bos, final InputStream fis, final boolean isStdout) throws IOException {
+        long size = 0;
         try {
-            f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
-            String line;
-            final String sep = System.getProperty("line.separator");
+            final byte[] buf = new byte[8192];
             final boolean isInstantFlush = logger.isInstantFlush();
-            while ((line = f.readLine()) != null) {
-                if (ret != null) {
-                    if (isInstantFlush) {
-                        logger.info(b + ":" + line);
-                    }
-                    synchronized (ret) {
-                        if (ret.length() > 0) {
-                            ret.append(sep);
-                        } else if (line.startsWith("\uFEFF")) {
-                            /*
-                             * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
-                             * http://bugs.sun.com/view_bug.do?bug_id=6378911
-                             */
-                            line = line.substring(1);
+            int lastReadPosition = 0;
+            while (true) {
+                if (fis.available() > 0) {
+                    int read = fis.read(buf);
+                    if (read == -1) {
+                        return;
+                    } else if (read > 0) {
+                        size += read;
+                        synchronized (bos) {
+                            bos.write(buf, 0, read);
+                            final byte[] array = bos.getBuf();
+                            for (int index = lastReadPosition; index < bos.size(); index++) {
+                                if (array[index] == 10 || array[index] == 13) {
+                                    final int length = index - 1 - lastReadPosition;
+                                    if (length > 0) {
+                                        final String line = new String(array, lastReadPosition, length, "UTF-8");
+                                        if (isInstantFlush) {
+                                            logger.info(line);
+                                        }
+                                        parseLine(isStdout, line);
+                                    }
+                                    // index is \r or \n so at least next one
+                                    lastReadPosition = index + 1;
+                                }
+                            }
                         }
-                        ret.append(line);
-                        parseLine(b, ret, line);
+                    } else {
+                        Thread.sleep(100);
                     }
                 }
             }
-            if (ret == null) {
-                return null;
-            }
-            return ret.toString();
         } catch (IOException e) {
-            throw e;
+            if (!"Stream closed".equals(e.getMessage())) {
+                throw e;
+            }
         } catch (Throwable e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
+            throw new IOException(e);
+        } finally {
+            if (isStdout) {
+                logger.info("Read(Stdout):" + size);
+            } else {
+                logger.info("Read(Stderr):" + size);
             }
-            if (e instanceof Error) {
-                throw (Error) e;
-            }
-            throw new RuntimeException(e);
         }
     }
 
-    protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
+    protected void parseLine(boolean isStdout, String line) {
     }
 
     protected LogSource  logger;
@@ -680,43 +700,69 @@ public class AbstractFFmpegBinary {
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
         final Process process = pb.start();
+        final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();
+        final AccessibleByteArrayOutputStream stderr = new AccessibleByteArrayOutputStream();
         try {
-            final StringBuilder sdtStream = new StringBuilder();
-            final Thread reader1 = new Thread("ffmpegReader") {
+            final Thread stdoutThread = new Thread("ffmpegReader:stdout") {
                 public void run() {
                     try {
-                        readInputStreamToString(sdtStream, process.getInputStream(), true);
+                        readInputStreamToString(stdout, process.getInputStream(), true);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
                 }
             };
-            final StringBuilder errorStream = new StringBuilder();
-            final Thread reader2 = new Thread("ffmpegReader") {
+            final Thread stderrThread = new Thread("ffmpegReader:stderr") {
                 public void run() {
                     try {
-                        readInputStreamToString(errorStream, process.getErrorStream(), false);
+                        readInputStreamToString(stderr, process.getErrorStream(), false);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
                 }
             };
             if (CrossSystem.isWindows()) {
-                reader1.setPriority(Thread.NORM_PRIORITY + 1);
-                reader2.setPriority(Thread.NORM_PRIORITY + 1);
+                stdoutThread.setPriority(Thread.NORM_PRIORITY + 1);
+                stderrThread.setPriority(Thread.NORM_PRIORITY + 1);
             }
-            reader1.start();
-            reader2.start();
+            stdoutThread.start();
+            stderrThread.start();
             updateLastUpdateTimestamp();
             long lastDuration = -1;
+            long lastRead = -1;
             while (true) {
-                final String errorStreamString;
-                synchronized (errorStream) {
-                    errorStreamString = errorStream.toString();
-                    errorStream.setLength(0);
+                long read = 0;
+                synchronized (stdout) {
+                    read = stdout.size();
                 }
-                if (StringUtils.isNotEmpty(errorStreamString)) {
+                final String errorStreamString;
+                synchronized (stderr) {
+                    read += stderr.size();
+                    int lastRN = 0;
+                    final byte[] array = stderr.getBuf();
+                    for (int index = 0; index < stderr.size(); index++) {
+                        if (array[index] == 10 || array[index] == 13) {
+                            lastRN = index;
+                        }
+                    }
+                    if (lastRN > 0) {
+                        errorStreamString = new String(array, 0, lastRN, "UTF-8");
+                        final int length = stderr.size() - lastRN - 1;
+                        if (length == 0) {
+                            stderr.reset();
+                        } else {
+                            final byte[] tmpBuf = stderr.toByteArray();
+                            stderr.reset();
+                            stderr.write(tmpBuf, lastRN, length);
+                        }
+                    } else {
+                        errorStreamString = null;
+                    }
+                    // stderr.reset();
+                }
+                if (read != lastRead) {
                     updateLastUpdateTimestamp();
+                    lastRead = read;
                 }
                 final String duration = new Regex(errorStreamString, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
                 if (duration != null) {
@@ -733,10 +779,13 @@ public class AbstractFFmpegBinary {
                 }
                 try {
                     final int exitCode = process.exitValue();
-                    reader2.join();
-                    final String lastStdStream = sdtStream.toString();
+                    if (stdoutThread.isAlive()) {
+                        logger.info("Wait for Reader:" + stdoutThread);
+                        stdoutThread.join(1000);
+                    }
+                    final String lastStdStream = stdout.toString("UTF-8");
                     logger.info("LastErrorStream:" + errorStreamString);
-                    logger.info("LastStdStream:" + lastStdStream);
+                    logger.info("Stdout:" + lastStdStream);
                     logger.info("ExitCode:" + exitCode);
                     final boolean okay = exitCode == 0;
                     if (!okay) {
@@ -745,7 +794,7 @@ public class AbstractFFmpegBinary {
                         }
                         throw new FFMpegException("FFmpeg Failed", lastStdStream, errorStreamString);
                     } else {
-                        return sdtStream.toString();
+                        return stdout.toString("UTF-8");
                     }
                 } catch (IllegalThreadStateException e) {
                     // still running;
@@ -763,6 +812,8 @@ public class AbstractFFmpegBinary {
             if (process != null) {
                 process.destroy();
             }
+            stdout.close();
+            stderr.close();
         }
     }
 

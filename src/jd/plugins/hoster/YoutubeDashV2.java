@@ -1272,7 +1272,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
 
                 @Override
-                protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
+                protected void parseLine(boolean isStdout, String line) {
                     if (line != null && StringUtils.contains(line, "Input/output error") && StringUtils.contains(line, "/meta")) {
                         PluginJsonConfig.get(YoutubeConfig.class).setMetaDataEnabled(false);
                         if (logger != null) {
