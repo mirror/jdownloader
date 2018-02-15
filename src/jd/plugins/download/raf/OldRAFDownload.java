@@ -1084,7 +1084,9 @@ public class OldRAFDownload extends DownloadInterface {
                 raf.seek(chunk.getWritePosition());
                 raf.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
                 if (chunk.getID() >= 0) {
-                    downloadable.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
+                    final long[] chunkProgress = downloadable.getChunksProgress();
+                    chunkProgress[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
+                    downloadable.setChunksProgress(chunkProgress);
                 }
             }
             DownloadController.getInstance().requestSaving();
