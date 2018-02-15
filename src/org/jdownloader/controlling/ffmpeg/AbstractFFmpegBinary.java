@@ -17,11 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
@@ -41,6 +36,11 @@ import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 public class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
@@ -49,11 +49,16 @@ public class AbstractFFmpegBinary {
     };
 
     public static enum FLAG {
-        OPUS(FLAGTYPE.CODEC, "D.A...\\s*opus"), // encode/decode
-        VORBIS(FLAGTYPE.CODEC, "D.A...\\s*vorbis"), // encode/decode
-        WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
-        DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
-        HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
+        OPUS(
+                FLAGTYPE.CODEC, "D.A...\\s*opus"), // encode/decode
+        VORBIS(
+                FLAGTYPE.CODEC, "D.A...\\s*vorbis"), // encode/decode
+        WEBM(
+                FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
+        DASH(
+                FLAGTYPE.FORMAT, "E\\s*dash"), // mux
+        HLS(
+                FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
         private final Pattern  pattern;
         private final FLAGTYPE type;
 
@@ -231,7 +236,7 @@ public class AbstractFFmpegBinary {
             int lastReadPosition = 0;
             while (true) {
                 if (fis.available() > 0) {
-                    int read = fis.read(buf);
+                    final int read = fis.read(buf);
                     if (read == -1) {
                         return;
                     } else if (read > 0) {
@@ -257,6 +262,8 @@ public class AbstractFFmpegBinary {
                     } else {
                         Thread.sleep(100);
                     }
+                } else {
+                    Thread.sleep(100);
                 }
             }
         } catch (IOException e) {
