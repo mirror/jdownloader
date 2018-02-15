@@ -162,7 +162,7 @@ public class LinkifierCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, resume, maxChunks);
             if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                 try {
-                    br.setAllowedResponseCodes(dl.getConnection().getResponseCode());
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
                 } catch (final IOException e) {
                     logger.log(e);
