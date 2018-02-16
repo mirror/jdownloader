@@ -225,6 +225,7 @@ public class AbstractFFmpegBinary {
             final byte[] buf = new byte[8192];
             final boolean isInstantFlush = logger.isInstantFlush();
             int lastReadPosition = 0;
+            int lastSize = 0;
             while (true) {
                 if (fis.available() > 0) {
                     final int read = fis.read(buf);
@@ -233,7 +234,12 @@ public class AbstractFFmpegBinary {
                     } else if (read > 0) {
                         size += read;
                         synchronized (bos) {
+                            if (bos.size() < lastSize) {
+                                // external AccessibleByteArrayOutputStream manipulation
+                                lastReadPosition = 0;
+                            }
                             bos.write(buf, 0, read);
+                            lastSize = bos.size();
                             final byte[] array = bos.getBuf();
                             for (int index = lastReadPosition; index < bos.size(); index++) {
                                 if (array[index] == 10 || array[index] == 13) {
@@ -245,7 +251,7 @@ public class AbstractFFmpegBinary {
                                         }
                                         parseLine(isStdout, line);
                                     }
-                                    // index is \r or \n so at least next one
+                                    // index is \r or \n, so index +1
                                     lastReadPosition = index + 1;
                                 }
                             }
