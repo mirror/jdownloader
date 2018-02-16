@@ -283,6 +283,12 @@ public class DownloadLinkSandBox {
         return null;
     }
 
+    public void setComment(String comment) {
+        if (downloadLink != null) {
+            downloadLink.setComment(comment);
+        }
+    }
+
     public void setEnabled(boolean b) {
         if (downloadLink != null) {
             downloadLink.setEnabled(b);

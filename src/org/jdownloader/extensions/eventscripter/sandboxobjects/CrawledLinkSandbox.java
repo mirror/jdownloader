@@ -211,6 +211,12 @@ public class CrawledLinkSandbox {
         return null;
     }
 
+    public void setComment(String comment) {
+        if (link != null) {
+            link.setComment(comment);
+        }
+    }
+
     public void setEnabled(boolean b) {
         if (link != null) {
             link.setEnabled(b);
