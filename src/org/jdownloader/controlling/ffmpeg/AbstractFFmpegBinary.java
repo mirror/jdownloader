@@ -161,10 +161,6 @@ public class AbstractFFmpegBinary {
                 }
             }
         };
-        if (CrossSystem.isWindows()) {
-            stdoutThread.setPriority(Thread.NORM_PRIORITY + 1);
-            stderrThread.setPriority(Thread.NORM_PRIORITY + 1);
-        }
         stdoutThread.start();
         stderrThread.start();
         if (timeout > 0) {
@@ -731,10 +727,6 @@ public class AbstractFFmpegBinary {
                     }
                 }
             };
-            if (CrossSystem.isWindows()) {
-                stdoutThread.setPriority(Thread.NORM_PRIORITY + 1);
-                stderrThread.setPriority(Thread.NORM_PRIORITY + 1);
-            }
             stdoutThread.start();
             stderrThread.start();
             updateLastUpdateTimestamp();
