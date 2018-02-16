@@ -16,11 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,6 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?fshare\\.vn/folder/([A-Z0-9]+)" })
 public class FShareVnFolder extends PluginForDecrypt {
@@ -46,44 +47,56 @@ public class FShareVnFolder extends PluginForDecrypt {
         /* Important or we'll get XML ;) */
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.getPage("https://www." + this.getHost() + "/api/v3/files/folder?linkcode=" + folderid + "&sort=type,name");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        LinkedHashMap<String, Object> entries2;
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("items");
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        } else if (ressourcelist.isEmpty()) {
-            logger.info("Empty folder");
-            return decryptedLinks;
-        }
-        entries = (LinkedHashMap<String, Object>) entries.get("current");
-        String fpName = (String) entries.get("name");
-        if (StringUtils.isEmpty(fpName)) {
-            fpName = folderid;
-        }
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName.trim());
-        for (final Object linkO : ressourcelist) {
-            entries2 = (LinkedHashMap<String, Object>) linkO;
-            // final String path = (String) entries2.get("path");
-            final String linkcode = (String) entries2.get("linkcode");
-            final String filename = (String) entries2.get("name");
-            final long filesize = JavaScriptEngineFactory.toLong(entries2.get("size"), 0);
-            if (StringUtils.isEmpty(linkcode)) {
-                /* This should never happen */
-                continue;
+        while (!isAbort()) {
+            final Map<String, Object> map = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Object> ressourcelist = (List<Object>) map.get("items");
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            } else if (ressourcelist.isEmpty()) {
+                logger.info("Empty folder");
+                return decryptedLinks;
             }
-            final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/file/" + linkcode);
-            dl.setLinkID(linkcode);
-            if (filesize > 0) {
-                /* Should always be the case. */
-                dl.setDownloadSize(filesize);
+            final Map<String, Object> entries = (Map<String, Object>) map.get("current");
+            String fpName = (String) entries.get("name");
+            if (StringUtils.isEmpty(fpName)) {
+                fpName = folderid;
             }
-            dl.setName(filename);
-            dl.setAvailable(true);
-            dl._setFilePackage(fp);
-            decryptedLinks.add(dl);
-            distribute(dl);
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            for (final Object linkO : ressourcelist) {
+                final Map<String, Object> entries2 = (Map<String, Object>) linkO;
+                // final String path = (String) entries2.get("path");
+                final String linkcode = (String) entries2.get("linkcode");
+                if (dupe.add(linkcode)) {
+                    final String filename = (String) entries2.get("name");
+                    final long filesize = JavaScriptEngineFactory.toLong(entries2.get("size"), 0);
+                    if (StringUtils.isEmpty(linkcode)) {
+                        /* This should never happen */
+                        continue;
+                    }
+                    final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/file/" + linkcode);
+                    dl.setLinkID(linkcode);
+                    if (filesize > 0) {
+                        /* Should always be the case. */
+                        dl.setDownloadSize(filesize);
+                    }
+                    dl.setName(filename);
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            }
+            final Map<String, Object> links = (Map<String, Object>) map.get("_links");
+            if (links != null) {
+                final String next = (String) links.get("next");
+                if (next != null && dupe.add(next)) {
+                    br.getPage("https://www." + this.getHost() + "/api" + next);
+                    continue;
+                }
+            }
+            break;
         }
         return decryptedLinks;
     }
