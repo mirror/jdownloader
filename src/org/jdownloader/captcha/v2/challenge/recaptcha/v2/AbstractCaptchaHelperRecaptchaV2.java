@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import java.util.regex.Pattern;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
@@ -43,35 +45,44 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     }
 
     protected String getSiteUrl() {
-        String siteURL = null;
+        final String siteDomain = getSiteDomain();
+        String url = null;
         if (plugin != null) {
             if (plugin instanceof PluginForHost) {
                 final DownloadLink downloadLink = ((PluginForHost) plugin).getDownloadLink();
                 if (downloadLink != null) {
-                    siteURL = downloadLink.getPluginPatternMatcher();
+                    url = downloadLink.getPluginPatternMatcher();
                 }
             } else if (plugin instanceof PluginForDecrypt) {
                 final CrawledLink crawledLink = ((PluginForDecrypt) plugin).getCurrentLink();
                 if (crawledLink != null) {
-                    siteURL = crawledLink.getURL();
+                    url = crawledLink.getURL();
                 }
             }
-        }
-        if (siteURL != null && (StringUtils.startsWithCaseInsensitive(siteURL, "https://") || StringUtils.startsWithCaseInsensitive(siteURL, "http://"))) {
-            if (br != null && br.getRequest() != null) {
-                if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
-                    siteURL = siteURL.replaceAll("^(?i)(https?://)", "https://");
-                } else {
-                    siteURL = siteURL.replaceAll("^(?i)(https?://)", "http://");
+            if (url != null && (StringUtils.startsWithCaseInsensitive(url, "https://") || StringUtils.startsWithCaseInsensitive(url, "http://"))) {
+                if (br != null && br.getRequest() != null) {
+                    if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
+                        url = url.replaceAll("^(?i)(https?://)", "https://");
+                    } else {
+                        url = url.replaceAll("^(?i)(https?://)", "http://");
+                    }
                 }
+            } else {
+                url = null;
             }
-            siteURL = siteURL.replaceAll("(#.+)", "");
-            return siteURL;
         }
-        if (br != null && br.getRequest() != null) {
-            return br.getURL();
+        if (url == null) {
+            url = br.getURL();
+        }
+        if (url != null) {
+            url = url.replaceAll("(#.+)", "");
+            final String urlDomain = Browser.getHost(url, true);
+            if (!StringUtils.equalsIgnoreCase(urlDomain, siteDomain)) {
+                url = url.replaceFirst(Pattern.quote(urlDomain), siteDomain);
+            }
+            return url;
         } else {
-            return "http://" + getSiteDomain();
+            return "http://" + siteDomain;
         }
     }
 
