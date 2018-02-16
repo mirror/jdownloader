@@ -247,7 +247,7 @@ public class AbstractFFmpegBinary {
                                     if (length > 0) {
                                         final String line = new String(array, lastReadPosition, length, "UTF-8");
                                         if (isInstantFlush) {
-                                            logger.info(line);
+                                            logger.info(isStdout + "|" + line);
                                         }
                                         parseLine(isStdout, line);
                                     }
@@ -738,12 +738,13 @@ public class AbstractFFmpegBinary {
             updateLastUpdateTimestamp();
             long lastDuration = -1;
             long lastRead = -1;
+            String lastNonEmptyStderr = null;
             while (true) {
                 long read = 0;
                 synchronized (stdout) {
                     read = stdout.size();
                 }
-                final String errorStreamString;
+                final String currentStderr;
                 synchronized (stderr) {
                     read += stderr.size();
                     int lastRN = 0;
@@ -755,7 +756,7 @@ public class AbstractFFmpegBinary {
                     }
                     if (lastRN > 0) {
                         updateLastUpdateTimestamp();
-                        errorStreamString = new String(array, 0, lastRN, "UTF-8");
+                        currentStderr = new String(array, 0, lastRN, "UTF-8");
                         final int length = stderr.size() - lastRN - 1;
                         if (length == 0) {
                             stderr.reset();
@@ -765,20 +766,23 @@ public class AbstractFFmpegBinary {
                             stderr.write(tmpBuf, lastRN, length);
                         }
                     } else {
-                        errorStreamString = null;
+                        currentStderr = null;
                     }
-                    // stderr.reset();
+                }
+                if (StringUtils.isNotEmpty(currentStderr)) {
+                    lastNonEmptyStderr = currentStderr;
+                    updateLastUpdateTimestamp();
                 }
                 if (read != lastRead) {
                     updateLastUpdateTimestamp();
                     lastRead = read;
                 }
-                final String duration = new Regex(errorStreamString, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+                final String duration = new Regex(currentStderr, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
                 if (duration != null) {
                     lastDuration = formatStringToMilliseconds(duration);
                 }
                 if (lastDuration > 0) {
-                    final String[] times = new Regex(errorStreamString, "time=(.*?).?\\d*? ").getColumn(0);
+                    final String[] times = new Regex(currentStderr, "time=(.*?).?\\d*? ").getColumn(0);
                     if (times != null && times.length > 0) {
                         final long msDone = formatStringToMilliseconds(times[times.length - 1]);
                         if (progress != null) {
@@ -792,28 +796,58 @@ public class AbstractFFmpegBinary {
                         logger.info("Wait for Reader:" + stdoutThread);
                         stdoutThread.join(1000);
                     }
-                    final String lastStdStream = stdout.toString("UTF-8");
-                    logger.info("LastErrorStream:" + errorStreamString);
-                    logger.info("Stdout:" + lastStdStream);
+                    final String lastStderr;
+                    final int stderrSize;
+                    synchronized (stderr) {
+                        stderrSize = stderr.size();
+                        if (lastNonEmptyStderr != null) {
+                            lastStderr = lastNonEmptyStderr + stderr.toString("UTF-8");
+                        } else {
+                            lastStderr = stderr.toString("UTF-8");
+                        }
+                    }
+                    final String lastStdout;
+                    final int stdoutSize;
+                    synchronized (stdout) {
+                        lastStdout = stdout.toString("UTF-8");
+                        stdoutSize = stdout.size();
+                    }
+                    logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
+                    logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
                     logger.info("ExitCode:" + exitCode);
                     final boolean okay = exitCode == 0;
                     if (!okay) {
-                        if (StringUtils.containsIgnoreCase(errorStreamString, "Unrecognized option 'c:v'") || StringUtils.containsIgnoreCase(errorStreamString, "Unrecognized option '-c:v'")) {
-                            throw new FFMpegException("FFmpeg version too old", lastStdStream, errorStreamString);
+                        if (StringUtils.containsIgnoreCase(lastStderr, "Unrecognized option 'c:v'") || StringUtils.containsIgnoreCase(lastStderr, "Unrecognized option '-c:v'")) {
+                            throw new FFMpegException("FFmpeg version too old", lastStdout, lastStderr);
                         }
-                        throw new FFMpegException("FFmpeg Failed", lastStdStream, errorStreamString);
+                        throw new FFMpegException("FFmpeg Failed", lastStdout, lastStderr);
                     } else {
-                        return lastStdStream;
+                        return lastStdout;
                     }
                 } catch (IllegalThreadStateException e) {
                     // still running;
                 }
                 if (System.currentTimeMillis() - getLastUpdateTimestamp() > getLastUpdateTimestampTimeout()) {
                     // 60 seconds without any ffmpeg update. interrupt
-                    final String lastStdStream = stdout.toString("UTF-8");
-                    logger.info("LastErrorStream:" + errorStreamString);
-                    logger.info("Stdout:" + lastStdStream);
-                    throw new InterruptedException("FFMPeg does not answer");
+                    final String lastStderr;
+                    final int stderrSize;
+                    synchronized (stderr) {
+                        stderrSize = stderr.size();
+                        if (lastNonEmptyStderr != null) {
+                            lastStderr = lastNonEmptyStderr + stderr.toString("UTF-8");
+                        } else {
+                            lastStderr = stderr.toString("UTF-8");
+                        }
+                    }
+                    final String lastStdout;
+                    final int stdoutSize;
+                    synchronized (stdout) {
+                        lastStdout = stdout.toString("UTF-8");
+                        stdoutSize = stdout.size();
+                    }
+                    logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
+                    logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
+                    throw new InterruptedException("FFmpeg does not answer");
                 }
                 Thread.sleep(1000);
             }
