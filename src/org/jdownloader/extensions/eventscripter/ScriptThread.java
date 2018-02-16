@@ -45,9 +45,17 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private Global                       scope;
     private Context                      cx;
     private final LogSource              logger;
-
     private final EventScripterExtension extension;
     private final boolean                isSynchronous;
+    private boolean                      checkPermissions = true;
+
+    public boolean isCheckPermissions() {
+        return checkPermissions;
+    }
+
+    public void setCheckPermissions(boolean checkPermissions) {
+        this.checkPermissions = checkPermissions;
+    }
 
     public LogSource getLogger() {
         return logger;
