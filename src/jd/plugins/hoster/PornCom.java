@@ -13,10 +13,8 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,17 +39,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z\\-]*?\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
 public class PornCom extends antiDDoSForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = -1;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -59,10 +56,8 @@ public class PornCom extends antiDDoSForHost {
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               dllink            = null;
     private String               vq                = null;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem           = new AtomicInteger(1);
 
@@ -84,7 +79,7 @@ public class PornCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -99,15 +94,7 @@ public class PornCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String q = downloadLink.getStringProperty("q", null);
-
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename.trim());
+        String filename = getFilename(br);
         if (q != null) {
             final HashMap<String, String> matches = jd.plugins.decrypter.PornCom.getQualities(this.br);
             dllink = matches.get(q);
@@ -154,7 +141,7 @@ public class PornCom extends antiDDoSForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -231,6 +218,10 @@ public class PornCom extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            final long responsecode = ((HTTPConnection) dl).getResponseCode();
+            if (responsecode == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -297,6 +288,19 @@ public class PornCom extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         doFree(link);
+    }
+
+    public static String getFilename(Browser br) throws Exception {
+        String filename = br.getRegex("<meta name=\"description\" content=\"([^<>\"]*?)\"\\s*/>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)( - PORN.COM)?</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            filename = Encoding.htmlDecode(filename.trim());
+        }
+        return filename;
     }
 
     @Override

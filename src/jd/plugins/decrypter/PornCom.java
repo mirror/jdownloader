@@ -9,7 +9,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -21,16 +20,14 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Files;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z\\-]*?\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
 public class PornCom extends PluginForDecrypt {
-
     public PornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -50,23 +47,19 @@ public class PornCom extends PluginForDecrypt {
             links.add(this.createOfflinelink(parameter.getCryptedUrl()));
             return links;
         }
-        String fileName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (fileName == null) {
-            fileName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        }
-        if (fileName == null) {
-            return null;
-        } else {
-            fileName = Encoding.htmlDecode(fileName.trim());
-        }
-        links = getLinks(br, url, fileName);
+        String filename = jd.plugins.hoster.PornCom.getFilename(br);
+        links = getLinks(br, url, filename);
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (links.size() == 0) {
             final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
             jd.plugins.hoster.PornHubCom.getPage(brc, "https://www.porn.com/videos/embed/" + fid);
-            links = getLinks(brc, url, fileName);
+            if (brc.containsHTML("<div id=\"player-removed\">")) {
+                links.add(this.createOfflinelink(parameter.getCryptedUrl()));
+                return links;
+            }
+            links = getLinks(brc, url, filename);
         }
         if (links.size() == 0) {
             if (br.containsHTML(">Sorry, this video is only available to members")) {
@@ -156,5 +149,4 @@ public class PornCom extends PluginForDecrypt {
         }
         return matches;
     }
-
 }
