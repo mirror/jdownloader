@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "http://(www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+&)?image=.{4,300}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "http://(www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+&)?image=.{4,300}" })
 public class ImageVenueCom extends PluginForHost {
-
     public ImageVenueCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,6 +51,7 @@ public class ImageVenueCom extends PluginForHost {
         // Offline links should also have nice filenames
         link.setName(new Regex(link.getDownloadURL(), "imagevenue\\.com/img\\.php\\?(.+)").getMatch(0));
         this.br.setAllowedResponseCodes(500);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         /* Error handling */
         if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<") || this.br.getHttpConnection().getResponseCode() == 500) {
@@ -131,5 +130,4 @@ public class ImageVenueCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
