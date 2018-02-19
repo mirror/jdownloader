@@ -492,6 +492,19 @@ public class HLSDownloader extends DownloadInterface {
             final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
                 @Override
+                protected int exitProcess(Process process, String stdout, String stderr) throws IllegalThreadStateException {
+                    try {
+                        return process.exitValue();
+                    } catch (IllegalThreadStateException e) {
+                        if (stderr != null && stderr.matches("(?s).*video:\\d+\\w*\\s*audio:\\d+\\w*\\s*subtitle:\\d+\\w*.+")) {
+                            return 0;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+
+                @Override
                 protected void parseLine(boolean isStdout, String line) {
                     try {
                         final String trimmedLine = line.trim();
