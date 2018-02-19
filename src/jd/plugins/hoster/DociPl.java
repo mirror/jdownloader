@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,7 +34,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "docidecrypted://.+" })
 public class DociPl extends PluginForHost {
-
     public DociPl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,7 +44,7 @@ public class DociPl extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("docidecrypted://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("docidecrypted://", "https://"));
     }
 
     /* Connection stuff */
@@ -63,7 +61,6 @@ public class DociPl extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
@@ -81,6 +78,7 @@ public class DociPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -96,7 +94,7 @@ public class DociPl extends PluginForHost {
             /* Fallback */
             filename = url_filename;
         }
-        String filesize = br.getRegex("<td>Rozmiar\\s*?:\\s*?</td><td>([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex("<td>\\s*Rozmiar\\s*:\\s*</td>\\s*<td>\\s*([^<>\"]+)\\s*<").getMatch(0);
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
         if (filesize != null) {
@@ -181,5 +179,4 @@ public class DociPl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
