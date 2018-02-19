@@ -984,6 +984,10 @@ public class LinkCrawler {
         final Request request = con.getRequest();
         final DownloadLink link = new DownloadLink(null, null, request.getURL().getHost(), "directhttp://" + request.getUrl(), true);
         final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
+        final String cookie = con.getRequestProperty("Cookie");
+        if (StringUtils.isNotEmpty(cookie)) {
+            link.setProperty("cookies", cookie);
+        }
         link.setProperty("refURL", requestRef);
         if (request instanceof PostRequest) {
             final String postString = ((PostRequest) request).getPostDataString();
@@ -1774,7 +1778,22 @@ public class LinkCrawler {
                                         final CrawledLink copy = createCopyOf(possibleCryptedLink);
                                         final CrawledLinkModifier linkModifier = copy.getCustomCrawledLinkModifier();
                                         copy.setCustomCrawledLinkModifier(null);
-                                        final CrawledLink directHTTP = crawledLinkFactorybyURL("directhttp://" + url);
+                                        final CrawledLink directHTTP;
+                                        if (rule != null && rule.getCookies() != null) {
+                                            final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + url, true);
+                                            final StringBuilder sb = new StringBuilder();
+                                            for (String[] cookie : rule.getCookies()) {
+                                                if (cookie.length == 1) {
+                                                    sb.append(cookie[0]).append("=;");
+                                                } else if (cookie.length == 2) {
+                                                    sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
+                                                }
+                                            }
+                                            link.setProperty("cookies", sb.toString());
+                                            directHTTP = crawledLinkFactorybyDownloadLink(link);
+                                        } else {
+                                            directHTTP = crawledLinkFactorybyURL("directhttp://" + url);
+                                        }
                                         directHTTP.setMatchingRule(rule);
                                         forwardCrawledLinkInfos(copy, directHTTP, linkModifier, getAndClearSourceURLs(copy), true);
                                         // modify sourceLink because directHTTP arise from possibleCryptedLink(convert to directhttp)
