@@ -173,7 +173,7 @@ public class AbstractFFmpegBinary {
                     } catch (InterruptedException e) {
                         return;
                     }
-                    if (processAlive.get()) {
+                    if (processAlive.compareAndSet(true, false)) {
                         timeoutReached.set(true);
                         process.destroy();
                     }
@@ -791,11 +791,6 @@ public class AbstractFFmpegBinary {
                     }
                 }
                 try {
-                    final int exitCode = process.exitValue();
-                    if (stdoutThread.isAlive()) {
-                        logger.info("Wait for Reader:" + stdoutThread);
-                        stdoutThread.join(1000);
-                    }
                     final String lastStderr;
                     final int stderrSize;
                     synchronized (stderr) {
@@ -811,6 +806,11 @@ public class AbstractFFmpegBinary {
                     synchronized (stdout) {
                         lastStdout = stdout.toString("UTF-8");
                         stdoutSize = stdout.size();
+                    }
+                    final int exitCode = exitProcess(process, lastStdout, lastStderr);
+                    if (stdoutThread.isAlive()) {
+                        logger.info("Wait for Reader:" + stdoutThread);
+                        stdoutThread.join(1000);
                     }
                     logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
                     logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
@@ -861,6 +861,10 @@ public class AbstractFFmpegBinary {
             stdout.close();
             stderr.close();
         }
+    }
+
+    protected int exitProcess(Process process, final String stdout, final String stderr) throws IllegalThreadStateException {
+        return process.exitValue();
     }
 
     protected long getLastUpdateTimestampTimeout() {
