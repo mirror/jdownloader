@@ -579,18 +579,36 @@ public class DeviantArtCom extends PluginForHost {
         return ai;
     }
 
+    private boolean isCookieSet(Browser br, String key) {
+        final String value = br.getCookie(getHost(), key);
+        return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
+    }
+
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                boolean requestMain = true;
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    return;
+                    br.getPage("https://www.deviantart.com/");
+                    requestMain = false;
+                    if (!isCookieSet(br, "userinfo") || !isCookieSet(br, "auth") || !isCookieSet(br, "auth_secure")) {
+                        br.clearCookies(getHost());
+                    } else {
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    }
                 }
-                br.getPage("https://www.deviantart.com/");
-                br.getPage("https://l.deviantart.com/"); // Not allowed to go directly to /users/login/
+                if (requestMain) {
+                    br.getPage("https://www.deviantart.com/");
+                }
+                br.getPage("https://www.deviantart.com/users/login"); // Not allowed to go directly to /users/login/
+                if (br.containsHTML("Please confirm you are human")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 if (false && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
                     // disabled because perimeterx code is incomplete
                     final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
@@ -616,7 +634,7 @@ public class DeviantArtCom extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_me", "1");
                 br.submitForm(loginform);
-                if (br.getURL().contains("/wrong-password")) {
+                if (!isCookieSet(br, "userinfo") || !isCookieSet(br, "auth") || !isCookieSet(br, "auth_secure") || br.getFormbyKey("username") != null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -625,7 +643,9 @@ public class DeviantArtCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
