@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -47,7 +46,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?(facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+|facebook\\.com/download/\\d+)" })
 public class FaceBookComVideos extends PluginForHost {
-
     private String              FACEBOOKMAINPAGE      = "http://www.facebook.com";
     private String              PREFERHD              = "PREFERHD";
     private static final String TYPE_SINGLE_PHOTO     = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
@@ -56,16 +54,12 @@ public class FaceBookComVideos extends PluginForHost {
     private final String        regexFileExtension    = "\\.[a-z0-9]{3}";
     private static final String REV_2                 = jd.plugins.decrypter.FaceBookComGallery.REV_2;
     private static final String REV_3                 = jd.plugins.decrypter.FaceBookComGallery.REV_3;
-
     // five minutes, not 30seconds! -raztoki20160309
     private static final long   trust_cookie_age      = 300000l;
-
     private static Object       LOCK                  = new Object();
-
     private String              dllink                = null;
     private boolean             loggedIN              = false;
     private boolean             accountNeeded         = false;
-
     private int                 maxChunks             = 0;
     private boolean             is_private            = false;
 
@@ -169,7 +163,7 @@ public class FaceBookComVideos extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-        } else {
+        } else { // Video and TYPE_SINGLE_PHOTO !is_private go here
             br.getPage(link.getDownloadURL());
             /* 2016-05-31: Removed this errorhandling as it caused false-positive-offline urls again and again! */
             // if (!br.containsHTML("class=\"uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator") && !loggedIN) {
@@ -206,7 +200,13 @@ public class FaceBookComVideos extends PluginForHost {
             filename = Encoding.htmlDecode(filename.trim());
             // ive seen new lines within filename!
             filename = filename.replaceAll("[\r\n]+", " ");
-
+            if (br.containsHTML(">You must log in to continue")) {
+                accountNeeded = true;
+                if (!loggedIN) {
+                    logger.info("You must log in to continue");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+            }
             if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) {
                 // Try if a downloadlink is available
                 dllink = br.getRegex("href=\"(https?://[^<>\"]*?(\\?|\\&amp;)dl=1)\"").getMatch(0);
@@ -266,7 +266,6 @@ public class FaceBookComVideos extends PluginForHost {
                     } catch (final Throwable e) {
                     }
                 }
-
                 // not sure what this is used for... -raztoki
                 if (dllink == null) {
                     dllink = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
@@ -276,7 +275,6 @@ public class FaceBookComVideos extends PluginForHost {
                 }
                 dllink = dllink.replace("\\", "");
                 dllink = Encoding.htmlDecode(dllink);
-
                 // Try to change it to HD
                 final Regex urlSplit = new Regex(dllink, "(https?://[a-z0-9\\-\\.]+/hphotos\\-ak\\-[a-z0-9]+)/(q\\d+/)?s\\d+x\\d+(/.+)");
                 final String partOne = urlSplit.getMatch(0);
@@ -287,7 +285,7 @@ public class FaceBookComVideos extends PluginForHost {
                 }
                 try {
                     con = br.openGetConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
+                    if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
                         link.setDownloadSize(con.getLongContentLength());
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -303,7 +301,7 @@ public class FaceBookComVideos extends PluginForHost {
                     } catch (Throwable e) {
                     }
                 }
-            } else {
+            } else { // Video link is handled by handleVideo
                 filename = filename + "_" + lid + ".mp4";
             }
         }
@@ -485,7 +483,6 @@ public class FaceBookComVideos extends PluginForHost {
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
-
                     }
                     loginForm.remove(null);
                     loginForm.put("email", Encoding.urlEncode(account.getUser()));
@@ -495,7 +492,6 @@ public class FaceBookComVideos extends PluginForHost {
                 } else {
                     br.getPage("https://www.facebook.com/login.php");
                     final String lang = System.getProperty("user.language");
-
                     final Form loginForm = br.getForm(0);
                     if (loginForm == null) {
                         if ("de".equalsIgnoreCase(lang)) {
@@ -504,7 +500,6 @@ public class FaceBookComVideos extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-
                     loginForm.remove("persistent");
                     loginForm.put("persistent", "1");
                     loginForm.remove(null);
@@ -515,7 +510,6 @@ public class FaceBookComVideos extends PluginForHost {
                     loginForm.remove("enable_profile_selector");
                     loginForm.remove("display");
                     String _js_datr = br.getRegex("\"_js_datr\"\\s*,\\s*\"([^\"]+)").getMatch(0);
-
                     br.setCookie("https://facebook.com", "_js_datr", _js_datr);
                     br.setCookie("https://facebook.com", "_js_reg_fb_ref", Encoding.urlEncode("https://www.facebook.com/login.php"));
                     br.setCookie("https://facebook.com", "_js_reg_fb_gate", Encoding.urlEncode("https://www.facebook.com/login.php"));
@@ -523,7 +517,6 @@ public class FaceBookComVideos extends PluginForHost {
                     loginForm.put("pass", Encoding.urlEncode(account.getPass()));
                     br.submitForm(loginForm);
                 }
-
                 /**
                  * Facebook thinks we're an unknown device, now we prove we're not ;)
                  */
@@ -538,7 +531,6 @@ public class FaceBookComVideos extends PluginForHost {
                         }
                     }
                     br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&submit%5BContinue%5D=Continue");
-
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "facebook.com", "http://facebook.com", true);
                     String achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
                     final String captchaPersistData = br.getRegex("name=\"captcha_persist_data\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -556,7 +548,6 @@ public class FaceBookComVideos extends PluginForHost {
                             break;
                         }
                         captchaLink = Encoding.htmlDecode(captchaLink);
-
                         String code;
                         try {
                             code = getCaptchaCode(captchaLink, dummyLink);
@@ -565,20 +556,17 @@ public class FaceBookComVideos extends PluginForHost {
                         }
                         br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&captcha_response=" + Encoding.urlEncode(code) + "&achal=" + achal + "&submit%5BSubmit%5D=Submit");
                     }
-
                     // reCaptcha handling
                     for (int i = 1; i <= 3; i++) {
                         final String rcID = br.getRegex("\"recaptchaPublicKey\":\"([^<>\"]*?)\"").getMatch(0);
                         if (rcID == null) {
                             break;
                         }
-
                         final String extraChallengeParams = br.getRegex("name=\"extra_challenge_params\" value=\"([^<>\"]*?)\"").getMatch(0);
                         final String captchaSession = br.getRegex("name=\"captcha_session\" value=\"([^<>\"]*?)\"").getMatch(0);
                         if (extraChallengeParams == null || captchaSession == null) {
                             break;
                         }
-
                         final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId(rcID);
                         rc.load();
@@ -591,7 +579,6 @@ public class FaceBookComVideos extends PluginForHost {
                         }
                         br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&captcha_session=" + Encoding.urlEncode(captchaSession) + "&extra_challenge_params=" + Encoding.urlEncode(extraChallengeParams) + "&recaptcha_type=password&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&captcha_response=" + Encoding.urlEncode(c) + "&achal=1&submit%5BSubmit%5D=Submit");
                     }
-
                     for (int i = 1; i <= 3; i++) {
                         if (br.containsHTML(">To confirm your identity, please enter your birthday")) {
                             achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
@@ -721,7 +708,6 @@ public class FaceBookComVideos extends PluginForHost {
     private static void showFeatureDialogAll() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
