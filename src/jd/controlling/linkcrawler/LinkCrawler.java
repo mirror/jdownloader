@@ -1070,8 +1070,12 @@ public class LinkCrawler {
                         br.setFollowRedirects(false);
                         if (matchingRule != null && matchingRule.getCookies() != null) {
                             for (String cookie[] : matchingRule.getCookies()) {
-                                if (cookie != null && cookie.length > 1) {
-                                    br.setCookie(source.getURL(), cookie[0], cookie[1]);
+                                if (cookie != null) {
+                                    if (cookie.length == 1) {
+                                        br.setCookie(source.getURL(), cookie[0], null);
+                                    } else if (cookie.length > 1) {
+                                        br.setCookie(source.getURL(), cookie[0], cookie[1]);
+                                    }
                                 }
                             }
                         }
@@ -1785,7 +1789,7 @@ public class LinkCrawler {
                                             for (String[] cookie : rule.getCookies()) {
                                                 if (cookie.length == 1) {
                                                     sb.append(cookie[0]).append("=;");
-                                                } else if (cookie.length == 2) {
+                                                } else if (cookie.length > 1) {
                                                     sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
                                                 }
                                             }
