@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -39,9 +38,8 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
 public class AtvAt extends PluginForDecrypt {
-
     public AtvAt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -68,7 +66,6 @@ public class AtvAt extends PluginForDecrypt {
         String json_source = null;
         String seasonnumber_str = null;
         String episodenumber_str = null;
-
         LinkedHashMap<String, Object> entries;
         final ArrayList<Object> parts;
         boolean geo_blocked = false;
@@ -76,7 +73,6 @@ public class AtvAt extends PluginForDecrypt {
             final Regex linkinfo = new Regex(parameter, "atvsmart\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
             url_seriesname = linkinfo.getMatch(0);
             url_episodename = linkinfo.getMatch(1);
-
             br.getPage(parameter);
             br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">404 \\- Nicht gefunden|Leider ist die von Ihnen aufgerufene Seite nicht")) {
@@ -107,7 +103,6 @@ public class AtvAt extends PluginForDecrypt {
             url_seriesname = linkinfo.getMatch(0);
             url_episodename = linkinfo.getMatch(1);
             fid = linkinfo.getMatch(2);
-
             br.getPage(parameter);
             br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -131,12 +126,10 @@ public class AtvAt extends PluginForDecrypt {
                 geo_blocked = true;
             }
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-
             /* Get filename information */
             seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
             episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
             episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
-
             json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
             json_source = Encoding.htmlDecode(json_source);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
@@ -183,7 +176,6 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name += episodename;
         hybrid_name = Encoding.htmlDecode(hybrid_name);
         hybrid_name = decodeUnicode(hybrid_name);
-
         final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
         final int possibleQualitiesCount = possibleQualities.length;
         final FFmpeg ffmpeg = new FFmpeg();
@@ -283,7 +275,6 @@ public class AtvAt extends PluginForDecrypt {
                                         break;
                                     }
                                 }
-
                             } catch (Throwable e) {
                                 getLogger().log(e);
                                 estimatedSize = 0;
@@ -305,7 +296,6 @@ public class AtvAt extends PluginForDecrypt {
                                 finalname += quality;
                             }
                             finalname += ".mp4";
-
                             link.setFinalFileName(finalname);
                             if (estimatedSize > 0) {
                                 link.setAvailable(true);
@@ -342,11 +332,9 @@ public class AtvAt extends PluginForDecrypt {
                     decryptedLinks.add(link);
                     distribute(link);
                 }
-
             }
             part_counter++;
         }
-
         if (decryptedLinks.size() == 0 && geo_blocked) {
             logger.info("GEO-blocked");
             final DownloadLink offline = this.createOfflinelink(parameter);
@@ -354,7 +342,6 @@ public class AtvAt extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-
         return decryptedLinks;
     }
 
@@ -372,5 +359,4 @@ public class AtvAt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
