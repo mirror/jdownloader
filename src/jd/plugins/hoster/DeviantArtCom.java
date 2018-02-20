@@ -567,13 +567,8 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        final AccountInfo ai = new AccountInfo();
+        login(this.br, account, true);
         account.setValid(true);
         ai.setStatus("Free Registered User");
         return ai;
@@ -605,6 +600,7 @@ public class DeviantArtCom extends PluginForHost {
                 if (requestMain) {
                     br.getPage("https://www.deviantart.com/");
                 }
+                Thread.sleep(2000);
                 br.getPage("https://www.deviantart.com/users/login"); // Not allowed to go directly to /users/login/
                 if (br.containsHTML("Please confirm you are human")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -633,6 +629,7 @@ public class DeviantArtCom extends PluginForHost {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_me", "1");
+                Thread.sleep(5000);
                 br.submitForm(loginform);
                 if (!isCookieSet(br, "userinfo") || !isCookieSet(br, "auth") || !isCookieSet(br, "auth_secure") || br.getFormbyKey("username") != null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -654,7 +651,6 @@ public class DeviantArtCom extends PluginForHost {
     public static void prepBR(final Browser br) {
         /* Needed to view mature content */
         br.setCookie("deviantart.com", "agegate_state", "1");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
     }
 
     @Override
