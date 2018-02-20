@@ -1,5 +1,11 @@
 package org.jdownloader.plugins.components;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import org.appwork.utils.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,11 +16,6 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -607,8 +608,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 case 9:
                 case 10:
                 case 11: {
-                    // kprotector.com, click to proceed step, prior to captcha.
-                    if (protectedForm.getInputFieldByType("button") != null && "Click+To+Proceed".equals(protectedForm.getInputFieldByType("button").getValue())) {
+                    // kprotector.com, click to proceed step, prior to captcha. && keeplinks also though not in submit value
+                    if (protectedForm.getInputFieldByType("button") != null && ("Click+To+Proceed".equals(protectedForm.getInputFieldByType("button").getValue()) || protectedForm.containsHTML(">\\s*Click To Proceed\\s*</button>"))) {
                         submitForm(protectedForm);
                         protectedForm = formProtected();
                         prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
