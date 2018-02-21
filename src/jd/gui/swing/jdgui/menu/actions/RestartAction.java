@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.Toolkit;
@@ -28,7 +27,6 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 public class RestartAction extends CustomizableAppAction {
-
     private static final long serialVersionUID = 1333126351380171619L;
 
     public RestartAction() {
@@ -41,8 +39,6 @@ public class RestartAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(false));
     }
-
 }

@@ -14,11 +14,11 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 
 //org.jdownloader.extensions.myjdownloader.MyJDownloaderExtension has been the old path of the settingsfile
 @StorageHandlerFactoryAnnotation(MyJDownloaderSettingsStorageHandlerFactory.class)
 public interface MyJDownloaderSettings extends ConfigInterface {
-
     public static enum DIRECTMODE {
         @EnumLabel("Disable direct connections")
         NONE,
@@ -33,6 +33,14 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     @DefaultStringValue("api.jdownloader.org")
     @RequiresRestart("A JDownloader Restart is Required")
     public String getServerHost();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Set preferred IP version to use")
+    @DefaultEnumValue("SYSTEM")
+    @RequiresRestart("A JDownloader Restart is Required")
+    IPVERSION getPreferredIPVersion();
+
+    void setPreferredIPVersion(IPVERSION ipVersion);
 
     public void setServerHost(String url);
 
@@ -70,7 +78,6 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public void setUniqueDeviceIDV2(String id);
 
     public static class DeviceNameFactory extends AbstractDefaultFactory<String> {
-
         @Override
         public String getDefaultValue() {
             return "JDownloader@" + System.getProperty("user.name", "User");
@@ -149,7 +156,6 @@ public interface MyJDownloaderSettings extends ConfigInterface {
         UNKNOWN,
         @EnumLabel("No Internet Connection")
         NO_INTERNET_CONNECTION,
-
     }
 
     @AboutConfig
@@ -157,5 +163,4 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public void setLatestError(MyJDownloaderError error);
 
     public MyJDownloaderError getLatestError();
-
 }
