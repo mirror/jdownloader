@@ -17,11 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -42,9 +37,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
-
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.google.com/signup");
@@ -347,7 +346,7 @@ public class GoogleDrive extends PluginForHost {
         }
         while (true) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
-            if (dl.getConnection().getContentType().equals("text/html")) {
+            if (dl.getConnection().getContentType().equals("text/html") && !dl.getConnection().isContentDisposition()) {
                 if (dl.getConnection().getResponseCode() == 416) {
                     dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
