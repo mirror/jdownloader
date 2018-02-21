@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,9 +37,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
 public class ImgSrcRu extends PluginForDecrypt {
-
     // dev notes
     // &pwd= is a md5 hash id once you've provided password for that album.
     public ImgSrcRu(PluginWrapper wrapper) {
@@ -245,7 +244,10 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean parseNextPage(CryptedLink param) throws Exception {
-        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}|\\?)?)\\1>(▶|&#9654;|&#9658;)</a>").getMatch(1);
+        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>(▶|&#9658;)</a>").getMatch(1);
+        if (nextPage == null) {
+            nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>&#9654</a>").getMatch(1);
+        }
         if (nextPage != null) {
             if (!getPage(nextPage, param)) {
                 return false;
