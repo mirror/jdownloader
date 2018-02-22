@@ -23,7 +23,7 @@ public class SubFolderByPackageRule extends PackagizerRule {
 
     public void init() {
         setMatchAlwaysFilter(new BooleanFilter(true));
-        setDownloadDestination("<jd:append><jd:packagename>");
+        setDownloadDestination("<jd:packagename>");
         setIconKey(IconKey.ICON_FOLDER);
         setName(_JDT.T.PackagizerSettings_folderbypackage_rule_name());
         setEnabled(true);
