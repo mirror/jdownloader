@@ -76,6 +76,7 @@ import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -2573,14 +2574,14 @@ public class LinkCrawler {
                     }
                 }
                 PackageInfo fpi = null;
-                if (fp.getDownloadDirectory() != null && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
+                if (StringUtils.isNotEmpty(fp.getDownloadDirectory()) && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
                     // do not set downloadfolder if it is the defaultfolder
                     if (link.getDesiredPackageInfo() == null) {
                         fpi = new PackageInfo();
                     } else {
                         fpi = link.getDesiredPackageInfo();
                     }
-                    fpi.setDestinationFolder(fp.getDownloadDirectory());
+                    fpi.setDestinationFolder(CrossSystem.fixPathSeparators(fp.getDownloadDirectory() + File.separator));
                 }
                 final String name;
                 if (Boolean.FALSE.equals(fp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {

@@ -1,8 +1,12 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.io.File;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 
@@ -109,6 +113,9 @@ public class PackagizerLinkSandbox {
             PackageInfo packageInfo = link.getDesiredPackageInfo();
             if (packageInfo == null) {
                 packageInfo = new PackageInfo();
+            }
+            if (StringUtils.isNotEmpty(destinationFolder)) {
+                destinationFolder = CrossSystem.fixPathSeparators(destinationFolder + File.separator);
             }
             packageInfo.setDestinationFolder(destinationFolder);
             link.setDesiredPackageInfo(packageInfo);

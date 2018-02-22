@@ -5,7 +5,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.translate._JDT;
 
 public class SubFolderByPackageRule extends PackagizerRule {
-
     public static enum COUNT {
         NAMES,
         ITEMS,
@@ -24,12 +23,11 @@ public class SubFolderByPackageRule extends PackagizerRule {
 
     public void init() {
         setMatchAlwaysFilter(new BooleanFilter(true));
-        setDownloadDestination("<jd:packagename>");
+        setDownloadDestination("<jd:append><jd:packagename>");
         setIconKey(IconKey.ICON_FOLDER);
         setName(_JDT.T.PackagizerSettings_folderbypackage_rule_name());
         setEnabled(true);
         setId(ID);
         setStaticRule(true);
     }
-
 }
