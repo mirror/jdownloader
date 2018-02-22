@@ -24,6 +24,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
@@ -36,10 +40,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BrDe.BrDeConfigInterface;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "https?://(www\\.)?br\\.de/mediathek/video/[^<>\"]+(\\.html)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "https?://(?:www\\.)?br\\.de/[^<>\"]+(\\.html)?" })
 public class BrDeDecrypter extends PluginForDecrypt {
     private static final String   TYPE_INVALID           = "https?://(www\\.)?br\\.de/mediathek/video/index\\.html";
     /* only keep best quality , do not change the ORDER */
@@ -52,7 +53,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         boolean offline = false;
         br.setFollowRedirects(true);
@@ -73,13 +74,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-        HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
-        HashMap<String, DownloadLink> tmpBestMap = new HashMap<String, DownloadLink>();
-        final BrDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.BrDe.BrDeConfigInterface.class);
-        final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
-        final boolean grabBEST = cfg.isGrabBESTEnabled();
-        final String player_link = br.getRegex("\\{dataURL:\\'(/mediathek/video/[^<>\"]*?)\\'\\}").getMatch(0);
+        final String player_link = br.getRegex("\\{dataURL:\\'(/[^<>\"]*?)\\'\\}").getMatch(0);
         String date = br.getRegex(">(\\d{2}\\.\\d{2}\\.\\d{4}), \\d{2}:\\d{2} Uhr,?</time>").getMatch(0);
         if (player_link == null) {
             logger.info("URL does not lead to any downloadable content");
@@ -94,11 +89,21 @@ public class BrDeDecrypter extends PluginForDecrypt {
         String show = getXML("broadcast");
         String plain_name = this.getXML("shareTitle");
         final String[] qualities = br.getRegex("<asset type=(.*?)</asset>").getColumn(0);
-        if (qualities == null || qualities.length == 0 || plain_name == null || date == null) {
+        if (qualities == null || qualities.length == 0 || plain_name == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String date_formatted = formatDate(date);
+        final ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
+        HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
+        HashMap<String, DownloadLink> tmpBestMap = new HashMap<String, DownloadLink>();
+        final BrDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.BrDe.BrDeConfigInterface.class);
+        final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
+        final boolean grabBEST = cfg.isGrabBESTEnabled();
+        String date_formatted = null;
+        if (!StringUtils.isEmpty(date)) {
+            /* Date is not always given */
+            date_formatted = formatDate(date);
+        }
         if (show == null) {
             /* Show is not always given */
             show = "-";
@@ -120,7 +125,11 @@ public class BrDeDecrypter extends PluginForDecrypt {
             final String height = this.getXML(qinfo, "frameHeight");
             final String fsize = this.getXML(qinfo, "size");
             final String resolution = width + "x" + height;
-            final String final_video_name = date_formatted + "_br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
+            String final_video_name = "";
+            if (date_formatted != null) {
+                final_video_name = date_formatted + "_";
+            }
+            final_video_name += "br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
             final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + playerLinkID);
             dl_video.setLinkID(getHost() + "://" + playerLinkID + "/" + q_string + "/" + resolution);
             dl_video.setProperty("mainlink", parameter);
@@ -225,7 +234,12 @@ public class BrDeDecrypter extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(date_formatted + "_br_" + show + " - " + plain_name);
+        String packagename = "";
+        if (date_formatted != null) {
+            packagename = date_formatted + "_";
+        }
+        packagename += "br_" + show + " - " + plain_name;
+        fp.setName(packagename);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

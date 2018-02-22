@@ -24,7 +24,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,7 @@ public class PremiumizeMe extends PluginForDecrypt {
         } else {
             folderPath = "";
         }
-        ret.addAll(convert(nodes, folderPath));
+        ret.addAll(convert(parameter.getCryptedUrl(), nodes, folderPath));
         return ret;
     }
 
@@ -63,7 +63,7 @@ public class PremiumizeMe extends PluginForDecrypt {
         return ret;
     }
 
-    public static List<DownloadLink> convert(ArrayList<PremiumizeBrowseNode> premiumizeNodes, String currentPath) {
+    public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, String currentPath) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (premiumizeNodes == null || premiumizeNodes.size() == 0) {
             return ret;
@@ -71,6 +71,8 @@ public class PremiumizeMe extends PluginForDecrypt {
         if (currentPath == null) {
             currentPath = "";
         }
+        /* If given, user only wants to have one specific file. */
+        final String targetFileID = new Regex(url_source, "file_id=([a-zA-Z0-9\\-_]+)").getMatch(0);
         final boolean addPath = StringUtils.isNotEmpty(currentPath);
         final Map<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
@@ -99,7 +101,14 @@ public class PremiumizeMe extends PluginForDecrypt {
                 if (addPath && StringUtils.isNotEmpty(currentPath)) {
                     link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 }
-                ret.add(link);
+                if (targetFileID != null && nodeCloudID.equals(targetFileID)) {
+                    /* User only wants to add specific file --> Delete everything else and only return this single URL/file. */
+                    ret.clear();
+                    ret.add(link);
+                    break;
+                } else {
+                    ret.add(link);
+                }
             }
         }
         return ret;

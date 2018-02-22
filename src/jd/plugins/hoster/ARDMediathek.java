@@ -24,8 +24,10 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -36,10 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -67,12 +65,9 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = downloadLink.getDownloadURL();
-        /* Load this plugin as we use functions of it. */
-        JDUtilities.getPluginForHost("br-online.de");
-        String finalName = downloadLink.getStringProperty("directName", null);
+        final String finalName = downloadLink.getStringProperty("directName", null);
         if (finalName == null) {
-            /* TODO */
-            finalName = getTitle(br) + ".mp4";
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(finalName);
         br.setFollowRedirects(true);
@@ -107,24 +102,6 @@ public class ARDMediathek extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
-    }
-
-    private String getTitle(Browser br) {
-        String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
-        String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        }
-        if (title != null) {
-            title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-        }
-        if (title == null) {
-            title = "UnknownTitle_" + System.currentTimeMillis();
-        }
-        return title;
     }
 
     @Override
