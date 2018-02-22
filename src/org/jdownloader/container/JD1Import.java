@@ -32,6 +32,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.HexInputStream;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.IconKey;
@@ -123,11 +124,11 @@ public class JD1Import extends PluginsC {
                 for (final FilePackage p : packages) {
                     final PackageInfo packageInfo = new PackageInfo();
                     packageInfo.setName(p.getName());
-                    if (new File(p.getDownloadDirectory()).exists()) {
-                        packageInfo.setDestinationFolder(p.getDownloadDirectory());
+                    if (StringUtils.isNotEmpty(p.getDownloadDirectory()) && new File(p.getDownloadDirectory()).isDirectory()) {
+                        packageInfo.setDestinationFolder(CrossSystem.fixPathSeparators(p.getDownloadDirectory() + File.separator));
                     }
                     for (final DownloadLink dl : p.getChildren()) {
-                        CrawledLink cl = new CrawledLink(dl);
+                        final CrawledLink cl = new CrawledLink(dl);
                         if (packageInfo.isNotEmpty()) {
                             cl.setDesiredPackageInfo(packageInfo.getCopy());
                         }
