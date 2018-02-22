@@ -83,7 +83,10 @@ public class DosyaTc extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // String dllink = br.getRegex("value=\"Download\" onClick=\"window\\.location=.*?(http.*?).'\">").getMatch(0);
-        String dllink = br.getRegex("<a href=\"([^\"]+)\" id=\"download\"").getMatch(0);
+        String dllink = br.getRegex("\\{\\s*window\\.open\\(\"(http.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<a href=\"([^\"]+)\" id=\"download\"").getMatch(0);
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
