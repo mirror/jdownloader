@@ -13,25 +13,32 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.decrypter;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.tl" }, urls = { "https?://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.tl" }, urls = { "https?://(www\\.)?link\\.tl/(?!advertising|\\w+/.+)?[A-Za-z0-9\\-]{4,}" })
 public class LnkTl extends antiDDoSForDecrypt {
+
     public LnkTl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,16 +64,21 @@ public class LnkTl extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         getPage(parameter);
+
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
-            redirect = br.getRegex("top\\.location\\.href = \"(https?[^<>\"]*?)\"").getMatch(0);
+            redirect = br.getRegex("top\\.location\\.href = \"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (redirect != null && !redirect.contains("link.tl/")) {
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
+        if (redirect != null) {
+            if (!redirect.contains("link.tl/")) {
+                decryptedLinks.add(createDownloadlink(redirect));
+                return decryptedLinks;
+            } else {
+                br.followRedirect();
+            }
         }
-        if (br.getURL().equals("http://link.tl/") || br.getURL().equals("https://link.tl/") || br.containsHTML("top\\.location\\.href = \"https?://link\\.tl/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist|>Üzgünüz, ulaşmaya çalışmış olduğunuz kısaltma sistemde yer almamaktadır\\.<")) {
+        if (br.getURL().matches("https?://link.tl/") || br.containsHTML("top\\.location\\.href = \"https?://link\\.tl/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist|>Üzgünüz, ulaşmaya çalışmış olduğunuz kısaltma sistemde yer almamaktadır\\.<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -75,49 +87,72 @@ public class LnkTl extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         String packed = null;
-        final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-        if (cryptedScripts != null && cryptedScripts.length != 0) {
-            for (String crypted : cryptedScripts) {
-                packed = decodeDownloadLink(crypted);
-                if (packed != null) {
-                    break;
+        {
+            final String cryptedScripts[] = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getColumn(0);
+            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                for (String crypted : cryptedScripts) {
+                    packed = decodeDownloadLink(crypted);
+                    if (packed != null) {
+                        break;
+                    }
+                }
+                if (packed == null) {
+                    packed = "";
                 }
             }
-            if (packed == null) {
-                packed = "";
+        }
+        // 20180221
+        final String[] vars = new Regex(packed, "var \\w+\\s*=\\s*function\\(\\)\\s*\\{.*?\\};").getColumn(-1);
+        // should be two and they are in order.
+        // time delay
+        this.sleep(1800, param);
+        if (vars != null) {
+            for (final String var : vars) {
+                final String url = new Regex(var, "url\\s*:\\s*'([^']+)'").getMatch(0);
+                final String unique = new Regex(var, "data\\.append\\('unique'\\s*,\\s*'([a-f0-9]{13})'\\)").getMatch(0);
+                final String xcsrf = new Regex(var, "'X-CSRF-TOKEN'\\s*:\\s*'([A-Za-z0-9]+)'").getMatch(0);
+                if (url == null || unique == null || xcsrf == null) {
+                    continue;
+                }
+                final PostFormDataRequest r = br.createPostFormDataRequest(url);
+                r.addFormData(new FormData("width", "1920"));
+                r.addFormData(new FormData("height", "1050"));
+                r.addFormData(new FormData("browser_width", "1693"));
+                r.addFormData(new FormData("browser_height", "949"));
+                r.addFormData(new FormData("width", "1920"));
+                r.addFormData(new FormData("incognito_browser", "0"));
+                r.addFormData(new FormData("adblock", "0"));
+                r.addFormData(new FormData("unique", unique));
+                r.getHeaders().put("X-CSRF-TOKEN", xcsrf);
+                r.getHeaders().put("Accept", "*/*");
+                ajax = br.cloneBrowser();
+                sendRequest(ajax, r);
+                // waittime is 5 seconds. but somehow this often results in an error.
+                // we use 5.5 seconds to avoid them
+                sleep(5500, param);
             }
         }
-        final String[] matches = new Regex(packed, "aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\}").getRow(0);
-        final String[] post = new Regex(packed, "\\$\\.post\\('(https?://link\\.tl/fly/.*?\\.php)',\\{opt").getColumn(0);
-        if (matches == null || matches.length == 0 || post == null || post.length == 0) {
-            logger.warning("Possible Decrypter broken for link: " + parameter);
-            return decryptedLinks;
-        }
-        LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
-        // first repeated twice
-        data.put("opt", "check_log");
-        data.put(Encoding.urlEncode("args[lid]"), matches[1]);
-        data.put(Encoding.urlEncode("args[oid]"), matches[2]);
-        ajaxPostPage(post[0], data);
-        ajaxPostPage(post[0], data);
-        // waittime is 5 seconds. but somehow this often results in an error.
-        // we use 5.5 seconds to avoid them
-        sleep(5500, param);
-        // second
-        data.put("opt", "make_log");
-        data.put(Encoding.urlEncode("args[aid]"), matches[0]);
-        ajaxPostPage(post[post.length - 1], data);
         String url = PluginJSonUtils.getJsonValue(ajax, "url");
-        if (url == null) {
-            // maybe we have to wait even longer?
-            sleep(2000, param);
-            ajaxPostPage(post[post.length - 1], data);
-            url = PluginJSonUtils.getJsonValue(ajax, "url");
-        }
-        if (url.contains("link.tl/fly/go.php?")) {
+        if (url != null && url.contains("link.tl/d/")) {
             getPage(url);
-            url = br.getRegex("href=\"([^\"]+)\"\\s*>Skip!<").getMatch(0);
-            if (url != null && url.contains("/fly/site.php")) {
+            br.followRedirect();
+            {
+                final String cryptedScripts[] = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        packed = decodeDownloadLink(crypted);
+                        if (packed != null) {
+                            break;
+                        }
+                    }
+                    if (packed == null) {
+                        packed = "";
+                    }
+                }
+            }
+            url = new Regex(packed, "window\\.location\\.href='([^\"]+)'").getMatch(0);
+            // should be /i/uid
+            if (url != null && url.contains("link.tl/i/")) {
                 getPage(url);
                 // skip
                 url = br.getRegex("<div class=\"skip\">\\s*<a href=\"(.*?)\"").getMatch(0);
@@ -127,7 +162,9 @@ public class LnkTl extends antiDDoSForDecrypt {
                 }
             }
         }
-        decryptedLinks.add(createDownloadlink(url));
+        if (url != null) {
+            decryptedLinks.add(createDownloadlink(url));
+        }
         return decryptedLinks;
     }
 
@@ -137,27 +174,21 @@ public class LnkTl extends antiDDoSForDecrypt {
      * @return String result
      */
     protected String decodeDownloadLink(final String s) {
-        String decoded = null;
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String result = null;
         try {
-            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) {
-                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-                }
-            }
-            decoded = p;
-        } catch (Exception e) {
+            engine.eval("var res = " + s + ";");
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            e.printStackTrace();
         }
-        return decoded;
+        return result;
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
+
 }
