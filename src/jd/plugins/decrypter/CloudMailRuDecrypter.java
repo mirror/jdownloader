@@ -45,8 +45,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     }
 
     public static final String  BUILD            = "release-33-1.201603012259";
-    /* Max .zip filesize = 4 GB - 2018: 10 MB */
-    private static final double MAX_ZIP_FILESIZE = 10485760;
+    /* Max .zip filesize = 4 GB // 2018: 10 MB // 20180223 back to 4194304 (4 MB) * 1024 for testing by user */
+    private static final double MAX_ZIP_FILESIZE = 4194304;
     private static String       DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
     private static final String TYPE_APIV2       = "https?://(www\\.)?cloud\\.mail\\.ru/(?:files/)?[A-Z0-9]{32}";
     private String              json;
@@ -218,7 +218,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 decryptedLinks.addAll(downloadLinks);
             }
         }
-        if (decryptedLinks.size() > 1 && Double.valueOf(fsize) <= MAX_ZIP_FILESIZE && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+        if (decryptedLinks.size() > 1 && Double.valueOf(fsize) <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final String main_name = mainName + ".zip";
             main.setProperty("plain_name", main_name);
