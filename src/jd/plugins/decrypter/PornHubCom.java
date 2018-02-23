@@ -63,11 +63,20 @@ public class PornHubCom extends PluginForDecrypt {
         parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
+        Boolean premium = false;
         aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             jd.plugins.hoster.PornHubCom.login(br, aa, false);
+            if (aa.getType().toString().equals("PREMIUM")) {
+                premium = true;
+            }
         }
-        jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        if (premium) {
+            // logger.info("Debug info: Premium account");
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter.replace("pornhub", "pornhubpremium"));
+        } else {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        }
         if (br.containsHTML("class=\"g-recaptcha\"")) {
             final Form form = br.getFormByInputFieldKeyValue("captchaType", "1");
             logger.info("Detected captcha method \"reCaptchaV2\" for this host");
