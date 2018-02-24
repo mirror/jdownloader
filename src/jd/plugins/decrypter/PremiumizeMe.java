@@ -24,7 +24,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files(?:\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?|\\?file_id=[a-zA-Z0-9\\-_]+)" })
 public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,9 +39,8 @@ public class PremiumizeMe extends PluginForDecrypt {
             return ret;
         }
         setBrowserExclusive();
-        final String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(parameter.getCryptedUrl());
         final Account account = accs.get(0);
-        final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, cloudID);
+        final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
         /* Find path from previous craw process if available. */
         String folderPath = new Regex(parameter.getCryptedUrl(), "folderpath=(.+)").getMatch(0);
         if (folderPath != null) {
@@ -128,7 +127,15 @@ public class PremiumizeMe extends PluginForDecrypt {
         link.setLinkID("premiumizecloud://" + node.getID());
     }
 
-    public static ArrayList<PremiumizeBrowseNode> getNodes(Browser br, Account account, final String cloudID) throws IOException {
+    public static ArrayList<PremiumizeBrowseNode> getNodes(final Browser br, final Account account, final String url) throws IOException {
+        String cloudID = jd.plugins.hoster.PremiumizeMe.getCloudID(url);
+        if (cloudID == null) {
+            /*
+             * 2018-02-24: No cloudID found? Fallback to root folder. This may happen if only a file_id is given --> It must be located in
+             * the root dir.
+             */
+            cloudID = "0";
+        }
         accessCloudItem(br, account, cloudID);
         final Map<String, Object> responseMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
         final String status = (String) responseMap.get("status");
