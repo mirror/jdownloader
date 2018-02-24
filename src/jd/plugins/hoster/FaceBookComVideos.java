@@ -207,7 +207,7 @@ public class FaceBookComVideos extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
             }
-            if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) {
+            if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) { // /photo.php?fbid=\\d+
                 // Try if a downloadlink is available
                 dllink = br.getRegex("href=\"(https?://[^<>\"]*?(\\?|\\&amp;)dl=1)\"").getMatch(0);
                 // Try to find original quality link
@@ -239,6 +239,12 @@ public class FaceBookComVideos extends PluginForHost {
                             dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_o" + regexFileExtension + "[^\"]*)\"").getMatch(0);
                             if (dllink == null) {
                                 dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_n" + regexFileExtension + "[^\"]*)\"").getMatch(0);
+                            }
+                            dllink = dllink.replace("\\", "");
+                            checkDllink(dllink);
+                            if (dllink == null) {
+                                // dllink = new Regex(filter, "\"smallurl\":\"(.*?)\"").getMatch(0);
+                                dllink = PluginJSonUtils.getJsonValue(filter, "smallurl");
                             }
                         }
                     } catch (final Throwable e) {
@@ -307,6 +313,27 @@ public class FaceBookComVideos extends PluginForHost {
         }
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
+    }
+
+    private String checkDllink(final String flink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br3 = br.cloneBrowser();
+        br3.setFollowRedirects(true);
+        try {
+            con = br3.openHeadConnection(flink);
+            if (!con.getContentType().contains("text")) {
+                dllink = flink;
+            } else {
+                dllink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
+        }
+        return dllink;
     }
 
     /**
