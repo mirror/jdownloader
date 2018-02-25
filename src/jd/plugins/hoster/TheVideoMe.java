@@ -29,6 +29,15 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,15 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.(me|cc)/((?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
@@ -375,6 +375,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 logger.info("Attempting Pairing: " + count);
                 /* Remove cookies & headers */
                 brv = br.cloneBrowser();
+                brv.setFollowRedirects(true);
                 brv.getPage(String.format("/pair?file_code=%s&check", this.fuid));
                 authenticated = Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"));
                 if (!authenticated) {
@@ -716,8 +717,8 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -1130,8 +1131,7 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
-     * error.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date error.
      *
      * @param dl
      *            : The DownloadLink
