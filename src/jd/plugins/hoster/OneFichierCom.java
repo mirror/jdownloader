@@ -354,6 +354,9 @@ public class OneFichierCom extends PluginForHost {
                         dllink = br3.getRedirectLocation();
                     }
                     if (dllink == null) {
+                        dllink = br3.getRegex("<a href=\"([^<>\"]*?)\"[^<>]*?>Click here to download").getMatch(0);
+                    }
+                    if (dllink == null) {
                         dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
                     }
                     if (dllink == null) {
