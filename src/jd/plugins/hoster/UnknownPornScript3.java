@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,10 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me", "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "http://(?:www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?vid2c\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?pornper\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?fantasy8\\.com/video/\\d+/[a-z0-9\\-]+",
         "http://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bestporntube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvideo\\.me/video/\\d+/[a-z0-9\\-]+" })
 public class UnknownPornScript3 extends antiDDoSForHost {
-
     public UnknownPornScript3(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,7 +41,6 @@ public class UnknownPornScript3 extends antiDDoSForHost {
     /* Porn_plugin */
     /* V0.5 */
     /* Tags: Script, template */
-
     private String dllink = null;
 
     @Override
@@ -73,6 +70,9 @@ public class UnknownPornScript3 extends antiDDoSForHost {
         }
         if (dllink == null) {
             dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=(?:'|\")(http[^<>'\"]*?)(?:'|\")").getMatch(0);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
