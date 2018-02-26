@@ -22,17 +22,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,6 +43,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" })
 public class RapiduNet extends PluginForHost {
@@ -266,14 +266,9 @@ public class RapiduNet extends PluginForHost {
     private void setLoginData(final Account account) throws Exception {
         br.getPage("https://rapidu.net/");
         br.setCookiesExclusive(true);
-        final Object ret = account.loadCookies("");
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        if (account.isValid()) {
-            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                this.br.setCookie("http://" + account.getHoster() + "/", key, value);
-            }
+        final Cookies cookies = account.loadCookies("");
+        if (account.isValid() && cookies != null) {
+            br.setCookies("http://" + account.getHoster() + "/", cookies);
         }
     }
 
@@ -402,21 +397,35 @@ public class RapiduNet extends PluginForHost {
 
     private String login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
-            br.setCookiesExclusive(true);
-            // final Object ret = account.getProperty("cookies", null);
-            br.postPage(MAINPAGE + "/api/getAccountDetails/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            String response = br.toString();
-            String error = checkForErrors(response, "error");
-            if (error == null && response.contains("Trwaja prace techniczne")) {
-                error = "Hoster in Maintenance Mode";
+            try {
+                br.setCookiesExclusive(true);
+                // final Object ret = account.getProperty("cookies", null);
+                br.postPage(MAINPAGE + "/api/getAccountDetails/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                String response = br.toString();
+                String error = checkForErrors(response, "error");
+                if (error == null && response.contains("Trwaja prace techniczne")) {
+                    error = "Hoster in Maintenance Mode";
+                }
+                if (error != null) {
+                    logger.info("Hoster RapiduNet reports: " + error);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error);
+                }
+                br.postPage(MAINPAGE + "/ajax.php?a=getUserLogin", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=1&_go=");
+                account.saveCookies(br.getCookies(br.getURL()), "");
+                return response;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    final String errorMessage = e.getMessage();
+                    if (errorMessage != null && errorMessage.contains("Maintenance")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, e.getMessage(), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, e).localizedMessage(e.getLocalizedMessage());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
+                    }
+                } else {
+                    throw e;
+                }
             }
-            if (error != null) {
-                logger.info("Hoster RapiduNet reports: " + error);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, error);
-            }
-            br.postPage(MAINPAGE + "/ajax.php?a=getUserLogin", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=1&_go=");
-            account.saveCookies(br.getCookies(br.getURL()), "");
-            return response;
         }
     }
 
@@ -435,21 +444,7 @@ public class RapiduNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         String accountResponse;
-        try {
-            accountResponse = login(account, true);
-        } catch (PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                account.clearCookies("");
-                final String errorMessage = e.getMessage();
-                if (errorMessage != null && errorMessage.contains("Maintenance")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, e.getMessage(), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, e).localizedMessage(e.getLocalizedMessage());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
-                }
-            } else {
-                throw e;
-            }
-        }
+        accountResponse = login(account, true);
         //
         // (string) [userLogin] - Login użytkownika
         // (string) [userEmail] - Adres email
@@ -600,15 +595,15 @@ public class RapiduNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
-                                                  }
-                                              };
+        {
+            put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
+        }
+    };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
-                                                  }
-                                              };
+        {
+            put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
