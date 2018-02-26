@@ -87,6 +87,9 @@ public class SubmitYourFlicksCom extends PluginForHost {
             dllink = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]+)\"").getMatch(0);
         }
         if (dllink == null) {
+            dllink = br.getRegex("file:\\s*\"(.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
             final String clip = PluginJSonUtils.getJsonNested(br.toString(), "clip");
             dllink = new Regex((clip != null ? clip : ""), "url\\s*:\\s*'(.*?)'").getMatch(0);
         }
@@ -108,6 +111,8 @@ public class SubmitYourFlicksCom extends PluginForHost {
             con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+            } else if (con.getResponseCode() == 401) {
+                logger.info("Got 401 Unauthorized");
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -125,10 +130,10 @@ public class SubmitYourFlicksCom extends PluginForHost {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (dl.getConnection().getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
