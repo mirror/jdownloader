@@ -167,7 +167,11 @@ public class LinkifierCom extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>Runtime Error</title>")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             if (!dl.getConnection().isContentDisposition()) {
                 dl.getConnection().disconnect();
