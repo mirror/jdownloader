@@ -13,13 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,9 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
 public class FilerNet extends PluginForHost {
-
     private static Object       LOCK                                         = new Object();
     private int                 statusCode                                   = 0;
     private String              fuid                                         = null;
@@ -160,24 +159,17 @@ public class FilerNet extends PluginForHost {
                     handleFreeErrorsAPI();
                 } while (statusCode == 203 && ++i <= 2);
             }
-
             if (statusCode == 202) {
                 int maxCaptchaTries = 4;
                 int tries = 0;
                 while (tries <= maxCaptchaTries) {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    if (recapID == null) {
-                        recapID = PluginJSonUtils.getJson(br, "recaptcha_challange");
-                    }
-                    if (recapID == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    rc.setId(recapID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     tries++;
-                    br.postPage("http://filer.net/get/" + fuid + ".json", "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + fuid);
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdB1kcUAAAAAAVPepnD-6TEd4BXKzS7L4FZFkpO");
+                    final String recaptchaV2Response = rc2.getToken();
+                    if (recaptchaV2Response == null) {
+                        continue;
+                    }
+                    br.postPage("http://filer.net/get/" + fuid + ".json", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&hash=" + fuid);
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
                         updateStatuscode();
