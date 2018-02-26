@@ -583,7 +583,7 @@ public class Keep2ShareCc extends K2SApi {
                     // recapthav2
                     final DownloadLink original = this.getDownloadLink();
                     if (original == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true));
+                        this.setDownloadLink(new DownloadLink(this, "Account", "keep2share.cc", "http://" + br.getRequest().getURL().getHost(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     if (original == null) {
