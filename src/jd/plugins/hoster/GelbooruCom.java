@@ -65,7 +65,8 @@ public class GelbooruCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]+) - Image View -.*?</title>").getMatch(0);
-        if (filename != null) {
+        if (filename != null && false) {
+            // filename can be too long
             filename = url_filename + "_" + filename;
         } else {
             filename = url_filename;
