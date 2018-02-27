@@ -73,13 +73,13 @@ public class DlPrteCom extends antiDDoSForDecrypt {
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
-                go = br.getRegex("go\\.php\\?url=(https?.*?|aHR.+)\"").getMatch(0);
-                if (go != null) {
-                    final DownloadLink dl = createDownloadlink(go);
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
             }
+        }
+        go = br.getRegex("go\\.php\\?url=(https?.*?|aHR.+)\"").getMatch(0);
+        if (go != null) {
+            final DownloadLink dl = createDownloadlink(go);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         // some weird form that does jack
         final Form f = br.getFormbyProperty("class", "magic");
