@@ -1775,7 +1775,9 @@ public class YoutubeHelper {
     private void collectMapsFormHtmlSource(String html, String src) {
         final String captionTracks = new Regex(html, "captionTracks\\\\\"\\s*:(\\[.*?\\])\\s*,").getMatch(0);
         if (captionTracks != null) {
-            subtitleUrls.add(captionTracks.replaceAll("\\\\", ""));
+            String decoded = captionTracks.replaceAll("\\\\u", "\\u");
+            decoded = Encoding.unicodeDecode(decoded).replaceAll("\\\\", "");
+            subtitleUrls.add(decoded);
         }
         collectSubtitleUrls(html, "['\"]TTS_URL['\"]\\s*:\\s*(['\"][^'\"]+['\"])");
         if (fmtMapEnabled) {
@@ -1814,7 +1816,7 @@ public class YoutubeHelper {
         }
         final String captionTracks = new Regex(videoInfo.get("player_response"), "captionTracks\"\\s*:(\\[.*?\\])\\s*,").getMatch(0);
         if (StringUtils.isNotEmpty(captionTracks)) {
-            subtitleUrls.add(captionTracks);
+            subtitleUrls.add(Encoding.unicodeDecode(captionTracks));
         }
         if (adaptiveFmtsEnabled) {
             String adaptive_fmts = videoInfo.get("adaptive_fmts");
@@ -2546,8 +2548,57 @@ public class YoutubeHelper {
                     for (final Object object : tts) {
                         if (object instanceof Map) {
                             final Map<String, Object> map = (Map<String, Object>) object;
+                            final Object isTranslatable = map.get("isTranslatable");
+                            if (!"true".equalsIgnoreCase(String.valueOf(isTranslatable))) {
+                                continue;
+                            }
+                            String url = (String) map.get("baseUrl");
+                            if (url == null) {
+                                continue;
+                            } else {
+                                url = br.getURL(url).toString();
+                            }
+                            String lang = (String) map.get("languageCode");
+                            String name = null;
+                            if (map.get("name") instanceof Map) {
+                                Map<String, Object> nameMap = (Map<String, Object>) map.get("name");
+                                name = (String) nameMap.get("simpleText");
+                            }
+                            String kind = (String) map.get("kind");
+                            if (name == null) {
+                                name = "";
+                            }
+                            if (kind == null) {
+                                kind = "";
+                            }
+                            final String lngID = lang + kind;
+                            List<YoutubeSubtitleStorable> list = urls.get(lngID);
+                            final YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(null, name, lang, null, kind);
+                            info.setFullUrl(url);
+                            if (info._getLocale() == null) {
+                                // unknown language
+                                logger.info("Unknown Subtitle Language: " + JSonStorage.serializeToJson(info));
+                                continue;
+                            }
+                            if (list == null) {
+                                list = new ArrayList<YoutubeSubtitleStorable>();
+                                urls.put(lngID, list);
+                            }
+                            if (list.size() > 0) {
+                                info.setMulti(list.size());
+                            }
+                            list.add(info);
+                            // if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
+                            // defaultLanguage = info;
+                            // }
+                            // System.out.println(lang);
                         }
                     }
+                    final ArrayList<YoutubeSubtitleStorable> ret = new ArrayList<YoutubeSubtitleStorable>();
+                    for (List<YoutubeSubtitleStorable> list : urls.values()) {
+                        ret.addAll(list);
+                    }
+                    return ret;
                 }
             } else {
                 String xml = br.getPage(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));

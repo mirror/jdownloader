@@ -12,7 +12,7 @@ import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGene
 
 public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implements Storable {
     public static final TypeRef<YoutubeSubtitleStorable> TYPE = new TypeRef<YoutubeSubtitleStorable>(YoutubeSubtitleStorable.class) {
-    };
+                                                              };
 
     public YoutubeSubtitleStorable(/* Storable */) {
     }
@@ -70,6 +70,16 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
 
     private String kind;
     private String base;
+    private String fullUrl;
+
+    public String getFullUrl() {
+        return fullUrl;
+    }
+
+    public void setFullUrl(String fullUrl) {
+        this.fullUrl = fullUrl;
+    }
+
     private String name;
 
     public String getName() {
@@ -92,20 +102,25 @@ public class YoutubeSubtitleStorable extends AbstractGenericVariantInfo implemen
         this.name = name;
     }
 
-    public String createUrl() {
-        final StringBuilder url = new StringBuilder();
-        url.append(base);
-        if (StringUtils.isNotEmpty(sourceLanguage)) {
-            url.append("&lang=").append(encode(sourceLanguage));
+    public String getUrl() {
+        final String ret = getFullUrl();
+        if (ret != null) {
+            return ret;
+        } else {
+            final StringBuilder url = new StringBuilder();
+            url.append(base);
+            if (StringUtils.isNotEmpty(sourceLanguage)) {
+                url.append("&lang=").append(encode(sourceLanguage));
+            }
+            url.append("&lang=").append(encode(language));
+            if (StringUtils.isNotEmpty(kind)) {
+                url.append("&kind=").append(encode(kind));
+            }
+            if (StringUtils.isNotEmpty(name)) {
+                url.append("&name=").append(encode(name));
+            }
+            return url.toString();
         }
-        url.append("&lang=").append(encode(language));
-        if (StringUtils.isNotEmpty(kind)) {
-            url.append("&kind=").append(encode(kind));
-        }
-        if (StringUtils.isNotEmpty(name)) {
-            url.append("&name=").append(encode(name));
-        }
-        return url.toString();
     }
 
     private String encode(String kind2) {

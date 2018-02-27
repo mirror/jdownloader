@@ -7,13 +7,14 @@ import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
 public class SubtitleVariantInfo extends VariantInfo {
     public SubtitleVariantInfo(SubtitleVariant v, YoutubeClipData vid) {
-        super(v, null, null, createDummyList(vid, v.getGenericInfo().createUrl()));
+        super(v, null, null, createDummyList(vid, v.getGenericInfo().getUrl()));
     }
 
     @Override
     public SubtitleVariant getVariant() {
         return (SubtitleVariant) super.getVariant();
     }
+
     // @Override
     // public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
     // thislink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, si._getIdentifier());
@@ -23,11 +24,9 @@ public class SubtitleVariantInfo extends VariantInfo {
     // }
     // thislink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE_LIST, JSonStorage.serializeToJson(lngCodes));
     // }
-
     private static StreamCollection createDummyList(YoutubeClipData vid, String url) {
         StreamCollection l = new StreamCollection();
         l.add(new YoutubeStreamData(null, vid, url, YoutubeITAG.SUBTITLE, null));
         return l;
     }
-
 }

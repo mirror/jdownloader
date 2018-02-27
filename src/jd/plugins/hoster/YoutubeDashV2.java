@@ -342,7 +342,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                totalSize = con.getLongContentLength();
+                if (con.getLongContentLength() > 0) {
+                    totalSize = con.getLongContentLength();
+                }
                 break;
             }
             break;

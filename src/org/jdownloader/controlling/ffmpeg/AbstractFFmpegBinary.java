@@ -187,19 +187,19 @@ public class AbstractFFmpegBinary {
                 throw new InterruptedException("Timeout!");
             }
             if (stdoutThread.isAlive()) {
-                stdoutThread.join(1000);
+                stdoutThread.join(100);
             }
             if (stderrThread.isAlive()) {
-                stderrThread.join(1000);
+                stderrThread.join(100);
             }
             return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
         } else {
             logger.info("ExitCode2: " + process.waitFor());
             if (stdoutThread.isAlive()) {
-                stdoutThread.join(1000);
+                stdoutThread.join(100);
             }
             if (stderrThread.isAlive()) {
-                stderrThread.join(1000);
+                stderrThread.join(100);
             }
             return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
         }
@@ -810,7 +810,7 @@ public class AbstractFFmpegBinary {
                     final int exitCode = exitProcess(process, lastStdout, lastStderr);
                     if (stdoutThread.isAlive()) {
                         logger.info("Wait for Reader:" + stdoutThread);
-                        stdoutThread.join(1000);
+                        stdoutThread.join(100);
                     }
                     logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
                     logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
@@ -849,7 +849,7 @@ public class AbstractFFmpegBinary {
                     logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
                     throw new InterruptedException("FFmpeg does not answer");
                 }
-                Thread.sleep(1000);
+                Thread.sleep(100);
             }
         } catch (InterruptedException e) {
             logger.log(e);
