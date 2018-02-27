@@ -21,10 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +38,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "" })
 public class RapidoxPl extends PluginForHost {
@@ -165,6 +165,9 @@ public class RapidoxPl extends PluginForHost {
             String fname = link.getName();
             fname = fname.replace(" ", "_");
             fname = fname.replaceAll("(;|\\&)", "");
+            fname = fname.replaceAll("ä", "a").replaceAll("Ä", "A");
+            fname = fname.replaceAll("ü", "u").replaceAll("Ü", "U");
+            fname = fname.replaceAll("ö", "o").replaceAll("Ö", "O");
             /* File is on their servers --> Chose download method */
             this.postAPISafe("/panel/lista-plikow", "download%5B%5D=" + dlid + "&form_hash=" + hash + "&download_files=Pobierz%21&pobieranie=posrednie");
             /* Access list of downloadable files/links & find correct final downloadlink */
