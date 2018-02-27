@@ -1179,11 +1179,14 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
         final String[] segments = streamData.getSegments();
         final GetRequest request;
-        if (youtubeConfig.isRateBypassEnabled() && segments == null) {
+        final boolean rateByPass;
+        if (youtubeConfig.isRateBypassEnabled() && segments == null && downloadLink.getTempProperties().getBooleanProperty("ratebypass", Boolean.TRUE)) {
             final String url = streamData.getBaseUrl();
+            rateByPass = true;
             // they auto add ratebypass for some of the higher quality itags. if you get two duplicate you will get 403. -raztoki
             request = new GetRequest(URLHelper.parseLocation(new URL(url), (!containsParameter(url, "ratebypass=yes") ? "&ratebypass=yes" : "") + (!containsParameter(url, "cmbypass=yes") ? "&cmbypass=yes" : "")));
         } else {
+            rateByPass = false;
             request = new GetRequest(streamData.getBaseUrl());
         }
         if (segments != null) {
@@ -1198,6 +1201,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
+            if (dl.getConnection().getResponseCode() == 403 && rateByPass) {
+                downloadLink.getTempProperties().setProperty("ratebypass", Boolean.FALSE);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
             }
