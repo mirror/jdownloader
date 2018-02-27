@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -24,10 +23,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -57,9 +52,12 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
-
     /** Settings stuff */
     private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
 
@@ -76,14 +74,11 @@ public class MediafireCom extends PluginForHost {
     }
 
     /* End of HbbTV agents */
-
     /** end of random agents **/
-
     private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
     private static final String PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
 
     public static abstract class PasswordSolver {
-
         protected Browser       br;
         protected PluginForHost plg;
         protected DownloadLink  dlink;
@@ -125,19 +120,16 @@ public class MediafireCom extends PluginForHost {
                     this.dlink.setProperty("pass", password);
                     return;
                 }
-
             }
             throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
     }
 
     private static AtomicReference<String> agent                      = new AtomicReference<String>(stringUserAgent());
-
     /**
      * The number of retries to be performed in order to determine if a file is availableor to try captcha/password.
      */
     private int                            max_number_of_free_retries = 3;
-
     private String                         dlURL;
     private Browser                        api                        = null;
     private String                         session_token              = null;
@@ -230,7 +222,7 @@ public class MediafireCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(downloadLink.getDownloadURL());
-                if (!con.getContentType().contains("html")) {
+                if (con.isContentDisposition()) {
                     url = downloadLink.getDownloadURL();
                 } else {
                     br.followConnection();
@@ -253,7 +245,6 @@ public class MediafireCom extends PluginForHost {
                 if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     handleExtraReconnectSettingOnCaptcha(account);
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     String code = getCaptchaCode(cf, downloadLink);
@@ -341,7 +332,7 @@ public class MediafireCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!dl.getConnection().isContentDisposition()) {
             handleServerErrors();
             logger.info("Error (3)");
             // logger.info(dl.getConnection() + "");
@@ -410,7 +401,7 @@ public class MediafireCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!dl.getConnection().isContentDisposition()) {
                 handleServerErrors();
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
@@ -426,7 +417,6 @@ public class MediafireCom extends PluginForHost {
     private void handlePW(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("dh\\(''\\)")) {
             new PasswordSolver(this, br, downloadLink) {
-
                 String curPw = null;
 
                 @Override
@@ -449,10 +439,8 @@ public class MediafireCom extends PluginForHost {
                         return true;
                     }
                 }
-
             }.run();
         }
-
     }
 
     @Override
@@ -774,7 +762,6 @@ public class MediafireCom extends PluginForHost {
                 eBr.getPage(eBr.getRedirectLocation());
             }
         }
-
         // error checking below!
         if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|23|78|80|86|88).*?")) {
             // 320 = file is removed by the originating user or MediaFire.
@@ -862,5 +849,4 @@ public class MediafireCom extends PluginForHost {
         }
         return AvailableStatus.UNCHECKED;
     }
-
 }
