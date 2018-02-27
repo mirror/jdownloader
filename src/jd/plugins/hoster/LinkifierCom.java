@@ -6,7 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -18,12 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
@@ -129,6 +130,7 @@ public class LinkifierCom extends PluginForHost {
         downloadJson.put("md5Pass", Hash.getMD5(account.getPass()));
         downloadJson.put("apiKey", API_KEY);
         downloadJson.put("url", downloadLink.getDefaultPlugin().buildExternalDownloadURL(downloadLink, this));
+        Browser br = new Browser();
         final PostRequest downloadRequest = new PostRequest("https://api.linkifier.com/downloadapi.svc/stream");
         downloadRequest.setContentType("application/json; charset=utf-8");
         downloadRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(downloadJson));
@@ -159,25 +161,37 @@ public class LinkifierCom extends PluginForHost {
                     maxChunks = 1;
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, resume, maxChunks);
-            if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
-                try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
-                } catch (final IOException e) {
-                    logger.log(e);
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, resume, maxChunks);
+                if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
+                    try {
+                        dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                        br.followConnection();
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>Runtime Error</title>")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
-                if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>Runtime Error</title>")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
+                if (!dl.getConnection().isContentDisposition()) {
+                    dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dl.startDownload();
+            } catch (PluginException e) {
+                if ("Server: Redirect".equals(e.getMessage())) {
+                    // the server often returns errors on multichunk connections. I aggreed with the admin to auto reduce chunk count to 1
+                    // if we detect this
+                    logger.severe("Server error with multichunk loading. Limiting Link to 1 chunk");
+                    downloadLink.setChunks(1);
+                    throw e;
+                } else {
+                    throw e;
+                }
             }
-            if (!dl.getConnection().isContentDisposition()) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
             return;
         }
         final String errorMsg = downloadResponse.get("ErrorMSG") != null ? String.valueOf(downloadResponse.get("ErrorMSG")) : null;
