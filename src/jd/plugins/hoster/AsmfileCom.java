@@ -1406,7 +1406,7 @@ public class AsmfileCom extends antiDDoSForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
                 /* Missing login cookies or we still have the loginform --> Login failed */
-                final boolean loginCookieOkay = br.getCookie(COOKIE_HOST, "login") != null || br.getCookie(COOKIE_HOST, "xfss") == null;
+                final boolean loginCookieOkay = br.getCookie(COOKIE_HOST, "login") != null || br.getCookie(COOKIE_HOST, "xfss") != null;
                 final boolean loginFormOkay = findLoginform(this.br) == null;
                 final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
                 if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
