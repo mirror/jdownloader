@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.SocketTimeoutException;
@@ -29,16 +28,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk|pwpan|srcpan|gmpan)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" })
 public class YunFileComFolder extends PluginForDecrypt {
-
     public YunFileComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("http://(www\\.)?(yunfile|filemarkets|yfdisk)\\.com/", "http://yunfile.com/");
+        String parameter = param.toString().replaceAll("http://(www\\.)?[A-Za-z0-9]+\\.com/", "http://yunfile.com/");
         br.setCookie("http://yunfile.com/", "language", "en_us");
         br.setFollowRedirects(true);
         try {
@@ -71,7 +69,7 @@ public class YunFileComFolder extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "http://(www\\.)?yunfile\\.com/ls/([a-z0-9]+)/([a-z0-9]+)?").getMatch(0));
+        fp.setName(new Regex(parameter, ".+yunfile\\.com/ls/([a-z0-9]+)/([a-z0-9]+)?").getMatch(0));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
@@ -80,5 +78,4 @@ public class YunFileComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

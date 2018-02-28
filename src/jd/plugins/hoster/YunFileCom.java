@@ -55,13 +55,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|gmpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
     private static final String            MAINPAGE    = "http://www.yunfile.com/";
     private static final String            CAPTCHAPART = "/verifyimg/getPcv";
     private static Object                  LOCK        = new Object();
     private static AtomicReference<String> agent       = new AtomicReference<String>();
-    private static final String            DOMAINS     = "(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com";
+    private static final String            DOMAINS     = "(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|gmpan)\\.com";
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
@@ -76,7 +76,7 @@ public class YunFileCom extends PluginForHost {
         // to fix jiaz bad commit
         url = url.replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\.yunfile\\.com/", "yunfile.com/");
         // standard
-        url = url.replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/", "yunfile.com/");
+        url = url.replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:[A-Za-z0-9]+)\\.com/", "yunfile.com/");
         url = url.replace("/file/down/", "/file/");
         link.setUrlDownload(url);
     }

@@ -4157,6 +4157,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Invalid logins" })
     String PremiumAccountTableModel_getStringValue_status_invalid();
 
+    @Default(lngs = { "en" }, values = { "This is not a paid (premium) account.\r\nOnly premium accounts are supported for this host!" })
+    String PremiumAccountTableModel_getStringValue_status_unsupported_account_type_free();
+
     @Default(lngs = { "en" }, values = { "Plugin Error" })
     String PremiumAccountTableModel_getStringValue_status_plugin_error();
 

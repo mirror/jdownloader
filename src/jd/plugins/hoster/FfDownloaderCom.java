@@ -13,12 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,14 +36,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffdownloader.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffdownloader.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FfDownloaderCom extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-
     private static final String                            NICE_HOST          = "ffdownloader.com";
 
     public FfDownloaderCom(PluginWrapper wrapper) {
@@ -154,7 +152,6 @@ public class FfDownloaderCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -170,7 +167,6 @@ public class FfDownloaderCom extends PluginForHost {
                 }
             }
         }
-
         this.br = newBrowser();
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
@@ -209,7 +205,8 @@ public class FfDownloaderCom extends PluginForHost {
         account.setMaxSimultanDownloads(-1);
         final String status = br.getRegex("account_type\":\"([^<>\"]*?)\"").getMatch(0);
         if (!"premium".equals(status)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "This is no premium account, only premium accounts are supported for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /* Invalid account type (free) */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, _GUI.T.PremiumAccountTableModel_getStringValue_status_unsupported_account_type_free(), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         String expire = br.getRegex("\"time_left\":(\\d+)").getMatch(0);
         if (expire != null) {
@@ -324,5 +321,4 @@ public class FfDownloaderCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
