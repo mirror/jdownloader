@@ -91,6 +91,9 @@ public class ARDMediathek extends PluginForHost {
                 con = br.openHeadConnection(dllink);
                 if (con.isOK() && !con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
+                } else if (con.getResponseCode() == 404) {
+                    /* Content should definitly be offline in this case! */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     server_issues = true;
                 }

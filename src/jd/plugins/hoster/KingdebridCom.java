@@ -202,6 +202,10 @@ public class KingdebridCom extends PluginForHost {
             br.getPage("//" + this.getHost());
         }
         String supportedhosts_source = null;
+        /*
+         * 2018-02-28: Bad workaround for issue that html will always contain a date in this format. Prevents free accounts from getting
+         * recognized as premium ...
+         */
         final String server_time = this.br.getRegex("Time now on Server: <b>(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
         final String expire = this.br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
         long trafficleft = 0;

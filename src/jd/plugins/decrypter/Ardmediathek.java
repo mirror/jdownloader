@@ -568,67 +568,68 @@ public class Ardmediathek extends PluginForDecrypt {
          * https://www.eurovision.de/videos/ESC-Vorentscheid-2018-Speeddating-mit-Xavier-Darcy,esc3076.html
          */
         subtitleLink = getMediathekSubtitleURL();
-        /* We know how their http links look - this way we can avoid HDS/HLS/RTMP */
+        /* We know how their http urls look - this way we can avoid HDS/HLS/RTMP */
         /*
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
          */
         // //wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/139/1394333/,1394333_16295554,1394333_16295556,1394333_16295555,1394333_16295557,1394333_16295553,1394333_16295558,.mp4.csmil/master.m3u8
         final String hls_master = br.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
-        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,]+),\\.mp4\\.csmil/?");
-        String urlpart = regex_hls.getMatch(0);
-        String http_url_format = null;
-        /** TODO: Maybe change this so that even if hls --> http fails, it will still return hls URLs! */
-        /* hls --> http urls */
-        if (hls_master.contains("rbbmediaadp-vh")) {
-            /* For all RBB websites e.g. sandmann.de */
-            http_url_format = "https://rbbmediapmdp-a.akamaihd.net/content/" + urlpart + "_%s.mp4";
-        } else if (hls_master.contains("sr_hls_od-vh")) {
-            http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
-        } else if (hls_master.contains("br-i.akamaihd.net")) {
-            urlpart = new Regex(hls_master, "br\\-i\\.akamaihd\\.net/[^/]+/(.*?)(?:/|_),").getMatch(0);
-            if (urlpart != null) {
-                http_url_format = "http://cdn-storage.br.de/" + urlpart + "_%s.mp4";
-            }
-        } else if (hls_master.contains("ndrod-vh.akamaihd.net")) {
-            http_url_format = "https://mediandr-a.akamaihd.net/progressive/" + urlpart + ".%s.mp4";
-        } else {
-            /* Try default WDR handling */
-            String region = new Regex(hls_master, "//[^/]+/[a-z0-9]+/med[a-z0-9]+/.*?([a-z]+)/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/?").getMatch(0);
-            if (region == null) {
-                throw new DecrypterException("Plugin broken");
-            }
-            region = correctRegionString(region);
-            http_url_format = "http://wdrmedien-a.akamaihd.net/medp/ondemand/" + region + "/" + urlpart + "/%s.mp4";
-        }
+        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
         final String quality_string = regex_hls.getMatch(1);
-        if (quality_string == null || hls_master == null) {
+        if (StringUtils.isEmpty(hls_master)) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Plugin broken");
+        }
+        String urlpart = regex_hls.getMatch(0);
+        String urlpart2 = new Regex(hls_master, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
+        String http_url_format = null;
+        /**
+         * hls --> http urls (whenever possible) <br />
+         * TODO: Improve this part!
+         */
+        /* First case */
+        if (hls_master.contains("rbbmediaadp-vh") && urlpart != null) {
+            /* For all RBB websites e.g. sandmann.de */
+            http_url_format = "https://rbbmediapmdp-a.akamaihd.net/content/" + urlpart + "_%s.mp4";
+        } else if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
+            http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
+        } else if (hls_master.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
+            http_url_format = "https://mediandr-a.akamaihd.net/progressive/" + urlpart + ".%s.mp4";
+        }
+        /* 2nd case */
+        if (hls_master.contains("dasersteuni-vh.akamaihd.net") || hls_master.contains("br-i.akamaihd.net")) {
+            if (urlpart2 != null) {
+                http_url_format = "https://pdvideosdaserste-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
+            }
+        } else if (hls_master.contains("wdradaptiv-vh.akamaihd.net") && urlpart2 != null) {
+            /* wdr */
+            http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
         }
         /* Access HLS master to find correct resolution for each ID (the only possible way) */
         br.getPage("http:" + hls_master);
         final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
-        final String[] qualities = quality_string.split(",");
-        if (qualities == null || qualities.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException("Plugin broken");
-        }
-        for (int counter = 0; counter <= qualities.length - 1; counter++) {
-            if (counter > qualities.length - 1 || counter > resolutionsInOrder.length - 1) {
-                break;
+        final String[] qualities = quality_string != null ? quality_string.split(",") : null;
+        if (resolutionsInOrder != null && qualities != null) {
+            logger.info("Crawling http urls");
+            for (int counter = 0; counter <= qualities.length - 1; counter++) {
+                if (counter > qualities.length - 1 || counter > resolutionsInOrder.length - 1) {
+                    break;
+                }
+                /* Old */
+                // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
+                /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
+                /* 2018-02-13: new e.g. http://wdrmedien-a.akamaihd.net/medp/ondemand/de/fsk0/158/1580248/1580248_18183304.mp4 */
+                final String quality_id = qualities[counter];
+                final String final_url = String.format(http_url_format, quality_id);
+                // final String linkid = qualities[counter];
+                final String resolution = resolutionsInOrder[counter];
+                final String[] height_width = resolution.split("x");
+                final String width = height_width[0];
+                final String height = height_width[1];
+                addQuality(final_url, null, Integer.parseInt(width), Integer.parseInt(height));
             }
-            /* Old */
-            // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
-            /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
-            /* 2018-02-13: new e.g. http://wdrmedien-a.akamaihd.net/medp/ondemand/de/fsk0/158/1580248/1580248_18183304.mp4 */
-            final String quality_id = qualities[counter];
-            final String final_url = String.format(http_url_format, quality_id);
-            // final String linkid = qualities[counter];
-            final String resolution = resolutionsInOrder[counter];
-            final String[] height_width = resolution.split("x");
-            final String width = height_width[0];
-            final String height = height_width[1];
-            addQuality(final_url, null, Integer.parseInt(width), Integer.parseInt(height));
+        } else {
+            logger.warning("Failed to find http urls; adding hls only");
         }
         addHLS(br, hls_master);
     }
@@ -749,7 +750,15 @@ public class Ardmediathek extends PluginForDecrypt {
             protocol = "http";
         }
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
+        /* 2018-02-28: This should work fine for all hls- and http urls */
+        final String filename_server = new Regex(directurl, "/([^/]+\\.mp4(?:.+\\.m3u8)?)").getMatch(0);
         final String plain_name = title + "_" + protocol + "_" + resolution;
+        final String linkid;
+        if (!StringUtils.isEmpty(filename_server)) {
+            linkid = filename_server;
+        } else {
+            linkid = plain_name;
+        }
         final String full_name = plain_name + ".mp4";
         final String qualityStringSelection = protocol + "_0_" + height_final;
         // final String qualityStringFull = protocol + "_" + resolution;
@@ -757,7 +766,7 @@ public class Ardmediathek extends PluginForDecrypt {
         link.setFinalFileName(full_name);
         link.setContentUrl(this.parameter);
         /* This is not perfect but should be enough as a unique identifier! */
-        link.setLinkID(plain_name);
+        link.setLinkID(linkid);
         /* 2018-02-22: Only store what we really need! */
         // if (this.date_formatted != null) {
         // link.setProperty("date_formatted", this.date_formatted);
