@@ -1052,6 +1052,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Package Name" })
     String PackagizerFilterRuleDialog_layoutDialogContent_packagename();
 
+    @Default(lngs = { "en" }, values = { "Package Key" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_packagekey();
+
     @Default(lngs = { "en" }, values = { "Enable Download" })
     String PackagizerFilterRuleDialog_layoutDialogContent_enable();
 
@@ -1425,6 +1428,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter Package Name Pattern..." })
     String PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_();
+
+    @Default(lngs = { "en" }, values = { "Enter Package Key Pattern..." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_packagekey_help_();
 
     @Default(lngs = { "en" }, values = { "Enter Filename Pattern..." })
     String PackagizerFilterRuleDialog_layoutDialogContent_filename_help_();

@@ -13,25 +13,20 @@ public class PackagizerRule extends FilterRule implements Storable {
     public PackagizerRule duplicate() {
         final PackagizerRule ret = new PackagizerRule();
         ret.setEnabled(isEnabled());
-
         ret.setCreated(System.currentTimeMillis());
         ret.setIconKey(getIconKey());
         ret.setName(_JDT.T.LinkgrabberFilterRule_duplicate(getName()));
-
         ret.setMatchAlwaysFilter(getMatchAlwaysFilter());
-
         ret.setFilenameFilter(getFilenameFilter());
         ret.setPackagenameFilter(getPackagenameFilter());
         ret.setFilesizeFilter(getFilesizeFilter());
         ret.setFiletypeFilter(getFiletypeFilter());
-
         ret.setHosterURLFilter(getHosterURLFilter());
         ret.setSourceURLFilter(getSourceURLFilter());
         ret.setOriginFilter(getOriginFilter());
         ret.setConditionFilter(getConditionFilter());
         ret.setOnlineStatusFilter(getOnlineStatusFilter());
         ret.setPluginStatusFilter(getPluginStatusFilter());
-
         ret.setDownloadDestination(getDownloadDestination());
         ret.setPriority(getPriority());
         ret.setPackageName(getPackageName());
@@ -43,11 +38,10 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.setAutoStartEnabled(isAutoStartEnabled());
         ret.setAutoForcedStartEnabled(isAutoForcedStartEnabled());
         ret.setLinkEnabled(getLinkEnabled());
-
         ret.setMoveto(getMoveto());
         ret.setRename(getRename());
-
         ret.setTestUrl(getTestUrl());
+        ret.setPackageKey(getPackageKey());
         return ret;
     }
 
@@ -109,10 +103,19 @@ public class PackagizerRule extends FilterRule implements Storable {
         this.moveto = moveto;
     }
 
-    private String  moveto = null;
+    private String  moveto     = null;
     private Boolean autoExtractionEnabled;
     private Boolean autoAddEnabled;
     private Boolean linkEnabled;
+    private String  packageKey = null;
+
+    public String getPackageKey() {
+        return packageKey;
+    }
+
+    public void setPackageKey(String packageKey) {
+        this.packageKey = packageKey;
+    }
 
     public Boolean getLinkEnabled() {
         return linkEnabled;
@@ -185,5 +188,4 @@ public class PackagizerRule extends FilterRule implements Storable {
     public Boolean isAutoForcedStartEnabled() {
         return autoForcedStartEnabled;
     }
-
 }

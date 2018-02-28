@@ -174,6 +174,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private ExtCheckBox    cbMove;
     private ExtCheckBox    cbName;
     private ExtCheckBox    cbPackagename;
+    private ExtCheckBox    cbPackagekey;
     private ExtCheckBox    cbPriority;
     private ExtCheckBox    cbRename;
     private ExtCheckBox    cbStart;
@@ -195,6 +196,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JLabel         lblForce;
     private JLabel         lblMove;
     private JLabel         lblPackagename;
+    private JLabel         lblPackagekey;
     private JLabel         lblPriority;
     private JLabel         lblRename;
     private RuleMatcher    matcher = null;
@@ -203,6 +205,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private ExtSpinner     spChunks;
     private ExtTextField   txtNewFilename;
     private ExtTextField   txtPackagename;
+    private ExtTextField   txtPackagekey;
     private ExtTextField   txtComment;
     private ExtTextField   txtRename;
     private ButtonGroup    group;
@@ -353,6 +356,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         lblDest = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_dest());
         lblPriority = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_priority());
         lblPackagename = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_packagename());
+        lblPackagekey = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_packagekey());
         lblFilename = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_filename());
         lblComment = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_comment());
         lblExtract = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_extract());
@@ -437,6 +441,26 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
         };
         txtPackagename.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_());
+        txtPackagekey = new ExtTextField() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(createVariablesMenu(txtPackagekey));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+        };
+        txtPackagekey.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_packagekey_help_());
         txtNewFilename = new ExtTextField() {
             /**
              *
@@ -481,6 +505,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbDest = new ExtCheckBox(fpDest);
         cbPriority = new ExtCheckBox(fpPriority);
         cbPackagename = new ExtCheckBox(txtPackagename);
+        cbPackagekey = new ExtCheckBox(txtPackagekey);
         cbExtract = new ExtCheckBox(cobExtract);
         cbStart = new ExtCheckBox(cobAutostart);
         cbForce = new ExtCheckBox(cobForce);
@@ -501,6 +526,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(lblPackagename, "spanx 2");
         ret.add(txtPackagename, "spanx,pushx,growx");
         link(cbPackagename, lblPackagename, txtPackagename);
+        ret.add(cbPackagekey);
+        ret.add(lblPackagekey, "spanx 2");
+        ret.add(txtPackagekey, "spanx,pushx,growx");
+        link(cbPackagekey, lblPackagekey, txtPackagekey);
         ret.add(cbName);
         ret.add(lblFilename, "spanx 2");
         ret.add(txtNewFilename, "spanx,pushx,growx");
@@ -596,6 +625,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         txtRename.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
         focusHelp(txtRename, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
         focusHelp(txtPackagename, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(txtPackagekey, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
         focusHelp(txtComment, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
         focusHelp(txtNewFilename, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
         focusHelp(fpDest.getTxt(), _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
@@ -764,6 +794,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         } else {
             rule.setMoveto(null);
         }
+        rule.setPackageKey(cbPackagekey.isSelected() ? txtPackagekey.getText() : null);
         rule.setRename(cbRename.isSelected() ? txtRename.getText() : null);
         rule.setLinkEnabled(cbEnable.isSelected() ? cobEnable.getSelectedIndex() == 0 : null);
         rule.setChunks(cbChunks.isSelected() ? ((Number) spChunks.getValue()).intValue() : -1);
@@ -813,6 +844,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         setOriginFilter(rule.getOriginFilter());
         setConditionFilter(rule.getConditionFilter());
         txtPackagename.setText(rule.getPackageName());
+        txtPackagekey.setText(rule.getPackageKey());
         txtNewFilename.setText(rule.getFilename());
         txtComment.setText(rule.getComment());
         txtRename.setText(rule.getRename());
@@ -842,6 +874,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbMove.setSelected(!StringUtils.isEmpty(rule.getMoveto()));
         cbRename.setSelected(!StringUtils.isEmpty(rule.getRename()));
         cbPackagename.setSelected(!StringUtils.isEmpty(rule.getPackageName()));
+        cbPackagekey.setSelected(!StringUtils.isEmpty(rule.getPackageKey()));
         cbPriority.setSelected(rule.getPriority() != null);
         prio = rule.getPriority();
         if (prio == null) {
