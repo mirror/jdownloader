@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -22,6 +21,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,6 +37,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -45,14 +51,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(www\\.)?alfafile\\.net/file/[A-Za-z0-9]+" })
 public class AlfafileNet extends PluginForHost {
-
     public AlfafileNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://alfafile.net/premium");
@@ -78,12 +78,9 @@ public class AlfafileNet extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
     private boolean              isDirecturl                  = false;
-
     /*
      * TODO: Use API for linkchecking whenever an account is added to JD. This will ensure that the plugin will always work, at least for
      * premium users. Status 2015-08-03: Filecheck API does not seem to work --> Disabled it - reported API issues to jiaz.
@@ -94,7 +91,6 @@ public class AlfafileNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         isDirecturl = false;
-
         this.setBrowserExclusive();
         prepBR();
         String filename = null;
@@ -113,7 +109,6 @@ public class AlfafileNet extends PluginForHost {
                 api_works = true;
             }
         }
-
         if (api_works) {
             final String status = PluginJSonUtils.getJsonValue(br, "status");
             if (!"200".equals(status)) {
@@ -207,26 +202,40 @@ public class AlfafileNet extends PluginForHost {
                 this.br.setFollowRedirects(true);
                 boolean success = false;
                 for (int i = 0; i <= 3; i++) {
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final SolveMedia sm = new SolveMedia(br);
-                    sm.setSecure(true);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                        logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                        Form dlForm = br.getFormBySubmitvalue("send");
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
+                        dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        br.submitForm(dlForm);
+                        logger.info("Submitted DLForm");
+                        if (br.containsHTML("class=\"g-recaptcha\"")) {
+                            continue;
                         }
-                        throw e;
+                        success = true;
+                        break;
+                    } else {
+                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        final SolveMedia sm = new SolveMedia(br);
+                        sm.setSecure(true);
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            }
+                            throw e;
+                        }
+                        final String code = getCaptchaCode("solvemedia", cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        this.br.postPage(this.br.getURL(), "send=Send&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid));
+                        if (br.containsHTML("solvemedia\\.com/papi/")) {
+                            continue;
+                        }
+                        success = true;
+                        break;
                     }
-                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    this.br.postPage(this.br.getURL(), "send=Send&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid));
-                    if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        continue;
-                    }
-                    success = true;
-                    break;
                 }
                 if (!success) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -385,8 +394,8 @@ public class AlfafileNet extends PluginForHost {
         br.setFollowRedirects(false);
         if (account.getType() == AccountType.FREE) {
             /*
-             * No API --> We're actually not downloading via free account but it doesnt matter as there are no known free account advantages
-             * compared to unregistered mode.
+             * No API --> We're actually not downloading via free account but it doesnt matter as there are no known free account advantages compared to
+             * unregistered mode.
              */
             br.getPage(link.getDownloadURL());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
@@ -437,9 +446,9 @@ public class AlfafileNet extends PluginForHost {
             } else if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:
-                 * 
+                 *
                  * Conflict. Delay between downloads must be not less than 60 minutes. Try again in 51 minutes.
-                 * 
+                 *
                  * Conflict. DOWNLOAD::ERROR::You can't download not more than 1 file at a time in free mode.
                  */
                 String minutes_regexed = null;
@@ -477,5 +486,4 @@ public class AlfafileNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
