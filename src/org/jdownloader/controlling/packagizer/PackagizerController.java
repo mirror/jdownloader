@@ -985,6 +985,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 link.setComment(replaceVariables(REPLACEVARIABLE.COMMENT, lgr.getRule().getComment(), link, lgr));
             }
             if (StringUtils.isNotEmpty((packageKey = lgr.getRule().getPackageKey()))) {
+                /* customize packagekey */
                 packageKeyFlag = true;
                 packageKey = replaceVariables(REPLACEVARIABLE.PACKAGEKEY, lgr.getRule().getPackageKey(), link, lgr);
             }
