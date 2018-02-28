@@ -278,8 +278,9 @@ public class YunFileCom extends PluginForHost {
         final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
         final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
-        logger.info("vid = " + vid + " vid1 = " + vid1 + " userid = " + userid + " action = " + action + " md5 = " + md5);
-        if (vid1 == null || vid == null || userid == null || md5 == null || savecdnurl == null || finalurl_pt2 == null) {
+        final String cs = br.getRegex("name=\"cs\" value=\"([a-z0-9]+)\"").getMatch(0);
+        logger.info("vid = " + vid + " vid1 = " + vid1 + " userid = " + userid + " action = " + action + " md5 = " + md5 + " cs = " + cs);
+        if (vid1 == null || vid == null || userid == null || md5 == null || cs == null || savecdnurl == null || finalurl_pt2 == null) {
             if (br.containsHTML(CAPTCHAPART)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -287,7 +288,7 @@ public class YunFileCom extends PluginForHost {
         }
         action = savecdnurl + finalurl_pt2;
         br.setFollowRedirects(true);
-        postData = "module=fileService&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
+        postData = "module=fileService&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5 + "&cs=" + cs;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors();
