@@ -9,6 +9,15 @@ public class PackageInfo {
     private boolean         packagizerRuleMatched = false;
     private Boolean         ignoreVarious         = null;
     private Boolean         allowInheritance      = null;
+    private String          packageKey            = null;
+
+    public String getPackageKey() {
+        return packageKey;
+    }
+
+    public void setPackageKey(String packageKey) {
+        this.packageKey = packageKey;
+    }
 
     public Boolean isAllowInheritance() {
         return allowInheritance;
@@ -38,6 +47,7 @@ public class PackageInfo {
         ret.setPackagizerRuleMatched(isPackagizerRuleMatched());
         ret.setUniqueId(getUniqueId());
         ret.setAllowInheritance(isAllowInheritance());
+        ret.setPackageKey(getPackageKey());
         return ret;
     }
 
@@ -61,33 +71,6 @@ public class PackageInfo {
 
     private String name              = null;
     private String destinationFolder = null;
-
-    /**
-     * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package,
-     * which is not part of autopackaging.
-     *
-     * @return
-     */
-    public String createPackageID() {
-        StringBuilder sb = new StringBuilder();
-        if (getUniqueId() != null) {
-            if (sb.length() > 0) {
-                sb.append("_");
-            }
-            sb.append(getUniqueId().toString());
-        }
-        // if (!StringUtils.isEmpty(getDestinationFolder())) {
-        // if (sb.length() > 0) sb.append("_");
-        // sb.append(getDestinationFolder());
-        // }
-        if (!StringUtils.isEmpty(getName())) {
-            if (sb.length() > 0) {
-                sb.append("_");
-            }
-            sb.append(getName());
-        }
-        return sb.length() == 0 ? null : sb.toString();
-    }
 
     /**
      * @return the packagizerRuleMatched
@@ -124,6 +107,6 @@ public class PackageInfo {
     }
 
     public boolean isNotEmpty() {
-        return ignoreVarious != null || uniqueId != null || destinationFolder != null || name != null || packagizerRuleMatched;
+        return ignoreVarious != null || packageKey != null || uniqueId != null || destinationFolder != null || name != null || packagizerRuleMatched;
     }
 }

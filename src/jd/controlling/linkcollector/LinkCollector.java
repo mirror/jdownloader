@@ -1013,6 +1013,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         crawledPackageID = null;
                                     }
                                 }
+                                if (StringUtils.isNotEmpty(dpi.getPackageKey())) {
+                                    crawledPackageID = dpi.getPackageKey();
+                                }
                             } else {
                                 downloadFolder = null;
                             }

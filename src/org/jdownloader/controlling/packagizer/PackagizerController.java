@@ -79,78 +79,78 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public static final String                    SIMPLEDATE                 = "simpledate";
     public static final String                    INDEXOF                    = "indexof";
     private final static PackagizerReplacer       DATER_REPLACER             = new PackagizerReplacer() {
-                                                                                 public String getID() {
-                                                                                     return SIMPLEDATE;
-                                                                                 }
+        public String getID() {
+            return SIMPLEDATE;
+        }
 
-                                                                                 public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                                                                                     if (StringUtils.isNotEmpty(modifiers)) {
-                                                                                         final String dateString = new SimpleDateFormat(modifiers).format(new Date());
-                                                                                         return Pattern.compile("<jd:simpledate:" + Pattern.quote(modifiers) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, dateString)));
-                                                                                     }
-                                                                                     return input;
-                                                                                 }
-                                                                             };
+        public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+            if (StringUtils.isNotEmpty(modifiers)) {
+                final String dateString = new SimpleDateFormat(modifiers).format(new Date());
+                return Pattern.compile("<jd:simpledate:" + Pattern.quote(modifiers) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, dateString)));
+            }
+            return input;
+        }
+    };
     private final static PackagizerReplacer       ENV_REPLACER               = new PackagizerReplacer() {
-                                                                                 private final Map<String, String> env = System.getenv();
+        private final Map<String, String> env = System.getenv();
 
-                                                                                 public String getID() {
-                                                                                     return ENV;
-                                                                                 }
+        public String getID() {
+            return ENV;
+        }
 
-                                                                                 public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                                                                                     if (StringUtils.isNotEmpty(modifiers)) {
-                                                                                         String value = env.get(modifiers);
-                                                                                         if (value == null) {
-                                                                                             for (Entry<String, String> entry : env.entrySet()) {
-                                                                                                 if (StringUtils.containsIgnoreCase(entry.getKey(), modifiers)) {
-                                                                                                     value = entry.getValue();
-                                                                                                     break;
-                                                                                                 }
-                                                                                             }
-                                                                                         }
-                                                                                         return Pattern.compile("<jd:env:" + Pattern.quote(modifiers) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, StringUtils.valueOrEmpty(value))));
-                                                                                     }
-                                                                                     return input;
-                                                                                 }
-                                                                             };
+        public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+            if (StringUtils.isNotEmpty(modifiers)) {
+                String value = env.get(modifiers);
+                if (value == null) {
+                    for (Entry<String, String> entry : env.entrySet()) {
+                        if (StringUtils.containsIgnoreCase(entry.getKey(), modifiers)) {
+                            value = entry.getValue();
+                            break;
+                        }
+                    }
+                }
+                return Pattern.compile("<jd:env:" + Pattern.quote(modifiers) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, StringUtils.valueOrEmpty(value))));
+            }
+            return input;
+        }
+    };
     private final static PackagizerReplacer       SUBFOLDERBYPLUGIN_REPLACER = new PackagizerReplacer() {
-                                                                                 private final Pattern pat = Pattern.compile("<jd:" + DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH + "/?>");
+        private final Pattern pat = Pattern.compile("<jd:" + DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH + "/?>");
 
-                                                                                 public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                                                                                     String subFolder = null;
-                                                                                     final DownloadLink dlLink = link.getDownloadLink();
-                                                                                     if (dlLink != null) {
-                                                                                         Object subFolderByPlugin = dlLink.getProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH);
-                                                                                         if (subFolderByPlugin != null && subFolderByPlugin instanceof String) {
-                                                                                             final String pathParts[] = ((String) subFolderByPlugin).split("/");
-                                                                                             final StringBuilder sb = new StringBuilder();
-                                                                                             for (String pathPart : pathParts) {
-                                                                                                 if (sb.length() > 0) {
-                                                                                                     sb.append("/");
-                                                                                                 }
-                                                                                                 pathPart = preprocessReplacement(replaceVariable, pathPart);
-                                                                                                 if (StringUtils.isNotEmpty(pathPart)) {
-                                                                                                     sb.append(pathPart);
-                                                                                                 }
-                                                                                             }
-                                                                                             subFolder = sb.toString();
-                                                                                             if (CrossSystem.isAbsolutePath(subFolder)) {
-                                                                                                 subFolder = null;
-                                                                                             }
-                                                                                         }
-                                                                                     }
-                                                                                     if (StringUtils.isEmpty(subFolder)) {
-                                                                                         return pat.matcher(input).replaceAll(Matcher.quoteReplacement(""));
-                                                                                     } else {
-                                                                                         return pat.matcher(input).replaceAll(Matcher.quoteReplacement(subFolder));
-                                                                                     }
-                                                                                 }
+        public String replace(REPLACEVARIABLE replaceVariable, String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+            String subFolder = null;
+            final DownloadLink dlLink = link.getDownloadLink();
+            if (dlLink != null) {
+                Object subFolderByPlugin = dlLink.getProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH);
+                if (subFolderByPlugin != null && subFolderByPlugin instanceof String) {
+                    final String pathParts[] = ((String) subFolderByPlugin).split("/");
+                    final StringBuilder sb = new StringBuilder();
+                    for (String pathPart : pathParts) {
+                        if (sb.length() > 0) {
+                            sb.append("/");
+                        }
+                        pathPart = preprocessReplacement(replaceVariable, pathPart);
+                        if (StringUtils.isNotEmpty(pathPart)) {
+                            sb.append(pathPart);
+                        }
+                    }
+                    subFolder = sb.toString();
+                    if (CrossSystem.isAbsolutePath(subFolder)) {
+                        subFolder = null;
+                    }
+                }
+            }
+            if (StringUtils.isEmpty(subFolder)) {
+                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(""));
+            } else {
+                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(subFolder));
+            }
+        }
 
-                                                                                 public String getID() {
-                                                                                     return DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH;
-                                                                                 }
-                                                                             };
+        public String getID() {
+            return DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH;
+        }
+    };
     private static final PackagizerController     INSTANCE                   = new PackagizerController(false);
     public static final String                    ORGPACKAGENAME             = "orgpackagename";
     private HashMap<String, PackagizerReplacer>   replacers                  = new HashMap<String, PackagizerReplacer>();
@@ -504,12 +504,17 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     return input;
                 }
                 final int id = Integer.parseInt(modifiers);
+                if (id == -1) {
+                    final String host = link.getHost();
+                    return Pattern.compile("<jd:hoster:" + Pattern.quote(String.valueOf(id)) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, Encoding.urlDecode(StringUtils.valueOrEmpty(host), false))));
+                }
                 final Regex regex = new Regex(link.getURL(), lgr.getHosterRule().getPattern());
                 if (regex.matches()) {
                     final String[] values = regex.getRow(0);
                     return Pattern.compile("<jd:hoster:" + Pattern.quote(String.valueOf(id)) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, Encoding.urlDecode(StringUtils.valueOrEmpty(values[id - 1]), false))));
+                } else {
+                    return input;
                 }
-                return input;
             }
 
             public String getID() {
@@ -564,6 +569,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         append = dpi.getName();
                     }
                     break;
+                case PACKAGEKEY:
+                    if (dpi != null) {
+                        append = dpi.getPackageKey();
+                    }
+                    break;
                 default:
                     break;
                 }
@@ -587,10 +597,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     private static String preprocessReplacement(REPLACEVARIABLE replaceVariable, final String string) {
-        if (REPLACEVARIABLE.DIRECTORY.equals(replaceVariable)) {
-            return CrossSystem.alleviatePathParts(string);
-        } else {
+        if (replaceVariable == null) {
             return string;
+        } else {
+            switch (replaceVariable) {
+            case DIRECTORY:
+                return CrossSystem.alleviatePathParts(string);
+            default:
+                return string;
+            }
         }
     }
 
@@ -918,6 +933,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public static enum REPLACEVARIABLE {
+        PACKAGEKEY,
         DIRECTORY,
         COMMENT,
         FILENAME,
@@ -929,12 +945,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             // ignore SubFolderByPackageRule when default folder already contains variables
             return;
         } else {
+            boolean packageKeyFlag = false;
+            String packageKey = null;
             boolean packageNameFlag = false;
             String packageNameValue = null;
             boolean packageDirectoryFlag = false;
             String packageDirectoryValue = null;
             boolean fileNameFlag = false;
             String fileNameValue = null;
+            // PARSE=========================================================================================
             if (lgr.getRule().getChunks() >= 0) {
                 /* customize chunk numbers */
                 link.setChunks(lgr.getRule().getChunks());
@@ -961,8 +980,38 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 fileNameFlag = true;
                 fileNameValue = replaceVariables(REPLACEVARIABLE.FILENAME, lgr.getRule().getFilename(), link, lgr);
             }
+            if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
+                /* customize filename */
+                link.setComment(replaceVariables(REPLACEVARIABLE.COMMENT, lgr.getRule().getComment(), link, lgr));
+            }
+            if (StringUtils.isNotEmpty((packageKey = lgr.getRule().getPackageKey()))) {
+                packageKeyFlag = true;
+                packageKey = replaceVariables(REPLACEVARIABLE.PACKAGEKEY, lgr.getRule().getPackageKey(), link, lgr);
+            }
             if (fileNameFlag && StringUtils.isNotEmpty(fileNameValue)) {
                 link.setName(fileNameValue);
+            }
+            // MODIFY=========================================================================================
+            if (packageKeyFlag) {
+                final PackageInfo dpi;
+                if (link.getDesiredPackageInfo() != null) {
+                    if (StringUtils.isNotEmpty(packageKey)) {
+                        dpi = link.getDesiredPackageInfo();
+                    } else {
+                        dpi = null;
+                    }
+                } else {
+                    if (StringUtils.isNotEmpty(packageKey)) {
+                        dpi = new PackageInfo();
+                    } else {
+                        dpi = null;
+                    }
+                }
+                if (dpi != null) {
+                    dpi.setPackageKey(packageKey);
+                    dpi.setPackagizerRuleMatched(true);
+                    link.setDesiredPackageInfo(dpi);
+                }
             }
             if (packageNameFlag) {
                 final PackageInfo dpi;
@@ -1005,10 +1054,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     dpi.setDestinationFolder(packageDirectoryValue);
                     link.setDesiredPackageInfo(dpi);
                 }
-            }
-            if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
-                /* customize filename */
-                link.setComment(replaceVariables(REPLACEVARIABLE.COMMENT, lgr.getRule().getComment(), link, lgr));
             }
             Boolean b = null;
             if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
