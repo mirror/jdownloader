@@ -140,7 +140,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.6.6<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.6.7<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -1373,45 +1373,69 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return loginform;
     }
 
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("op=logout");
+    }
+
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                boolean loggedInViaCookies = false;
+                if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    return;
-                }
-                getPage(COOKIE_HOST + "/login.html");
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    /* Required for some XFS setups. */
-                    getPage(COOKIE_HOST + "/login");
-                }
-                Form loginform = findLoginform(this.br);
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        return;
+                    }
+                    getPage(COOKIE_HOST + "/");
+                    loggedInViaCookies = isLoggedinHTML();
+                    if (loggedInViaCookies) {
+                        /* Save new cookie-timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    }
+                    if (loggedInViaCookies && !force) {
+                        return;
                     }
                 }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                submitForm(loginform);
-                /* Missing login cookies or we still have the loginform --> Login failed */
-                final boolean loginCookieOkay = br.getCookie(COOKIE_HOST, "login") != null || br.getCookie(COOKIE_HOST, "xfss") == null;
-                final boolean loginFormOkay = findLoginform(this.br) == null;
-                final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
-                if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedInViaCookies) {
+                    getPage(COOKIE_HOST + "/login.html");
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        /* Required for some XFS setups. */
+                        getPage(COOKIE_HOST + "/login");
+                    }
+                    Form loginform = findLoginform(this.br);
+                    if (loginform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML("class=\"g\\-recaptcha\"")) {
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    submitForm(loginform);
+                    /* Missing login cookies or we still have the loginform --> Login failed */
+                    final boolean loginCookieOkay = br.getCookie(COOKIE_HOST, "login") != null || br.getCookie(COOKIE_HOST, "xfss") != null;
+                    final boolean loginFormOkay = findLoginform(this.br) == null;
+                    final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
+                    if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 if (!br.getURL().contains("/?op=my_account")) {
