@@ -24,9 +24,6 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -64,15 +64,12 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String url_filename_str = getUniqueURLServerFilenameString(link.getDownloadURL());
-        final String linkid;
-        if (url_filename_str != null) {
-            linkid = url_filename_str;
+        final String ret = getUniqueURLServerFilenameString(link.getDownloadURL());
+        if (ret != null) {
+            return ret;
         } else {
-            /* Fallback just in case ... but actually this should never happen! */
-            linkid = link.getDownloadURL();
+            return super.getLinkID(link);
         }
-        return linkid;
     }
 
     public static String getUniqueURLServerFilenameString(final String directurl) {
