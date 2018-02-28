@@ -751,7 +751,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         /* 2018-02-28: This should work fine for all hls- and http urls */
-        final String filename_server = new Regex(directurl, "/([^/]+\\.mp4(?:.+\\.m3u8)?)").getMatch(0);
+        final String filename_server = jd.plugins.hoster.ARDMediathek.getUniqueURLServerFilenameString(directurl);
         final String plain_name = title + "_" + protocol + "_" + resolution;
         final String linkid;
         if (!StringUtils.isEmpty(filename_server)) {
