@@ -202,13 +202,14 @@ public class KingdebridCom extends PluginForHost {
             br.getPage("//" + this.getHost());
         }
         String supportedhosts_source = null;
+        final String server_time = this.br.getRegex("Time now on Server: <b>(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
         final String expire = this.br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
         long trafficleft = 0;
         String trafficleft_str = this.br.getRegex("<br>Total: <div class=\\'badge badge\\-warning\\'>([^<>\"]+)<").getMatch(0);
         if (trafficleft_str != null) {
             trafficleft = SizeFormatter.getSize(trafficleft_str);
         }
-        if (expire != null) {
+        if (expire != null && !expire.equals(server_time)) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
             if (trafficleft_str == null) {
@@ -219,13 +220,19 @@ public class KingdebridCom extends PluginForHost {
             }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss a", Locale.US), br);
         } else {
-            /* TODO: Check if free accounts have traffic. */
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
             /* Try to only grab all hosts which are supported for free accounts. */
             supportedhosts_source = this.br.getRegex("Free hosts <(.*?)</div>").getMatch(0);
             if (trafficleft > 0) {
                 ai.setTrafficLeft(trafficleft);
+            } else {
+                /*
+                 * 2018-02-28: Free accounts do not have any traffic. However, users can download from all hosts listed under "Free hosts"
+                 * but usually these will be free websites such as vimeo.com so it makes no sense to allow free downloads via this multihost
+                 * via JD.
+                 */
+                ai.setTrafficLeft(0);
             }
         }
         if (supportedhosts_source == null) {

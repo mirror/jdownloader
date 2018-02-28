@@ -17,7 +17,6 @@ import jd.plugins.PluginException;
  *
  */
 public class MultiHosterManagement {
-
     private String getHost;
     private String niceHost;
     private String hsFailed;
@@ -122,8 +121,7 @@ public class MultiHosterManagement {
         } else {
             downloadLink.setProperty(errorID, Property.NULL);
             // default of 1 hour wait.
-            this.putError(account, downloadLink, errorWait, "Excausted retry count: " + error);
+            this.putError(account, downloadLink, errorWait, "Exhausted retry count: " + error);
         }
     }
-
 }
