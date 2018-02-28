@@ -64,7 +64,7 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String url_filename_str = getUniqueURLServerFilenameString(dllink);
+        final String url_filename_str = getUniqueURLServerFilenameString(link.getDownloadURL());
         final String linkid;
         if (url_filename_str != null) {
             linkid = url_filename_str;
