@@ -583,7 +583,19 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (file.isDirectory() && file.exists()) {
             return true;
         }
-        return file.getParentFile() != null && file.getParentFile().exists();
+        int threshold = config.getMissingParentDirectoryThreshold();
+        while (threshold > 0) {
+            final File parent = file.getParentFile();
+            if (parent == null) {
+                return false;
+            } else if (parent.exists()) {
+                return true;
+            } else {
+                file = parent;
+                threshold--;
+            }
+        }
+        return false;
     }
 
     private void inform() {

@@ -24,6 +24,14 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncomplete
 
 public interface LinkgrabberSettings extends ConfigInterface {
     @AboutConfig
+    @DescriptionForConfigEntry("Threshold for missing parent directories")
+    @DefaultIntValue(1)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
+    int getMissingParentDirectoryThreshold();
+
+    void setMissingParentDirectoryThreshold(int threshold);
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isVariantsColumnAlwaysVisible();
 
