@@ -64,7 +64,15 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        return getUniqueURLServerFilenameString(link.getDownloadURL());
+        final String url_filename_str = getUniqueURLServerFilenameString(dllink);
+        final String linkid;
+        if (url_filename_str != null) {
+            linkid = url_filename_str;
+        } else {
+            /* Fallback just in case ... but actually this should never happen! */
+            linkid = link.getDownloadURL();
+        }
+        return linkid;
     }
 
     public static String getUniqueURLServerFilenameString(final String directurl) {
@@ -74,10 +82,6 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = downloadLink.getDownloadURL();
-        final String url_filename_str = getUniqueURLServerFilenameString(dllink);
-        if (url_filename_str != null) {
-            downloadLink.setLinkID(url_filename_str);
-        }
         final String finalName = downloadLink.getStringProperty("directName", null);
         if (finalName == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
