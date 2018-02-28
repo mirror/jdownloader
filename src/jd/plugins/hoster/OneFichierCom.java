@@ -753,12 +753,18 @@ public class OneFichierCom extends PluginForHost {
     private void handlePassword() throws Exception {
         synchronized (lastSessionPassword) {
             logger.info("This link seems to be password protected, continuing...");
-            final String url = br.getURL();
-            final String postData = getSSLFormValue() + "&pass=";
+            Form pwForm = br.getFormbyKey("pass");
+            if (pwForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
+                pwForm.put("dl_no_ssl", "on");
+            }
             // if property is set use it over lastSessionPassword!
             String passCode = currDownloadLink.getDownloadPassword();
             if (passCode != null) {
-                br.postPage(url, postData + Encoding.urlEncode(passCode));
+                pwForm.put("pass", Encoding.urlEncode(passCode));
+                br.submitForm(pwForm);
                 if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
                     lastSessionPassword.set(passCode);
                     currDownloadLink.setDownloadPassword(passCode);
@@ -770,7 +776,8 @@ public class OneFichierCom extends PluginForHost {
             // next lastSessionPassword
             passCode = lastSessionPassword.get();
             if (passCode != null) {
-                br.postPage(url, postData + Encoding.urlEncode(passCode));
+                pwForm.put("pass", Encoding.urlEncode(passCode));
+                br.submitForm(pwForm);
                 if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
                     lastSessionPassword.set(passCode);
                     currDownloadLink.setDownloadPassword(passCode);
@@ -780,11 +787,14 @@ public class OneFichierCom extends PluginForHost {
             }
             // last user input
             passCode = Plugin.getUserInput("Password?", currDownloadLink);
-            br.postPage(url, postData + Encoding.urlEncode(passCode));
-            if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
-                lastSessionPassword.set(passCode);
-                currDownloadLink.setDownloadPassword(passCode);
-                return;
+            if (passCode != null) {
+                pwForm.put("pass", Encoding.urlEncode(passCode));
+                br.submitForm(pwForm);
+                if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
+                    lastSessionPassword.set(passCode);
+                    currDownloadLink.setDownloadPassword(passCode);
+                    return;
+                }
             }
             // nothing to nullify, just throw exception
             throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
