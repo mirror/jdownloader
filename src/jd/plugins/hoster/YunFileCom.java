@@ -29,10 +29,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -54,6 +50,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|gmpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
@@ -299,6 +299,7 @@ public class YunFileCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -375,6 +376,7 @@ public class YunFileCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     // success
+                    dl.setFilenameFix(true);
                     dl.startDownload();
                     return;
                 }
