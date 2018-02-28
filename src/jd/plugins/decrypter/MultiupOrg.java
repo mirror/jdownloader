@@ -58,17 +58,24 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
             return decryptedLinks;
         }
-        final String filename = getFilename(parameter);
-        if (filename == null) {
-            logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
-            return decryptedLinks;
-        }
-        final String filesize = getFileSize(parameter);
+        String filename = getFilename(parameter);
+        String filesize = getFileSize(parameter);
         if (filename != null) {
             parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
             param.setCryptedUrl(parameter);
         }
         getPage(parameter.replace("/en/download/", "/en/mirror/"));
+        String webSiteFilename = br.getRegex("<title>\\s*Download\\s*(.*?)\\s*-\\sMirror").getMatch(0);
+        if (webSiteFilename == null) {
+            webSiteFilename = br.getRegex("<meta name=\"description\" content=\"Download\\s*(.*?)\\s*\\(").getMatch(0);
+        }
+        if (filename == null) {
+            filename = webSiteFilename;
+        }
+        String webSiteFileSize = br.getRegex("<meta name=\"description\" content=\"Download\\s*.*?\\s*\\(([0-9\\.]+\\s*[KGMiB]+)").getMatch(0);
+        if (filesize == null) {
+            filesize = webSiteFileSize;
+        }
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
