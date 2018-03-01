@@ -3,7 +3,6 @@ package org.jdownloader.api.captcha;
 import org.appwork.storage.Storable;
 
 public class CaptchaJob implements Storable {
-
     private long   captchaID;
     private String hosterID;
     private long   linkID;
@@ -11,7 +10,17 @@ public class CaptchaJob implements Storable {
     private String captchaCategory;
     private String explain;
     private int    timeout;
-    private long   created;
+    private long   validUntil;
+
+    public long getValidUntil() {
+        return validUntil;
+    }
+
+    public void setValidUntil(long validUntil) {
+        this.validUntil = validUntil;
+    }
+
+    private long created;
 
     /**
      * @return the type
@@ -98,5 +107,4 @@ public class CaptchaJob implements Storable {
     public void setCreated(long created) {
         this.created = created;
     }
-
 }

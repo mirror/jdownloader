@@ -29,6 +29,7 @@ public abstract class Challenge<T> {
     private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private final Class<T>        resultType;
     private final long            created      = System.currentTimeMillis();
+    private volatile long         lastActivity = created;
     private int                   timeout      = -1;
     private volatile boolean      accountLogin = false;
     private final boolean         createdInsideAccountChecker;
@@ -63,7 +64,6 @@ public abstract class Challenge<T> {
         final PluginForDecrypt currentPlugin = (PluginForDecrypt) plugin;
         final LinkCrawler currentCrawler = currentPlugin.getCrawler();
         final CrawledLink currentOrigin = currentPlugin.getCurrentLink().getOriginLink();
-
         final PluginForDecrypt decrypt = (PluginForDecrypt) challengePlugin;
         if (currentCrawler != decrypt.getCrawler()) {
             /* we have a different crawler source */
@@ -149,15 +149,12 @@ public abstract class Challenge<T> {
         createdInsideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
         Type superClass = this.getClass().getGenericSuperclass();
         while (superClass instanceof Class) {
-
             superClass = ((Class<?>) superClass).getGenericSuperclass();
             if (superClass == null) {
                 throw new IllegalArgumentException("Wrong Construct");
             }
-
         }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
-
     }
 
     public boolean isCreatedInsideAccountChecker() {
@@ -187,6 +184,33 @@ public abstract class Challenge<T> {
 
     public long getCreated() {
         return created;
+    }
+
+    public long getLastActivity() {
+        return lastActivity;
+    }
+
+    public void keepAlive() {
+        if (isKeepAliveSupported()) {
+            lastActivity = System.currentTimeMillis();
+        }
+    }
+
+    public boolean isKeepAliveSupported() {
+        return false;
+    }
+
+    public long getValidUntil() {
+        final int timeout = getTimeout();
+        if (timeout > 0) {
+            if (isKeepAliveSupported()) {
+                return getLastActivity() + timeout;
+            } else {
+                return getCreated() + timeout;
+            }
+        } else {
+            return -1;
+        }
     }
 
     public void setTypeID(String typeID) {
@@ -282,14 +306,12 @@ public abstract class Challenge<T> {
      * is called from plugins after all it's challenges have been handled. NOTE: Not all plugins call this method.
      */
     public void cleanup() {
-
     }
 
     /**
      * called when the controller handled this challenge
      */
     public void onHandled() {
-
     }
 
     public void sendStatsError(ChallengeSolver solver, Throwable e) {
@@ -311,7 +333,6 @@ public abstract class Challenge<T> {
             return;
         }
         HashMap<String, String> info = createStatsInfoMap(solver);
-
         StatsManager.I().track(REDUCER, "captchaCES", "solving", info, CollectionName.CAPTCHA);
     }
 
@@ -320,7 +341,6 @@ public abstract class Challenge<T> {
             return;
         }
         HashMap<String, String> info = createStatsInfoMap(solver);
-
         info.put("status", status);
         StatsManager.I().track(REDUCER, "captchaCES", "validation", info, CollectionName.CAPTCHA);
     }
@@ -328,7 +348,6 @@ public abstract class Challenge<T> {
     private HashMap<String, String> createStatsInfoMap(ChallengeSolver solver) {
         HashMap<String, String> info;
         info = new HashMap<String, String>();
-
         info.put("service", solver.getService().getID());
         info.put("solver", solver.getClass().getSimpleName());
         info.put("type", getTypeID());
@@ -341,7 +360,6 @@ public abstract class Challenge<T> {
     }
 
     // is called in a 1000ms interval while solvers are active. can be used to check for external success (like oauth
-
     public void poll(SolverJob<T> job2) {
     }
 }
