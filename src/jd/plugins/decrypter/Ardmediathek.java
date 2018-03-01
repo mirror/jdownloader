@@ -53,16 +53,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
-        "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
+        "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
     /* Constants */
     private static final String                 type_unsupported      = ".+ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
     private static final String                 type_invalid          = ".+(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
-    private static final String                 type_ard_mediathek    = ".+(ardmediathek|mediathek\\.daserste)\\.de/.+";
-    private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/.+";
-    private static final String                 type_rbb_mediathek    = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
     /* Variables */
     private final HashMap<String, DownloadLink> foundQualitiesMap     = new HashMap<String, DownloadLink>();
     ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
@@ -76,6 +73,14 @@ public class Ardmediathek extends PluginForDecrypt {
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @PluginHost(host = "eurovision.de", type = Type.CRAWLER)
+    public static interface EurovisionConfig extends ArdConfigInterface {
+    }
+
+    @PluginHost(host = "kika.de", type = Type.CRAWLER)
+    public static interface KikaDeConfig extends ArdConfigInterface {
     }
 
     @PluginHost(host = "ndr.de", type = Type.CRAWLER)
@@ -350,11 +355,12 @@ public class Ardmediathek extends PluginForDecrypt {
             selectedQualities.add("audio");
         }
         try {
+            final String host = Browser.getHost(this.parameter);
             /*
              * 2018-02-22: Important: So far there is only one OLD website, not compatible with the "decryptMediathek" function! Keep this
              * in mind when changing things!
              */
-            if (parameter.matches("https?://www\\.daserste\\.de/.+")) {
+            if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de")) {
                 decryptDasersteVideo();
             } else {
                 decryptMediathek();
@@ -398,6 +404,7 @@ public class Ardmediathek extends PluginForDecrypt {
         String date = null;
         this.date_formatted = br.getRegex("<meta property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/>").getMatch(0);
         String description = br.getRegex("<meta property=\"og:description\" content=\"([^\"]+)\"").getMatch(0);
+        final String host = br.getHost();
         if (jsonSchemaOrg != null) {
             /* 2018-02-15: E.g. daserste.de, wdr.de */
             final String headline = br.getRegex("<h3 class=\"headline\">([^<>]+)</h3>").getMatch(0);
@@ -427,7 +434,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             } catch (final Throwable e) {
             }
-        } else if (br.getHost().equalsIgnoreCase("wdrmaus.de")) {
+        } else if (host.equalsIgnoreCase("wdrmaus.de")) {
             final String content_ids_str = br.getRegex("var _contentId = \\[([^<>\\[\\]]+)\\];").getMatch(0);
             if (content_ids_str != null) {
                 final String[] content_ids = content_ids_str.split(",");
@@ -448,11 +455,11 @@ public class Ardmediathek extends PluginForDecrypt {
              * http://www.wdrmaus.de/extras/mausthemen/eisenbahn/index.php5
              */
             date = br.getRegex("Sendetermin: (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
-        } else if (br.getHost().contains("sr-online.de")) {
+        } else if (host.contains("sr-online.de")) {
             /* sr-mediathek.sr-online.de */
             title = br.getRegex("<div class=\"ardplayer\\-title\">([^<>\"]+)</div>").getMatch(0);
             date = br.getRegex("<p>Video \\| (\\d{2}\\.\\d{2}\\.\\d{4}) \\| Dauer:").getMatch(0);
-        } else if (br.getHost().equalsIgnoreCase("ndr.de")) {
+        } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             /* ndr.de */
             title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
         } else {
@@ -469,7 +476,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (StringUtils.isEmpty(provider)) {
             /* Fallback */
-            provider = br.getHost().substring(0, br.getHost().lastIndexOf("."));
+            provider = host.substring(0, br.getHost().lastIndexOf("."));
         }
         title = Encoding.htmlDecode(title).trim();
         if (!StringUtils.isEmpty(show)) {
@@ -496,7 +503,7 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         } else if (ardBroadcastID != null) {
             url_json = String.format("http://www.ardmediathek.de/play/media/%s?devicetype=pc&features=flash", ardBroadcastID);
-        } else if (Browser.getHost(this.parameter).contains("ndr.de")) {
+        } else if (Browser.getHost(this.parameter).contains("ndr.de") || Browser.getHost(this.parameter).equalsIgnoreCase("eurovision.de")) {
             /* E.g. daserste.ndr.de, blabla.ndr.de */
             final String video_id = br.getRegex("([A-Za-z0-9]+\\d+)\\-(?:ard)?player_[^\"]+\"").getMatch(0);
             if (!StringUtils.isEmpty(video_id)) {
@@ -516,9 +523,22 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /** Find xml URL which leads to subtitle and video stream URLs. */
-    private String getVideoXMLURL() throws MalformedURLException {
-        String url_xml;
-        return null;
+    private String getVideoXMLURL() throws Exception {
+        final String host = Browser.getHost(this.parameter);
+        String url_xml = null;
+        if (host.equalsIgnoreCase("daserste.de")) {
+            /* We do not even have to access the main URL which the user has added :) */
+            url_xml = parameter.replace(".html", "~playerXml.xml");
+        } else {
+            br.getPage(this.parameter);
+            if (isOffline(this.br)) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            if (host.equalsIgnoreCase("kika.de")) {
+                url_xml = br.getRegex("\\{dataURL\\s*?:\\s*?\\'(https?://[^<>\"]+\\-avCustom\\.xml)\\'").getMatch(0);
+            }
+        }
+        return url_xml;
     }
 
     /**
@@ -583,14 +603,6 @@ public class Ardmediathek extends PluginForDecrypt {
         if (!br.getHttpConnection().getContentType().contains("application/json") && !br.getHttpConnection().getContentType().contains("application/javascript") && !br.containsHTML("\\{") || br.getHttpConnection().getResponseCode() == 404) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-        if (br.containsHTML("comScoreParams")) {
-            logger.warning("WTF");
-        }
-        /**
-         * TODO: Sometimes we can get media info e.g. title/release-date and so on via json, check this and prefer these data. Maybe add a
-         * function getMediathekTitleJson (or similar). Example:
-         * https://www.eurovision.de/videos/ESC-Vorentscheid-2018-Speeddating-mit-Xavier-Darcy,esc3076.html
-         */
         subtitleLink = getJsonSubtitleURL(br);
         /* We know how their http urls look - this way we can avoid HDS/HLS/RTMP */
         /*
@@ -667,11 +679,15 @@ public class Ardmediathek extends PluginForDecrypt {
 
     /* INFORMATION: network = akamai or limelight == RTMP */
     private void decryptDasersteVideo() throws Exception {
-        final String xml_URL = parameter.replace(".html", "~playerXml.xml");
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String xml_URL = getVideoXMLURL();
+        if (xml_URL == null) {
+            /* Probably no downloadable content available */
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
         br.getPage(xml_URL);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/xml")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
@@ -682,6 +698,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final String date = getXML("broadcastDate");
         title = getXML("shareTitle");
+        if (StringUtils.isEmpty(title)) {
+            title = getXML("broadcastName");
+        }
         if (this.title == null || date == null) {
             throw new DecrypterException("Decrypter broken");
         }
@@ -691,7 +710,12 @@ public class Ardmediathek extends PluginForDecrypt {
         title = this.date_formatted + "_daserste_" + title;
         final String[] mediaStreamArray = br.getRegex("(<asset.*?</asset>)").getColumn(0);
         for (final String stream : mediaStreamArray) {
-            final String directurl = getXML(stream, "fileName");
+            /* E.g. kika.de */
+            String directurl = getXML(stream, "progressiveDownloadUrl");
+            if (StringUtils.isEmpty(directurl)) {
+                /* E.g. daserste.de */
+                directurl = getXML(stream, "fileName");
+            }
             final String filesize = getXML(stream, "size");
             final String width_str = getXML(stream, "frameWidth");
             final String height_str = getXML(stream, "frameHeight");
@@ -703,7 +727,7 @@ public class Ardmediathek extends PluginForDecrypt {
             if (height_str != null && height_str.matches("\\d+")) {
                 height = Integer.parseInt(height_str);
             }
-            if (isUnsupportedProtocolDasersteVideo(directurl)) {
+            if (StringUtils.isEmpty(directurl) || isUnsupportedProtocolDasersteVideo(directurl) || !directurl.startsWith("http")) {
                 continue;
             }
             if (directurl.contains(".m3u8")) {
@@ -1066,8 +1090,8 @@ public class Ardmediathek extends PluginForDecrypt {
     // }
     private String formatDateDasErste(String input) {
         /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
-        input = input.substring(0, input.lastIndexOf(":")) + "00";
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
+        input = new Regex(input, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.GERMAN);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);
