@@ -24,6 +24,9 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,9 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -73,7 +73,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     public static String getUniqueURLServerFilenameString(final String directurl) {
-        return new Regex(directurl, "/([^/]+\\.mp4(?:.+\\.m3u8)?)").getMatch(0);
+        return new Regex(directurl, "/([^/]+\\.(?:mp3|mp4)(?:.+\\.m3u8)?)").getMatch(0);
     }
 
     @Override
@@ -103,14 +103,12 @@ public class ARDMediathek extends PluginForHost {
             try {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 con = br.openHeadConnection(dllink);
-                if (con.isOK() && !con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                } else if (con.getResponseCode() == 404) {
+                /* 2018-03-01: Download everything which is not 404. */
+                if (con.getResponseCode() == 404) {
                     /* Content should definitly be offline in this case! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    server_issues = true;
                 }
+                downloadLink.setDownloadSize(con.getLongContentLength());
             } finally {
                 try {
                     con.disconnect();
@@ -142,14 +140,16 @@ public class ARDMediathek extends PluginForHost {
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
             boolean resume = true;
             int maxChunks = 0;
-            if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+            final boolean isSubtitle = "subtitle".equals(downloadLink.getStringProperty("streamingType", null));
+            if (isSubtitle) {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 downloadLink.setDownloadSize(0);
                 resume = false;
                 maxChunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            /* E.g. https://www.ndr.de/fernsehen/sendungen/ndr_aktuell/ut64736.html */
+            if (dl.getConnection().getContentType().contains("html") && (isSubtitle && !dllink.matches(".+ut\\d+\\.html"))) {
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
