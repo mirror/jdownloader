@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spankwire.com" }, urls = { "https?://(?:www\\.)?spankwire\\.com/(?:.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" })
 public class SpankWireCom extends PluginForHost {
-
     public String dllink = null;
 
     public SpankWireCom(PluginWrapper wrapper) {
@@ -59,7 +57,6 @@ public class SpankWireCom extends PluginForHost {
         br.setCookie("http://spankwire.com/", "Tablet_False", "");
         br.setCookie("http://spankwire.com/", "init", "Straight^^false^false^^None");
         br.setCookie("http://spankwire.com/", "adultd", "1");
-
         br.getPage(downloadLink.getDownloadURL());
         // Invalid link
         if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("(removedCopyright|removedTOS|removedDefault)\\.jpg")) {
@@ -67,6 +64,10 @@ public class SpankWireCom extends PluginForHost {
         }
         // Link offline
         if (br.containsHTML(">This (article|video) has been (deleted|disabled)") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // No content
+        if (br.containsHTML("\"videoContainer\">\\s*<div id=\"vidAdRight\">")) { // No playerData | No "video player"
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fileID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
