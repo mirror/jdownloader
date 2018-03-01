@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -22,6 +21,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,9 +37,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" })
 public class MdrDe extends PluginForHost {
-
     /** Settings stuff */
     private static final String ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
     private static final String ALLOW_BEST           = "ALLOW_BEST";
@@ -132,18 +131,15 @@ public class MdrDe extends PluginForHost {
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         BufferedWriter dest;
         try {
             dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
         } catch (IOException e1) {
             return false;
         }
-
         final StringBuilder xml = new StringBuilder();
         int counter = 1;
         final String lineseparator = System.getProperty("line.separator");
-
         Scanner in = null;
         try {
             in = new Scanner(new FileReader(source));
@@ -156,20 +152,16 @@ public class MdrDe extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
-
         final String[] matches = new Regex(xmlContent, "(<p begin.*?</p>)").getColumn(0);
         try {
-
             for (String info : matches) {
                 dest.write(counter++ + lineseparator);
                 // final DecimalFormat df = new DecimalFormat("00");
                 final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}:\\d{2})\"");
                 final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}:\\d{2})\"");
-
                 final String start = startInfo.getMatch(0);
                 final String end = endInfo.getMatch(0);
                 dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-
                 info = info.replaceAll(lineseparator, " ");
                 info = info.replaceAll("<br />", lineseparator);
                 final String[][] color_texts = new Regex(info, "<span style=\"([a-z]+)\">(.*?)</span>").getMatches();
@@ -186,10 +178,8 @@ public class MdrDe extends PluginForHost {
                     text = HTMLEntities.unhtmlDoubleQuotes(text);
                     text = text.replaceAll("</?(p|span)>?", "");
                     text = text.trim();
-
                     final String color_code = getColorCode(style);
                     stitle_text += "<font color=#" + color_code + ">" + text + "</font>";
-
                 }
                 dest.write(stitle_text + lineseparator + lineseparator);
             }
@@ -201,9 +191,7 @@ public class MdrDe extends PluginForHost {
             } catch (IOException e) {
             }
         }
-
         source.delete();
-
         return true;
     }
 
@@ -237,11 +225,9 @@ public class MdrDe extends PluginForHost {
      */
     private static String convertSubtitleTime(final String input) {
         final Regex info = new Regex(input, "(\\d{2}):(\\d{2}):(\\d{2}):(\\d{2})");
-
         final String milliseconds = info.getMatch(3) + "0";
         // Result
         String result = info.getMatch(0) + ":" + info.getMatch(1) + ":" + info.getMatch(2) + "," + milliseconds;
-
         return result;
     }
 
