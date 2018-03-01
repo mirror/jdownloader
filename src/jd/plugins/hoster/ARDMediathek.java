@@ -24,9 +24,6 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -59,11 +59,23 @@ public class ARDMediathek extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
+        final String linkID = link.getSetLinkID();
         link.setUrlDownload(link.getDownloadURL().replace("ardmediathek://", "http://"));
+        if (linkID == null) {
+            link.setLinkID(linkID);
+        }
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        final String itemId = link.getStringProperty("itemId");
+        final String itemSrc = link.getStringProperty("itemSrc");
+        final String itemType = link.getStringProperty("itemType");
+        final String itemRes = link.getStringProperty("itemRes");
+        if (itemId != null && itemSrc != null && itemType != null && itemRes != null) {
+            final String ret = itemSrc.concat("://").concat(itemId).concat("/").concat(itemType).concat("/").concat(itemRes);
+            return ret;
+        }
         final String ret = getUniqueURLServerFilenameString(link.getDownloadURL());
         if (ret != null) {
             return ret;
@@ -72,7 +84,9 @@ public class ARDMediathek extends PluginForHost {
         }
     }
 
+    @Deprecated
     public static String getUniqueURLServerFilenameString(final String directurl) {
+        // TODO: very bad, not unique
         return new Regex(directurl, "/([^/]+\\.(?:mp3|mp4)(?:.+\\.m3u8)?)").getMatch(0);
     }
 
