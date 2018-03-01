@@ -317,10 +317,10 @@ public class M3U8Playlist {
         return addSegment(segment);
     }
 
-    protected final ArrayList<M3U8Segment>       segments            = new ArrayList<M3U8Segment>();
-    protected final HashMap<String, M3U8Segment> map                 = new HashMap<String, M3U8Segment>();
-    protected int                                mediaSequenceOffset = 0;
-    protected long                               averageBandwidth    = -1;
+    protected final ArrayList<M3U8Segment>           segments            = new ArrayList<M3U8Segment>();
+    private final HashMap<String, List<M3U8Segment>> map                 = new HashMap<String, List<M3U8Segment>>();
+    protected int                                    mediaSequenceOffset = 0;
+    protected long                                   averageBandwidth    = -1;
 
     public void setAverageBandwidth(long averageBandwidth) {
         this.averageBandwidth = averageBandwidth;
@@ -409,13 +409,37 @@ public class M3U8Playlist {
         return segments.size();
     }
 
+    private void addSegmentToMap(M3U8Segment segment) {
+        if (segment != null) {
+            final String url = segment.getUrl();
+            List<M3U8Segment> list = map.get(url);
+            if (list == null) {
+                list = new ArrayList<M3U8Segment>();
+                map.put(url, list);
+            }
+            if (!list.contains(segment)) {
+                list.add(segment);
+            }
+        }
+    }
+
+    private void removeSegmentFromMap(M3U8Segment segment) {
+        if (segment != null) {
+            final String url = segment.getUrl();
+            final List<M3U8Segment> list = map.get(url);
+            if (list != null && list.remove(segment) && list.size() == 0) {
+                map.remove(url);
+            }
+        }
+    }
+
     public int addSegment(M3U8Segment segment) {
         if (segment != null) {
             int index = segments.indexOf(segment);
             if (index == -1) {
                 index = segments.size();
                 segments.add(segment);
-                map.put(segment.getUrl(), segment);
+                addSegmentToMap(segment);
             }
             return index;
         }
@@ -425,7 +449,8 @@ public class M3U8Playlist {
     public M3U8Segment setSegment(int index, M3U8Segment segment) {
         if (segment != null && index >= 0 && index < segments.size()) {
             final M3U8Segment ret = segments.set(index, segment);
-            map.put(segment.getUrl(), segment);
+            removeSegmentFromMap(ret);
+            addSegment(segment);
             return ret;
         } else {
             return null;
@@ -513,13 +538,18 @@ public class M3U8Playlist {
     }
 
     protected M3U8Segment getSegment(final String url) {
-        return map.get(url);
+        final List<M3U8Segment> list = map.get(url);
+        if (list != null && list.size() > 0) {
+            return list.get(0);
+        } else {
+            return null;
+        }
     }
 
     public M3U8Segment removeSegment(int index) {
         if (index >= 0 && index < segments.size()) {
             final M3U8Segment ret = segments.remove(index);
-            map.remove(ret.getUrl(), ret);
+            removeSegmentFromMap(ret);
             return ret;
         } else {
             return null;
@@ -529,7 +559,7 @@ public class M3U8Playlist {
     public boolean addSegment(int index, M3U8Segment segment) {
         if (segment != null && index >= 0) {
             segments.add(index, segment);
-            map.put(segment.getUrl(), segment);
+            addSegmentToMap(segment);
             return true;
         } else {
             return false;
