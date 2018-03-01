@@ -3,6 +3,7 @@ package org.jdownloader.downloader.hls;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import jd.http.Browser;
@@ -316,9 +317,10 @@ public class M3U8Playlist {
         return addSegment(segment);
     }
 
-    protected final ArrayList<M3U8Segment> segments            = new ArrayList<M3U8Segment>();
-    protected int                          mediaSequenceOffset = 0;
-    protected long                         averageBandwidth    = -1;
+    protected final ArrayList<M3U8Segment>       segments            = new ArrayList<M3U8Segment>();
+    protected final HashMap<String, M3U8Segment> map                 = new HashMap<String, M3U8Segment>();
+    protected int                                mediaSequenceOffset = 0;
+    protected long                               averageBandwidth    = -1;
 
     public void setAverageBandwidth(long averageBandwidth) {
         this.averageBandwidth = averageBandwidth;
@@ -400,7 +402,7 @@ public class M3U8Playlist {
     }
 
     public boolean containsSegmentURL(final String segmentURL) {
-        return getSegment(segmentURL) != null;
+        return segmentURL != null && map.containsKey(segmentURL);
     }
 
     public int size() {
@@ -413,6 +415,7 @@ public class M3U8Playlist {
             if (index == -1) {
                 index = segments.size();
                 segments.add(segment);
+                map.put(segment.getUrl(), segment);
             }
             return index;
         }
@@ -421,7 +424,9 @@ public class M3U8Playlist {
 
     public M3U8Segment setSegment(int index, M3U8Segment segment) {
         if (segment != null && index >= 0 && index < segments.size()) {
-            return segments.set(index, segment);
+            final M3U8Segment ret = segments.set(index, segment);
+            map.put(segment.getUrl(), segment);
+            return ret;
         } else {
             return null;
         }
@@ -508,19 +513,14 @@ public class M3U8Playlist {
     }
 
     protected M3U8Segment getSegment(final String url) {
-        if (url != null) {
-            for (M3U8Segment segment : segments) {
-                if (url.equals(segment.getUrl())) {
-                    return segment;
-                }
-            }
-        }
-        return null;
+        return map.get(url);
     }
 
     public M3U8Segment removeSegment(int index) {
         if (index >= 0 && index < segments.size()) {
-            return segments.remove(index);
+            final M3U8Segment ret = segments.remove(index);
+            map.remove(ret.getUrl(), ret);
+            return ret;
         } else {
             return null;
         }
@@ -529,6 +529,7 @@ public class M3U8Playlist {
     public boolean addSegment(int index, M3U8Segment segment) {
         if (segment != null && index >= 0) {
             segments.add(index, segment);
+            map.put(segment.getUrl(), segment);
             return true;
         } else {
             return false;
