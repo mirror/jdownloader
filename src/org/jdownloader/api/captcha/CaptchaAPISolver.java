@@ -132,22 +132,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             if (entry.isDone()) {
                 continue;
             }
-            Challenge<?> challenge = entry.getChallenge();
-            if (challenge instanceof RecaptchaV2Challenge) {
-                CaptchaJob job = new CaptchaJob();
-                Class<?> cls = challenge.getClass();
-                while (cls != null && StringUtils.isEmpty(job.getType())) {
-                    job.setType(cls.getSimpleName());
-                    cls = cls.getSuperclass();
-                }
-                job.setID(challenge.getId().getID());
-                // we send the host, not the site domain. the site domain will be sent on /get
-                job.setHoster(challenge.getHost());
-                job.setCaptchaCategory(challenge.getTypeID());
-                job.setTimeout(challenge.getTimeout());
-                job.setCreated(challenge.getCreated());
-                ret.add(job);
-            } else if (challenge instanceof ImageCaptchaChallenge) {
+            final Challenge<?> challenge = entry.getChallenge();
+            if (challenge instanceof RecaptchaV2Challenge || challenge instanceof ImageCaptchaChallenge || challenge instanceof AccountLoginOAuthChallenge) {
                 final CaptchaJob job = new CaptchaJob();
                 Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
@@ -159,19 +145,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 job.setCaptchaCategory(challenge.getTypeID());
                 job.setTimeout(challenge.getTimeout());
                 job.setCreated(challenge.getCreated());
-                ret.add(job);
-            } else if (challenge instanceof AccountLoginOAuthChallenge) {
-                final CaptchaJob job = new CaptchaJob();
-                Class<?> cls = challenge.getClass();
-                while (cls != null && StringUtils.isEmpty(job.getType())) {
-                    job.setType(cls.getSimpleName());
-                    cls = cls.getSuperclass();
-                }
-                job.setID(challenge.getId().getID());
-                job.setHoster(challenge.getHost());
-                job.setCaptchaCategory(challenge.getTypeID());
-                job.setTimeout(challenge.getTimeout());
-                job.setCreated(challenge.getCreated());
+                job.setValidUntil(challenge.getValidUntil());
                 ret.add(job);
             }
         }

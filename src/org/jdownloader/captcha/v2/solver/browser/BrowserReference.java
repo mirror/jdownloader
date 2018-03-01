@@ -267,8 +267,9 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             if (custom) {
                 return true;
             }
-            String pDo = request.getParameterbyKey("do");
-            String id = request.getParameterbyKey("id");
+            final String pDo = request.getParameterbyKey("do");
+            final String id = request.getParameterbyKey("id");
+            final String useractive = request.getParameterbyKey("useractive");
             if (!StringUtils.equals(id, Long.toString(this.id.getID()))) {
                 return false;
             }
@@ -298,7 +299,10 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 }
                 return true;
             } else if ("canClose".equals(pDo)) {
-                SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
+                if (useractive != null) {
+                    ChallengeResponseController.getInstance().keepAlivePendingChallenges();
+                }
+                final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
                 if (challenge.isSolved() || job == null || job.isDone() || BrowserSolver.getInstance().isJobDone(job)) {
                     response.getOutputStream(true).write("true".getBytes("UTF-8"));
                     return true;
@@ -306,8 +310,10 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                     response.getOutputStream(true).write("false".getBytes("UTF-8"));
                 }
             } else if ("unload".equals(pDo)) {
-                SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
-                BrowserSolver.getInstance().kill((SolverJob<String>) job);
+                final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
+                if (job != null) {
+                    BrowserSolver.getInstance().kill((SolverJob<String>) job);
+                }
                 response.getOutputStream(true).write("true".getBytes("UTF-8"));
                 return true;
             } else if (pDo == null) {

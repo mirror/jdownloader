@@ -8,6 +8,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
@@ -48,11 +51,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-
 public class ChallengeResponseController {
-
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
 
     /**
@@ -229,6 +228,12 @@ public class ChallengeResponseController {
         }
     }
 
+    public void keepAlivePendingChallenges() {
+        for (final SolverJob<?> job : activeJobs) {
+            job.getChallenge().keepAlive();
+        }
+    }
+
     public <T> SolverJob<T> handle(final Challenge<T> c) throws InterruptedException, SkipException {
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
         if (logger == null) {
@@ -265,9 +270,8 @@ public class ChallengeResponseController {
                     final Challenge<T> challenge = job.getChallenge();
                     challenge.poll(job);
                     if (!job.isSolved() && !job.isDone()) {
-                        final long expired = System.currentTimeMillis() - challenge.getCreated();
-                        final int jobTimeout = challenge.getTimeout();
-                        if (jobTimeout != -1 && expired > jobTimeout) {
+                        final long validUntil = challenge.getValidUntil();
+                        if (validUntil != -1 && System.currentTimeMillis() > validUntil) {
                             timeout = true;
                             break;
                         }
