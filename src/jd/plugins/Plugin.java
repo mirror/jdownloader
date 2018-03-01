@@ -67,6 +67,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.auth.Login;
 import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
@@ -590,6 +591,14 @@ public abstract class Plugin implements ActionListener {
      */
     public int getCaptchaTimeout(Challenge<?> challenge) {
         return CFG_CAPTCHA.CFG.getDefaultChallengeTimeout();
+    }
+
+    public boolean keepAlive(Challenge<?> challenge) {
+        if (challenge != null && challenge instanceof RecaptchaV2Challenge) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**

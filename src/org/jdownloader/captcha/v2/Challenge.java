@@ -191,23 +191,16 @@ public abstract class Challenge<T> {
     }
 
     public void keepAlive() {
-        if (isKeepAliveSupported()) {
+        final Plugin plugin = getPlugin();
+        if (plugin != null && plugin.keepAlive(this)) {
             lastActivity = System.currentTimeMillis();
         }
-    }
-
-    public boolean isKeepAliveSupported() {
-        return false;
     }
 
     public long getValidUntil() {
         final int timeout = getTimeout();
         if (timeout > 0) {
-            if (isKeepAliveSupported()) {
-                return getLastActivity() + timeout;
-            } else {
-                return getCreated() + timeout;
-            }
+            return getLastActivity() + timeout;
         } else {
             return -1;
         }

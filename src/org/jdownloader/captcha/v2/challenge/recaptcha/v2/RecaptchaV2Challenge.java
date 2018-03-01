@@ -128,11 +128,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean isKeepAliveSupported() {
-        return true;
-    }
-
-    @Override
     public Object getAPIStorable(String format) throws Exception {
         if (RAWTOKEN.equals(format)) {
             final RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
