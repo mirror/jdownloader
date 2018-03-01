@@ -2,6 +2,12 @@ package jd.controlling.captcha;
 
 import javax.swing.SwingUtilities;
 
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogInterface;
@@ -18,12 +24,6 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
-
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
     private DomainInfo            host;
@@ -170,12 +170,10 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
     protected int getTimeoutInMS() {
         int countdown = -1;
-        if (captchaChallenge.getPlugin() instanceof PluginForHost) {
-            if (config.isDialogCountdownForDownloadsEnabled()) {
+        if (config.isDialogCountdownForDownloadsEnabled()) {
+            if (captchaChallenge.getPlugin() instanceof PluginForHost) {
                 countdown = config.getCaptchaDialogDefaultCountdown();
-            }
-        } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
-            if (config.isDialogCountdownForCrawlerEnabled()) {
+            } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
                 countdown = config.getCaptchaDialogDefaultCountdown();
             }
         }
