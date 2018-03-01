@@ -402,7 +402,7 @@ public class M3U8Playlist {
     }
 
     public boolean containsSegmentURL(final String segmentURL) {
-        return segmentURL != null && map.containsKey(segmentURL);
+        return map.containsKey(segmentURL);
     }
 
     public int size() {
