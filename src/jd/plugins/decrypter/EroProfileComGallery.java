@@ -13,10 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -32,9 +32,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" })
 public class EroProfileComGallery extends PluginForDecrypt {
-
     public EroProfileComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,8 +43,6 @@ public class EroProfileComGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> correctedpages = new ArrayList<String>();
-        correctedpages.add("1");
         String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookiesExclusive(false);
@@ -72,17 +69,30 @@ public class EroProfileComGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
-        final String[] pages = br.getRegex("\\?pnum=(\\d+)\"").getColumn(0);
-        if (pages != null && pages.length != 0) {
-            for (final String page : pages) {
-                if (!correctedpages.contains(page)) {
-                    correctedpages.add(page);
+        final List<String> pagesDones = new ArrayList<String>();
+        final List<String> pagesLeft = new ArrayList<String>();
+        pagesLeft.add("1");
+        while (!isAbort()) {
+            final String page;
+            if (pagesLeft.size() > 0) {
+                page = pagesLeft.remove(0);
+                if (pagesDones.contains(page)) {
+                    continue;
                 }
+            } else {
+                break;
             }
-        }
-        for (final String page : correctedpages) {
             if (!page.equals("1")) {
                 br.getPage(parameter + "?pnum=" + page);
+            }
+            pagesDones.add(page);
+            final String[] nextPages = br.getRegex("\\?pnum=(\\d+)\"").getColumn(0);
+            if (nextPages != null && nextPages.length != 0) {
+                for (final String nextPage : nextPages) {
+                    if (!pagesLeft.contains(nextPage)) {
+                        pagesLeft.add(nextPage);
+                    }
+                }
             }
             String[][] links = br.getRegex("<table cellspacing=\"0\"><tr><td><a href=\"(/m/photos/view/([A-Za-z0-9\\-_]+))\"").getMatches();
             if (links == null || links.length == 0) {
@@ -121,7 +131,6 @@ public class EroProfileComGallery extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.EroProfileCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }
@@ -134,5 +143,4 @@ public class EroProfileComGallery extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
