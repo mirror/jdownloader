@@ -2,6 +2,21 @@ package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
 import java.awt.Rectangle;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.plugins.CaptchaException;
+import jd.plugins.DecrypterException;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -19,21 +34,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.parser.html.Form;
-import jd.plugins.CaptchaException;
-import jd.plugins.DecrypterException;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 public class CaptchaHelperHostPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForHost> {
     public CaptchaHelperHostPluginSweetCaptcha(final PluginForHost plugin, final Browser br, final String siteKey, final String appKey) {
@@ -76,7 +76,7 @@ public class CaptchaHelperHostPluginSweetCaptcha extends AbstractCaptchaHelperSw
                     return null;
                 }
             };
-            c.setTimeout(plugin.getCaptchaTimeout());
+            c.setTimeout(plugin.getCaptchaTimeout(c));
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services

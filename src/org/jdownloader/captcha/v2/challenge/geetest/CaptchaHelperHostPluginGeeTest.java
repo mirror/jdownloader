@@ -38,7 +38,6 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest<PluginForHost> {
-
     public CaptchaHelperHostPluginGeeTest(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -66,7 +65,6 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
             link.addPluginProgress(progress);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             final GeeTestChallenge c = new GeeTestChallenge(apiKey, getPlugin()) {
-
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                     if (insideAccountChecker) {
@@ -101,9 +99,8 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                 public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                     return null;
                 }
-
             };
-            c.setTimeout(getPlugin().getCaptchaTimeout());
+            c.setTimeout(getPlugin().getCaptchaTimeout(c));
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use antiCaptcha services
@@ -138,7 +135,6 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                 switch (e.getSkipRequest()) {
                 case BLOCK_ALL_CAPTCHAS:
                     CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
-
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                     }
@@ -149,7 +145,6 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                     }
                     break;
-
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(link.getParentNode()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
@@ -179,5 +174,4 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
             link.removePluginProgress(progress);
         }
     }
-
 }

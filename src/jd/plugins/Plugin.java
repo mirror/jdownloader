@@ -588,7 +588,7 @@ public abstract class Plugin implements ActionListener {
      * @PluginDevelopers: Please do not use the @Override Annotation when overriding this method. At least not until 2.0 stable release
      * @return
      */
-    public int getCaptchaTimeout() {
+    public int getCaptchaTimeout(Challenge<?> challenge) {
         return CFG_CAPTCHA.CFG.getDefaultChallengeTimeout();
     }
 

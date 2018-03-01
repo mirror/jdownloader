@@ -39,15 +39,12 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAreYouHuman<PluginForHost> {
-
     public CaptchaHelperHostPluginAreYouHuman(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
-
     }
 
     public CaptchaHelperHostPluginAreYouHuman(PluginForHost plugin, Browser br) {
         this(plugin, br, null);
-
     }
 
     public String getToken() throws PluginException, InterruptedException {
@@ -69,7 +66,6 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
             link.addPluginProgress(progress);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             final AreYouAHumanChallenge challenge = new AreYouAHumanChallenge(apiKey, getPlugin()) {
-
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                     if (insideAccountChecker) {
@@ -105,7 +101,7 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                     return null;
                 }
             };
-            challenge.setTimeout(getPlugin().getCaptchaTimeout());
+            challenge.setTimeout(getPlugin().getCaptchaTimeout(c));
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use antiCaptcha services
@@ -150,7 +146,6 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
-
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(link.getParentNode()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
