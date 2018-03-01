@@ -27,7 +27,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 
 public class CaptchaHelperCrawlerPluginConfidentCaptcha extends AbstractCaptchaHelperConfidentCaptcha<PluginForDecrypt> {
-
     public CaptchaHelperCrawlerPluginConfidentCaptcha(final PluginForDecrypt plugin, final Browser br, final String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -51,14 +50,12 @@ public class CaptchaHelperCrawlerPluginConfidentCaptcha extends AbstractCaptchaH
         final LinkCrawler currentCrawler = plugin.getCrawler();
         final CrawledLink currentOrigin = plugin.getCurrentLink().getOriginLink();
         ConfidentCaptchaChallenge c = new ConfidentCaptchaChallenge(plugin, sitekey) {
-
             @Override
             public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                 return null;
             }
         };
-        int ct = plugin.getCaptchaTimeout();
-        c.setTimeout(ct);
+        c.setTimeout(plugin.getCaptchaTimeout(c));
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
@@ -109,5 +106,4 @@ public class CaptchaHelperCrawlerPluginConfidentCaptcha extends AbstractCaptchaH
         }
         return c.getResult().getValue();
     }
-
 }

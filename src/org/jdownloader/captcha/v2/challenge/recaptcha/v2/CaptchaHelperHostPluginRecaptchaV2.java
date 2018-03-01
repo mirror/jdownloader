@@ -85,7 +85,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             final RecaptchaV2Challenge c = createChallenge();
             try {
-                c.setTimeout(plugin.getCaptchaTimeout());
+                c.setTimeout(plugin.getCaptchaTimeout(c));
                 if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                     // coalado: discuss why. FilePackage.isDefaultFilePackage(link.getFilePackage()) is triggered for captchas during online
                     // check es well

@@ -688,7 +688,9 @@ public class HLSDownloader extends DownloadInterface {
             }
         }
         applyBitStreamFilter(l, format, ffmpeg);
-        l.add("-c");
+        l.add("-c:v");
+        l.add("copy");
+        l.add("-c:a");
         l.add("copy");
         l.add("-f");
         l.add(format);

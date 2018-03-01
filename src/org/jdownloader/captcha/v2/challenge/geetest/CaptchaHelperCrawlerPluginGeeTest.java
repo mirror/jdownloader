@@ -25,10 +25,8 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 
 public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeTest<PluginForDecrypt> {
-
     public CaptchaHelperCrawlerPluginGeeTest(PluginForDecrypt plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
-
     }
 
     public CaptchaHelperCrawlerPluginGeeTest(PluginForDecrypt plugin, Browser br) {
@@ -46,19 +44,15 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AreYouAHuman API Key can not be found");
             }
         }
-
         final LinkCrawler currentCrawler = getPlugin().getCrawler();
         final CrawledLink currentOrigin = getPlugin().getCurrentLink().getOriginLink();
-
         GeeTestChallenge c = new GeeTestChallenge(apiKey, getPlugin()) {
-
             @Override
             public BrowserViewport getBrowserViewport(BrowserWindow screenResource, java.awt.Rectangle elementBounds) {
                 return null;
             }
-
         };
-        c.setTimeout(getPlugin().getCaptchaTimeout());
+        c.setTimeout(getPlugin().getCaptchaTimeout(c));
         getPlugin().invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
@@ -111,5 +105,4 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
             throw new CaptchaException(e.getSkipRequest());
         }
     }
-
 }

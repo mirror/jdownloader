@@ -2,16 +2,6 @@ package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
 import java.awt.Rectangle;
 
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.blacklist.BlacklistEntry;
-import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
-import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
-import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
-import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
-
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
@@ -25,6 +15,16 @@ import jd.plugins.DecrypterException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.blacklist.BlacklistEntry;
+import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
+import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 
 public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForDecrypt> {
     public CaptchaHelperCrawlerPluginSweetCaptcha(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String apiKey) {
@@ -60,8 +60,7 @@ public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelpe
                 return null;
             }
         };
-        int ct = plugin.getCaptchaTimeout();
-        c.setTimeout(ct);
+        c.setTimeout(plugin.getCaptchaTimeout(c));
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
