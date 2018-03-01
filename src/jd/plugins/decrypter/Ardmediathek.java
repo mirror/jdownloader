@@ -402,7 +402,10 @@ public class Ardmediathek extends PluginForDecrypt {
         /* These RegExes should be compatible with all websites */
         /* Date is already provided in the format we need. */
         String date = null;
-        this.date_formatted = br.getRegex("<meta property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/>").getMatch(0);
+        this.date_formatted = br.getRegex("<meta property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
+        if (date_formatted == null) {
+            date_formatted = br.getRegex("<span itemprop=\"datePublished\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
+        }
         String description = br.getRegex("<meta property=\"og:description\" content=\"([^\"]+)\"").getMatch(0);
         final String host = br.getHost();
         if (jsonSchemaOrg != null) {
