@@ -1424,8 +1424,10 @@ public class YoutubeHelper {
         if (StringUtils.isEmpty(sts)) {
             sts = "";
         }
-        apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US");
-        collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
+        if (unavailableReason == null || !StringUtils.equals(unavailableReason, "Sign in to confirm your age")) {
+            apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US");
+            collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
+        }
         if (fmtMaps.size() == 0) {
             apiBrowser = br.cloneBrowser();
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);

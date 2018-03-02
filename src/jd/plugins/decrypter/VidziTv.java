@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -40,18 +39,17 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.(tv|cc)/((vid)?embed\\-)?[a-z0-9]{12}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.(tv|cc|si)/((vid)?embed\\-)?[a-z0-9]{12}" })
 public class VidziTv extends antiDDoSForDecrypt {
-
     public VidziTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace(".cc", ".tv");
+        final String parameter = param.toString().replace(".cc", ".si").replace(".tv", ".si");
         // add video link
-        decryptedLinks.add(createDownloadlink(parameter.replace("vidzi.tv", "vidzidecrypted.tv")));
+        decryptedLinks.add(createDownloadlink(parameter.replace("vidzi.si", "vidzidecrypted.tv")));
         // default is to only want video, so we can can return decrypted fast without the need to page get
         if (!this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.VidziTv.DownloadSubTitles, jd.plugins.hoster.VidziTv.DownloadSubTitles_default)) {
             return decryptedLinks;
@@ -103,22 +101,18 @@ public class VidziTv extends antiDDoSForDecrypt {
 
     private String getSubtitleSource(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
@@ -129,5 +123,4 @@ public class VidziTv extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
