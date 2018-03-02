@@ -142,6 +142,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
                     ((jd.plugins.hoster.SoundcloudCom) hostPlugin).login(this.br, accs.get(0), false);
                 } catch (final PluginException e) {
+                    logger.log(e);
                 }
             }
             try {
@@ -220,6 +221,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     throw e;
                 }
             } catch (final BrowserException e) {
+                logger.log(e);
                 logger.info("Link offline (BrowserException): " + parameter);
                 final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 dl.setAvailable(false);
