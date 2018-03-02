@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -38,7 +37,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de", "kabeleinsdoku.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?7tv\\.(?:de|at|ch)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?kabeleinsdoku\\.(?:de|at|ch)/.+" })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
-
     public ProSevenDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,7 +58,10 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             date = br.getRegex("property=\"og:modified_time\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
         final String brand = new Regex(parameter, "https?://(?:www\\.)?([^<>\"/]*?)\\.(?:de|at|ch)/").getMatch(0);
-        final String json = this.br.getRegex("var contentResources = (\\[.+\\]);").getMatch(0);
+        String json = this.br.getRegex("var contentResources?\\s*=\\s*(\\[.+\\]);").getMatch(0);
+        if (json == null) {
+            json = this.br.getRegex("\"contentResources?\"\\s*:\\s*(\\[.+\\])").getMatch(0);
+        }
         String fpName = br.getRegex("itemprop=\"title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
             fpName = new Regex(parameter, "([^/]+)/?$").getMatch(0);
@@ -76,7 +77,6 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         if (ressources == null) {
             return null;
         }
-
         for (final Object video_o : ressources) {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) video_o;
             /* E.g. skip invalid ContentType 'live'. */
@@ -91,7 +91,6 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             if (formatName != null && formatName.length() > 0) {
                 filename += "_" + formatName;
             }
-
             /* E.g. http://www.7tv.de/big-brother/161-staffel-1-episode-61-big-brother-tag-60-teil-2-ganze-folge */
             Regex seriesinfo = new Regex(title, "(Staffel (\\d+) Episode (\\d+): )");
             String delete_me = seriesinfo.getMatch(0);
@@ -126,10 +125,8 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
                 /* In some rare cases title will be "" after we remove season- and episodenumbers from it ... */
                 filename += " - " + title;
             }
-
             /* Even though the data comes from json it might be htmlencoded sometimes - let's fix that! */
             filename = Encoding.htmlDecode(filename);
-
             filename = encodeUnicode(filename) + ".mp4";
             final DownloadLink dl = this.createDownloadlink("http://7tvdecrypted.de/" + videoid);
             dl.setProperty("decrypter_filename", filename);
@@ -139,11 +136,9 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             dl.setContentUrl(parameter);
             decryptedLinks.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -179,5 +174,4 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             return false;
         }
     }
-
 }
