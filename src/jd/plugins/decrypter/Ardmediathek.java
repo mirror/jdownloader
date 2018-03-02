@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -40,6 +41,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
@@ -648,6 +651,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
             }
             /* Access HLS master to find correct resolution for each ID (the only possible way) */
+            final HashMap<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             br.getPage("http:" + hls_master);
             final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
             final String[] qualities = quality_string != null ? quality_string.split(",") : null;
@@ -671,7 +675,73 @@ public class Ardmediathek extends PluginForDecrypt {
                     addQuality(final_url, null, Integer.parseInt(width), Integer.parseInt(height));
                 }
             } else {
-                logger.warning("Failed to find http urls; adding hls only");
+                final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
+                for (Map<String, Object> media : mediaArray) {
+                    List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
+                    for (Map<String, Object> mediaStream : mediaStreamArray) {
+                        final String stream;
+                        if (mediaStream.get("_stream") instanceof String) {
+                            stream = (String) mediaStream.get("_stream");
+                        } else {
+                            stream = ((List<String>) mediaStream.get("_stream")).get(0);
+                        }
+                        if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
+                            continue;
+                        }
+                        final String url = br.getURL(stream).toString();
+                        final Object quality = mediaStream.get("_quality");
+                        if (!(quality instanceof Number)) {
+                            continue;
+                        }
+                        final Object width = mediaStream.get("_width");
+                        final Object height = mediaStream.get("_height");
+                        final int widthInt;
+                        if (width instanceof Number) {
+                            widthInt = ((Number) width).intValue();
+                        } else {
+                            switch (((Number) quality).intValue()) {
+                            case 0:
+                                widthInt = 320;
+                                break;
+                            case 1:
+                                widthInt = 512;
+                                break;
+                            case 2:
+                                widthInt = 640;
+                                break;
+                            case 3:
+                                widthInt = 1280;
+                                break;
+                            default:
+                                widthInt = -1;
+                                break;
+                            }
+                        }
+                        final int heightInt;
+                        if (width instanceof Number) {
+                            heightInt = ((Number) height).intValue();
+                        } else {
+                            switch (((Number) quality).intValue()) {
+                            case 0:
+                                heightInt = 180;
+                                break;
+                            case 1:
+                                heightInt = 288;
+                                break;
+                            case 2:
+                                heightInt = 360;
+                                break;
+                            case 3:
+                                heightInt = 720;
+                                break;
+                            default:
+                                heightInt = -1;
+                                break;
+                            }
+                        }
+                        addQuality(url, null, widthInt, heightInt);
+                    }
+                }
             }
             addHLS(br, hls_master);
         }
