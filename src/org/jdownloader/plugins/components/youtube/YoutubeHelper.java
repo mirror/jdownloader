@@ -987,6 +987,9 @@ public class YoutubeHelper {
 
     private String ensurePlayerSource() throws IOException {
         if (html5PlayerSource == null) {
+            if (html5PlayerJs == null) {
+                throw new IOException("no html5 player js");
+            }
             html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
         }
         return html5PlayerSource;
@@ -1395,13 +1398,13 @@ public class YoutubeHelper {
             html5PlayerJs = br.getURL(html5PlayerJs).toString();
         }
         if (html5PlayerJs == null) {
-            html5PlayerJs = br.getMatch("src=\"//([^\"<>]*?/base.js)\" name=\"player\\/base\"");
+            html5PlayerJs = br.getMatch("src=\"((https?:)?//[^\"<>]*?/base.js)\"[^<>]*name=\"player\\\\?/base");
             if (html5PlayerJs != null) {
                 html5PlayerJs = br.getURL(html5PlayerJs).toString();
             }
         }
         if (html5PlayerJs == null) {
-            html5PlayerJs = br.getMatch("src=\"([^\"<>]*?/base.js)\" n");
+            html5PlayerJs = br.getMatch("src=\"([^\"<>]*?/base.js)\"[^<>]*n");
             if (html5PlayerJs != null) {
                 html5PlayerJs = br.getURL(html5PlayerJs).toString();
             }
