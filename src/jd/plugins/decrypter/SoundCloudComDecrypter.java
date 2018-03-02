@@ -206,6 +206,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final DecrypterException e) {
+                logger.log(e);
                 if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKINVALID)) {
                     return decryptedLinks;
                 } else if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
