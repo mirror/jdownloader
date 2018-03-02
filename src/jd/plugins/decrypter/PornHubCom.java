@@ -72,11 +72,9 @@ public class PornHubCom extends PluginForDecrypt {
             }
         }
         if (premium) {
-            // logger.info("Debug info: Premium account");
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter.replace("pornhub.com", "pornhubpremium.com"));
-        } else {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
         }
+        jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.containsHTML("class=\"g-recaptcha\"")) {
             final Form form = br.getFormByInputFieldKeyValue("captchaType", "1");
             logger.info("Detected captcha method \"reCaptchaV2\" for this host");
