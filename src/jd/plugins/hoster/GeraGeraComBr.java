@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -16,6 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -36,6 +38,11 @@ public class GeraGeraComBr extends PluginForHost {
         return "https://geragera.com.br/termos-de-uso";
     }
 
+    private boolean isCookieSet(Browser br, String key) {
+        final String value = br.getCookie(getHost(), key);
+        return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
+    }
+
     private void login(final Account account) throws Exception {
         synchronized (account) {
             try {
@@ -45,16 +52,16 @@ public class GeraGeraComBr extends PluginForHost {
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
                     br.getPage("https://geragera.com.br");
-                    if (br.getCookie(COOKIE_HOST, "cm_auth") == null) {
-                        account.clearCookies("");
-                    } else {
+                    if (isCookieSet(br, "_cidsFG") && isCookieSet(br, "_cidFG")) {
                         account.saveCookies(br.getCookies(getHost()), "");
                         return;
+                    } else {
+                        account.clearCookies("");
                     }
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://geragera.com.br/login", "email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()) + "&lembrar=1&login=1&entrar=ENTRAR");
-                if (br.getCookie(COOKIE_HOST, "cm_auth") == null) {
+                if (!isCookieSet(br, "_cidsFG") || !isCookieSet(br, "_cidFG")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
