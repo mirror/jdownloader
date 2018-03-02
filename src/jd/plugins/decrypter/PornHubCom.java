@@ -73,7 +73,7 @@ public class PornHubCom extends PluginForDecrypt {
         }
         if (premium) {
             // logger.info("Debug info: Premium account");
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter.replace("pornhub", "pornhubpremium"));
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter.replace("pornhub.com", "pornhubpremium.com"));
         } else {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
