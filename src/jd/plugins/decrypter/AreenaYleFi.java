@@ -16,6 +16,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "areena.yle.fi" }, urls = { "https?://(?:www\\.)?areena\\.yle\\.fi/\\d+-\\d+" })
 public class AreenaYleFi extends PluginForDecrypt {
+    // different sites with different layout. some sites have downloads, some use m3u8, some use f4m, some html5, others flash.....
     public AreenaYleFi(PluginWrapper wrapper) {
         super(wrapper);
     }
