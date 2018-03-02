@@ -791,8 +791,10 @@ public class AbstractFFmpegBinary {
                     }
                 }
                 try {
-                    final String lastStderr;
-                    final int stderrSize;
+                    String lastStderr;
+                    String lastStdout;
+                    int stderrSize;
+                    int stdoutSize;
                     synchronized (stderr) {
                         stderrSize = stderr.size();
                         if (lastNonEmptyStderr != null) {
@@ -801,8 +803,6 @@ public class AbstractFFmpegBinary {
                             lastStderr = stderr.toString("UTF-8");
                         }
                     }
-                    final String lastStdout;
-                    final int stdoutSize;
                     synchronized (stdout) {
                         lastStdout = stdout.toString("UTF-8");
                         stdoutSize = stdout.size();
@@ -811,6 +811,19 @@ public class AbstractFFmpegBinary {
                     if (stdoutThread.isAlive()) {
                         logger.info("Wait for Reader:" + stdoutThread);
                         stdoutThread.join(100);
+                    }
+                    // update lastStderr and lastStdout
+                    synchronized (stderr) {
+                        stderrSize = stderr.size();
+                        if (lastNonEmptyStderr != null) {
+                            lastStderr = lastNonEmptyStderr + stderr.toString("UTF-8");
+                        } else {
+                            lastStderr = stderr.toString("UTF-8");
+                        }
+                    }
+                    synchronized (stdout) {
+                        lastStdout = stdout.toString("UTF-8");
+                        stdoutSize = stdout.size();
                     }
                     logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
                     logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
