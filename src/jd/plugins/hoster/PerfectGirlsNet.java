@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -47,7 +45,7 @@ public class PerfectGirlsNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -61,7 +59,16 @@ public class PerfectGirlsNet extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("").getMatch(0);
         }
-        dllink = br.getRegex("<source src=\"([^<>\"]+)\" res=\"480\"").getMatch(0);
+        String[] reses = { "720", "480", "360" };
+        for (String res : reses) {
+            dllink = br.getRegex("<source src=\"([^<>\"]+)\" res=\"" + res + "\"").getMatch(0);
+            if (dllink != null) {
+                checkDllink(downloadLink, dllink);
+            }
+            if (dllink != null) {
+                break;
+            }
+        }
         if (dllink == null) {
             dllink = br.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
         }
@@ -72,24 +79,29 @@ public class PerfectGirlsNet extends PluginForHost {
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        return AvailableStatus.TRUE;
+    }
+
+    private String checkDllink(final DownloadLink link, final String flink) throws Exception {
         final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openHeadConnection(flink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = flink;
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                dllink = null;
             }
-            return AvailableStatus.TRUE;
+        } catch (final Throwable e) {
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return dllink;
     }
 
     @Override
