@@ -83,7 +83,7 @@ public class RedTubeCom extends PluginForHost {
         if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("class=\"video-deleted-info\"")) {
+        if (br.containsHTML("class=\"video-deleted-info\"") || br.containsHTML("class=\"unavailable_text\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
