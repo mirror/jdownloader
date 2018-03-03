@@ -16,6 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -59,7 +65,7 @@ public class PornTubeCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -68,17 +74,41 @@ public class PornTubeCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\"|>\\s*This video is no longer available\\s*<)") || br.getURL().contains("error=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
-        }
-        final String mediaID = getMediaid(br);
-        String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(1);
-        logger.info("availablequalities: " + availablequalities);
-        if (availablequalities != null) {
-            availablequalities = availablequalities.replace(",", "+");
+        String initialState = br.getRegex("window.INITIALSTATE = '([^']+)'").getMatch(0);
+        String filename = null;
+        String mediaID = null;
+        String availablequalities = null;
+        if (initialState == null) {
+            filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+            }
+            mediaID = getMediaid(br);
+            availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(1);
+            logger.info("availablequalities: " + availablequalities);
+            if (availablequalities != null) {
+                availablequalities = availablequalities.replace(",", "+");
+            } else {
+                availablequalities = "1080+720+480+360+240";
+            }
         } else {
-            availablequalities = "1080+720+480+360+240";
+            String json = Encoding.htmlDecode(Encoding.Base64Decode(initialState));
+            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            filename = (String) JavaScriptEngineFactory.walkJson(entries, "page/video/title");
+            mediaID = String.valueOf(JavaScriptEngineFactory.walkJson(entries, "page/video/mediaId"));
+            List<Map<String, Object>> encodings = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "page/video/encodings");
+            List<Integer> enc = new ArrayList<Integer>();
+            for (Map<String, Object> encoding : encodings) {
+                enc.add((Integer) encoding.get("height"));
+            }
+            Collections.sort(enc, Collections.reverseOrder());
+            StringBuilder sb = new StringBuilder();
+            for (int h : enc) {
+                sb.append(String.valueOf(h));
+                sb.append("+");
+            }
+            sb.delete(sb.length() - 1, sb.length());
+            availablequalities = sb.toString();
         }
         if (mediaID == null || filename == null) {
             logger.info("mediaID: " + mediaID + ", filename: " + filename);
