@@ -385,6 +385,11 @@ public class UpToBoxCom extends antiDDoSForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
+            if (correctedBR.contains("Hot linking is not allowed")) {
+                dllink = null;
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hot linking is not allowed", 30 * 60 * 1000l);
+            }
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -799,7 +804,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                 }
                 getPage("/?op=my_account");
-                if (!new Regex(correctedBR, "class=\"premium_time\"").matches()) {
+                if (!new Regex(correctedBR, ">Premium account expiration date :").matches()) {
                     account.setType(AccountType.FREE);
                 } else {
                     account.setType(AccountType.PREMIUM);
