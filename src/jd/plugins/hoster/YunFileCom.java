@@ -327,7 +327,7 @@ public class YunFileCom extends PluginForHost {
                 br.setCookie(br.getURL(), "language", language);
                 br.getPage(br.getURL());
                 final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
-                for (String dllink : br.getRegex("\"(https?://dl\\d+\\." + DOMAINS + "/downfile/[^<>\"]*?)\"").getColumn(0)) {
+                for (String dllink : br.getRegex("\"(https?://[^/]+/downfile/[^<>\"]*?)\"").getColumn(0)) {
                     dllinkVidMap.put(dllink, vid1);
                 }
                 if (dllinkVidMap.size() == 0) { // try to login if not found
