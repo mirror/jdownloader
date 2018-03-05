@@ -348,7 +348,6 @@ public class GoogleDrive extends PluginForHost {
             maxChunks = 1;
         }
         final Set<String> loopCheck = new HashSet<String>();
-        loopCheck.add(dllink);
         while (true) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (!dl.getConnection().isContentDisposition() || (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
