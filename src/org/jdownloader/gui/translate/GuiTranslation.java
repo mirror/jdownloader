@@ -6571,9 +6571,39 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(PAID) Fully automated remote Captcha Solving" })
     String AntiCaptchaCom_getName_();
 
-    @Default(lngs = { "en" }, values = { "<b><p style='color:#ff0000'>To solve this kind of captcha, you have to use either the <a href='https://my.jdownloader.org/apps' target='_blank'>Android app via 'my.jdownloader'</a>, or our <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader browser extension. (Please note: a My.JDownloader is NOT required!)</a></p></b>" })
-    String extension_required();
+    @Default(lngs = { "en" }, values = { "This captcha is harder to solve than others. JDownloader needs help from our browser extension to continue." })
+    String extension_required_description();
 
-    @Default(lngs = { "en" }, values = { "<p>To get more readable and better solvable captchas, we strongly recommend to install the official <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader Browser extension. (Please note: a My.JDownloader is NOT required!)</a></p>" })
-    String extension_recommended();
+    @Default(lngs = { "en" }, values = { "Browser Extension Needed" })
+    String extension_required_header();
+
+    @Default(lngs = { "en" }, values = { "Download Browser Extension" })
+    String extension_required_link_title();
+
+    @Default(lngs = { "en" }, values = { "What's happening?" })
+    String extension_help_header();
+
+    @Default(lngs = { "en" }, values = { "wants you to solve a captcha. Only after solving this captcha, you are allowed to continue with your downloads. JDownloader is not able to auto-solve these captchas, so we need to pass the captcha to you." })
+    String extension_help_description();
+
+    @Default(lngs = { "en" }, values = { "Do you need help?" })
+    String extension_support_header();
+
+    @Default(lngs = { "en" }, values = { "Sometimes these captchas are hard to solve. But there are ways to improve your experience!" })
+    String extension_support_description();
+
+    @Default(lngs = { "en" }, values = { "Find out more" })
+    String extension_help_description_link_title();
+
+    @Default(lngs = { "en" }, values = { "Find out more" })
+    String extension_support_link_title();
+
+    @Default(lngs = { "en" }, values = { "Captcha For:" })
+    String recaptchav2_header();
+
+    @Default(lngs = { "en" }, values = { "New Captcha!" })
+    String recaptchav2_head_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader needs your help with solving a captcha" })
+    String recaptchav2_head_description();
 }
