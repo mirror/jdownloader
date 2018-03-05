@@ -94,19 +94,23 @@ public class UseNetNL extends UseNet {
             final String currentPlan = br.getRegex("My usenet.nl plan:</td>\\s*<td>\\s*(.*?)\\s*</td>").getMatch(0);
             final String validUntil = br.getRegex("Contract valid until:</td>\\s*<td>\\s*(\\d+\\s*/\\s*\\d+\\s*/\\s*\\d+)\\s*</td>").getMatch(0);
             final String accountStatus = br.getRegex("Account status:\\s*</strong>\\s*\\<br />\\s*<span.*?>\\s*(.*?)\\s*</span>").getMatch(0);
-            if ("OK".equals(accountStatus) && validUntil != null) {
-                ai.setStatus("Your usenet.nl plan: " + currentPlan);
+            if (validUntil != null) {
                 final long date = TimeFormatter.getMilliSeconds(validUntil.replace(" ", ""), "MM'/'dd'/'yyyy", null);
                 if (date > 0) {
                     ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
+                    if (!ai.isExpired()) {
+                        if (currentDownloadVolume != null) {
+                            ai.setTrafficLeft(currentDownloadVolume);
+                        }
+                        account.setMaxSimultanDownloads(16);
+                        if (currentPlan != null) {
+                            ai.setStatus("Plan:" + currentPlan);
+                        }
+                        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+                        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+                        return ai;
+                    }
                 }
-                if (currentDownloadVolume != null) {
-                    ai.setTrafficLeft(currentDownloadVolume);
-                }
-                account.setMaxSimultanDownloads(16);
-                ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
-                return ai;
             }
             if (accountStatus != null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Accountstatus: " + accountStatus, PluginException.VALUE_ID_PREMIUM_DISABLE);
