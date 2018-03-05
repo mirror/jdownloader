@@ -8,10 +8,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -41,6 +37,10 @@ import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -576,15 +576,28 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         try {
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
+            html = html.replace("%%%headTitle%%%", _GUI.T.recaptchav2_head_title());
+            html = html.replace("%%%headDescription%%%", _GUI.T.recaptchav2_head_description());
+            html = html.replace("%%%captchaHeader%%%", _GUI.T.recaptchav2_header());
+            html = html.replace("%%%helpHeader%%%", _GUI.T.extension_help_header());
+            html = html.replace("%%%helpDescription%%%", _GUI.T.extension_help_description());
+            html = html.replace("%%%helpDescriptionLinkTitle%%%", _GUI.T.extension_help_description_link_title());
+            html = html.replace("%%%extensionSupportHeader%%%", _GUI.T.extension_support_header());
+            html = html.replace("%%%extensionSupportDescription%%%", _GUI.T.extension_support_description());
+            html = html.replace("%%%extensionSupportLinkTitle%%%", _GUI.T.extension_support_link_title());
+            html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
-            html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             if (isBoundToDomain()) {
                 html = html.replace("%%%display%%%", "none");
-                html = html.replace("%%%no_extension%%%", _GUI.T.extension_required());
+                html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
+                html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
+                html = html.replace("%%%noExtensionLinkTitle%%%", _GUI.T.extension_required_link_title());
             } else {
                 html = html.replace("%%%display%%%", "block");
-                html = html.replace("%%%no_extension%%%", _GUI.T.extension_recommended());
+                html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
+                html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
+                html = html.replace("%%%noExtensionLinkTitle%%%", _GUI.T.extension_required_link_title());
             }
             html = html.replace("%%%session%%%", id);
             html = html.replace("%%%challengeId%%%", Long.toString(getId().getID()));
