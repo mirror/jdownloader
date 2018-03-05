@@ -33,8 +33,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+|(?:www\\.)?vsco\\.co/\\w+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+)" })
 public class VscoCo extends PluginForDecrypt {
+
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -114,7 +115,7 @@ public class VscoCo extends PluginForDecrypt {
     private String getUsername(final String parameter) {
         final String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
         if (username == null) {
-            return new Regex(parameter, "vsco\\.co/([a-zA-Z0-9]+)").getMatch(0);
+            return new Regex(parameter, "vsco\\.co/([\\w-]+)").getMatch(0);
         } else {
             return username;
         }
