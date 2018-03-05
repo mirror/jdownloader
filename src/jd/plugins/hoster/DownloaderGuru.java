@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,12 +45,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class DownloaderGuru extends PluginForHost {
+
     private static final String                            API_ENDPOINT         = "http://www.downloader.guru/";
     private static final String                            NICE_HOST            = "downloader.guru";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -186,6 +187,7 @@ public class DownloaderGuru extends PluginForHost {
                 con.disconnect();
             }
             downloadable = new DownloadLinkDownloadable(link) {
+
                 @Override
                 public boolean isHashCheckEnabled() {
                     return false;
@@ -243,8 +245,8 @@ public class DownloaderGuru extends PluginForHost {
             }
         }
         /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-         * needed to get the individual host limits.
+         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is needed to
+         * get the individual host limits.
          */
         synchronized (CTRLLOCK) {
             if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
@@ -334,9 +336,9 @@ public class DownloaderGuru extends PluginForHost {
             ai.setStatus("Registered (free) account");
             account.setConcurrentUsePossible(false);
             /*
-             * 2016-06-16: When logged in, top right corner says "No Traffic" while there is a list of "Free Trial Hosters". I've tested 4
-             * of them but when sending the links to download, the error "You are out of Traffic!" will come up. I guess it's safe to say
-             * that Free Accounts have no traffic.
+             * 2016-06-16: When logged in, top right corner says "No Traffic" while there is a list of "Free Trial Hosters". I've tested 4 of them but
+             * when sending the links to download, the error "You are out of Traffic!" will come up. I guess it's safe to say that Free Accounts have no
+             * traffic.
              */
             ai.setTrafficLeft(0);
         }
@@ -470,7 +472,7 @@ public class DownloaderGuru extends PluginForHost {
      */
     private void updatestatuscode() {
         final String errormessage = PluginJSonUtils.getJsonValue(this.br, "errormessage");
-        if (errormessage != null) {
+        if (errormessage != null && !"".equals(errormessage)) {
             if (errormessage.equalsIgnoreCase("You are out of Traffic!")) {
                 statuscode = 1;
             } else {
