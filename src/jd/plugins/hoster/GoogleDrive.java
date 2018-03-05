@@ -15,6 +15,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -344,22 +347,30 @@ public class GoogleDrive extends PluginForHost {
         if (downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) || !resume) {
             maxChunks = 1;
         }
+        final Set<String> loopCheck = new HashSet<String>();
+        loopCheck.add(dllink);
         while (true) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
-            if (dl.getConnection().getContentType().equals("text/html") && !dl.getConnection().isContentDisposition()) {
+            if (!dl.getConnection().isContentDisposition() || (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
                 if (dl.getConnection().getResponseCode() == 416) {
                     dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
                 }
-                br.followConnection();
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
                     // dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
                     dllink = br.getRegex("href=\"((/a/.*?/)?/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0); // w/ account
-                    if (dllink == null) {
+                    if (dllink == null || !loopCheck.add(dllink)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        dllink = HTMLEntities.unhtmlentities(dllink);
+                        continue;
                     }
-                    dllink = HTMLEntities.unhtmlentities(dllink);
-                    continue;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
