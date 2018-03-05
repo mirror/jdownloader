@@ -588,8 +588,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                  * eg subscriptions
                  */
                 getPage("/Payment/Payment");
-                // expireDate = br.getRegex("style=\"width:60px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
-                expireDate = br.getRegex("style=\"width.*?style=\"width.*?style=\"width.*?>([^<>\"]*?)<").getMatch(0);
+                expireDate = br.getRegex("\\d+\\s*</td>\\s*<td style=\"width.*?>(\\d{4}-\\d{2}-\\d{2})<").getMatch(0);
             }
             if (expireDate == null) {
                 logger.warning("Could not find expire date!");
@@ -970,9 +969,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
