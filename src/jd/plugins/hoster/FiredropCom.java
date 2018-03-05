@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -51,7 +50,6 @@ import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firedrop.com" }, urls = { "https?://(?:www\\.)?(?:firedrop\\.com|frd\\.li)/[A-Za-z0-9]+" })
 public class FiredropCom extends PluginForHost {
-
     public FiredropCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -65,7 +63,6 @@ public class FiredropCom extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other: domain before: cloudstor.es
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -93,18 +90,16 @@ public class FiredropCom extends PluginForHost {
     private static final String  errortext_ERROR_SERVER                       = "Server error";
     private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
     private static final int     free_MAXCHUNKS                               = 1;
-    private static final int     free_MAXDOWNLOADS                            = 20;
+    private static final int     free_MAXDOWNLOADS                            = 1;
     private static final boolean account_FREE_RESUME                          = true;
     private static final int     account_FREE_MAXCHUNKS                       = 1;
     private static final int     account_FREE_MAXDOWNLOADS                    = 20;
     private static final boolean account_PREMIUM_RESUME                       = true;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
-
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
@@ -632,5 +627,4 @@ public class FiredropCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
