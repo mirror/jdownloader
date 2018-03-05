@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -143,7 +144,8 @@ public class RapidoxPl extends PluginForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            this.postAPISafe("http://rapidox.pl/panel/pobierz-plik", "check_links=" + Encoding.urlEncode(link.getDownloadURL()));
+            final String downloadURL = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+            this.postAPISafe("http://rapidox.pl/panel/pobierz-plik", "check_links=" + Encoding.urlEncode(downloadURL));
             final String requestId = br.getRegex("rapidox.pl/panel/pobierz\\-plik/(\\d+)").getMatch(0);
             if (requestId == null) {
                 handleErrorRetries("requestIdnull", 5, 2 * 60 * 1000l);
@@ -164,6 +166,7 @@ public class RapidoxPl extends PluginForHost {
             /* Modify name so we can actually find our final downloadlink. */
             String fname = link.getName();
             fname = fname.replace(" ", "_");
+            fname = fname.replace("'", "");
             fname = fname.replaceAll("(;|\\&)", "");
             fname = fname.replaceAll("ä", "a").replaceAll("Ä", "A");
             fname = fname.replaceAll("ü", "u").replaceAll("Ü", "U");
@@ -175,11 +178,14 @@ public class RapidoxPl extends PluginForHost {
                 this.sleep(wait_between_reload * 1000l, link);
                 this.getAPISafe("/panel/lista-plikow");
                 /* TODO: Maybe find a more reliable way to get the final downloadlink... */
-                final String[] alldirectlinks = br.getRegex("\"(http://[a-z0-9]+\\.rapidox\\.pl/[A-Za-z0-9]+/[^<>\"]*?)\"").getColumn(0);
-                if (alldirectlinks != null && alldirectlinks.length > 1) {
-                    for (final String directlink : alldirectlinks) {
-                        if (directlink.contains(fname)) {
-                            dllink = directlink;
+                final String[][] results = br.getRegex("<span title=\"(https?://.*?)\">(.*?)</span>.*?<a href=\"(https?://[a-z0-9]+\\.rapidox\\.pl/[A-Za-z0-9]+/[^<>\"]*?)\"").getMatches();
+                if (results != null && results.length >= 1) {
+                    for (final String[] result : results) {
+                        if (StringUtils.equals(downloadURL, result[0])) {
+                            dllink = result[2];
+                            break;
+                        } else if (StringUtils.equals(fname, result[1])) {
+                            dllink = result[2];
                             break;
                         }
                     }
