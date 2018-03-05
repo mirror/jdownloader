@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,7 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|static|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
 public class BeegCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
