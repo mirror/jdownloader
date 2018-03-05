@@ -309,11 +309,10 @@ public class RapiduNet extends PluginForHost {
                     MAXCHUNKSFORPREMIUM = -1 * Integer.parseInt(downloadLimit);
                 }
             }
-            br.setFollowRedirects(true);
-            br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
+            br.setFollowRedirects(false);// disable because of server bug (redirect loop)
+            response = br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
             // response
             // (string) [fileLocation] - Lokalizacja pliku ( link ważny jest 24h od momentu wygenerowania )
-            response = br.toString();
             String errors = checkForErrors(response, "error");
             // errorEmptyLoginOrPassword - Brak parametru Login lub Password
             // errorAccountNotFound - Konto użytkownika nie zostało znalezione
@@ -326,7 +325,9 @@ public class RapiduNet extends PluginForHost {
             if (errors != null) {
                 // probably it won't happen after changes in the API -
                 // getFileDownload now supports also Free Registered Users
-                if (errors.contains("errorAccountFree")) {
+                if (errors.contains("errorEmptyLoginOrPassword")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (errors.contains("errorAccountFree")) {
                     setLoginData(account);
                     doFree(downloadLink, "account_free");
                     return;
