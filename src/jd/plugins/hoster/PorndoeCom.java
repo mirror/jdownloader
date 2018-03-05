@@ -70,7 +70,7 @@ public class PorndoeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(this.br.getURL(), "/video/(.+)").getMatch(0);
-        String filename = br.getRegex("<h1 class=\"header\\-title\"[^<>]+\">([^<>\"]+)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1.*?>([^<>]+)</h1>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
