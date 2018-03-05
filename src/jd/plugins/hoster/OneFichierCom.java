@@ -750,16 +750,23 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicReference<String> lastSessionPassword = new AtomicReference<String>(null);
 
+    private Form getPasswordForm() throws Exception {
+        final Form ret = br.getFormbyKey("pass");
+        if (ret == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            ret.remove("save");
+            if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
+                ret.put("dl_no_ssl", "on");
+            }
+            return ret;
+        }
+    }
+
     private void handlePassword() throws Exception {
         synchronized (lastSessionPassword) {
             logger.info("This link seems to be password protected, continuing...");
-            Form pwForm = br.getFormbyKey("pass");
-            if (pwForm == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
-                pwForm.put("dl_no_ssl", "on");
-            }
+            Form pwForm = getPasswordForm();
             // if property is set use it over lastSessionPassword!
             String passCode = currDownloadLink.getDownloadPassword();
             if (passCode != null) {
@@ -769,9 +776,11 @@ public class OneFichierCom extends PluginForHost {
                     lastSessionPassword.set(passCode);
                     currDownloadLink.setDownloadPassword(passCode);
                     return;
+                } else {
+                    pwForm = getPasswordForm();
+                    // nullify stored password
+                    currDownloadLink.setDownloadPassword(null);
                 }
-                // nullify stored password
-                currDownloadLink.setDownloadPassword(null);
             }
             // next lastSessionPassword
             passCode = lastSessionPassword.get();
@@ -782,8 +791,10 @@ public class OneFichierCom extends PluginForHost {
                     lastSessionPassword.set(passCode);
                     currDownloadLink.setDownloadPassword(passCode);
                     return;
+                } else {
+                    pwForm = getPasswordForm();
+                    // do no nullify... as it could work for another link.
                 }
-                // do no nullify... as it could work for another link.
             }
             // last user input
             passCode = Plugin.getUserInput("Password?", currDownloadLink);
