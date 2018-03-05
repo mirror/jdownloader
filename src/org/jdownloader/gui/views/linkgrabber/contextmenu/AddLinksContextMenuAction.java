@@ -9,7 +9,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
 public class AddLinksContextMenuAction extends CustomizableTableContextAppAction {
-
     private static final long   serialVersionUID = 1901008532686173167L;
     private static final String NAME             = _GUI.T.AddLinksToLinkgrabberAction();
     private static final String TT               = _GUI.T.AddLinksAction_AddLinksAction_tt();
@@ -19,12 +18,10 @@ public class AddLinksContextMenuAction extends CustomizableTableContextAppAction
         setName(NAME);
         setIconKey(IconKey.ICON_ADD);
         setTooltipText(TT);
-        setAccelerator(KeyEvent.VK_O);
+        setAccelerator(KeyEvent.VK_L);
     }
 
     public void actionPerformed(ActionEvent e) {
         new AddLinksAction().actionPerformed(e);
-
     }
-
 }
