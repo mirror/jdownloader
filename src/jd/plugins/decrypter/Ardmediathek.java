@@ -28,21 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
@@ -56,8 +41,21 @@ import org.jdownloader.plugins.config.Type;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
-        "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html" })
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
+        "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
     /* Constants */
@@ -67,15 +65,38 @@ public class Ardmediathek extends PluginForDecrypt {
     private final HashMap<String, DownloadLink> foundQualitiesMap     = new HashMap<String, DownloadLink>();
     ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private final List<String>                  all_known_qualities   = Arrays.asList("http_0_720", "hls_0_720", "http_0_540", "hls_0_540", "http_0_360", "hls_0_360", "http_0_280", "hls_0_280", "http_0_270", "hls_0_270", "http_0_180", "hls_0_180");
-    private String                              subtitleLink          = null;
-    private String                              parameter             = null;
-    private String                              title                 = null;
-    private String                              date_formatted        = null;
-    private boolean                             grabHLS               = false;
+    private final List<String>                  all_known_qualities   = Arrays.asList("http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
+    private final Map<String, Long>             heigth_to_bitrate     = new HashMap<String, Long>();
+    {
+        heigth_to_bitrate.put("180", 189000l);
+        /* keep in mind that sometimes there are two versions for 270! This is the higher one (default)! */
+        heigth_to_bitrate.put("270", 448000l);
+        heigth_to_bitrate.put("280", 605000l);
+        heigth_to_bitrate.put("360", 1213000l);
+        heigth_to_bitrate.put("540", 1989000l);
+        heigth_to_bitrate.put("720", 3773000l);
+    }
+    private String  subtitleLink   = null;
+    private String  parameter      = null;
+    private String  title          = null;
+    private String  date_formatted = null;
+    private String  host           = null;
+    private boolean grabHLS        = false;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @PluginHost(host = "checkeins.de", type = Type.CRAWLER)
+    public static interface CheckeinsDeConfig extends ArdConfigInterface {
+    }
+
+    @PluginHost(host = "mdr.de", type = Type.CRAWLER)
+    public static interface MdrDeConfig extends ArdConfigInterface {
+    }
+
+    @PluginHost(host = "sputnik.de", type = Type.CRAWLER)
+    public static interface SputnikDeConfig extends ArdConfigInterface {
     }
 
     @PluginHost(host = "eurovision.de", type = Type.CRAWLER)
@@ -90,7 +111,7 @@ public class Ardmediathek extends PluginForDecrypt {
     public static interface NdrDeConfig extends ArdConfigInterface {
     }
 
-    @PluginHost(host = "sr-mediathek.sr-online.de", type = Type.CRAWLER)
+    @PluginHost(host = "sr-online.de", type = Type.CRAWLER)
     public static interface SrOnlineConfig extends ArdConfigInterface {
     }
 
@@ -114,7 +135,7 @@ public class Ardmediathek extends PluginForDecrypt {
     public static interface MediathekDasersteConfig extends ArdConfigInterface {
     }
 
-    @PluginHost(host = "daerste.de", type = Type.CRAWLER)
+    @PluginHost(host = "daserste.de", type = Type.CRAWLER)
     public static interface DasersteConfig extends ArdConfigInterface {
     }
 
@@ -151,6 +172,14 @@ public class Ardmediathek extends PluginForDecrypt {
 
             public String getAddUnknownQualitiesEnabled_label() {
                 return _JDT.T.lit_add_unknown_formats();
+            }
+
+            public String getGrabHLS270pLowerVideoEnabled_label() {
+                return "Grab hls 270p lower (bandwidth = 317000)";
+            }
+
+            public String getGrabHTTP270pLowerVideoEnabled_label() {
+                return "Grab http 270p lower (bandwidth = 317000)";
             }
         }
 
@@ -207,6 +236,12 @@ public class Ardmediathek extends PluginForDecrypt {
 
         @DefaultBooleanValue(false)
         @Order(41)
+        boolean isGrabHLS270pLowerVideoEnabled();
+
+        void setGrabHLS270pLowerVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(42)
         boolean isGrabHLS280pVideoEnabled();
 
         void setGrabHLS280pVideoEnabled(boolean b);
@@ -248,6 +283,12 @@ public class Ardmediathek extends PluginForDecrypt {
         void setGrabHTTP270pVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
+        @Order(101)
+        boolean isGrabHTTP270pLowerVideoEnabled();
+
+        void setGrabHTTP270pLowerVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
         @Order(110)
         boolean isGrabHTTP280pVideoEnabled();
 
@@ -278,26 +319,45 @@ public class Ardmediathek extends PluginForDecrypt {
         void setGrabHTTP720pVideoEnabled(boolean b);
     }
 
-    /** 2018-02-22: TODO: Update this to work fine for all supported websites/domains! */
     @Override
     public Class<? extends ArdConfigInterface> getConfigInterface() {
         if ("ardmediathek.de".equalsIgnoreCase(getHost())) {
             return ArdConfigInterface.class;
+        } else if ("mediathek.rbb-online.de".equalsIgnoreCase(getHost())) {
+            return MediathekRbbOnlineConfig.class;
+        } else if ("daserste.de".equalsIgnoreCase(getHost())) {
+            return DasersteConfig.class;
+        } else if ("mediathek.daserste.de".equalsIgnoreCase(getHost())) {
+            return MediathekDasersteConfig.class;
+        } else if ("one.ard.de".equalsIgnoreCase(getHost())) {
+            return OneARDConfig.class;
+        } else if ("wdrmaus.de".equalsIgnoreCase(getHost())) {
+            return WDRMausConfig.class;
+        } else if ("wdr.de".equalsIgnoreCase(getHost())) {
+            return WDRConfig.class;
+        } else if ("sportschau.de".equalsIgnoreCase(getHost())) {
+            return SportschauConfig.class;
+        } else if ("sr-online.de".equalsIgnoreCase(getHost())) {
+            return SrOnlineConfig.class;
+        } else if ("ndr.de".equalsIgnoreCase(getHost())) {
+            return NdrDeConfig.class;
+        } else if ("kika.de".equalsIgnoreCase(getHost())) {
+            return KikaDeConfig.class;
+        } else if ("eurovision.de".equalsIgnoreCase(getHost())) {
+            return EurovisionConfig.class;
+        } else if ("sputnik.de".equalsIgnoreCase(getHost())) {
+            return SputnikDeConfig.class;
+        } else if ("checkeins.de".equalsIgnoreCase(getHost())) {
+            return CheckeinsDeConfig.class;
         }
-        return MediathekRbbOnlineConfig.class;
+        return ArdConfigInterface.class;
     }
 
-    /**
-     * Examples of other, unsupported linktypes:
-     *
-     * http://daserste.ndr.de/panorama/aktuell/Mal-eben-die-Welt-retten-Studie-belegt-Gefahren-durch-Voluntourismus-,volontourismus136.html
-     *
-     */
-    /** TODO: Maybe add setting for version for disabled ppl ('Gebärdenversion'), example: http://www.wdrmaus.de/aktuelle-sendung/ */
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         parameter = Encoding.htmlDecode(param.toString());
+        this.host = Browser.getHost(this.parameter);
         if (parameter.matches(type_unsupported) || parameter.matches(type_invalid)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -310,60 +370,70 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         final List<String> selectedQualities = new ArrayList<String>();
+        /*
+         * 2018-03-06: TODO: Maybe add option to download hls audio as hls master playlist will often contain a mp4 stream without video (==
+         * audio only).
+         */
         final boolean addAudio = cfg.isGrabAudio();
         final boolean addHLS180 = cfg.isGrabHLS180pVideoEnabled();
         final boolean addHLS270 = cfg.isGrabHLS270pVideoEnabled();
+        final boolean addHLS270lower = cfg.isGrabHLS270pLowerVideoEnabled();
         final boolean addHLS280 = cfg.isGrabHLS280pVideoEnabled();
         final boolean addHLS360 = cfg.isGrabHLS360pVideoEnabled();
         final boolean addHLS540 = cfg.isGrabHLS540pVideoEnabled();
         final boolean addHLS720 = cfg.isGrabHLS720pVideoEnabled();
-        grabHLS = addHLS180 || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS720;
+        grabHLS = addHLS180 || addHLS270lower || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS720;
         if (addHLS180) {
-            selectedQualities.add("hls_0_180");
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("180") + "_180");
+        }
+        if (addHLS270lower) {
+            selectedQualities.add("hls_317000_270");
         }
         if (addHLS270) {
-            selectedQualities.add("hls_0_270");
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("270") + "_270");
         }
         if (addHLS280) {
-            selectedQualities.add("hls_0_280");
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("280") + "_280");
         }
         if (addHLS360) {
-            selectedQualities.add("hls_0_360");
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("360") + "_360");
         }
         if (addHLS540) {
-            selectedQualities.add("hls_0_540");
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("540") + "_540");
         }
         if (addHLS720) {
-            selectedQualities.add("hls_0_720");
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("720") + "_720");
         }
         if (cfg.isGrabHTTP180pVideoEnabled()) {
-            selectedQualities.add("http_0_180");
+            selectedQualities.add("http_" + heigth_to_bitrate.get("180") + "_180");
+        }
+        if (cfg.isGrabHTTP270pLowerVideoEnabled()) {
+            selectedQualities.add("http_317000_270");
         }
         if (cfg.isGrabHTTP270pVideoEnabled()) {
-            selectedQualities.add("http_0_270");
+            selectedQualities.add("http_" + heigth_to_bitrate.get("270") + "_270");
         }
         if (cfg.isGrabHTTP280pVideoEnabled()) {
-            selectedQualities.add("http_0_280");
+            selectedQualities.add("http_" + heigth_to_bitrate.get("280") + "_280");
         }
         if (cfg.isGrabHTTP360pVideoEnabled()) {
-            selectedQualities.add("http_0_360");
+            selectedQualities.add("http_" + heigth_to_bitrate.get("360") + "_360");
         }
         if (cfg.isGrabHTTP540pVideoEnabled()) {
-            selectedQualities.add("http_0_540");
+            selectedQualities.add("http_" + heigth_to_bitrate.get("540") + "_540");
         }
         if (cfg.isGrabHTTP720pVideoEnabled()) {
-            selectedQualities.add("http_0_720");
+            selectedQualities.add("http_" + heigth_to_bitrate.get("720") + "_720");
         }
         if (addAudio) {
-            selectedQualities.add("audio");
+            selectedQualities.add("http_0_0");
         }
         try {
-            final String host = Browser.getHost(this.parameter);
             /*
              * 2018-02-22: Important: So far there is only one OLD website, not compatible with the "decryptMediathek" function! Keep this
              * in mind when changing things!
              */
-            if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de")) {
+            if (this.host.equalsIgnoreCase("daserste.de") || this.host.equalsIgnoreCase("kika.de") || this.host.equalsIgnoreCase("sputnik.de") || this.host.equalsIgnoreCase("mdr.de") || this.host.equalsIgnoreCase("checkeins.de")) {
                 decryptDasersteVideo();
             } else {
                 decryptMediathek();
@@ -395,22 +465,62 @@ public class Ardmediathek extends PluginForDecrypt {
         return br.getHttpConnection().getResponseCode() == 404;
     }
 
+    /* Returns title for all XML based websites (XML has to be accessed before!) */
+    private String getDasersteTitle() {
+        final String provider = host.substring(0, this.host.lastIndexOf(".")).replace(".", "_");
+        String date = getXML("broadcastDate");
+        if (StringUtils.isEmpty(date)) {
+            /* E.g. kika.de */
+            date = getXML("datetimeOfBroadcasting");
+        }
+        if (StringUtils.isEmpty(date)) {
+            /* E.g. mdr.de */
+            date = getXML("broadcastStartDate");
+        }
+        /* E.g. kika.de */
+        final String show = getXML("channelName");
+        String video_title = getXML("shareTitle");
+        if (StringUtils.isEmpty(video_title)) {
+            video_title = getXML("broadcastName");
+        }
+        if (StringUtils.isEmpty(video_title)) {
+            /* E.g. sputnik.de */
+            video_title = getXML("headline");
+        }
+        if (StringUtils.isEmpty(video_title)) {
+            video_title = "UnknownTitle_" + System.currentTimeMillis();
+        }
+        if (!StringUtils.isEmpty(date)) {
+            this.date_formatted = formatDateDasErste(date);
+        }
+        String title_final = "";
+        if (this.date_formatted != null) {
+            title_final = this.date_formatted + "_";
+        }
+        title_final += provider + "_";
+        if (!StringUtils.isEmpty(show)) {
+            title_final += show + " - ";
+        }
+        title_final += video_title;
+        title_final = Encoding.htmlDecode(title_final).trim();
+        title_final = encodeUnicode(title_final);
+        return title_final;
+    }
+
     /* Returns title, with fallback if nothing found in html */
     private String getMediathekTitle() {
         final String jsonSchemaOrg = br.getRegex("<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
         String title = null;
         String provider = null;
-        /* TODO: Find name of the Show whenever possible */
         String show = null;
         /* These RegExes should be compatible with all websites */
         /* Date is already provided in the format we need. */
         String date = null;
         this.date_formatted = br.getRegex("<meta property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
-        if (date_formatted == null) {
-            date_formatted = br.getRegex("<span itemprop=\"datePublished\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
+        if (this.date_formatted == null) {
+            this.date_formatted = br.getRegex("<span itemprop=\"datePublished\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
         }
         String description = br.getRegex("<meta property=\"og:description\" content=\"([^\"]+)\"").getMatch(0);
-        final String host = br.getHost();
         if (jsonSchemaOrg != null) {
             /* 2018-02-15: E.g. daserste.de, wdr.de */
             final String headline = br.getRegex("<h3 class=\"headline\">([^<>]+)</h3>").getMatch(0);
@@ -420,7 +530,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 title = (String) entries.get("name");
                 if ("Video".equalsIgnoreCase(title) && !StringUtils.isEmpty(headline)) {
                     /**
-                     * TODO: 2018-02-22: Some of these schema-objects contain wrong information e.g.
+                     * 2018-02-22: Some of these schema-objects contain wrong information e.g.
                      * https://www1.wdr.de/mediathek/video/klangkoerper/klangkoerper/video-wdr-dackl-jazzkonzert-100.html --> This is a
                      * simple fallback.
                      */
@@ -478,11 +588,12 @@ public class Ardmediathek extends PluginForDecrypt {
             this.date_formatted = formatDate(date);
         }
         if (StringUtils.isEmpty(title)) {
-            title = getTitleArdmediathek(br);
+            /* This should never happen */
+            title = "UnknownTitle_" + System.currentTimeMillis();
         }
         if (StringUtils.isEmpty(provider)) {
             /* Fallback */
-            provider = host.substring(0, br.getHost().lastIndexOf("."));
+            provider = host.substring(0, this.host.lastIndexOf(".")).replace(".", "_");
         }
         title = Encoding.htmlDecode(title).trim();
         if (!StringUtils.isEmpty(show)) {
@@ -496,55 +607,63 @@ public class Ardmediathek extends PluginForDecrypt {
         return title;
     }
 
+    /** Find xml URL which leads to subtitle and video stream URLs. */
+    private String getVideoXMLURL() throws Exception {
+        final String host = this.host;
+        String url_xml = null;
+        if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("checkeins.de")) {
+            /* The fast way - we do not even have to access the main URL which the user has added :) */
+            url_xml = parameter.replace(".html", "~playerXml.xml");
+        } else {
+            /* E.g. kika.de, sputnik.de, mdr.de */
+            br.getPage(this.parameter);
+            if (isOffline(this.br)) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            url_xml = br.getRegex("\\'((?:https?://|(?:\\\\)?/)[^<>\"]+\\-avCustom\\.xml)\\'").getMatch(0);
+            if (!StringUtils.isEmpty(url_xml) && url_xml.contains("\\")) {
+                url_xml = url_xml.replace("\\", "");
+            }
+        }
+        return url_xml;
+    }
+
     /** Find json URL which leads to subtitle and video stream URLs. */
     private String getVideoJsonURL() throws MalformedURLException {
         String url_json = null;
         final String ardBroadcastID = new Regex(br.getURL(), "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
-        if (Browser.getHost(this.parameter).contains("sr-online.de")) {
-            url_json = String.format("http://www.sr-mediathek.de/sr_player/mc.php?id=%s&tbl=&pnr=0&hd=0&devicetype=", new Regex(br.getURL(), "id=(\\d+)").getMatch(0));
-        } else if (Browser.getHost(this.parameter).equalsIgnoreCase("sandmann.de")) {
+        if (this.host.contains("sr-online.de")) {
+            url_json = String.format("http://www.sr-mediathek.de/sr_player/mc.php?id=%s&tbl=&pnr=0&hd=1&devicetype=", new Regex(br.getURL(), "id=(\\d+)").getMatch(0));
+        } else if (this.host.equalsIgnoreCase("sandmann.de")) {
             url_json = br.getRegex("data\\-media\\-ref=\"([^\"]+)\"").getMatch(0);
             if (!StringUtils.isEmpty(url_json) && url_json.startsWith("/")) {
                 url_json = "https://www.sandmann.de" + url_json;
             }
         } else if (ardBroadcastID != null) {
             url_json = String.format("http://www.ardmediathek.de/play/media/%s?devicetype=pc&features=flash", ardBroadcastID);
-        } else if (Browser.getHost(this.parameter).contains("ndr.de") || Browser.getHost(this.parameter).equalsIgnoreCase("eurovision.de")) {
+        } else if (this.host.contains("ndr.de") || this.host.equalsIgnoreCase("eurovision.de")) {
             /* E.g. daserste.ndr.de, blabla.ndr.de */
             final String video_id = br.getRegex("([A-Za-z0-9]+\\d+)\\-(?:ard)?player_[^\"]+\"").getMatch(0);
             if (!StringUtils.isEmpty(video_id)) {
                 url_json = String.format("https://www.ndr.de/%s-ardjson.json", video_id);
             }
         } else {
-            // if (br.getURL().contains("one.ard.")) {
-            // /* one.ard.de --> Back then this was "einsfestival" */
-            // } else {
-            // url_json =
-            // this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
-            // }
             /* wdr.de, one.ard.de */
             url_json = this.br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getMatch(0);
         }
         return url_json;
     }
 
-    /** Find xml URL which leads to subtitle and video stream URLs. */
-    private String getVideoXMLURL() throws Exception {
-        final String host = Browser.getHost(this.parameter);
-        String url_xml = null;
-        if (host.equalsIgnoreCase("daserste.de")) {
-            /* We do not even have to access the main URL which the user has added :) */
-            url_xml = parameter.replace(".html", "~playerXml.xml");
-        } else {
-            br.getPage(this.parameter);
-            if (isOffline(this.br)) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-            if (host.equalsIgnoreCase("kika.de")) {
-                url_xml = br.getRegex("\\{dataURL\\s*?:\\s*?\\'(https?://[^<>\"]+\\-avCustom\\.xml)\\'").getMatch(0);
-            }
+    /**
+     * Find subtitle URL inside xml String
+     */
+    private String getXMLSubtitleURL(final Browser xmlBR) throws MalformedURLException {
+        String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
+        if (StringUtils.isEmpty(subtitleURL)) {
+            /* E.g. checkeins.de */
+            subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"(http[^<>\"]+\\.xml)\">").getMatch(0);
         }
-        return url_xml;
+        return subtitleURL;
     }
 
     /**
@@ -563,31 +682,6 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         return subtitleURL;
-    }
-
-    private String getTitleArdmediathek(final Browser br) {
-        String title = br.getRegex("<(div|span) class=\"(MainBoxHeadline|BoxHeadline)\">([^<]+)</").getMatch(2);
-        String titleUT = br.getRegex("<span class=\"(BoxHeadlineUT|boxSubHeadline)\">([^<]+)</").getMatch(1);
-        if (titleUT == null) {
-            titleUT = br.getRegex("<h3 class=\"mt\\-title\"><a>([^<>\"]*?)</a></h3>").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("class=\"mt\\-icon mt\\-icon_video\"></span><img src=\"[^\"]+\" alt=\"([^\"]+)\"").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("class=\"mt\\-icon mt\\-icon\\-toggle_arrows\"></span>([^<>\"]*?)</a>").getMatch(0);
-        }
-        if (title != null) {
-            title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-        }
-        if (title == null) {
-            title = "UnknownTitle_" + System.currentTimeMillis();
-        }
-        title = title.replaceAll("\\n|\\t|,", "").trim();
-        return title;
     }
 
     /** Last revision with old handling: 38658 */
@@ -629,6 +723,10 @@ public class Ardmediathek extends PluginForDecrypt {
             String urlpart2 = new Regex(hls_master, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
             String http_url_format = null;
             /**
+             * TODO:
+             * http://www.ardmediathek.de/tv/Exakt/Wie-Fl%C3%BCchtlinge-in-Lkw-nach-Deutschland-/MDR-Fernsehen/Video?bcastId=7545124&documentId=50460294
+             */
+            /**
              * hls --> http urls (whenever possible) <br />
              * TODO: Improve this part!
              */
@@ -651,7 +749,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
             }
             /* Access HLS master to find correct resolution for each ID (the only possible way) */
-            final HashMap<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             br.getPage("http:" + hls_master);
             final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
             final String[] qualities = quality_string != null ? quality_string.split(",") : null;
@@ -672,81 +769,13 @@ public class Ardmediathek extends PluginForDecrypt {
                     final String[] height_width = resolution.split("x");
                     final String width = height_width[0];
                     final String height = height_width[1];
-                    addQuality(final_url, null, Integer.parseInt(width), Integer.parseInt(height));
-                }
-            } else {
-                final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
-                for (Map<String, Object> media : mediaArray) {
-                    List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
-                    for (Map<String, Object> mediaStream : mediaStreamArray) {
-                        final String stream;
-                        if (mediaStream.get("_stream") instanceof String) {
-                            stream = (String) mediaStream.get("_stream");
-                        } else {
-                            stream = ((List<String>) mediaStream.get("_stream")).get(0);
-                        }
-                        if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
-                            continue;
-                        }
-                        final String url = br.getURL(stream).toString();
-                        final Object quality = mediaStream.get("_quality");
-                        if (!(quality instanceof Number)) {
-                            continue;
-                        }
-                        final Object width = mediaStream.get("_width");
-                        final Object height = mediaStream.get("_height");
-                        final int widthInt;
-                        if (width instanceof Number) {
-                            widthInt = ((Number) width).intValue();
-                        } else {
-                            switch (((Number) quality).intValue()) {
-                            case 0:
-                                widthInt = 320;
-                                break;
-                            case 1:
-                                widthInt = 512;
-                                break;
-                            case 2:
-                                widthInt = 640;
-                                break;
-                            case 3:
-                                widthInt = 1280;
-                                break;
-                            default:
-                                widthInt = -1;
-                                break;
-                            }
-                        }
-                        final int heightInt;
-                        if (width instanceof Number) {
-                            heightInt = ((Number) height).intValue();
-                        } else {
-                            switch (((Number) quality).intValue()) {
-                            case 0:
-                                heightInt = 180;
-                                break;
-                            case 1:
-                                heightInt = 288;
-                                break;
-                            case 2:
-                                heightInt = 360;
-                                break;
-                            case 3:
-                                heightInt = 720;
-                                break;
-                            default:
-                                heightInt = -1;
-                                break;
-                            }
-                        }
-                        addQuality(url, null, widthInt, heightInt);
-                    }
+                    addQuality(final_url, null, 0, Integer.parseInt(width), Integer.parseInt(height));
                 }
             }
             addHLS(br, hls_master);
         }
         if (http_url_audio != null) {
-            addQuality(http_url_audio, null, 0, 0);
+            addQuality(http_url_audio, null, 0, 0, 0);
         }
     }
 
@@ -763,33 +792,33 @@ public class Ardmediathek extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
+        this.subtitleLink = getXMLSubtitleURL(this.br);
+        /* E.g. checkeins.de */
         final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
         if (fskRating != null && Short.parseShort(fskRating) >= 12) {
             /* Video is age restricted --> Only available from >=8PM. */
             decryptedLinks.add(this.createOfflinelink(parameter, "FSK_BLOCKED"));
             return;
         }
-        final String date = getXML("broadcastDate");
-        title = getXML("shareTitle");
-        if (StringUtils.isEmpty(title)) {
-            title = getXML("broadcastName");
-        }
-        if (this.title == null || date == null) {
-            throw new DecrypterException("Decrypter broken");
-        }
-        title = Encoding.htmlDecode(title).trim();
-        title = encodeUnicode(title);
-        this.date_formatted = formatDateDasErste(date);
-        title = this.date_formatted + "_daserste_" + title;
+        this.title = getDasersteTitle();
+        final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
         final String[] mediaStreamArray = br.getRegex("(<asset.*?</asset>)").getColumn(0);
         for (final String stream : mediaStreamArray) {
             /* E.g. kika.de */
-            String directurl = getXML(stream, "progressiveDownloadUrl");
-            if (StringUtils.isEmpty(directurl)) {
+            final String hls_master;
+            String http_url = getXML(stream, "progressiveDownloadUrl");
+            if (StringUtils.isEmpty(http_url)) {
                 /* E.g. daserste.de */
-                directurl = getXML(stream, "fileName");
+                http_url = getXML(stream, "fileName");
             }
-            final String filesize = getXML(stream, "size");
+            /* E.g. daserste.de */
+            String filesize = getXML(stream, "size");
+            if (StringUtils.isEmpty(filesize)) {
+                /* E.g. kika.de */
+                filesize = getXML(stream, "fileSize");
+            }
+            final String bitrate_video = getXML(stream, "bitrateVideo");
+            final String bitrate_audio = getXML(stream, "bitrateAudio");
             final String width_str = getXML(stream, "frameWidth");
             final String height_str = getXML(stream, "frameHeight");
             int width = 0;
@@ -800,15 +829,35 @@ public class Ardmediathek extends PluginForDecrypt {
             if (height_str != null && height_str.matches("\\d+")) {
                 height = Integer.parseInt(height_str);
             }
-            if (StringUtils.isEmpty(directurl) || isUnsupportedProtocolDasersteVideo(directurl) || !directurl.startsWith("http")) {
+            if (StringUtils.isEmpty(http_url) || isUnsupportedProtocolDasersteVideo(http_url) || !http_url.startsWith("http")) {
                 continue;
             }
-            if (directurl.contains(".m3u8")) {
-                /* HLS */
-                addHLS(this.br, directurl);
+            if (http_url.contains(".m3u8")) {
+                hls_master = http_url;
+                http_url = null;
             } else {
-                /* HTTP */
-                addQualityDasersteVideo(directurl, filesize, width, height);
+                /* hls master is stored in separate tag e.g. kika.de */
+                hls_master = getXML(stream, "adaptiveHttpStreamingRedirectorUrl");
+            }
+            /* HLS master url may exist in every XML item --> We only have to add all HLS qualities once! */
+            if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master)) {
+                /* HLS */
+                addHLS(this.br, hls_master);
+                hls_master_dupelist.add(hls_master);
+            }
+            if (!StringUtils.isEmpty(http_url)) {
+                /* http */
+                long bitrate;
+                if (!StringUtils.isEmpty(bitrate_video) && !StringUtils.isEmpty(bitrate_audio)) {
+                    bitrate = Long.parseLong(bitrate_video) + Long.parseLong(bitrate_audio);
+                    if (host.equalsIgnoreCase("checkeins.de")) {
+                        /* 2018-03-06: Small workaround */
+                        bitrate = bitrate * 1000;
+                    }
+                } else {
+                    bitrate = 0;
+                }
+                addQualityDasersteVideo(http_url, filesize, bitrate, width, height);
             }
         }
         return;
@@ -831,12 +880,12 @@ public class Ardmediathek extends PluginForDecrypt {
         final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
         for (final HlsContainer hlscontainer : allHlsContainers) {
             final String final_download_url = hlscontainer.getDownloadurl();
-            addQuality(final_download_url, null, hlscontainer.getWidth(), hlscontainer.getHeight());
+            addQuality(final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight());
         }
     }
 
     /* Especially for video.daserste.de */
-    private void addQualityDasersteVideo(final String directurl, final String filesize_str, int width, int height) {
+    private void addQualityDasersteVideo(final String directurl, final String filesize_str, long bitrate, int width, int height) {
         /* Get/Fix correct width/height values. */
         /* Type 1 */
         String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
@@ -854,22 +903,31 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         width = getWidth(width_URL, width);
         height = getHeight(width_URL, width, height);
-        addQuality(directurl, filesize_str, width, height);
+        addQuality(directurl, filesize_str, bitrate, width, height);
     }
 
-    private void addQuality(final String directurl, final String filesize_str, int width, int height) {
+    private void addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height) {
         /* Errorhandling */
         final String ext;
+        final boolean isVideo;
         if (directurl == null || ((width == 0 || height == 0) && !directurl.contains(".mp3"))) {
             /* Skip items with bad data. */
             return;
         } else if (directurl.contains(".mp3")) {
             ext = ".mp3";
+            isVideo = false;
         } else {
             ext = ".mp4";
+            isVideo = true;
         }
         /* Use this for quality selection as real resolution can be slightly different than the values which our users can select. */
-        final String height_final = getHeightForQualitySelection(height);
+        final int height_corrected = getHeightForQualitySelection(height);
+        final long bitrate_corrected;
+        if (bitrate > 0) {
+            bitrate_corrected = getBitrateForQualitySelection(bitrate, isVideo);
+        } else {
+            bitrate_corrected = getDefaultBitrateForHeight(height_corrected);
+        }
         long filesize = 0;
         if (filesize_str != null && filesize_str.matches("\\d+")) {
             filesize = Long.parseLong(filesize_str);
@@ -885,29 +943,30 @@ public class Ardmediathek extends PluginForDecrypt {
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         /* 2018-02-28: This should work fine for all hls- and http urls */
         final String filename_server = jd.plugins.hoster.ARDMediathek.getUniqueURLServerFilenameString(directurl);
-        final String plain_name = title + "_" + protocol + "_" + resolution;
+        final String qualityStringForQualitySelection = protocol + "_" + bitrate_corrected + "_" + height_corrected;
+        final String plain_name = title + "_" + protocol + "_" + bitrate + "_" + resolution;
+        final String file_name = plain_name + ext;
         final String linkid;
         if (!StringUtils.isEmpty(filename_server)) {
             linkid = filename_server;
         } else {
             linkid = plain_name;
         }
-        final String full_name = plain_name + ext;
-        final String qualityStringSelection = protocol + "_0_" + height_final;
-        // final String qualityStringFull = protocol + "_" + resolution;
-        final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", "ardmediathek://"));
-        link.setFinalFileName(full_name);
+        /* TODO: Change this to keep hostnames in hosterplugin */
+        final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", this.host + "decrypted://"));
+        link.setFinalFileName(file_name);
         link.setContentUrl(this.parameter);
         /* This is not perfect but should be enough as a unique identifier! */
         link.setLinkID(linkid);
         /* 2018-02-22: Only store what we really need! */
         link.setProperty("plain_name", plain_name);
         // link.setProperty("mainlink", this.parameter);
-        link.setProperty("directName", full_name);
+        link.setProperty("directName", file_name);
         // new properties that can be used for future linkIDs
         link.setProperty("itemSrc", getHost());
         link.setProperty("itemType", protocol);
         link.setProperty("itemRes", width + "x" + height);
+        /* TODO: Improve itemID handling */
         String itemID = new Regex(parameter, "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
         if (itemID == null) {
             // TODO
@@ -919,7 +978,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (cfg.isFastLinkcheckEnabled()) {
             link.setAvailable(true);
         }
-        foundQualitiesMap.put(qualityStringSelection, link);
+        foundQualitiesMap.put(qualityStringForQualitySelection, link);
     }
 
     private void handleUserQualitySelection(List<String> selectedQualities) {
@@ -976,7 +1035,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 final String plain_name = dl.getStringProperty("plain_name", null);
                 final String linkid = dl.getLinkID() + "_subtitle";
                 final String subtitle_filename = plain_name + ".xml";
-                final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", "ardmediathek://"));
+                final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", this.host + "decrypted://"));
                 dl_subtitle.setAvailable(true);
                 dl_subtitle.setFinalFileName(subtitle_filename);
                 dl_subtitle.setProperty("directName", subtitle_filename);
@@ -1105,29 +1164,73 @@ public class Ardmediathek extends PluginForDecrypt {
         return height;
     }
 
+    /* Returns default videoBitrate for width values. */
+    private long getDefaultBitrateForHeight(final int height) {
+        final String height_str = Integer.toString(height);
+        long bitrateVideo;
+        if (heigth_to_bitrate.containsKey(height_str)) {
+            bitrateVideo = heigth_to_bitrate.get(height_str);
+        } else {
+            /* Unknown or audio */
+            bitrateVideo = 0;
+        }
+        return bitrateVideo;
+    }
+
     /**
      * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
      * work properly!
      */
-    private String getHeightForQualitySelection(final int height) {
-        final String heightelect;
-        if (height > 0 && height <= 200) {
-            heightelect = "180";
-        } else if (height > 200 && height <= 272) {
-            heightelect = "270";
+    private int getHeightForQualitySelection(final int height) {
+        final int heightelect;
+        if (height > 0 && height <= 250) {
+            heightelect = 180;
+        } else if (height > 250 && height <= 272) {
+            heightelect = 270;
         } else if (height > 272 && height <= 320) {
-            heightelect = "280";
+            heightelect = 280;
         } else if (height > 320 && height <= 400) {
-            heightelect = "360";
+            heightelect = 360;
         } else if (height > 400 && height <= 600) {
-            heightelect = "540";
+            heightelect = 540;
         } else if (height > 600 && height <= 800) {
-            heightelect = "720";
+            heightelect = 720;
         } else {
             /* Either unknown quality or audio (0x0) */
-            heightelect = Integer.toString(height);
+            heightelect = height;
         }
         return heightelect;
+    }
+
+    /**
+     * Given bandwidth may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
+     * work properly!
+     */
+    private long getBitrateForQualitySelection(final long bandwidth, final boolean isVideo) {
+        final long bandwidthselect;
+        if (!isVideo) {
+            /* Audio --> There is usually only 1 bandwidth available so for our selection, we use the value 0. */
+            bandwidthselect = 0;
+        } else if (bandwidth > 0 && bandwidth <= 250000) {
+            bandwidthselect = 189000;
+        } else if (bandwidth > 250000 && bandwidth <= 350000) {
+            /* lower 270 */
+            bandwidthselect = 317000;
+        } else if (bandwidth > 350000 && bandwidth <= 500000) {
+            bandwidthselect = 448000;
+        } else if (bandwidth > 500000 && bandwidth <= 800000) {
+            bandwidthselect = 605000;
+        } else if (bandwidth > 800000 && bandwidth <= 1600000) {
+            bandwidthselect = 1213000;
+        } else if (bandwidth > 1600000 && bandwidth <= 2800000) {
+            bandwidthselect = 1989000;
+        } else if (bandwidth > 2800000 && bandwidth <= 4500000) {
+            bandwidthselect = 3773000;
+        } else {
+            /* Probably unknown quality */
+            bandwidthselect = bandwidth;
+        }
+        return bandwidthselect;
     }
 
     private String getXML(final String parameter) {
@@ -1136,10 +1239,6 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private String getXML(final String source, final String parameter) {
         return new Regex(source, "<" + parameter + "[^<]*?>([^<>]*?)</" + parameter + ">").getMatch(0);
-    }
-
-    private boolean isEmpty(String ip) {
-        return ip == null || ip.trim().length() == 0;
     }
 
     public static final String correctRegionString(final String input) {
@@ -1152,24 +1251,15 @@ public class Ardmediathek extends PluginForDecrypt {
         return output;
     }
 
-    // private String formatDateArdMediathek(final String input) {
-    // final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
-    // String formattedDate = null;
-    // final String targetFormat = "yyyy-MM-dd";
-    // Date theDate = new Date(date);
-    // try {
-    // final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-    // formattedDate = formatter.format(theDate);
-    // } catch (Exception e) {
-    // /* prevent input error killing plugin */
-    // formattedDate = input;
-    // }
-    // return formattedDate;
-    // }
     private String formatDateDasErste(String input) {
-        /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
-        input = new Regex(input, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.GERMAN);
+        final long date;
+        if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+        } else {
+            /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
+            input = new Regex(input, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.GERMAN);
+        }
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);
