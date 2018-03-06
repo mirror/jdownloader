@@ -537,38 +537,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* wdr */
                 http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
             }
-            /* Access HLS master to find correct resolution for each ID (the only possible way) */
-            HashMap<String, Object> map = null;
+            final List<DownloadLink> httpStreams = new ArrayList<DownloadLink>();
             try {
-                map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            } catch (Throwable e) {
-                logger.log(e);
-            }
-            br.getPage("http:" + hls_master);
-            final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
-            final String[] qualities = quality_string != null ? quality_string.split(",") : null;
-            if (resolutionsInOrder != null && qualities != null) {
-                logger.info("Crawling http urls");
-                for (int counter = 0; counter <= qualities.length - 1; counter++) {
-                    if (counter > qualities.length - 1 || counter > resolutionsInOrder.length - 1) {
-                        break;
-                    }
-                    /* Old */
-                    // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
-                    /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
-                    /* 2018-02-13: new e.g. http://wdrmedien-a.akamaihd.net/medp/ondemand/de/fsk0/158/1580248/1580248_18183304.mp4 */
-                    final String quality_id = qualities[counter];
-                    final String final_url = String.format(http_url_format, quality_id);
-                    // final String linkid = qualities[counter];
-                    final String resolution = resolutionsInOrder[counter];
-                    final String[] height_width = resolution.split("x");
-                    final String width = height_width[0];
-                    final String height = height_width[1];
-                    addQuality(final_url, null, 0, Integer.parseInt(width), Integer.parseInt(height));
-                }
-            }
-            if (map != null && map.containsKey("_mediaArray")) {
-                try {
+                final HashMap<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                if (map != null && map.containsKey("_mediaArray")) {
                     final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
                     for (Map<String, Object> media : mediaArray) {
                         List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
@@ -633,11 +605,40 @@ public class Ardmediathek extends PluginForDecrypt {
                                     break;
                                 }
                             }
-                            addQuality(url, null, 0, widthInt, heightInt);
+                            final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt);
+                            if (download != null) {
+                                httpStreams.add(download);
+                            }
                         }
                     }
-                } catch (Throwable e) {
-                    logger.log(e);
+                }
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+            br.getPage("http:" + hls_master);
+            if (httpStreams.size() == 0) {
+                /* Access HLS master to find correct resolution for each ID (the only possible way) */
+                final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
+                final String[] qualities = quality_string != null ? quality_string.split(",") : null;
+                if (resolutionsInOrder != null && qualities != null) {
+                    logger.info("Crawling http urls");
+                    for (int counter = 0; counter <= qualities.length - 1; counter++) {
+                        if (counter > qualities.length - 1 || counter > resolutionsInOrder.length - 1) {
+                            break;
+                        }
+                        /* Old */
+                        // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
+                        /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
+                        /* 2018-02-13: new e.g. http://wdrmedien-a.akamaihd.net/medp/ondemand/de/fsk0/158/1580248/1580248_18183304.mp4 */
+                        final String quality_id = qualities[counter];
+                        final String final_url = String.format(http_url_format, quality_id);
+                        // final String linkid = qualities[counter];
+                        final String resolution = resolutionsInOrder[counter];
+                        final String[] height_width = resolution.split("x");
+                        final String width = height_width[0];
+                        final String height = height_width[1];
+                        addQuality(final_url, null, 0, Integer.parseInt(width), Integer.parseInt(height));
+                    }
                 }
             }
             addHLS(br, hls_master);
@@ -774,13 +775,13 @@ public class Ardmediathek extends PluginForDecrypt {
         addQuality(directurl, filesize_str, bitrate, width, height);
     }
 
-    private void addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height) {
+    private DownloadLink addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height) {
         /* Errorhandling */
         final String ext;
         final boolean isVideo;
         if (directurl == null || ((width == 0 || height == 0) && !directurl.contains(".mp3"))) {
             /* Skip items with bad data. */
-            return;
+            return null;
         } else if (directurl.contains(".mp3")) {
             ext = ".mp3";
             isVideo = false;
@@ -847,6 +848,7 @@ public class Ardmediathek extends PluginForDecrypt {
             link.setAvailable(true);
         }
         foundQualitiesMap.put(qualityStringForQualitySelection, link);
+        return link;
     }
 
     private void handleUserQualitySelection(List<String> selectedQualities) {
