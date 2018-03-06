@@ -983,12 +983,26 @@ public class LinkCrawler {
 
     public CrawledLink createDirectHTTPCrawledLink(URLConnectionAdapter con) {
         final Request request = con.getRequest();
-        final DownloadLink link = new DownloadLink(null, null, request.getURL().getHost(), "directhttp://" + request.getUrl(), true);
-        final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
+        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + request.getUrl(), true);
         final String cookie = con.getRequestProperty("Cookie");
         if (StringUtils.isNotEmpty(cookie)) {
             link.setProperty("cookies", cookie);
         }
+        final long contentLength = con.getLongContentLength();
+        if (contentLength > 0) {
+            link.setVerifiedFileSize(contentLength);
+        }
+        final String headerFileName = Plugin.getFileNameFromDispositionHeader(con);
+        if (headerFileName != null) {
+            link.setFinalFileName(headerFileName);
+        } else {
+            final String urlFileName = Plugin.getFileNameFromURL(request.getURL());
+            if (urlFileName != null) {
+                link.setName(urlFileName);
+            }
+        }
+        link.setAvailable(true);
+        final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
         link.setProperty("refURL", requestRef);
         if (request instanceof PostRequest) {
             final String postString = ((PostRequest) request).getPostDataString();
