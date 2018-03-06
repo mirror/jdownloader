@@ -24,6 +24,9 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -36,10 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "(?:mediathek\\.)?rbb\\-online\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "(?:one\\.)?ard\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "(?:sr\\-mediathek\\.)?sr\\-online\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "checkeins\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
     private String  dllink        = null;
     private boolean server_issues = false;
@@ -60,7 +60,10 @@ public class ARDMediathek extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         final String linkID = link.getSetLinkID();
-        link.setUrlDownload(link.getDownloadURL().replace("ardmediathek://", "http://"));
+        final String real_domain = new Regex(link.getDownloadURL(), "(.+)decrypted://").getMatch(0);
+        if (real_domain != null) {
+            link.setUrlDownload(link.getDownloadURL().replace(real_domain + "decrypted://", "http://"));
+        }
         if (linkID == null) {
             link.setLinkID(linkID);
         }
@@ -162,12 +165,12 @@ public class ARDMediathek extends PluginForHost {
                 maxChunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
-            /* E.g. https://www.ndr.de/fernsehen/sendungen/ndr_aktuell/ut64736.html */
-            if (dl.getConnection().getContentType().contains("html") && (isSubtitle && !dllink.matches(".+ut\\d+\\.html"))) {
+            if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* 2018-03-06: Only investigate by content type if it is supposed to be a video file! */
+            if (dl.getConnection().getContentType().contains("html") && !isSubtitle) {
                 br.followConnection();
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
-                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             if (this.dl.startDownload()) {

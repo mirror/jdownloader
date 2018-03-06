@@ -72,7 +72,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:dt\\d+|imaginaryblueogre\\-sto|dangerousclashknife\\-sto|punydragonhoard\\-sto)\\.energycdn\\.com/dl/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://[A-Za-z0-9\\-]+\\.energycdn\\.com/dl/.+" })
 public class PremiumizeMe extends UseNet {
     private static MultiHosterManagement mhm          = new MultiHosterManagement("premiumize.me");
     private static final String          SENDDEBUGLOG = "SENDDEBUGLOG";

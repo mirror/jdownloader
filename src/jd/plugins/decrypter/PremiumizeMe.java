@@ -76,12 +76,16 @@ public class PremiumizeMe extends PluginForDecrypt {
         final Map<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
             final String itemName = node.getName();
+            final String parentName = node._getParentName();
             final String nodeCloudID = node.getID();
             if (node._isDirectory()) {
                 /* Folder */
-                final String path_for_next_crawl_level;
+                String path_for_next_crawl_level = null;
                 if (StringUtils.isEmpty(currentPath)) {
-                    path_for_next_crawl_level = itemName;
+                    if (!StringUtils.isEmpty(parentName)) {
+                        path_for_next_crawl_level = parentName + "/";
+                    }
+                    path_for_next_crawl_level += itemName;
                 } else {
                     path_for_next_crawl_level = currentPath + "/" + itemName;
                 }
@@ -90,7 +94,6 @@ public class PremiumizeMe extends PluginForDecrypt {
                 ret.add(folder);
             } else {
                 /* File */
-                /** TODO: Maybe do not add .nzb and .torrent files (see comment in host class near PremiumizeMeConfigInterface)! */
                 final DownloadLink link = new DownloadLink(null, null, "premiumize.me", node.getUrl(), true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
                 final FilePackage filePackage = getFilePackage(filePackages, node);
