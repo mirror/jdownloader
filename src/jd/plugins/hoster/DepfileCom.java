@@ -24,6 +24,14 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,34 +49,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
-    private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
-    private static AtomicReference<String> MAINPAGE                     = new AtomicReference<String>("https://depfile.com/");
-    private static Object                  LOCK                         = new Object();
-    private static final String            ONLY4PREMIUM                 = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
-    private static final String            ONLY4PREMIUMUSERTEXT         = "Only downloadable for premium users";
-    private static final long              FREE_RECONNECTWAIT           = 1 * 60 * 60 * 1001L;
-    private String                         PROPERTY_LASTIP              = "DEPFILECOM_PROPERTY_LASTIP";
-    private static final String            PROPERTY_LASTDOWNLOAD        = "depfilecom_lastdownload_timestamp";
-    private final String                   ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
-    private final String                   EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    private Pattern                        IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK                     = new Object();
-    private static String[]                IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static final String            CAPTCHATEXT           = "includes/vvc\\.php\\?vvcid=";
+    private static AtomicReference<String> MAINPAGE              = new AtomicReference<String>("https://depfile.com/");
+    private static Object                  LOCK                  = new Object();
+    private static final long              FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1001L;
+    private String                         PROPERTY_LASTIP       = "DEPFILECOM_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD = "depfilecom_lastdownload_timestamp";
+    private Pattern                        IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK              = new Object();
+    private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public DepfileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -108,7 +103,7 @@ public class DepfileCom extends PluginForHost {
         return "http://depfile.com/terms";
     }
 
-    public void prepBrowser() {
+    public static void prepBrowser(final Browser br) {
         br.setCustomCharset("utf-8");
         // they set base language on accept language without cookie
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
@@ -120,35 +115,43 @@ public class DepfileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         br = newBrowser();
-        prepBrowser();
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        final DepfileConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DepfileCom.DepfileConfigInterface.class);
-        if (isOfflineHTML() && br.containsHTML("RESTORE ACCESS TO THE FILE") && cfg.isEnableDMCADownload()) {
-            return AvailableStatus.UNCHECKABLE;
-        } else if (isOfflineURL()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return parseAvailableStatus(this.br, link);
+    }
+
+    public static AvailableStatus parseAvailableStatus(final Browser br, final DownloadLink dl) {
+        // final DepfileConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DepfileCom.DepfileConfigInterface.class);
+        if (isOfflineHTML(br) && isPremiumonly(br)) {
+            /* Premiumonly but no filename/filesize info given on website! */
+            return AvailableStatus.TRUE;
+        } else if (isOfflineURL(br)) {
+            /* Dead */
+            return AvailableStatus.FALSE;
         }
-        String filename = new Regex(link.getDownloadURL(), "/downloads/i/\\d+/f/(.+)").getMatch(0);
-        if (!link.getDownloadURL().matches(".+/downloads/i/\\d+/f/.+")) {
+        String filename = new Regex(dl.getDownloadURL(), "/downloads/i/\\d+/f/(.+)").getMatch(0);
+        if (!dl.getDownloadURL().matches(".+/downloads/i/\\d+/f/.+")) {
             filename = br.getRegex("<th>File name:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
         String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            dl.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
         }
-        link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
         if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            dl.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-f0-9]{32})</td>").getMatch(0);
         if (md5 != null) {
-            link.setMD5Hash(md5);
-        }
-        if (br.containsHTML(ONLY4PREMIUM)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+            dl.setMD5Hash(md5);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isPremiumonly(final Browser br) {
+        final boolean premiumonly1 = br.containsHTML("RESTORE ACCESS TO THE FILE");
+        final boolean premiumonly2 = br.containsHTML(">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<");
+        return premiumonly1 || premiumonly2;
     }
 
     @Override
@@ -163,8 +166,8 @@ public class DepfileCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        if (br.containsHTML(ONLY4PREMIUM)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT), PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (isPremiumonly(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, Property.NULL);
         currentIP.set(this.getIP());
@@ -282,12 +285,12 @@ public class DepfileCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookiesExclusive(true);
-                    prepBrowser();
+                    prepBrowser(br);
                     br.setCookies(MAINPAGE.get(), cookies);
                     return null;
                 }
                 br = newBrowser();
-                prepBrowser();
+                prepBrowser(br);
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE.get());
                 br.postPage("/", "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
@@ -579,14 +582,14 @@ public class DepfileCom extends PluginForHost {
         return verifyCode;
     }
 
-    private boolean isOfflineURL() {
+    public static boolean isOfflineURL(final Browser br) {
         if (br._getURL().getPath().equals("/premium")) {
             return true;
         }
         return false;
     }
 
-    private boolean isOfflineHTML() {
+    public static boolean isOfflineHTML(final Browser br) {
         final boolean offline;
         if (br.containsHTML("(>File was not found in the d[ei]pFile database\\.|It is possible that you provided wrong link\\.<|>Файл не найден в базе (?:d[ei]pfile\\.com|depfile\\.us)\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
             offline = true;
@@ -599,13 +602,6 @@ public class DepfileCom extends PluginForHost {
             offline = false;
         }
         return offline;
-    }
-
-    public void handleErrors() throws PluginException {
-        if (isOfflineHTML()) {
-            logger.warning("File not found OR file removed from provider");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
     }
 
     public Browser newBrowser() {
@@ -660,10 +656,13 @@ public class DepfileCom extends PluginForHost {
 
     public static interface DepfileConfigInterface extends PluginConfigInterface {
         public static class TRANSLATION {
-            public String getEnableDMCADownload_label() {
-                return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till depfile irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart";
-            }
-
+            // public String getEnableDMCADownload_label() {
+            // return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a
+            // 'legacy takedown' status till depfile irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have
+            // the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename-
+            // and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on
+            // downloadstart";
+            // }
             public String getEnableReconnectWorkaround_label() {
                 return "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.";
             }
@@ -671,12 +670,12 @@ public class DepfileCom extends PluginForHost {
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
-        @DefaultBooleanValue(true)
-        @Order(8)
-        boolean isEnableDMCADownload();
-
-        void setEnableDMCADownload(boolean b);
-
+        /* 2018-03-06: This setting was never needed. such files are simply premiumonly! */
+        // @DefaultBooleanValue(true)
+        // @Order(8)
+        // boolean isEnableDMCADownload();
+        //
+        // void setEnableDMCADownload(boolean b);
         @DefaultBooleanValue(false)
         @Order(9)
         boolean isEnableReconnectWorkaround();

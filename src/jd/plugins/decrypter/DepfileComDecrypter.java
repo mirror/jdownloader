@@ -13,13 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import java.net.URL;
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,13 +28,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez\\.com|d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileComDecrypter extends PluginForDecrypt {
-
     public DepfileComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,18 +40,15 @@ public class DepfileComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost plugin = JDUtilities.getPluginForHost("depfile.com");
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         final String folder_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-        ((jd.plugins.hoster.DepfileCom) plugin).setBrowser(br);
-        ((jd.plugins.hoster.DepfileCom) plugin).prepBrowser();
+        jd.plugins.hoster.DepfileCom.prepBrowser(this.br);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        ((jd.plugins.hoster.DepfileCom) plugin).handleErrors();
         // mass adding links from folders can cause exceptions and high server loads. when possible best practice to set all info, a full
         // linkcheck happens prior to download which can correct any false positives by doing the following..
         final String[] links = br.getRegex("<tr><td[^>]+><input[^>]+>.*?</td></tr>").getColumn(-1);
@@ -96,7 +89,9 @@ public class DepfileComDecrypter extends PluginForDecrypt {
         }
         // single link
         if (decryptedLinks.isEmpty()) {
-            decryptedLinks.add(createDownloadlink(param.toString()));
+            final DownloadLink dl = createDownloadlink(param.toString());
+            dl.setAvailableStatus(jd.plugins.hoster.DepfileCom.parseAvailableStatus(this.br, dl));
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
@@ -105,5 +100,4 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

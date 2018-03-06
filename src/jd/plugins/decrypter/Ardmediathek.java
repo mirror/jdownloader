@@ -28,19 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -66,6 +53,19 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
         "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -88,11 +88,11 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("540", 1989000l);
         heigth_to_bitrate.put("720", 3773000l);
     }
-    private String                              subtitleLink          = null;
-    private String                              parameter             = null;
-    private String                              title                 = null;
-    private String                              date_formatted        = null;
-    private boolean                             grabHLS               = false;
+    private String  subtitleLink   = null;
+    private String  parameter      = null;
+    private String  title          = null;
+    private String  date_formatted = null;
+    private boolean grabHLS        = false;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -365,6 +365,9 @@ public class Ardmediathek extends PluginForDecrypt {
             date = br.getRegex("<p>Video \\| (\\d{2}\\.\\d{2}\\.\\d{4}) \\| Dauer:").getMatch(0);
         } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             /* ndr.de */
+            if (br.getURL().contains("daserste.ndr.de")) {
+                date = br.getRegex("<p>Dieses Thema im Programm:</p>\\s*?<h2>[^<>]*?(\\d{2}\\.\\d{2}\\.\\d{4})[^<>]*?</h2>").getMatch(0);
+            }
             title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
         } else {
             /* E.g. ardmediathek.de */
@@ -379,14 +382,15 @@ public class Ardmediathek extends PluginForDecrypt {
             /* This should never happen */
             title = "UnknownTitle_" + System.currentTimeMillis();
         }
+        title = title.trim();
         if (StringUtils.isEmpty(provider)) {
             /* Fallback */
             provider = host.substring(0, host.lastIndexOf(".")).replace(".", "_");
         }
-        title = Encoding.htmlDecode(title).trim();
         if (!StringUtils.isEmpty(show)) {
-            title = show + " - " + title;
+            title = show.trim() + " - " + title;
         }
+        title = Encoding.htmlDecode(title);
         title = provider + "_" + title;
         if (this.date_formatted != null) {
             title = this.date_formatted + "_" + title;
@@ -498,7 +502,6 @@ public class Ardmediathek extends PluginForDecrypt {
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
          */
         // //wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/139/1394333/,1394333_16295554,1394333_16295556,1394333_16295555,1394333_16295557,1394333_16295553,1394333_16295558,.mp4.csmil/master.m3u8
-        /* TODO: Maybe improve finding these mp3 URLs. */
         final String http_url_audio = br.getRegex("(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
         final String hls_master = br.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
         final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
@@ -537,6 +540,12 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* wdr */
                 http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
             }
+            /*
+             * 2018-03-06: Possible issues with parsing existing http streams first: 1. You might name them wrong 2. You might get less
+             * qualities than you have via HLS e.g.
+             * http://www.ardmediathek.de/tv/Reportage-Dokumentation/Deutschland-Heimat-Fremdes-Land/Das-Erste/Video?bcastId=799280&
+             * documentId=50390340
+             */
             final List<DownloadLink> httpStreams = new ArrayList<DownloadLink>();
             try {
                 final HashMap<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -812,9 +821,9 @@ public class Ardmediathek extends PluginForDecrypt {
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         /* 2018-02-28: This should work fine for all hls- and http urls */
         final String qualityStringForQualitySelection = protocol + "_" + bitrate_corrected + "_" + height_corrected;
+        /* TODO: Maybe it makes sense not to include bitrate in the title if it is 0 - or use bitrate_corrected instead then. */
         final String plain_name = title + "_" + protocol + "_" + bitrate + "_" + resolution;
         final String file_name = plain_name + ext;
-        /* TODO: Change this to keep hostnames in hosterplugin */
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         link.setFinalFileName(file_name);
         link.setContentUrl(this.parameter);
