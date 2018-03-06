@@ -24,9 +24,6 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "(?:mediathek\\.)?rbb\\-online\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "(?:one\\.)?ard\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "(?:sr\\-mediathek\\.)?sr\\-online\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "checkeins\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -60,12 +60,12 @@ public class ARDMediathek extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         final String linkID = link.getSetLinkID();
-        final String real_domain = new Regex(link.getDownloadURL(), "(.+)decrypted://").getMatch(0);
+        final String real_domain = new Regex(link.getDownloadURL(), "^(.+)decrypted://").getMatch(0);
         if (real_domain != null) {
             link.setUrlDownload(link.getDownloadURL().replace(real_domain + "decrypted://", "http://"));
-        }
-        if (linkID == null) {
-            link.setLinkID(linkID);
+            if (linkID == null) {
+                link.setLinkID(linkID);
+            }
         }
     }
 
@@ -124,8 +124,9 @@ public class ARDMediathek extends PluginForHost {
                 if (con.getResponseCode() == 404) {
                     /* Content should definitly be offline in this case! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
-                downloadLink.setDownloadSize(con.getLongContentLength());
             } finally {
                 try {
                     con.disconnect();
@@ -166,11 +167,22 @@ public class ARDMediathek extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getResponseCode() == 404) {
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* 2018-03-06: Only investigate by content type if it is supposed to be a video file! */
             if (dl.getConnection().getContentType().contains("html") && !isSubtitle) {
-                br.followConnection();
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             if (this.dl.startDownload()) {
