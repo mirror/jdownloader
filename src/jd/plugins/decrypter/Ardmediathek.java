@@ -838,7 +838,7 @@ public class Ardmediathek extends PluginForDecrypt {
         /* TODO: Improve itemID handling */
         String itemID = new Regex(parameter, "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
         if (itemID == null) {
-            // TODO
+            logger.log(new Exception("FixMe!"));
         }
         link.setProperty("itemId", itemID);
         if (filesize > 0) {
@@ -913,6 +913,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 dl_subtitle.setProperty("directName", subtitle_filename);
                 dl_subtitle.setProperty("streamingType", "subtitle");
                 dl_subtitle.setProperty("mainlink", parameter);
+                dl_subtitle.setProperty("itemSrc", getHost());
+                dl_subtitle.setProperty("itemType", "sub");
+                dl_subtitle.setProperty("itemRes", dl.getProperty("itemRes", null));
+                dl_subtitle.setProperty("itemId", dl.getProperty("itemId", null));
                 dl_subtitle.setContentUrl(parameter);
                 dl_subtitle.setLinkID(linkid);
                 decryptedLinks.add(dl_subtitle);
