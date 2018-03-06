@@ -6,6 +6,9 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 
+import jd.gui.swing.dialog.CaptchaDialog;
+import jd.gui.swing.dialog.DialogType;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.images.IconIO;
@@ -20,11 +23,7 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 
-import jd.gui.swing.dialog.CaptchaDialog;
-import jd.gui.swing.dialog.DialogType;
-
 public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptchaChallenge> {
-
     private CaptchaDialog dialog;
     private String        result;
     private String        suggest;
@@ -35,7 +34,6 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
     public BasicCaptchaDialogHandler(BasicCaptchaChallenge captchaChallenge) {
         super(captchaChallenge.getDomainInfo(), captchaChallenge);
-
     }
 
     @Override
@@ -43,64 +41,49 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         Image[] images = null;
         try {
             if (captchaChallenge instanceof ImageCaptchaChallenge) {
-
                 images = CaptchaDialog.getGifImages(((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().toURI().toURL());
-
                 if (images == null || images.length == 0) {
                     BufferedImage img = IconIO.getImage(((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().toURI().toURL(), false);
                     if (img != null) {
                         images = new Image[] { img };
                     }
                 }
-
                 if (images == null || images.length == 0 || images[0] == null) {
                     getLogger().severe("Could not load CaptchaImage! " + ((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().getAbsolutePath());
                     return;
                 }
-
             } else {
                 return;
             }
-
             CaptchaDialog d = new CaptchaDialog(captchaChallenge, flag, dialogType, getHost(), images, captchaChallenge.getExplain()) {
-
                 public void dispose() {
-
                     super.dispose();
                     synchronized (BasicCaptchaDialogHandler.this) {
-
                         BasicCaptchaDialogHandler.this.notifyAll();
                     }
                 }
             };
             d.setPlugin(captchaChallenge.getPlugin());
-
             d.setTimeout(getTimeoutInMS());
-            if (getTimeoutInMS() == captchaChallenge.getTimeout()) {
+            if (!captchaChallenge.keepAlive()) {
                 // no reason to let the user stop the countdown if the result cannot be used after the countdown anyway
                 d.setCountdownPausable(false);
             }
             dialog = d;
             if (suggest != null) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         dialog.suggest(suggest);
                     }
                 }.waitForEDT();
-
             }
             // don't put this in the edt
             showDialog(dialog);
-
             new EDTHelper<Object>() {
-
                 @Override
                 public Object edtRun() {
-
                     dialog.getDialog().addWindowListener(new WindowListener() {
-
                         @Override
                         public void windowOpened(WindowEvent e) {
                         }
@@ -120,10 +103,8 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                         @Override
                         public void windowClosing(WindowEvent e) {
                             synchronized (BasicCaptchaDialogHandler.this) {
-
                                 BasicCaptchaDialogHandler.this.notifyAll();
                             }
-
                         }
 
                         @Override
@@ -144,25 +125,20 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             try {
                 while (dialog.getDialog().isDisplayable()) {
                     synchronized (this) {
-
                         this.wait(1000);
-
                     }
                 }
-
             } catch (InterruptedException e) {
                 throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
             } finally {
                 try {
                     dialog.dispose();
                 } catch (Exception e) {
-
                 }
             }
             result = dialog.getResult();
             try {
                 if (dialog.getCloseReason() != CloseReason.OK) {
-
                     if (dialog.isHideCaptchasForHost()) {
                         throw new HideCaptchasByHostException();
                     }
@@ -190,7 +166,6 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                 }
             } catch (IllegalStateException e) {
                 // Captcha has been solved externally
-
             }
         } catch (MalformedURLException e) {
             throw new WTFException(e);
@@ -200,7 +175,6 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
     public void setSuggest(final String value) {
         suggest = value;
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (dialog != null) {
@@ -208,7 +182,6 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                 }
             }
         };
-
     }
 
     public String getSuggest() {
@@ -217,7 +190,6 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
     public void requestFocus() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 CaptchaDialog d = dialog;
@@ -230,7 +202,6 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             }
         };
     }
-
     // public void setResponse(CaptchaResult resp) {
     // externalSet = true;
     // this.resp = resp;
@@ -245,5 +216,4 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
     // }
     // };
     // }
-
 }

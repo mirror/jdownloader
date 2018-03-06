@@ -586,10 +586,10 @@ public abstract class Plugin implements ActionListener {
     /**
      * Returns the time in ms until a captcha request times out. this can be different for every plugin.
      *
-     * @PluginDevelopers: Please do not use the @Override Annotation when overriding this method. At least not until 2.0 stable release
+     *
      * @return
      */
-    public int getCaptchaTimeout(Challenge<?> challenge) {
+    public int getChallengeTimeout(Challenge<?> challenge) {
         return CFG_CAPTCHA.CFG.getDefaultChallengeTimeout();
     }
 
@@ -783,10 +783,6 @@ public abstract class Plugin implements ActionListener {
      */
     public String siteSupportedPath() {
         return null;
-    }
-
-    public int getChallengeTimeout(Challenge<?> captchaChallenge) {
-        return -1;
     }
 
     protected List<Challenge<?>> challenges = null;

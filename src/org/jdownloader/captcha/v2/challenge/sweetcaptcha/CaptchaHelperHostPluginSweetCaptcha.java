@@ -76,7 +76,7 @@ public class CaptchaHelperHostPluginSweetCaptcha extends AbstractCaptchaHelperSw
                     return null;
                 }
             };
-            c.setTimeout(plugin.getCaptchaTimeout(c));
+            c.setTimeout(plugin.getChallengeTimeout(c));
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services

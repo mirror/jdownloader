@@ -59,12 +59,12 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
-    @DefaultIntValue(60000)
+    @DefaultIntValue(300000)
     @SpinnerValidator(min = 10000, max = 900000)
     @DescriptionForConfigEntry("MS to wait until captcha dialog gets answered. Close dialog after this timeout unanswered")
-    int getCaptchaDialogDefaultCountdown();
+    int getCaptchaDialogDefaultCountdown2();
 
-    void setCaptchaDialogDefaultCountdown(int seconds);
+    void setCaptchaDialogDefaultCountdown2(int seconds);
 
     @AboutConfig
     @DefaultIntValue(95)

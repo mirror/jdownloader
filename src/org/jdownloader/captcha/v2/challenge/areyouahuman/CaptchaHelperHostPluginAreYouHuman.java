@@ -101,7 +101,7 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                     return null;
                 }
             };
-            challenge.setTimeout(getPlugin().getCaptchaTimeout(challenge));
+            challenge.setTimeout(getPlugin().getChallengeTimeout(challenge));
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use antiCaptcha services

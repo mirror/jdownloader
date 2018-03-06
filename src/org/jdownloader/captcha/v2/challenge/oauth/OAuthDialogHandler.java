@@ -3,6 +3,14 @@ package org.jdownloader.captcha.v2.challenge.oauth;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import jd.controlling.captcha.ChallengeDialogHandler;
+import jd.controlling.captcha.HideAllCaptchasException;
+import jd.controlling.captcha.HideCaptchasByHostException;
+import jd.controlling.captcha.HideCaptchasByPackageException;
+import jd.controlling.captcha.RefreshException;
+import jd.controlling.captcha.StopCurrentActionException;
+import jd.gui.swing.dialog.DialogType;
+
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -13,59 +21,39 @@ import org.appwork.utils.swing.dialog.InternDialog;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 
-import jd.controlling.captcha.ChallengeDialogHandler;
-import jd.controlling.captcha.HideAllCaptchasException;
-import jd.controlling.captcha.HideCaptchasByHostException;
-import jd.controlling.captcha.HideCaptchasByPackageException;
-import jd.controlling.captcha.RefreshException;
-import jd.controlling.captcha.StopCurrentActionException;
-import jd.gui.swing.dialog.DialogType;
-
 public class OAuthDialogHandler extends ChallengeDialogHandler<OAuthChallenge> {
-
     private OAuthDialog dialog;
 
     public OAuthDialogHandler(OAuthChallenge captchaChallenge) {
         super(captchaChallenge.getDomainInfo(), captchaChallenge);
-
     }
 
     @Override
     protected int getTimeoutInMS() {
-
         return captchaChallenge.getTimeout();
     }
 
     @Override
     protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-
         OAuthDialog d = new OAuthDialog(flag, dialogType, getHost(), captchaChallenge) {
             public void dispose() {
-
                 super.dispose();
                 synchronized (OAuthDialogHandler.this) {
-
                     OAuthDialogHandler.this.notifyAll();
                 }
             }
         };
-
         d.setTimeout(getTimeoutInMS());
-        if (getTimeoutInMS() == captchaChallenge.getTimeout()) {
+        if (!captchaChallenge.keepAlive()) {
             // no reason to let the user stop the countdown if the result cannot be used after the countdown anyway
             d.setCountdownPausable(false);
         }
         dialog = d;
-
         showDialog(dialog);
-
         new EDTHelper<Object>() {
-
             @Override
             public Object edtRun() {
-
                 dialog.getDialog().addWindowListener(new WindowListener() {
-
                     @Override
                     public void windowOpened(WindowEvent e) {
                     }
@@ -85,10 +73,8 @@ public class OAuthDialogHandler extends ChallengeDialogHandler<OAuthChallenge> {
                     @Override
                     public void windowClosing(WindowEvent e) {
                         synchronized (OAuthDialogHandler.this) {
-
                             OAuthDialogHandler.this.notifyAll();
                         }
-
                     }
 
                     @Override
@@ -109,25 +95,20 @@ public class OAuthDialogHandler extends ChallengeDialogHandler<OAuthChallenge> {
         try {
             while (dialog.getDialog().isDisplayable()) {
                 synchronized (this) {
-
                     this.wait(1000);
-
                 }
             }
-
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
         } finally {
             try {
                 dialog.dispose();
             } catch (Exception e) {
-
             }
         }
         dialog.getReturnValue();
         try {
             if (dialog.getCloseReason() != CloseReason.OK) {
-
                 // if (dialog.isHideCaptchasForHost()) {
                 // throw new HideCaptchasByHostException();
                 // }
@@ -155,14 +136,11 @@ public class OAuthDialogHandler extends ChallengeDialogHandler<OAuthChallenge> {
             }
         } catch (IllegalStateException e) {
             // Captcha has been solved externally
-
         }
-
     }
 
     public void requestFocus() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 OAuthDialog d = dialog;
@@ -175,7 +153,6 @@ public class OAuthDialogHandler extends ChallengeDialogHandler<OAuthChallenge> {
             }
         };
     }
-
     // public void setResponse(CaptchaResult resp) {
     // externalSet = true;
     // this.resp = resp;
@@ -190,5 +167,4 @@ public class OAuthDialogHandler extends ChallengeDialogHandler<OAuthChallenge> {
     // }
     // };
     // }
-
 }

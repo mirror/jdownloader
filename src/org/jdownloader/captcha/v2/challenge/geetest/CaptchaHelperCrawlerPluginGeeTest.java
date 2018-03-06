@@ -52,7 +52,7 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
                 return null;
             }
         };
-        c.setTimeout(getPlugin().getCaptchaTimeout(c));
+        c.setTimeout(getPlugin().getChallengeTimeout(c));
         getPlugin().invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {

@@ -190,10 +190,13 @@ public abstract class Challenge<T> {
         return lastActivity;
     }
 
-    public void keepAlive() {
+    public boolean keepAlive() {
         final Plugin plugin = getPlugin();
         if (plugin != null && plugin.keepAlive(this)) {
             lastActivity = System.currentTimeMillis();
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -201,6 +204,15 @@ public abstract class Challenge<T> {
         final int timeout = getTimeout();
         if (timeout > 0) {
             return getLastActivity() + timeout;
+        } else {
+            return -1;
+        }
+    }
+
+    public int getRemainingTimeout() {
+        final long validUntil = getValidUntil();
+        if (validUntil > 0) {
+            return (int) Math.max(0, validUntil - System.currentTimeMillis());
         } else {
             return -1;
         }

@@ -143,9 +143,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 job.setID(challenge.getId().getID());
                 job.setHoster(challenge.getHost());
                 job.setCaptchaCategory(challenge.getTypeID());
-                job.setTimeout(challenge.getTimeout());
+                job.setTimeout(challenge.getRemainingTimeout());
                 job.setCreated(challenge.getCreated());
-                job.setValidUntil(challenge.getValidUntil());
                 ret.add(job);
             }
         }
@@ -267,6 +266,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         ret.setHoster(challenge.getHost());
         ret.setCaptchaCategory(challenge.getTypeID());
         ret.setExplain(challenge.getExplain());
+        ret.setTimeout(challenge.getRemainingTimeout());
+        ret.setCreated(challenge.getCreated());
         final DownloadLink link = challenge.getDownloadLink();
         if (link != null) {
             ret.setLink(link.getUniqueID().getID());
