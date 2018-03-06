@@ -170,7 +170,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         } else {
             /* Check if we got a forced Referer - if so, extract it, clean url, use it and set it on our DownloadLinks for later usage. */
             String vimeo_forced_referer = null;
-            final String vimeo_forced_referer_url_part = new Regex(parameter, "(\\&forced_referer=.+)").getMatch(0);
+            final String vimeo_forced_referer_url_part = new Regex(parameter, "((\\&|\\?)forced_referer=.+)").getMatch(0);
             if (vimeo_forced_referer_url_part != null) {
                 parameter = parameter.replace(vimeo_forced_referer_url_part, "");
                 final String forced_referer = new Regex(vimeo_forced_referer_url_part, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
