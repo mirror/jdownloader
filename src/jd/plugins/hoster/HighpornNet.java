@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,9 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends antiDDoSForHost {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "highporn.net", "tanix.net" };
@@ -134,13 +133,9 @@ public class HighpornNet extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean supportsResume() {
-        return "tanix.net".equals(getHost());
-    }
-
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final boolean resumes = cfg.getBooleanProperty("Allow_resume", supportsResume());
+        final boolean resumes = cfg.getBooleanProperty("Allow_resume", true);
         logger.info("resumes: " + resumes);
         dllink = downloadLink.getStringProperty("directlink");
         if (dllink != null) {
@@ -196,7 +191,7 @@ public class HighpornNet extends antiDDoSForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Allow_resume", JDL.L("plugins.hoster.HighpornNet.Allow_resume", "Allow resume")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "", JDL.L("plugins.hoster.HighpornNet.Allow_resume", "Allow resume")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Allow_filesize_check", JDL.L("plugins.hoster.HighpornNet.Allow_filesize_check", "Allow filesize check")).setDefaultValue(false));
     }
 
@@ -220,5 +215,4 @@ public class HighpornNet extends antiDDoSForHost {
     public void getPage(final String page) throws Exception {
         super.getPage(page);
     }
-
 }
