@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -173,7 +175,12 @@ public class HighpornNet extends antiDDoSForHost {
         if (dl == null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {

@@ -6,10 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -23,6 +19,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files(?:\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?|\\?file_id=[a-zA-Z0-9\\-_]+)" })
 public class PremiumizeMe extends PluginForDecrypt {
@@ -80,12 +80,13 @@ public class PremiumizeMe extends PluginForDecrypt {
             final String nodeCloudID = node.getID();
             if (node._isDirectory()) {
                 /* Folder */
-                String path_for_next_crawl_level = null;
+                final String path_for_next_crawl_level;
                 if (StringUtils.isEmpty(currentPath)) {
                     if (!StringUtils.isEmpty(parentName)) {
-                        path_for_next_crawl_level = parentName + "/";
+                        path_for_next_crawl_level = parentName + "/" + itemName;
+                    } else {
+                        path_for_next_crawl_level = itemName;
                     }
-                    path_for_next_crawl_level += itemName;
                 } else {
                     path_for_next_crawl_level = currentPath + "/" + itemName;
                 }
