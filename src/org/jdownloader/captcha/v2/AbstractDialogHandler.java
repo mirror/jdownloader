@@ -23,7 +23,6 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 
 public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaDialog<ReturnCode>, ChallengeType extends Challenge<?>, ReturnCode> extends ChallengeDialogHandler<ChallengeType> {
-
     protected DialogClass dialog;
 
     public DialogClass getDialog() {
@@ -42,35 +41,26 @@ public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaD
 
     @Override
     protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-
         DialogClass d = createDialog(dialogType, flag, new Runnable() {
-
             @Override
             public void run() {
                 synchronized (AbstractDialogHandler.this) {
-
                     AbstractDialogHandler.this.notifyAll();
                 }
             }
         });
         d.setPlugin(captchaChallenge.getPlugin());
-
         d.setTimeout(getTimeoutInMS());
-        if (getTimeoutInMS() == captchaChallenge.getTimeout()) {
+        if (!captchaChallenge.keepAlive()) {
             // no reason to let the user stop the countdown if the result cannot be used after the countdown anyway
             d.setCountdownPausable(false);
         }
         dialog = d;
-
         showDialog(dialog);
-
         new EDTHelper<Object>() {
-
             @Override
             public Object edtRun() {
-
                 dialog.getDialog().addWindowListener(new WindowListener() {
-
                     @Override
                     public void windowOpened(WindowEvent e) {
                     }
@@ -90,10 +80,8 @@ public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaD
                     @Override
                     public void windowClosing(WindowEvent e) {
                         synchronized (AbstractDialogHandler.this) {
-
                             AbstractDialogHandler.this.notifyAll();
                         }
-
                     }
 
                     @Override
@@ -114,26 +102,20 @@ public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaD
         try {
             while (dialog.getDialog().isDisplayable()) {
                 synchronized (this) {
-
                     this.wait(1000);
-
                 }
             }
-
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
         } finally {
             try {
                 dialog.dispose();
             } catch (Exception e) {
-
             }
         }
         // dialog.getReturnValue();
-
         try {
             if (dialog.getCloseReason() != CloseReason.OK) {
-
                 if (dialog.isHideCaptchasForHost()) {
                     throw new HideCaptchasByHostException();
                 }
@@ -161,9 +143,7 @@ public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaD
             }
         } catch (IllegalStateException e) {
             // Captcha has been solved externally
-
         }
-
     }
 
     protected abstract DialogClass createDialog(DialogType dialogType, int flag, final Runnable runnable);
@@ -178,12 +158,10 @@ public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaD
         //
         // }
         // };
-
     }
 
     public void requestFocus() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 DialogClass d = dialog;
@@ -196,5 +174,4 @@ public abstract class AbstractDialogHandler<DialogClass extends AbstractCaptchaD
             }
         };
     }
-
 }

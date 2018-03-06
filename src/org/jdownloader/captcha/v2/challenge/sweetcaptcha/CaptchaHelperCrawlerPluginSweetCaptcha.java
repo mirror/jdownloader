@@ -60,7 +60,7 @@ public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelpe
                 return null;
             }
         };
-        c.setTimeout(plugin.getCaptchaTimeout(c));
+        c.setTimeout(plugin.getChallengeTimeout(c));
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {

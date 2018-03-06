@@ -100,7 +100,7 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                     return null;
                 }
             };
-            c.setTimeout(getPlugin().getCaptchaTimeout(c));
+            c.setTimeout(getPlugin().getChallengeTimeout(c));
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use antiCaptcha services

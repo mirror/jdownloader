@@ -22,34 +22,26 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 
 public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowserChallenge> {
-
     private BrowserCaptchaDialog dialog;
-
     private Object               suggest;
-
     private String               responseString;
 
     public BrowserDialogHandler(AbstractBrowserChallenge captchaChallenge) {
         super(captchaChallenge.getDomainInfo(), captchaChallenge);
-
     }
 
     @Override
     protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-
         BrowserCaptchaDialog d = new BrowserCaptchaDialog(flag, dialogType, getHost(), captchaChallenge) {
             public void dispose() {
-
                 super.dispose();
                 synchronized (BrowserDialogHandler.this) {
-
                     BrowserDialogHandler.this.notifyAll();
                 }
             }
         };
-
         d.setTimeout(getTimeoutInMS());
-        if (getTimeoutInMS() == captchaChallenge.getTimeout()) {
+        if (!captchaChallenge.keepAlive()) {
             // no reason to let the user stop the countdown if the result cannot be used after the countdown anyway
             d.setCountdownPausable(false);
         }
@@ -66,14 +58,10 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
         // }
         // don't put this in the edt
         showDialog(dialog);
-
         new EDTHelper<Object>() {
-
             @Override
             public Object edtRun() {
-
                 dialog.getDialog().addWindowListener(new WindowListener() {
-
                     @Override
                     public void windowOpened(WindowEvent e) {
                     }
@@ -93,10 +81,8 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
                     @Override
                     public void windowClosing(WindowEvent e) {
                         synchronized (BrowserDialogHandler.this) {
-
                             BrowserDialogHandler.this.notifyAll();
                         }
-
                     }
 
                     @Override
@@ -117,25 +103,20 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
         try {
             while (dialog.getDialog().isDisplayable()) {
                 synchronized (this) {
-
                     this.wait(1000);
-
                 }
             }
-
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
         } finally {
             try {
                 dialog.dispose();
             } catch (Exception e) {
-
             }
         }
         responseString = dialog.getReturnValue();
         try {
             if (dialog.getCloseReason() != CloseReason.OK) {
-
                 if (dialog.isHideCaptchasForHost()) {
                     throw new HideCaptchasByHostException();
                 }
@@ -163,9 +144,7 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
             }
         } catch (IllegalStateException e) {
             // Captcha has been solved externally
-
         }
-
     }
 
     public void setSuggest(final Object responseList) {
@@ -178,12 +157,10 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
         //
         // }
         // };
-
     }
 
     public void requestFocus() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 BrowserCaptchaDialog d = dialog;
@@ -200,7 +177,6 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
     public String getResponseString() {
         return responseString;
     }
-
     // public void setResponse(CaptchaResult resp) {
     // externalSet = true;
     // this.resp = resp;
@@ -215,5 +191,4 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
     // }
     // };
     // }
-
 }

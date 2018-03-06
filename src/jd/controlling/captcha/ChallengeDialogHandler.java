@@ -23,6 +23,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
@@ -170,22 +171,17 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
     protected int getTimeoutInMS() {
         int countdown = -1;
-        if (config.isDialogCountdownForDownloadsEnabled()) {
-            if (captchaChallenge.getPlugin() instanceof PluginForHost) {
-                countdown = config.getCaptchaDialogDefaultCountdown();
-            } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
-                countdown = config.getCaptchaDialogDefaultCountdown();
-            }
+        final Plugin plugin = captchaChallenge.getPlugin();
+        if (plugin instanceof PluginForHost && config.isDialogCountdownForDownloadsEnabled()) {
+            countdown = CFG_CAPTCHA.CAPTCHA_DIALOG_DEFAULT_COUNTDOWN.getValue().intValue();
+        } else if (plugin instanceof PluginForDecrypt && config.isDialogCountdownForCrawlerEnabled()) {
+            countdown = CFG_CAPTCHA.CAPTCHA_DIALOG_DEFAULT_COUNTDOWN.getValue().intValue();
         }
-        int pluginTimeout = captchaChallenge.getTimeout();
-        if (pluginTimeout > 0) {
-            if (countdown <= 0 || pluginTimeout < countdown) {
-                countdown = pluginTimeout;
+        final int remainingTimeout = captchaChallenge.getRemainingTimeout();
+        if (remainingTimeout > 0) {
+            if (countdown <= 0 || remainingTimeout < countdown) {
+                countdown = remainingTimeout;
             }
-        }
-        int pluginCaptchaChallengeTimout = captchaChallenge.getPlugin() == null ? 0 : captchaChallenge.getPlugin().getChallengeTimeout(captchaChallenge);
-        if (pluginCaptchaChallengeTimout > 0 && pluginCaptchaChallengeTimout < countdown) {
-            countdown = pluginCaptchaChallengeTimout;
         }
         return countdown;
     }

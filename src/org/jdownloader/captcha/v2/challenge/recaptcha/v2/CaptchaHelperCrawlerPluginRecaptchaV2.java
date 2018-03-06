@@ -56,7 +56,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         }
         final PluginForDecrypt plugin = getPlugin();
         final RecaptchaV2Challenge c = createChallenge();
-        c.setTimeout(plugin == null ? 60000 : plugin.getCaptchaTimeout(c));
+        c.setTimeout(plugin == null ? 60000 : plugin.getChallengeTimeout(c));
         if (plugin != null) {
             plugin.invalidateLastChallengeResponse();
         }

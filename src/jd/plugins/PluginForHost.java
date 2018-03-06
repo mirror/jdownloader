@@ -492,7 +492,7 @@ public abstract class PluginForHost extends Plugin {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
-        c.setTimeout(getCaptchaTimeout(c));
+        c.setTimeout(getChallengeTimeout(c));
         invalidateLastChallengeResponse();
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);

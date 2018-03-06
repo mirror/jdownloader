@@ -3,6 +3,14 @@ package org.jdownloader.captcha.v2.solver.gui;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import jd.controlling.captcha.ChallengeDialogHandler;
+import jd.controlling.captcha.HideAllCaptchasException;
+import jd.controlling.captcha.HideCaptchasByHostException;
+import jd.controlling.captcha.HideCaptchasByPackageException;
+import jd.controlling.captcha.RefreshException;
+import jd.controlling.captcha.StopCurrentActionException;
+import jd.gui.swing.dialog.DialogType;
+
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -14,16 +22,7 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 
-import jd.controlling.captcha.ChallengeDialogHandler;
-import jd.controlling.captcha.HideAllCaptchasException;
-import jd.controlling.captcha.HideCaptchasByHostException;
-import jd.controlling.captcha.HideCaptchasByPackageException;
-import jd.controlling.captcha.RefreshException;
-import jd.controlling.captcha.StopCurrentActionException;
-import jd.gui.swing.dialog.DialogType;
-
 public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<AbstractRecaptcha2FallbackChallenge> {
-
     private String                       result;
     private RecaptchaChooseFrom3x3Dialog dialog;
 
@@ -33,7 +32,6 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
 
     public RecaptchaChooseFrom3x3DialogHandler(AbstractRecaptcha2FallbackChallenge captchaChallenge) {
         super(captchaChallenge.getDomainInfo(), captchaChallenge);
-
     }
 
     @Override
@@ -50,21 +48,17 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
         RecaptchaChooseFrom3x3Dialog d = new RecaptchaChooseFrom3x3Dialog(captchaChallenge, flag, dialogType, getHost(), captchaChallenge);
         d.setPlugin(captchaChallenge.getPlugin());
         d.setTimeout(getTimeoutInMS());
-        if (getTimeoutInMS() == captchaChallenge.getTimeout()) {
+        if (!captchaChallenge.keepAlive()) {
             // no reason to let the user stop the countdown if the result cannot be used after the countdown anyway
             d.setCountdownPausable(false);
         }
-
         dialog = d;
         // don't put this in the edt
         showDialog(dialog);
         new EDTHelper<Object>() {
-
             @Override
             public Object edtRun() {
-
                 dialog.getDialog().addWindowListener(new WindowListener() {
-
                     @Override
                     public void windowOpened(WindowEvent e) {
                     }
@@ -87,7 +81,6 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
                             boolean v = dialog.getDialog().isVisible();
                             RecaptchaChooseFrom3x3DialogHandler.this.notifyAll();
                         }
-
                     }
 
                     @Override
@@ -108,12 +101,9 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
         try {
             while (dialog.getDialog().isVisible()) {
                 synchronized (this) {
-
                     this.wait();
-
                 }
             }
-
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
         } finally {
@@ -122,13 +112,11 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
                     dialog.dispose();
                 }
             } catch (Exception e) {
-
             }
         }
         result = dialog.getResult();
         try {
             if (dialog.getCloseReason() != CloseReason.OK) {
-
                 if (dialog.isHideCaptchasForHost()) {
                     throw new HideCaptchasByHostException();
                 }
@@ -155,14 +143,11 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
             }
         } catch (IllegalStateException e) {
             // Captcha has been solved externally
-
         }
-
     }
 
     public void requestFocus() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 RecaptchaChooseFrom3x3Dialog d = dialog;
@@ -175,5 +160,4 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
             }
         };
     }
-
 }

@@ -10,17 +10,7 @@ public class CaptchaJob implements Storable {
     private String captchaCategory;
     private String explain;
     private int    timeout;
-    private long   validUntil;
-
-    public long getValidUntil() {
-        return validUntil;
-    }
-
-    public void setValidUntil(long validUntil) {
-        this.validUntil = validUntil;
-    }
-
-    private long created;
+    private long   created;
 
     /**
      * @return the type
