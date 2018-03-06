@@ -811,22 +811,13 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         /* 2018-02-28: This should work fine for all hls- and http urls */
-        final String filename_server = jd.plugins.hoster.ARDMediathek.getUniqueURLServerFilenameString(directurl);
         final String qualityStringForQualitySelection = protocol + "_" + bitrate_corrected + "_" + height_corrected;
         final String plain_name = title + "_" + protocol + "_" + bitrate + "_" + resolution;
         final String file_name = plain_name + ext;
-        final String linkid;
-        if (!StringUtils.isEmpty(filename_server)) {
-            linkid = filename_server;
-        } else {
-            linkid = plain_name;
-        }
         /* TODO: Change this to keep hostnames in hosterplugin */
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         link.setFinalFileName(file_name);
         link.setContentUrl(this.parameter);
-        /* This is not perfect but should be enough as a unique identifier! */
-        link.setLinkID(linkid);
         /* 2018-02-22: Only store what we really need! */
         link.setProperty("plain_name", plain_name);
         // link.setProperty("mainlink", this.parameter);
@@ -905,7 +896,6 @@ public class Ardmediathek extends PluginForDecrypt {
             final DownloadLink dl = entry.getValue();
             if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(subtitleLink)) {
                 final String plain_name = dl.getStringProperty("plain_name", null);
-                final String linkid = dl.getLinkID() + "_subtitle";
                 final String subtitle_filename = plain_name + ".xml";
                 final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", getHost() + "decrypted://"));
                 dl_subtitle.setAvailable(true);
@@ -918,7 +908,6 @@ public class Ardmediathek extends PluginForDecrypt {
                 dl_subtitle.setProperty("itemRes", dl.getProperty("itemRes", null));
                 dl_subtitle.setProperty("itemId", dl.getProperty("itemId", null));
                 dl_subtitle.setContentUrl(parameter);
-                dl_subtitle.setLinkID(linkid);
                 decryptedLinks.add(dl_subtitle);
             }
             decryptedLinks.add(dl);
