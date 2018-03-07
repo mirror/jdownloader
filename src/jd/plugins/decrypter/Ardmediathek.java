@@ -43,6 +43,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.ArdConfigInterface;
@@ -94,6 +95,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private String                              title                 = null;
     private String                              date_formatted        = null;
     private boolean                             grabHLS               = false;
+    private String                              contentID             = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -550,7 +552,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
             }
             /*
-             *
+             * 
              * Cannot find any issue. What do you mean by 'name them wrong'? There might be less http than hls! See comment to see example
              * where there are less http than hls. Works fine here, please contact in chat
              */
@@ -675,6 +677,10 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         br.getPage(xml_URL);
+        final String id = br.getRegex(">(crid://.*?)<").getMatch(0);
+        if (id != null) {
+            contentID = Hash.getSHA1(id);
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -736,8 +742,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 long bitrate;
                 if (!StringUtils.isEmpty(bitrate_video) && !StringUtils.isEmpty(bitrate_audio)) {
                     bitrate = Long.parseLong(bitrate_video) + Long.parseLong(bitrate_audio);
-                    if (getHost().equalsIgnoreCase("checkeins.de")) {
-                        /* 2018-03-06: Small workaround */
+                    if (bitrate < 10000) {
                         bitrate = bitrate * 1000;
                     }
                 } else {
@@ -844,7 +849,15 @@ public class Ardmediathek extends PluginForDecrypt {
         link.setProperty("itemType", protocol);
         link.setProperty("itemRes", width + "x" + height);
         /* TODO: Improve itemID handling */
-        String itemID = new Regex(parameter, "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
+        final String itemID;
+        if (contentID != null) {
+            itemID = contentID;
+        } else {
+            itemID = new Regex(parameter, "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
+            if (itemID != null) {
+                contentID = itemID;
+            }
+        }
         if (itemID == null) {
             logger.log(new Exception("FixMe!"));
         }
