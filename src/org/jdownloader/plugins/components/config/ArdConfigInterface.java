@@ -126,6 +126,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     void setGrabHLS540pVideoEnabled(boolean b);
 
     @DefaultBooleanValue(false)
+    @Order(71)
+    boolean isGrabHLS576pVideoEnabled();
+
+    void setGrabHLS576pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
     @Order(80)
     boolean isGrabHLS720pVideoEnabled();
 
@@ -172,6 +178,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     boolean isGrabHTTP540pVideoEnabled();
 
     void setGrabHTTP540pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @Order(141)
+    boolean isGrabHTTP576pVideoEnabled();
+
+    void setGrabHTTP576pVideoEnabled(boolean b);
 
     @DefaultBooleanValue(true)
     @Order(150)
