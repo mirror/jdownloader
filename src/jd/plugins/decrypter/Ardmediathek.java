@@ -366,7 +366,8 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             /*
              * 2018-02-22: TODO: This may sometimes be inaccurate when there are multiple videoObjects on one page (rare case) e.g.
-             * http://www.wdrmaus.de/extras/mausthemen/eisenbahn/index.php5
+             * http://www.wdrmaus.de/extras/mausthemen/eisenbahn/index.php5 --> This is so far not a real usage case and we do not have any
+             * complaints about the current plugin behavior!
              */
             date = br.getRegex("Sendetermin: (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
         } else if (host.contains("sr-online.de")) {
@@ -416,6 +417,10 @@ public class Ardmediathek extends PluginForDecrypt {
         if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("checkeins.de")) {
             /* The fast way - we do not even have to access the main URL which the user has added :) */
             url_xml = parameter.replace(".html", "~playerXml.xml");
+        } else if (this.parameter.matches(".+mdr\\.de/.+/((?:video|audio)\\-\\d+)\\.html")) {
+            /* Some special mdr.de URLs --> We do not have to access main URL so this way we can speed up the crawl process a bit :) */
+            this.contentID = new Regex(this.parameter, "((?:audio|video)\\-\\d+)\\.html$").getMatch(0);
+            url_xml = String.format("https://www.mdr.de/mediathek/mdr-videos/d/%s-avCustom.xml", this.contentID);
         } else {
             /* E.g. kika.de, sputnik.de, mdr.de */
             br.getPage(this.parameter);
@@ -507,7 +512,6 @@ public class Ardmediathek extends PluginForDecrypt {
         String http_url_format = null;
         /**
          * hls --> http urls (whenever possible) <br />
-         * TODO: Improve this part! not always possible and we should not guess (false positives, see my comment) but use what is provided!
          */
         /* First case */
         if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
@@ -526,7 +530,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* wdr */
             http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
         } else if (hls_master.contains("rbbmediaadp-vh") && urlpart2 != null) {
-            /* For all RBB websites e.g. sandmann.de */
+            /* For all RBB websites e.g. also sandmann.de */
             http_url_format = "https://rbbmediapmdp-a.akamaihd.net/" + urlpart2 + "_%s.mp4";
         }
         /* 3rd case */
@@ -577,8 +581,6 @@ public class Ardmediathek extends PluginForDecrypt {
          * Grab all http qualities inside json
          */
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
-        final List<DownloadLink> httpStreams = new ArrayList<DownloadLink>();
-        final long bitrate = 0;
         try {
             final HashMap<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             if (map != null && map.containsKey("_mediaArray")) {
@@ -678,7 +680,6 @@ public class Ardmediathek extends PluginForDecrypt {
                             }
                             final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt);
                             if (download != null) {
-                                httpStreams.add(download);
                                 httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
                             }
                         }
@@ -912,11 +913,9 @@ public class Ardmediathek extends PluginForDecrypt {
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         link.setFinalFileName(file_name);
         link.setContentUrl(this.parameter);
-        /* 2018-02-22: Only store what we really need! */
         link.setProperty("plain_name", plain_name);
-        // link.setProperty("mainlink", this.parameter);
         link.setProperty("directName", file_name);
-        // new properties that can be used for future linkIDs
+        /* new properties that can be used for future linkIDs */
         link.setProperty("itemSrc", getHost());
         link.setProperty("itemType", protocol);
         link.setProperty("itemRes", width + "x" + height);
@@ -1176,15 +1175,20 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (bandwidth > 250000 && bandwidth <= 350000) {
             /* lower 270 */
             bandwidthselect = 317000;
-        } else if (bandwidth > 350000 && bandwidth <= 500000) {
+        } else if (bandwidth > 350000 && bandwidth <= 480000) {
+            /* higher/normal 270 */
             bandwidthselect = 448000;
-        } else if (bandwidth > 500000 && bandwidth <= 800000) {
+        } else if (bandwidth > 480000 && bandwidth <= 800000) {
+            /* 280 */
             bandwidthselect = 605000;
         } else if (bandwidth > 800000 && bandwidth <= 1600000) {
+            /* 360 */
             bandwidthselect = 1213000;
         } else if (bandwidth > 1600000 && bandwidth <= 2800000) {
+            /* 540 */
             bandwidthselect = 1989000;
         } else if (bandwidth > 2800000 && bandwidth <= 4500000) {
+            /* 720 */
             bandwidthselect = 3773000;
         } else {
             /* Probably unknown quality */
