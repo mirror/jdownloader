@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,7 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tinyupload.com" }, urls = { "https?://s\\d+\\.tinyupload\\.com/index\\.php\\?file_id=\\d+" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tinyupload.com" }, urls = { "https?://s\\d+\\.tinyupload\\.com/(index\\.php)?\\?file_id=\\d+" })
 public class TinyuploadCom extends PluginForHost {
     public TinyuploadCom(PluginWrapper wrapper) {
         super(wrapper);
