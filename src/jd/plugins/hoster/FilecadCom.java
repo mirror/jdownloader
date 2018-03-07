@@ -13,20 +13,16 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -48,9 +44,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecad.com" }, urls = { "https?://(?:www\\.)?filecad\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecad.com" }, urls = { "https?://(?:www\\.)?filecad\\.com/[A-Za-z0-9]+" })
 public class FilecadCom extends PluginForHost {
-
     public FilecadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -63,7 +58,6 @@ public class FilecadCom extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other:
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -91,7 +85,6 @@ public class FilecadCom extends PluginForHost {
     private static final String  errortext_ERROR_SERVER                       = "Server error";
     private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
     private static final int     free_MAXCHUNKS                               = 0;
@@ -425,29 +418,24 @@ public class FilecadCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
+            final Cookies cookies = account.loadCookies("");
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(mainpage, key, value);
-                        }
+                br.setFollowRedirects(true);
+                if (cookies != null) {
+                    br.setCookies(getHost(), cookies);
+                    br.getPage(this.getProtocol() + this.getHost() + "/account_home." + type);
+                    if (br.getURL().endsWith("login.html")) {
+                        br.clearCookies(getHost());
+                        account.clearCookies("");
+                    } else {
+                        account.saveCookies(br.getCookies(getHost()), "");
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
                 br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
@@ -480,17 +468,11 @@ public class FilecadCom extends PluginForHost {
                 } else {
                     account.setType(Account.AccountType.PREMIUM);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mainpage);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -588,5 +570,4 @@ public class FilecadCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }
