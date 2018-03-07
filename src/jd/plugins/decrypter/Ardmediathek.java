@@ -506,10 +506,6 @@ public class Ardmediathek extends PluginForDecrypt {
         String urlpart2 = new Regex(hls_master, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
         String http_url_format = null;
         /**
-         * TODO: http://www.ardmediathek.de/tv/Exakt/Wie-Fl%C3%BCchtlinge-in-Lkw-nach-Deutschland-/MDR-Fernsehen/Video?bcastId=7545124&
-         * documentId=50460294
-         */
-        /**
          * hls --> http urls (whenever possible) <br />
          * TODO: Improve this part! not always possible and we should not guess (false positives, see my comment) but use what is provided!
          */
