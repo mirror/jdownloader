@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?!view)[^/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?!view)[^/]+" })
 public class CoubComDecrypter extends PluginForDecrypt {
-
     public CoubComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,16 +58,9 @@ public class CoubComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-
             if (page == 1) {
                 pages_total = (short) JavaScriptEngineFactory.toLong(entries.get("total_pages"), 1);
             }
-
-            if (entries.size() < max_entries_per_page) {
-                /* Fail safe */
-                break;
-            }
-
             final ArrayList<Object> ressources = (ArrayList) entries.get("coubs");
             for (final Object ressource : ressources) {
                 entries = (LinkedHashMap<String, Object>) ressource;
@@ -91,13 +82,13 @@ public class CoubComDecrypter extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    break;
+                }
             }
-
             page++;
-
         } while (page <= pages_total);
-
         return decryptedLinks;
     }
-
 }
