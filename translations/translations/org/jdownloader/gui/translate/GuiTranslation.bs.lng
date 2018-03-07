@@ -1714,8 +1714,15 @@ downloadview_skipped=Preskočeni Download-i
 downloadview_successful=Uspješni Download-i
 downloadview_todo=Downloadi koji slijede
 extensionManager_title=Moduli Dodataka
-extension_recommended=<p>Da bi dobili čitljive i lakše rješive captcha-e, preporučujemo da instalirate zvanični <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader Browser dodatak.</a></p>
-extension_required=<b><p style='color:#ff0000'>Za rješavanje ove vrsta captcha, morate koristiti <a href='https://my.jdownloader.org/apps' target='_blank'>Android aplikaciju preko 'my.jdownloader'</a>, ili naš <a href='https://my.jdownloader.org/apps' target='_blank'>My.JDownloader browser dodatak.</a></p></b>
+extension_help_description=želi da vi riješite captcha. Samo nakon rješavanja ovog captcha, biće vam dozvoljeno da nastavite sa vašim download-om. JDownloader nije u stanju da automatski riješi ove captcha, pa ih moramo proslijediti vama.
+extension_help_description_link_title=Saznaj više
+extension_help_header=Šta se dešava?
+extension_required_description=Ovaj captcha je teže riješiti od drugih. Za nastavak, JDownloader treba pomoć našeg dodatka za web preglednik.
+extension_required_header=Potreban je Dodatak za Web preglednik
+extension_required_link_title=Preuzmi dodatak za web preglednik
+extension_support_description=Ponekad je teško riješiti ove captcha. Međutim, postoje načini za popravljanje vašeg doživljaja!
+extension_support_header=Da li trebate pomoć?
+extension_support_link_title=Saznaj više
 ffmpeg_install_now=Sada instaliraj FFmpeg™
 file_exists_want_to_overwrite_question=Dokument %s1 postoji. Želite li ga prepisati?
 filecolumn_title=Ime
@@ -2058,6 +2065,9 @@ proxytable_edit_btn_blacklist=izmijeni (B%s1)
 proxytable_edit_btn_whitelist=izmijeni (W%s1)
 proxytablemodel_problems=%s1
 quicksettings_SettingsMenuContainer=Brza podešenja
+recaptchav2_head_description=JDownloader treba vašu pomoć pri rješavanju captcha
+recaptchav2_head_title=Novi Captcha!
+recaptchav2_header=Captcha za:
 runDetectionWizard_confirm_title=Potvrdi Test Ponovnog pokretanja
 searchcategory_comment=Komentar
 searchcategory_comment_help=Molimo unesite komentar koji tražite...
