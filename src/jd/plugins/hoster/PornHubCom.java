@@ -418,7 +418,7 @@ public class PornHubCom extends PluginForHost {
     private static Object       LOCK            = new Object();
 
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -441,14 +441,16 @@ public class PornHubCom extends PluginForHost {
                      * (logged in) but at the same time we get logged out on pornhub.com --> So when re-using the cookies we have to check
                      * both as we only need the cookies for our account type.
                      */
-                    final boolean loggedin_free;
-                    final boolean loggedin_premium;
+                    boolean loggedin_premium = false;
                     final boolean loggedin;
                     getPage(br, (getProtocolFree() + "www." + PORNHUB_FREE));
-                    loggedin_free = isLoggedInHtml(br);
-                    /* Important - first check free, then premium! */
-                    br.getPage(getProtocolPremium() + "www." + PORNHUB_PREMIUM);
-                    loggedin_premium = isLoggedInHtml(br);
+                    final boolean loggedin_free = isLoggedInHtml(br);
+                    if (!loggedin_free) {
+                        /* free account and loading premium page expires cookies! */
+                        /* Important - first check free, then premium! */
+                        br.getPage(getProtocolPremium() + "www." + PORNHUB_PREMIUM);
+                        loggedin_premium = isLoggedInHtml(br);
+                    }
                     loggedin = loggedin_free || loggedin_premium;
                     if (loggedin) {
                         /* Refresh timestamp */
@@ -531,13 +533,8 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static void saveCookies(final Browser br, final Account acc) {
-        if (isLoggedInHtmlPremium(br)) {
-            /* Premium account --> Premium cookies */
-            acc.saveCookies(br.getCookies(getProtocolPremium() + PORNHUB_PREMIUM), "");
-        } else {
-            /* Free account --> Free cookies */
-            acc.saveCookies(br.getCookies(acc.getHoster()), "");
-        }
+        acc.saveCookies(br.getCookies(getProtocolPremium() + PORNHUB_PREMIUM), "");
+        acc.saveCookies(br.getCookies(acc.getHoster()), "");
     }
 
     @SuppressWarnings("deprecation")
