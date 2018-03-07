@@ -500,6 +500,50 @@ public class Ardmediathek extends PluginForDecrypt {
         return subtitleURL;
     }
 
+    private String getHlsToHttpURLFormat(final String hls_master) {
+        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
+        String urlpart = regex_hls.getMatch(0);
+        String urlpart2 = new Regex(hls_master, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
+        String http_url_format = null;
+        /**
+         * TODO: http://www.ardmediathek.de/tv/Exakt/Wie-Fl%C3%BCchtlinge-in-Lkw-nach-Deutschland-/MDR-Fernsehen/Video?bcastId=7545124&
+         * documentId=50460294
+         */
+        /**
+         * hls --> http urls (whenever possible) <br />
+         * TODO: Improve this part! not always possible and we should not guess (false positives, see my comment) but use what is provided!
+         */
+        /* First case */
+        if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
+            http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
+        }
+        /* 2nd case */
+        if (hls_master.contains("dasersteuni-vh.akamaihd.net")) {
+            if (urlpart2 != null) {
+                http_url_format = "https://pdvideosdaserste-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
+            }
+        } else if (hls_master.contains("br-i.akamaihd.net")) {
+            if (urlpart2 != null) {
+                http_url_format = "http://cdn-storage.br.de/" + urlpart2 + "_%s.mp4";
+            }
+        } else if (hls_master.contains("wdradaptiv-vh.akamaihd.net") && urlpart2 != null) {
+            /* wdr */
+            http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
+        } else if (hls_master.contains("rbbmediaadp-vh") && urlpart2 != null) {
+            /* For all RBB websites e.g. sandmann.de */
+            http_url_format = "https://rbbmediapmdp-a.akamaihd.net/" + urlpart2 + "_%s.mp4";
+        }
+        /* 3rd case */
+        if (hls_master.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
+            /* 2018-03-07: There is '/progressive/' and '/progressive_geo/' --> We have to grab this from existing http urls */
+            final String server_http = br.getRegex("(https?://mediandr\\-a\\.akamaihd\\.net/progressive[^/]*?/)[^\"]+\\.mp4").getMatch(0);
+            if (server_http != null) {
+                http_url_format = server_http + urlpart + ".%s.mp4";
+            }
+        }
+        return http_url_format;
+    }
+
     /** Last revision with old handling: 38658 */
     private void decryptMediathek() throws Exception {
         if (isOffline(this.br)) {
@@ -534,36 +578,6 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new DecrypterException("Plugin broken");
         }
         if (hls_master != null) {
-            String urlpart = regex_hls.getMatch(0);
-            String urlpart2 = new Regex(hls_master, "//[^/]+/[^/]+/(.*?)(?:/|_),").getMatch(0);
-            String http_url_format = null;
-            /**
-             * TODO: http://www.ardmediathek.de/tv/Exakt/Wie-Fl%C3%BCchtlinge-in-Lkw-nach-Deutschland-/MDR-Fernsehen/Video?bcastId=7545124&
-             * documentId=50460294
-             */
-            /**
-             * hls --> http urls (whenever possible) <br />
-             * TODO: Improve this part! not always possible and we should not guess (false positives, see my comment) but use what is
-             * provided!
-             */
-            /* First case */
-            if (hls_master.contains("rbbmediaadp-vh") && urlpart != null) {
-                /* For all RBB websites e.g. sandmann.de */
-                http_url_format = "https://rbbmediapmdp-a.akamaihd.net/content/" + urlpart + "_%s.mp4";
-            } else if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
-                http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
-            } else if (hls_master.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
-                http_url_format = "https://mediandr-a.akamaihd.net/progressive/" + urlpart + ".%s.mp4";
-            }
-            /* 2nd case */
-            if (hls_master.contains("dasersteuni-vh.akamaihd.net") || hls_master.contains("br-i.akamaihd.net")) {
-                if (urlpart2 != null) {
-                    http_url_format = "https://pdvideosdaserste-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
-                }
-            } else if (hls_master.contains("wdradaptiv-vh.akamaihd.net") && urlpart2 != null) {
-                /* wdr */
-                http_url_format = "http://wdrmedien-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
-            }
             /*
              *
              * Cannot find any issue. What do you mean by 'name them wrong'? There might be less http than hls! See comment to see example
@@ -649,10 +663,11 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             br.getPage("http:" + hls_master);
             if (httpStreams.size() == 0) {
+                final String http_url_format = getHlsToHttpURLFormat(hls_master);
                 /* Access HLS master to find correct resolution for each ID (the only possible way) */
                 final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
                 final String[] qualities = quality_string != null ? quality_string.split(",") : null;
-                if (resolutionsInOrder != null && qualities != null) {
+                if (resolutionsInOrder != null && qualities != null && http_url_format != null) {
                     logger.info("Crawling http urls");
                     for (int counter = 0; counter <= qualities.length - 1; counter++) {
                         if (counter > qualities.length - 1 || counter > resolutionsInOrder.length - 1) {
