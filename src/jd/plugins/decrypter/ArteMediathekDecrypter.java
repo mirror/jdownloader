@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -81,6 +81,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final short      format_intern_unknown                       = 6;
     final String[]                  formats                                     = { http_300, http_800, http_1500, http_2200 };
     private static final String     LANG_DE                                     = "de";
+    private static final String     LOAD_BEST                                   = "LOAD_BEST";
     private static final String     LANG_FR                                     = "fr";
     private String                  parameter;
     private ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
@@ -223,6 +224,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             final boolean germanSelected = cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true);
             final boolean francaisSelected = cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true);
             final boolean loadURLLanguage = cfg.getBooleanProperty(LOAD_LANGUAGE_URL, true);
+            final boolean loadBest = cfg.getBooleanProperty(LOAD_BEST, false);
             if (loadURLLanguage) {
                 selectedLanguages.add(this.getUrlLang());
             } else {
@@ -239,7 +241,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            final HashSet<String> linkIDs = new HashSet<String>();
+            final HashMap<String, DownloadLink> results = new HashMap<String, DownloadLink>();
             /* Finally, grab all we can get (in the selected language(s)) */
             for (final String selectedLanguage : selectedLanguages) {
                 final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
@@ -339,13 +341,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final Object widtho = qualitymap.get("width");
                     final Object heighto = qualitymap.get("height");
                     String videoresolution = "";
-                    String width = "";
-                    String height = "";
+                    Number width = null;
+                    Number height = null;
                     final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
                     if (widtho != null && heighto != null) {
                         /* These parameters are available in 95+% of all cases! */
-                        width = ((Number) qualitymap.get("width")).toString();
-                        height = ((Number) qualitymap.get("height")).toString();
+                        width = ((Number) qualitymap.get("width"));
+                        height = ((Number) qualitymap.get("height"));
                         videoresolution = width + "x" + height;
                     }
                     final String quality_intern = "http_" + videoBitrate;
@@ -382,7 +384,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     // continue;
                     // }
                     final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
-                    if (linkIDs.add(linkID)) {
+                    if (!results.containsKey(linkID)) {
                         final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
                         link.setFinalFileName(filename);
@@ -395,6 +397,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         link.setProperty("langShort", selectedLanguage);
                         link.setProperty("mainlink", parameter);
                         link.setProperty("apiurl", apiurl);
+                        link.setProperty("width", width);
+                        link.setProperty("height", height);
+                        link.setProperty("bitrate", videoBitrate);
                         if (vra != null && vru != null) {
                             link.setProperty("VRA", convertDateFormat(vra));
                             link.setProperty("VRU", convertDateFormat(vru));
@@ -405,9 +410,32 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         if (fastLinkcheck) {
                             link.setAvailable(true);
                         }
-                        decryptedLinks.add(link);
+                        results.put(linkID, link);
                     }
                 }
+            }
+            if (loadBest) {
+                final HashMap<String, DownloadLink> map = new HashMap<String, DownloadLink>();
+                for (final DownloadLink downloadLink : results.values()) {
+                    final String versionCode = downloadLink.getStringProperty("versionCode");
+                    final String langShort = downloadLink.getStringProperty("langShort");
+                    final Number height = (Number) downloadLink.getProperty("height");
+                    final String id = versionCode + "_" + langShort;
+                    final DownloadLink best = map.get(id);
+                    if (best == null) {
+                        map.put(id, downloadLink);
+                    } else {
+                        final Number bheight = (Number) best.getProperty("height");
+                        if (height != null && bheight != null) {
+                            if (height.intValue() > bheight.intValue()) {
+                                map.put(id, downloadLink);
+                            }
+                        }
+                    }
+                }
+                decryptedLinks.addAll(map.values());
+            } else {
+                decryptedLinks.addAll(results.values());
             }
             /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
             if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
