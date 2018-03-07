@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -40,6 +41,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
@@ -336,25 +338,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
                     final String url = (String) qualitymap.get("url");
-                    if (!url.startsWith("http") || url.contains(".m3u8")) {
-                        continue;
-                    }
-                    final Object widtho = qualitymap.get("width");
-                    final Object heighto = qualitymap.get("height");
-                    String videoresolution = "";
-                    Number width = null;
-                    Number height = null;
-                    final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
-                    if (widtho != null && heighto != null) {
-                        /* These parameters are available in 95+% of all cases! */
-                        width = ((Number) qualitymap.get("width"));
-                        height = ((Number) qualitymap.get("height"));
-                        videoresolution = width + "x" + height;
-                    }
-                    final String quality_intern = "http_" + videoBitrate;
-                    if (!cfg.getBooleanProperty(quality_intern, true)) {
-                        /* User does not want this bitrate --> Skip it */
-                        logger.info("Skipping " + quality_intern);
+                    if (!url.startsWith("http")) {
                         continue;
                     }
                     final String versionCode = (String) qualitymap.get("versionCode");
@@ -379,39 +363,111 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     if (!germanSelected && !loadURLLanguage && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
                         continue;
                     }
-                    // TODO
-                    // if (!cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true) && format_code == format_intern_audio_description) {
-                    // /* User does not want the audio-description version */
-                    // continue;
-                    // }
-                    final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
-                    if (!results.containsKey(linkID)) {
-                        final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                        final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
-                        link.setFinalFileName(filename);
-                        link.setContentUrl(parameter);
-                        link._setFilePackage(fp);
-                        link.setProperty("versionCode", versionCode);
-                        link.setProperty("directURL", url);
-                        link.setProperty("directName", filename);
-                        link.setProperty("quality_intern", quality_intern);
-                        link.setProperty("langShort", selectedLanguage);
-                        link.setProperty("mainlink", parameter);
-                        link.setProperty("apiurl", apiurl);
-                        link.setProperty("width", width);
-                        link.setProperty("height", height);
-                        link.setProperty("bitrate", videoBitrate);
-                        if (vra != null && vru != null) {
-                            link.setProperty("VRA", convertDateFormat(vra));
-                            link.setProperty("VRU", convertDateFormat(vru));
+                    if (url.contains(".m3u8")) {
+                        if (!cfg.getBooleanProperty("hls", false)) {
+                            continue;
                         }
-                        link.setComment(description);
-                        link.setContentUrl(parameter);
-                        link.setLinkID(linkID);
-                        if (fastLinkcheck) {
-                            link.setAvailable(true);
+                        final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br.cloneBrowser(), url);
+                        if (hlsContainers != null) {
+                            for (HlsContainer container : hlsContainers) {
+                                final int videoBitrate = container.getBandwidth();
+                                final String quality_intern = "hls_" + videoBitrate;
+                                Number width = null;
+                                if (container.getWidth() > 0) {
+                                    width = container.getWidth();
+                                }
+                                Number height = null;
+                                if (container.getHeight() > 0) {
+                                    height = container.getHeight();
+                                }
+                                String videoresolution = "";
+                                if (height != null && width != null) {
+                                    videoresolution = width + "x" + height;
+                                }
+                                final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
+                                if (!results.containsKey(linkID)) {
+                                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                                    final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+                                    link.setFinalFileName(filename);
+                                    link.setContentUrl(parameter);
+                                    link._setFilePackage(fp);
+                                    link.setProperty("versionCode", versionCode);
+                                    link.setProperty("directURL", container.getDownloadurl());
+                                    link.setProperty("directName", filename);
+                                    link.setProperty("quality_intern", quality_intern);
+                                    link.setProperty("langShort", selectedLanguage);
+                                    link.setProperty("mainlink", parameter);
+                                    link.setProperty("apiurl", apiurl);
+                                    link.setProperty("width", width);
+                                    link.setProperty("height", height);
+                                    link.setProperty("bitrate", videoBitrate);
+                                    if (vra != null && vru != null) {
+                                        link.setProperty("VRA", convertDateFormat(vra));
+                                        link.setProperty("VRU", convertDateFormat(vru));
+                                    }
+                                    link.setComment(description);
+                                    link.setContentUrl(parameter);
+                                    link.setLinkID(linkID);
+                                    if (fastLinkcheck) {
+                                        link.setAvailable(true);
+                                    }
+                                    results.put(linkID, link);
+                                }
+                            }
                         }
-                        results.put(linkID, link);
+                    } else {
+                        final Object widtho = qualitymap.get("width");
+                        final Object heighto = qualitymap.get("height");
+                        String videoresolution = "";
+                        Number width = null;
+                        Number height = null;
+                        final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
+                        if (widtho != null && heighto != null) {
+                            /* These parameters are available in 95+% of all cases! */
+                            width = ((Number) qualitymap.get("width"));
+                            height = ((Number) qualitymap.get("height"));
+                            videoresolution = width + "x" + height;
+                        }
+                        final String quality_intern = "http_" + videoBitrate;
+                        if (!cfg.getBooleanProperty(quality_intern, true)) {
+                            /* User does not want this bitrate --> Skip it */
+                            logger.info("Skipping " + quality_intern);
+                            continue;
+                        }
+                        // TODO
+                        // if (!cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true) && format_code == format_intern_audio_description) {
+                        // /* User does not want the audio-description version */
+                        // continue;
+                        // }
+                        final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
+                        if (!results.containsKey(linkID)) {
+                            final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                            final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+                            link.setFinalFileName(filename);
+                            link.setContentUrl(parameter);
+                            link._setFilePackage(fp);
+                            link.setProperty("versionCode", versionCode);
+                            link.setProperty("directURL", url);
+                            link.setProperty("directName", filename);
+                            link.setProperty("quality_intern", quality_intern);
+                            link.setProperty("langShort", selectedLanguage);
+                            link.setProperty("mainlink", parameter);
+                            link.setProperty("apiurl", apiurl);
+                            link.setProperty("width", width);
+                            link.setProperty("height", height);
+                            link.setProperty("bitrate", videoBitrate);
+                            if (vra != null && vru != null) {
+                                link.setProperty("VRA", convertDateFormat(vra));
+                                link.setProperty("VRU", convertDateFormat(vru));
+                            }
+                            link.setComment(description);
+                            link.setContentUrl(parameter);
+                            link.setLinkID(linkID);
+                            if (fastLinkcheck) {
+                                link.setAvailable(true);
+                            }
+                            results.put(linkID, link);
+                        }
                     }
                 }
             }
