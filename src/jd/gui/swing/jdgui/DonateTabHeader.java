@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.Icon;
 import javax.swing.Timer;
@@ -18,42 +19,54 @@ import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
-
     /**
      *
      */
-    private static final long   serialVersionUID = 1L;
-    private final DONATE_EVENT  event;
-    private final Icon          eventIcon;
-    private final AtomicBoolean flashFlag        = new AtomicBoolean(false);
+    private static final long                   serialVersionUID = 1L;
+    private final AtomicReference<DONATE_EVENT> event            = new AtomicReference<DONATE_EVENT>(null);
+    private final AtomicBoolean                 flashFlag        = new AtomicBoolean(false);
 
     public DonateTabHeader(final View view) {
         super(view);
-        event = DONATE_EVENT.getNow();
-        eventIcon = event.getIcon();
-        labelIcon.setIcon(eventIcon);
-        flashFlag.set(!event.matchesID(CFG_GUI.CFG.getDonationNotifyID()));
-        if (isFlashing()) {
-            final Timer blinker = new Timer(1500, new ActionListener() {
-                private int        i               = 0;
-                private final Icon iconTransparent = IconIO.getTransparentIcon(IconIO.toBufferedImage(eventIcon), 0.5f);
+        updateEvent();
+        final Timer updateTimer = new Timer(60 * 60 * 1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateEvent();
+            }
+        });
+        updateTimer.setRepeats(true);
+        updateTimer.start();
+    }
 
-                @Override
-                public void actionPerformed(final ActionEvent e) {
-                    if (!isFlashing()) {
-                        labelIcon.setIcon(eventIcon);
-                        ((Timer) e.getSource()).stop();
-                    } else {
-                        if (i++ % 2 == 0) {
-                            labelIcon.setIcon(eventIcon);
+    private void updateEvent() {
+        final DONATE_EVENT now = DONATE_EVENT.getNow();
+        if (event.getAndSet(now) != null) {
+            final Icon icon = now.getIcon();
+            labelIcon.setIcon(icon);
+            flashFlag.set(!now.matchesID(CFG_GUI.CFG.getDonationNotifyID()));
+            if (isFlashing()) {
+                final Timer blinker = new Timer(1500, new ActionListener() {
+                    private int        i               = 0;
+                    private final Icon iconTransparent = IconIO.getTransparentIcon(IconIO.toBufferedImage(icon), 0.5f);
+
+                    @Override
+                    public void actionPerformed(final ActionEvent e) {
+                        if (!isFlashing() || event.get() != now) {
+                            labelIcon.setIcon(event.get().getIcon());
+                            ((Timer) e.getSource()).stop();
                         } else {
-                            labelIcon.setIcon(iconTransparent);
+                            if (i++ % 2 == 0) {
+                                labelIcon.setIcon(icon);
+                            } else {
+                                labelIcon.setIcon(iconTransparent);
+                            }
                         }
                     }
-                }
-            });
-            blinker.setRepeats(true);
-            blinker.start();
+                });
+                blinker.setRepeats(true);
+                blinker.start();
+            }
         }
     }
 
@@ -91,22 +104,17 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                setShown();
                 flashFlag.set(false);
-                CFG_GUI.CFG.setDonationNotifyID(event.getID());
+                CFG_GUI.CFG.setDonationNotifyID(event.get().getID());
                 new DonateAction().actionPerformed(null);
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                setHidden();
             }
-
         });
     }
 
     public void onClick() {
-
     }
-
 }
