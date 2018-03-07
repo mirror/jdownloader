@@ -40,6 +40,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -386,7 +387,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                                 }
                                 final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
                                 if (!results.containsKey(linkID)) {
-                                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
                                     final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
                                     link.setFinalFileName(filename);
                                     link.setContentUrl(parameter);
@@ -441,7 +442,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         // }
                         final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
                         if (!results.containsKey(linkID)) {
-                            final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                            final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
                             final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
                             link.setFinalFileName(filename);
                             link.setContentUrl(parameter);
