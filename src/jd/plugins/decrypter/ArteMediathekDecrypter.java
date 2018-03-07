@@ -119,8 +119,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(new int[] { 410, 503 });
         br.getPage(parameter);
-        final boolean isGerman = "de".equalsIgnoreCase(TranslationFactory.getDesiredLanguage());
-        final boolean isFrancais = "fr".equalsIgnoreCase(TranslationFactory.getDesiredLanguage());
+        final String desiredLanguage = TranslationFactory.getDesiredLanguage();
+        final boolean isGerman = "de".equalsIgnoreCase(desiredLanguage);
+        final boolean isFrancais = "fr".equalsIgnoreCase(desiredLanguage);
         String videoid_base = null;
         String video_section = null;
         try {
