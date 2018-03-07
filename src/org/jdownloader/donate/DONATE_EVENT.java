@@ -54,16 +54,70 @@ public enum DONATE_EVENT {
             }
         }
     },
-    BLACK_FRIDAY(IconKey.ICON_BLACK_FRIDAY) {
+    HALLOWEEN(IconKey.ICON_HALLOWEEN) {
         @Override
         public boolean isNow() {
-            // Black Friday, 24.12.2017
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(timeStamp);
+            final int day = calendar.get(Calendar.DAY_OF_MONTH);
+            final int month = calendar.get(Calendar.MONTH);
+            if (month == 9 && day == 31) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    },
+    VALENTINE(IconKey.ICON_VALENTINE) {
+        @Override
+        public boolean isNow() {
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(timeStamp);
+            final int day = calendar.get(Calendar.DAY_OF_MONTH);
+            final int month = calendar.get(Calendar.MONTH);
+            if (month == 1 && day == 14) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    },
+    EASTER(IconKey.ICON_EASTER_EGG) {
+        @Override
+        public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(timeStamp);
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int year = calendar.get(Calendar.YEAR);
-            if (month == 10 && day == 24 && year == 2017) {
+            if (year == 2018 && month == 3 && day == 1) {
+                return true;
+            } else if (year == 2019 && month == 3 && day == 21) {
+                return true;
+            } else if (year == 2020 && month == 3 && day == 12) {
+                return true;
+            } else if (year == 2021 && month == 3 && day == 4) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    },
+    BLACK_FRIDAY(IconKey.ICON_BLACK_FRIDAY) {
+        @Override
+        public boolean isNow() {
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(timeStamp);
+            final int day = calendar.get(Calendar.DAY_OF_MONTH);
+            final int month = calendar.get(Calendar.MONTH);
+            final int year = calendar.get(Calendar.YEAR);
+            if (month == 10 && day == 23 && year == 2018) {
+                return true;
+            } else if (month == 10 && day == 29 && year == 2019) {
+                return true;
+            } else if (month == 10 && day == 27 && year == 2020) {
+                return true;
+            } else if (month == 10 && day == 26 && year == 2021) {
                 return true;
             } else {
                 return false;
