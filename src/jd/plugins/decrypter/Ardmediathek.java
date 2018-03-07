@@ -28,6 +28,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -54,19 +67,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
         "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -90,12 +90,12 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("576", 1728000l);
         heigth_to_bitrate.put("720", 3773000l);
     }
-    private String  subtitleLink   = null;
-    private String  parameter      = null;
-    private String  title          = null;
-    private String  date_formatted = null;
-    private boolean grabHLS        = false;
-    private String  contentID      = null;
+    private String                              subtitleLink          = null;
+    private String                              parameter             = null;
+    private String                              title                 = null;
+    private String                              date_formatted        = null;
+    private boolean                             grabHLS               = false;
+    private String                              contentID             = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -575,7 +575,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (hls_master != null) {
             /*
-             *
+             * 
              * Cannot find any issue. What do you mean by 'name them wrong'? There might be less http than hls! See comment to see example
              * where there are less http than hls. Works fine here, please contact in chat
              */
@@ -587,69 +587,95 @@ public class Ardmediathek extends PluginForDecrypt {
                     for (Map<String, Object> media : mediaArray) {
                         List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
                         for (Map<String, Object> mediaStream : mediaStreamArray) {
-                            final String stream;
+                            final List<String> streams;
                             if (mediaStream.get("_stream") instanceof String) {
-                                stream = (String) mediaStream.get("_stream");
+                                streams = new ArrayList<String>();
+                                streams.add((String) mediaStream.get("_stream"));
                             } else {
-                                stream = ((List<String>) mediaStream.get("_stream")).get(0);
+                                streams = ((List<String>) mediaStream.get("_stream"));
                             }
-                            if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
-                                continue;
-                            }
-                            final String url = br.getURL(stream).toString();
-                            final Object quality = mediaStream.get("_quality");
-                            if (!(quality instanceof Number)) {
-                                continue;
-                            }
-                            final Object width = mediaStream.get("_width");
-                            final Object height = mediaStream.get("_height");
-                            final int widthInt;
-                            if (width instanceof Number) {
-                                widthInt = ((Number) width).intValue();
-                            } else {
-                                switch (((Number) quality).intValue()) {
-                                case 0:
+                            for (final String stream : streams) {
+                                if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
+                                    continue;
+                                }
+                                final String url = br.getURL(stream).toString();
+                                final Object quality = mediaStream.get("_quality");
+                                if (!(quality instanceof Number)) {
+                                    continue;
+                                }
+                                final int widthInt;
+                                final int heightInt;
+                                if (StringUtils.containsIgnoreCase(stream, "0.mp4") || StringUtils.containsIgnoreCase(stream, "128k.mp4")) {
                                     widthInt = 320;
-                                    break;
-                                case 1:
-                                    widthInt = 512;
-                                    break;
-                                case 2:
-                                    widthInt = 640;
-                                    break;
-                                case 3:
-                                    widthInt = 1280;
-                                    break;
-                                default:
-                                    widthInt = -1;
-                                    break;
-                                }
-                            }
-                            final int heightInt;
-                            if (width instanceof Number) {
-                                heightInt = ((Number) height).intValue();
-                            } else {
-                                switch (((Number) quality).intValue()) {
-                                case 0:
                                     heightInt = 180;
-                                    break;
-                                case 1:
+                                } else if (StringUtils.containsIgnoreCase(stream, "lo.mp4")) {
+                                    widthInt = 256;
+                                    heightInt = 144;
+                                } else if (StringUtils.containsIgnoreCase(stream, "A.mp4") || StringUtils.containsIgnoreCase(stream, "mn.mp4") || StringUtils.containsIgnoreCase(stream, "256k.mp4")) {
+                                    widthInt = 480;
+                                    heightInt = 270;
+                                } else if (StringUtils.containsIgnoreCase(stream, "B.mp4") || StringUtils.containsIgnoreCase(stream, "hi.mp4") || StringUtils.containsIgnoreCase(stream, "512k.mp4")) {
+                                    widthInt = 512;
                                     heightInt = 288;
-                                    break;
-                                case 2:
+                                } else if (StringUtils.containsIgnoreCase(stream, "C.mp4") || StringUtils.containsIgnoreCase(stream, "hq.mp4") || StringUtils.containsIgnoreCase(stream, "1800k.mp4")) {
+                                    widthInt = 960;
+                                    heightInt = 544;
+                                } else if (StringUtils.containsIgnoreCase(stream, "E.mp4") || StringUtils.containsIgnoreCase(stream, "ln.mp4") || StringUtils.containsIgnoreCase(stream, "1024k.mp4")) {
+                                    widthInt = 640;
                                     heightInt = 360;
-                                    break;
-                                case 3:
+                                } else if (StringUtils.containsIgnoreCase(stream, "X.mp4") || StringUtils.containsIgnoreCase(stream, "hd.mp4")) {
+                                    widthInt = 1280;
                                     heightInt = 720;
-                                    break;
-                                default:
-                                    heightInt = -1;
-                                    break;
+                                } else {
+                                    final Object width = mediaStream.get("_width");
+                                    final Object height = mediaStream.get("_height");
+                                    if (width instanceof Number) {
+                                        widthInt = ((Number) width).intValue();
+                                    } else {
+                                        switch (((Number) quality).intValue()) {
+                                        case 0:
+                                            widthInt = 320;
+                                            break;
+                                        case 1:
+                                            widthInt = 512;
+                                            break;
+                                        case 2:
+                                            widthInt = 640;
+                                            break;
+                                        case 3:
+                                            widthInt = 1280;
+                                            break;
+                                        default:
+                                            widthInt = -1;
+                                            break;
+                                        }
+                                    }
+                                    if (width instanceof Number) {
+                                        heightInt = ((Number) height).intValue();
+                                    } else {
+                                        switch (((Number) quality).intValue()) {
+                                        case 0:
+                                            heightInt = 180;
+                                            break;
+                                        case 1:
+                                            heightInt = 288;
+                                            break;
+                                        case 2:
+                                            heightInt = 360;
+                                            break;
+                                        case 3:
+                                            heightInt = 720;
+                                            break;
+                                        default:
+                                            heightInt = -1;
+                                            break;
+                                        }
+                                    }
                                 }
-                            }
-                            final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt);
-                            if (download != null) {
-                                httpStreams.add(download);
+                                final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt);
+                                if (download != null) {
+                                    httpStreams.add(download);
+                                }
                             }
                         }
                     }
