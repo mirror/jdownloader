@@ -677,7 +677,7 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         br.getPage(xml_URL);
-        final String id = br.getRegex(">(crid://.*?)<").getMatch(0);
+        final String id = br.getRegex("<c7>(.*?)</c7>").getMatch(0);
         if (id != null) {
             contentID = Hash.getSHA1(id);
         }
