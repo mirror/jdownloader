@@ -138,7 +138,8 @@ public class TviIolPt extends PluginForHost {
             }
         } else {
             /* hls download */
-            String dllink = this.br.getRegex("videoUrl: \\'(http[^<>\"\\']*?)\\'").getMatch(0);
+            // String dllink = this.br.getRegex("videoUrl: \\'(http[^<>\"\\']*?)\\'").getMatch(0);
+            String dllink = br.getRegex("videoUrl = '(http[^<>\"']*?)'").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
