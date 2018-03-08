@@ -116,11 +116,11 @@ public class PornktubeCom extends PluginForHost {
             final int Preferred_format = cfg.getIntegerProperty("Preferred_format", 0);
             logger.info("Debug info: Preferred_format: " + Preferred_format);
             /* Preferred_format 0 = best, 1 = 1080p, 2 = 720p, 3 = 480p, 4 = 360p, 5 = 240p */
-            final String items[][] = br.getRegex("data-c=\"([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+)").getMatches();
+            final String items[][] = br.getRegex("data-c=\"([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^;]+);([^<>\";]+)").getMatches();
             if (items != null && items.length > 0) {
                 for (final String item[] : items) {
                     logger.info("Debug info: Preferred_format: " + Preferred_format + ", checking format: " + item[1]);
-                    dllink = "http://s" + item[7] + ".cdna.tv/svideo/?t=" + item[5] + "&k=" + item[6] + "&n=/13000/" + item[4] + "/" + item[4] + "_" + item[1] + ".mp4";
+                    dllink = "http://s" + item[7] + ".cdna.tv/cvideo/" + item[5] + "/" + item[6] + "/13000/" + item[4] + "/" + item[4] + "_" + item[1] + ".mp4";
                     logger.info("Debug info: checking dllink: " + dllink);
                     checkDllink(link);
                     if (dllink == null) {
