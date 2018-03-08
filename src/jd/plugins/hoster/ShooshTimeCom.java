@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "https?://(www\\.)?shooshtime\\.com/(videos/(?:[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "https?://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+_\\d+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
 public class ShooshTimeCom extends PluginForHost {
     public ShooshTimeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +72,9 @@ public class ShooshTimeCom extends PluginForHost {
             }
             if (dllink == null) {
                 dllink = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("<video src=\"([^<>\"]*?)\"").getMatch(0);
             }
         }
         if (filename == null || dllink == null) {
