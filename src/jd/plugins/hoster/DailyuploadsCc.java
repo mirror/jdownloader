@@ -92,13 +92,13 @@ public class DailyuploadsCc extends PluginForHost {
     private static final int               WAITSECONDSMAX               = 100;
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
+    private static final boolean           FREE_RESUME                  = false;
     private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final boolean           ACCOUNT_FREE_RESUME          = false;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = false;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
