@@ -2149,24 +2149,27 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         @SuppressWarnings("unchecked")
         final T ret = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new InvocationHandler() {
             public String getKey(Method method) {
+                final Key keyAnnotation = method.getAnnotation(Key.class);
                 String key = null;
-                if (method.getName().startsWith("set")) {
-                    key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
-                } else if (method.getName().startsWith("is")) {
-                    key = method.getName().substring(2).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
-                } else if (method.getName().startsWith("get")) {
-                    key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
-                } else {
-                    return null;
-                }
-                Key keyAnnotation = method.getAnnotation(Key.class);
                 if (keyAnnotation != null) {
                     key = keyAnnotation.value();
                 }
-                if (ID != null) {
-                    key = ID + key;
+                if (key == null) {
+                    if (method.getName().startsWith("set")) {
+                        key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                    } else if (method.getName().startsWith("is")) {
+                        key = method.getName().substring(2).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                    } else if (method.getName().startsWith("get")) {
+                        key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                    } else {
+                        return null;
+                    }
                 }
-                return key;
+                if (ID != null) {
+                    return ID + key;
+                } else {
+                    return key;
+                }
             }
 
             @Override
