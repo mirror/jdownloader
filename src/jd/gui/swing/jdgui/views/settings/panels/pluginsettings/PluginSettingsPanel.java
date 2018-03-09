@@ -37,6 +37,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -200,7 +201,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     int selectIndex = 0;
                     if (pluginID != null) {
                         for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
-                            if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getID().equals(pluginID)) {
+                            final LazyPlugin<?> plugin = ((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i));
+                            if (StringUtils.startsWithCaseInsensitive(pluginID, plugin.getClassName()) && plugin.getID().equals(pluginID)) {
                                 selectIndex = i;
                                 break;
                             }

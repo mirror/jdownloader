@@ -62,7 +62,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public String getID() {
-        return getLazyPluginClass().getClassName() + "/" + getDisplayName();
+        return getClassName() + "/" + getDisplayName();
     }
 
     public boolean equals(Object lazyPlugin) {
