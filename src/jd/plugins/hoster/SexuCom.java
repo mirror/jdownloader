@@ -74,7 +74,8 @@ public class SexuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p" };
-        String js = this.br.getRegex("\\.setup\\((\\{.*?\\})\\);").getMatch(0);
+        // String js = this.br.getRegex("\\.setup\\((\\{.*?\\})\\);").getMatch(0);
+        String js = br.getRegex("\"clip\":(\\{.*?\\}\\}\\})").getMatch(0);
         if (js == null) {
             js = br.cloneBrowser().getPage("http://sexu.com/v.php?v_id=" + downloadLink.getLinkID() + "&bitrate=720p&_=" + System.currentTimeMillis());
             // js = js.replace("'", "\"");
@@ -85,9 +86,9 @@ public class SexuCom extends PluginForHost {
         for (final String quality : qualities) {
             for (final Object qualinfo : sources) {
                 final HashMap<String, Object> qual_info = (HashMap<String, Object>) qualinfo;
-                final String currquality = (String) qual_info.get("label");
+                final String currquality = (String) qual_info.get("quality");
                 if (currquality.contains(quality)) {
-                    dllink = (String) qual_info.get("file");
+                    dllink = (String) qual_info.get("src");
                     done = true;
                     break;
                 }
