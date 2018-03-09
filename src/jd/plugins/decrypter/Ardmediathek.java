@@ -588,6 +588,12 @@ public class Ardmediathek extends PluginForDecrypt {
                 for (Map<String, Object> media : mediaArray) {
                     List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
                     for (Map<String, Object> mediaStream : mediaStreamArray) {
+                        final int quality;
+                        if (mediaStream.get("_quality") instanceof Number) {
+                            quality = ((Number) mediaStream.get("_quality")).intValue();
+                        } else {
+                            continue;
+                        }
                         final List<String> streams;
                         if (mediaStream.get("_stream") instanceof String) {
                             streams = new ArrayList<String>();
@@ -595,19 +601,64 @@ public class Ardmediathek extends PluginForDecrypt {
                         } else {
                             streams = ((List<String>) mediaStream.get("_stream"));
                         }
-                        for (final String stream : streams) {
+                        for (int index = 0; index < streams.size(); index++) {
+                            final String stream = streams.get(index);
                             if (stream == null || !StringUtils.endsWithCaseInsensitive(stream, ".mp4")) {
                                 /* Skip invalid objects */
                                 continue;
                             }
                             final String url = br.getURL(stream).toString();
-                            final Object quality = mediaStream.get("_quality");
-                            if (!(quality instanceof Number)) {
-                                continue;
-                            }
                             final int widthInt;
                             final int heightInt;
-                            if (StringUtils.containsIgnoreCase(stream, "0.mp4") || StringUtils.containsIgnoreCase(stream, "128k.mp4")) {
+                            if (quality == 0 && streams.size() == 1) {
+                                widthInt = 320;
+                                heightInt = 180;
+                            } else if (quality == 1 && streams.size() == 1) {
+                                widthInt = 512;
+                                heightInt = 288;
+                            } else if (quality == 1 && streams.size() == 2) {
+                                switch (index) {
+                                case 0:
+                                    widthInt = 512;
+                                    heightInt = 288;
+                                    break;
+                                case 1:
+                                default:
+                                    widthInt = 480;
+                                    heightInt = 270;
+                                    break;
+                                }
+                            } else if (quality == 2 && streams.size() == 1) {
+                                widthInt = 960;
+                                heightInt = 544;
+                            } else if (quality == 2 && streams.size() == 2) {
+                                switch (index) {
+                                case 0:
+                                    widthInt = 640;
+                                    heightInt = 360;
+                                    break;
+                                case 1:
+                                default:
+                                    widthInt = 960;
+                                    heightInt = 540;
+                                    break;
+                                }
+                            } else if (quality == 3 && streams.size() == 1) {
+                                widthInt = 960;
+                                heightInt = 540;
+                            } else if (quality == 3 && streams.size() == 2) {
+                                switch (index) {
+                                case 0:
+                                    widthInt = 1280;
+                                    heightInt = 720;
+                                    break;
+                                case 1:
+                                default:
+                                    widthInt = 960;
+                                    heightInt = 540;
+                                    break;
+                                }
+                            } else if (StringUtils.containsIgnoreCase(stream, "0.mp4") || StringUtils.containsIgnoreCase(stream, "128k.mp4")) {
                                 widthInt = 320;
                                 heightInt = 180;
                             } else if (StringUtils.containsIgnoreCase(stream, "lo.mp4")) {
@@ -621,7 +672,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                 heightInt = 288;
                             } else if (StringUtils.containsIgnoreCase(stream, "C.mp4") || StringUtils.containsIgnoreCase(stream, "hq.mp4") || StringUtils.containsIgnoreCase(stream, "1800k.mp4")) {
                                 widthInt = 960;
-                                heightInt = 544;
+                                heightInt = 540;
                             } else if (StringUtils.containsIgnoreCase(stream, "E.mp4") || StringUtils.containsIgnoreCase(stream, "ln.mp4") || StringUtils.containsIgnoreCase(stream, "1024k.mp4") || StringUtils.containsIgnoreCase(stream, "1.mp4")) {
                                 widthInt = 640;
                                 heightInt = 360;
