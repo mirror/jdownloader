@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import java.util.Collection;
+
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
@@ -48,7 +50,7 @@ public class VideoGoogle extends PluginForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
+    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
         if (pv.size() == 1) {
             final DownloadLink downloadLink = pv.get(0);
             if (StringUtils.contains(downloadLink.getPluginPatternMatcher(), "videoplayback?")) {
