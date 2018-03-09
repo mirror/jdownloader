@@ -64,7 +64,7 @@ public class LinkCrawlerRetry extends PluginForHost {
     }
 
     @Override
-    public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
+    public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, final Collection<PluginView<CrawledLink>> allPvs) {
         if (pv.size() > 0) {
             parent.add(new JMenuItem(new BasicAction() {
                 {
@@ -95,7 +95,7 @@ public class LinkCrawlerRetry extends PluginForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
+    public void extendDownloadsTableContextMenu(final JComponent parent, final PluginView<DownloadLink> pv, final Collection<PluginView<DownloadLink>> views) {
         if (pv.size() > 0) {
             parent.add(new JMenuItem(new BasicAction() {
                 {
