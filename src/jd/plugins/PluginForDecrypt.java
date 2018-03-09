@@ -287,20 +287,21 @@ public abstract class PluginForDecrypt extends Plugin {
         return decryptIt(link.getCryptedLink(), dummyProgressController);
     }
 
-    protected DownloadLink createLinkCrawlerRetry(CrawledLink link, RetryReason skipReason) {
+    protected DownloadLink createLinkCrawlerRetry(final CrawledLink link, final RetryReason skipReason, final String message) {
         final LazyHostPlugin plugin = HostPluginController.getInstance().get("LinkCrawlerRetry");
         if (plugin != null) {
             try {
                 String name = null;
                 try {
                     name = getFileNameFromURL(new URL(link.getURL()));
-                    if (name == null) {
+                    if (StringUtils.isEmpty(name)) {
                         name = getHost();
                     }
                 } catch (final MalformedURLException e) {
                     name = getHost();
                 }
                 final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), skipReason.getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
+                ret.setComment(message);
                 ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
                 return ret;
             } catch (UpdateRequiredClassNotFoundException e) {
@@ -310,10 +311,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return null;
     }
 
-    protected ArrayList<DownloadLink> addLinkCrawlerRetryTask(ArrayList<DownloadLink> list, final CrawledLink link, final RetryReason skipReason) {
+    protected ArrayList<DownloadLink> addLinkCrawlerRetryTask(ArrayList<DownloadLink> list, final CrawledLink link, final RetryReason skipReason, final String message) {
         final String[] retryTasks = LinkCrawler.getConfig().getAddRetryCrawlerTasks();
         if (retryTasks != null && skipReason != null && Arrays.asList(retryTasks).contains(skipReason.name())) {
-            final DownloadLink retry = createLinkCrawlerRetry(link, skipReason);
+            final DownloadLink retry = createLinkCrawlerRetry(link, skipReason, message);
             if (retry != null) {
                 if (list == null) {
                     list = new ArrayList<DownloadLink>();
@@ -393,22 +394,26 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* User entered wrong captcha (too many times) */
                 throwable = null;
                 hostFailed = true;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.HOST);
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.HOST, null);
             } else if (processCaptchaException(e)) {
                 /* User entered wrong captcha (too many times) */
                 throwable = null;
                 captchafailed = true;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.CAPTCHA);
+                String message = null;
+                if (e instanceof CaptchaException) {
+                    message = ((CaptchaException) e).getSkipRequest().name();
+                }
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.CAPTCHA, message);
             } else if (DecrypterException.PLUGIN_DEFECT.equals(e.getMessage())) {
                 // leave alone.
             } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                 /* User entered password captcha (too many times) */
                 throwable = null;
                 pwfailed = true;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PASSWORD);
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PASSWORD, null);
             } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
                 throwable = null;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.NO_ACCOUNT);
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.NO_ACCOUNT, null);
             } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                 throwable = null;
             } else if (e instanceof PluginException) {
@@ -416,7 +421,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (((PluginException) e).getLinkStatus() == 32) {
                     throwable = null;
                     linkstatusOffline = true;
-                    tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT);
+                    tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT, null);
                 }
             }
         } finally {
@@ -430,7 +435,7 @@ public abstract class PluginForDecrypt extends Plugin {
             errLog(throwable, br, link);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + link.getURL());
-            tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT);
+            tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT, null);
             /* lets forward the log */
             if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
