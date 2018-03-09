@@ -50,14 +50,14 @@ public class LinkCrawlerRetry extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+        return AvailableStatus.FALSE;
     }
 
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls != null) {
             for (final DownloadLink link : urls) {
-                link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                link.setAvailableStatus(AvailableStatus.FALSE);
             }
         }
         return true;
@@ -79,7 +79,7 @@ public class LinkCrawlerRetry extends PluginForHost {
                         protected Void run() throws RuntimeException {
                             LinkCollector.getInstance().removeChildren(pv.getChildren());
                             final StringBuilder sb = new StringBuilder();
-                            for (CrawledLink crawledLink : pv.getChildren()) {
+                            for (final CrawledLink crawledLink : pv.getChildren()) {
                                 if (sb.length() > 0) {
                                     sb.append("\r\n");
                                 }
@@ -110,7 +110,7 @@ public class LinkCrawlerRetry extends PluginForHost {
                         protected Void run() throws RuntimeException {
                             DownloadController.getInstance().removeChildren(pv.getChildren());
                             final StringBuilder sb = new StringBuilder();
-                            for (DownloadLink downloadLink : pv.getChildren()) {
+                            for (final DownloadLink downloadLink : pv.getChildren()) {
                                 if (sb.length() > 0) {
                                     sb.append("\r\n");
                                 }
