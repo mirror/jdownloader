@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.List;
 
 import javax.swing.JComponent;
@@ -17,7 +18,6 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
 public class DownloadsTablePluginLink extends MenuItemData implements MenuLink {
-
     @Override
     public String getName() {
         return _GUI.T.DownloadsTablePluginLink_getName_object_();
@@ -40,8 +40,9 @@ public class DownloadsTablePluginLink extends MenuItemData implements MenuLink {
 
     @Override
     public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        for (PluginView<DownloadLink> pv : DownloadsTable.getInstance().getSelectionInfo().getPluginViews()) {
-            pv.getPlugin().extendDownloadsTableContextMenu(root, pv);
+        final Collection<PluginView<DownloadLink>> views = DownloadsTable.getInstance().getSelectionInfo().getPluginViews();
+        for (PluginView<DownloadLink> pv : views) {
+            pv.getPlugin().extendDownloadsTableContextMenu(root, pv, views);
         }
         return null;
     }
