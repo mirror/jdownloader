@@ -18,6 +18,7 @@ package jd.plugins;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +38,7 @@ import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.timetracker.TimeTracker;
@@ -65,7 +67,6 @@ import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMediaCaptchaChalleng
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -300,7 +301,6 @@ public abstract class PluginForDecrypt extends Plugin {
                     name = getHost();
                 }
                 final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), skipReason.getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
-                ret.setUrlProtection(UrlProtection.PROTECTED_DECRYPTER);
                 ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
                 return ret;
             } catch (UpdateRequiredClassNotFoundException e) {
@@ -328,7 +328,8 @@ public abstract class PluginForDecrypt extends Plugin {
         CAPTCHA(_JDT.T.decrypter_wrongcaptcha()),
         NO_ACCOUNT(_JDT.T.decrypter_wrongpassword()),
         PLUGIN_DEFECT(_JDT.T.decrypter_plugindefect()),
-        PASSWORD(_JDT.T.decrypter_wrongpassword());
+        PASSWORD(_JDT.T.decrypter_wrongpassword()),
+        HOST(_JDT.T.plugins_errors_hosterproblem());
         private final String exp;
 
         private RetryReason(String exp) {
@@ -358,6 +359,7 @@ public abstract class PluginForDecrypt extends Plugin {
         boolean linkstatusOffline = false;
         boolean pwfailed = false;
         boolean captchafailed = false;
+        boolean hostFailed = false;
         try {
             challenges = null;
             setCurrentLink(link);
@@ -375,9 +377,23 @@ public abstract class PluginForDecrypt extends Plugin {
             tmpLinks = decryptIt(link);
             validateLastChallengeResponse();
         } catch (final Throwable e) {
+            if (logger instanceof LogSource) {
+                if (logger instanceof LogSource) {
+                    /* make sure we use the right logger */
+                    ((LogSource) logger).clear();
+                    ((LogSource) logger).log(e);
+                } else {
+                    LogSource.exception(logger, e);
+                }
+            }
             throwable = e;
             if (isAbort()) {
                 throwable = null;
+            } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
+                /* User entered wrong captcha (too many times) */
+                throwable = null;
+                hostFailed = true;
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.HOST);
             } else if (processCaptchaException(e)) {
                 /* User entered wrong captcha (too many times) */
                 throwable = null;
@@ -403,20 +419,11 @@ public abstract class PluginForDecrypt extends Plugin {
                     tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT);
                 }
             }
-            if (throwable == null && logger instanceof LogSource) {
-                if (logger instanceof LogSource) {
-                    /* make sure we use the right logger */
-                    ((LogSource) logger).clear();
-                    ((LogSource) logger).log(e);
-                } else {
-                    LogSource.exception(logger, e);
-                }
-            }
         } finally {
             clean();
             challenges = null;
         }
-        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed && !linkstatusOffline) {
+        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed && !linkstatusOffline && !hostFailed) {
             /*
              * null as return value? something must have happened, do not clear log
              */
