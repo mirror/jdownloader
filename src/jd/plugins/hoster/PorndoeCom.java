@@ -96,6 +96,13 @@ public class PorndoeCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
+        if (dllink == null) {
+            String embedURL = br.getRegex("itemprop=\"embedURL\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (embedURL != null) {
+                br.getPage(embedURL);
+                dllink = br.getRegex("<source\\s*src=\"(http[^<>\"]*?)\"\\s*type=\"video/mp4\" label=\"480p\"").getMatch(0);
+            }
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
