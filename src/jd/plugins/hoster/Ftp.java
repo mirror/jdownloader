@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -270,7 +271,7 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
+    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
         if (pv.size() == 1) {
             final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
             if (changeURLMenuItem != null) {

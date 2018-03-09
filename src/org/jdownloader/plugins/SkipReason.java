@@ -20,7 +20,8 @@ public enum SkipReason {
     UPDATE_RESTART_REQUIRED(_JDT.T.DownloadLink_setSkipped_statusmessage_update_restart(), IconKey.ICON_RESTART),
     FFMPEG_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_ffmpeg(), IconKey.ICON_LOGO_FFMPEG),
     FFPROBE_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_ffprobe(), IconKey.ICON_LOGO_FFMPEG),
-    PHANTOM_JS_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_phantom(), IconKey.ICON_LOGO_PHANTOMJS_LOGO);
+    PHANTOM_JS_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_phantom(), IconKey.ICON_LOGO_PHANTOMJS_LOGO),
+    PLUGIN_DEFECT(_JDT.T.downloadlink_status_error_defect(), IconKey.ICON_FALSE);
     private final String exp;
     private final String iconKey;
 

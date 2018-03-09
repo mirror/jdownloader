@@ -16,7 +16,10 @@
 package jd.plugins;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,9 +65,15 @@ import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMediaCaptchaChalleng
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -277,6 +286,60 @@ public abstract class PluginForDecrypt extends Plugin {
         return decryptIt(link.getCryptedLink(), dummyProgressController);
     }
 
+    protected DownloadLink createLinkCrawlerRetry(CrawledLink link, RetryReason skipReason) {
+        final LazyHostPlugin plugin = HostPluginController.getInstance().get("LinkCrawlerRetry");
+        if (plugin != null) {
+            try {
+                String name = null;
+                try {
+                    name = getFileNameFromURL(new URL(link.getURL()));
+                    if (name == null) {
+                        name = getHost();
+                    }
+                } catch (final MalformedURLException e) {
+                    name = getHost();
+                }
+                final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), skipReason.getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
+                ret.setUrlProtection(UrlProtection.PROTECTED_DECRYPTER);
+                ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
+                return ret;
+            } catch (UpdateRequiredClassNotFoundException e) {
+                logger.log(e);
+            }
+        }
+        return null;
+    }
+
+    protected ArrayList<DownloadLink> addLinkCrawlerRetryTask(ArrayList<DownloadLink> list, final CrawledLink link, final RetryReason skipReason) {
+        final String[] retryTasks = LinkCrawler.getConfig().getAddRetryCrawlerTasks();
+        if (retryTasks != null && skipReason != null && Arrays.asList(retryTasks).contains(skipReason.name())) {
+            final DownloadLink retry = createLinkCrawlerRetry(link, skipReason);
+            if (retry != null) {
+                if (list == null) {
+                    list = new ArrayList<DownloadLink>();
+                }
+                list.add(retry);
+            }
+        }
+        return list;
+    }
+
+    public static enum RetryReason {
+        CAPTCHA(_JDT.T.decrypter_wrongcaptcha()),
+        NO_ACCOUNT(_JDT.T.decrypter_wrongpassword()),
+        PLUGIN_DEFECT(_JDT.T.decrypter_plugindefect()),
+        PASSWORD(_JDT.T.decrypter_wrongpassword());
+        private final String exp;
+
+        private RetryReason(String exp) {
+            this.exp = exp;
+        }
+
+        public String getExplanation(Object requestor) {
+            return exp;
+        }
+    }
+
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector
      * <String> mit den decoded Links setzen
@@ -319,6 +382,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* User entered wrong captcha (too many times) */
                 throwable = null;
                 captchafailed = true;
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.CAPTCHA);
             } else if (DecrypterException.PLUGIN_DEFECT.equals(e.getMessage())) {
                 // leave alone.
             } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
@@ -328,7 +392,7 @@ public abstract class PluginForDecrypt extends Plugin {
             } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
                 throwable = null;
                 final String reason = e.getMessage();
-                tmpLinks = createOfflineLink(link, tmpLinks, reason);
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.NO_ACCOUNT);
             } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                 throwable = null;
             } else if (e instanceof PluginException) {
@@ -336,7 +400,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (((PluginException) e).getLinkStatus() == 32) {
                     throwable = null;
                     linkstatusOffline = true;
-                    tmpLinks = createOfflineLink(link, tmpLinks, null);
+                    tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT);
                 }
             }
             if (throwable == null && logger instanceof LogSource) {
@@ -359,7 +423,7 @@ public abstract class PluginForDecrypt extends Plugin {
             errLog(throwable, br, link);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + link.getURL());
-            tmpLinks = createOfflineLink(link, tmpLinks, null);
+            tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT);
             /* lets forward the log */
             if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
@@ -369,21 +433,6 @@ public abstract class PluginForDecrypt extends Plugin {
         if (logger instanceof LogSource) {
             /* make sure we use the right logger */
             ((LogSource) logger).clear();
-        }
-        return tmpLinks;
-    }
-
-    /**
-     * we can effectively create generic offline link here. For custom message/comments this must be done within the plugin, else we can use
-     * the exception message
-     *
-     * @author raztoki
-     * @return
-     */
-    private ArrayList<DownloadLink> createOfflineLink(final CrawledLink link, ArrayList<DownloadLink> tmpLinks, final String message) {
-        if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
-            tmpLinks = new ArrayList<DownloadLink>();
-            tmpLinks.add(createOfflinelink(link.getURL(), message));
         }
         return tmpLinks;
     }
