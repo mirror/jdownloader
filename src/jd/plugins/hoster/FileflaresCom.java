@@ -519,10 +519,7 @@ public class FileflaresCom extends PluginForHost {
                     }
                     download1.put("method_free", Encoding.urlEncode(method_free_value));
                 }
-                String specialKey = br.getRegex("'([a-f0-9]{35})'").getMatch(0);
-                if (specialKey == null) {
-                    specialKey = br.getRegex("\\\"([a-f0-9]{35})\\\"").getMatch(0);
-                }
+                final String specialKey = getSpecialKey();
                 if (specialKey != null && !download1.hasInputFieldByName(specialKey)) {
                     download1.put(specialKey, "1");
                 }
@@ -660,10 +657,7 @@ public class FileflaresCom extends PluginForHost {
                     }
                     dlForm.put("rand", randValue);
                 }
-                String specialKey = br.getRegex("'([a-f0-9]{35})'").getMatch(0);
-                if (specialKey == null) {
-                    specialKey = br.getRegex("\\\"([a-f0-9]{35})\\\"").getMatch(0);
-                }
+                final String specialKey = getSpecialKey();
                 if (specialKey != null && !dlForm.hasInputFieldByName(specialKey)) {
                     dlForm.put(specialKey, "1");
                 }
@@ -708,6 +702,15 @@ public class FileflaresCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private String getSpecialKey() {
+        String result = null;
+        String[] specialKeys = br.getRegex("['|\"]([a-f0-9]{35}[^'\"]+)['|\"]").getColumn(0);
+        if (specialKeys != null && specialKeys.length > 0) {
+            result = specialKeys[specialKeys.length - 1];
+        }
+        return result;
     }
 
     /**
