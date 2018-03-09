@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,11 +39,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://ma\\.fakehub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://fakehubdecrypted.+" })
 public class FakehubCom extends PluginForHost {
-
     public FakehubCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://join.fakehub.com/signup/signup.php");
@@ -61,11 +59,8 @@ public class FakehubCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private final String         type_premium_pic             = ".+\\.jpg.*?";
-
     public static final String   html_loggedin                = "/member/profile/";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -120,7 +115,6 @@ public class FakehubCom extends PluginForHost {
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-
                     /* ... new URL should work! */
                     con = br.openHeadConnection(dllink);
                     if (!con.getContentType().contains("html")) {
@@ -223,6 +217,15 @@ public class FakehubCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        try {
+            /* 2018-03-09: Expiredate might not always be available */
+            br.getPage("/member/profile/");
+            final String days_remaining = br.getRegex("class=\"membership\\-details\\-data\">\\s*?(\\d+) days\\s*?</span>").getMatch(0);
+            if (days_remaining != null) {
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_remaining) * 24 * 60 * 60 * 1000, br);
+            }
+        } catch (final Throwable e) {
+        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -279,5 +282,4 @@ public class FakehubCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
