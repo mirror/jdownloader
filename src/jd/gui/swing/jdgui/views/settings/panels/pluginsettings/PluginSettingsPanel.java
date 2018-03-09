@@ -28,7 +28,6 @@ import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.exceptions.WTFException;
@@ -184,18 +183,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         add(header, "growx,pushx,gaptop 10");
                         add(card, "spanx,pushx,growx");
                         if (searchCombobox.getModel().getSize() > 0) {
-                            String active = JsonConfig.create(GraphicalUserInterfaceSettings.class).getActivePluginConfigPanel();
-                            int selectIndex = 0;
-                            if (active != null) {
-                                for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
-                                    if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassName().equals(active)) {
-                                        selectIndex = i;
-                                        break;
-                                    }
-                                }
-                            }
-                            searchCombobox.setSelectedIndex(selectIndex);
-                            // show((LazyPlugin<?>) selector.getModel().getElementAt(selectIndex));
+                            final String activePlugin = JsonConfig.create(GraphicalUserInterfaceSettings.class).getActivePluginConfigPanel();
+                            setPlugin(activePlugin);
                         }
                     }
                 };
@@ -203,25 +192,36 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }.start();
     }
 
-    public void setPlugin(final Class<? extends PluginForHost> class1) {
+    private void setPlugin(final String pluginID) {
         new EDTRunner() {
             @Override
             protected void runInEDT() {
                 if (searchCombobox.getModel().getSize() > 0) {
-                    String active = class1.getName();
                     int selectIndex = 0;
-                    if (active != null) {
+                    if (pluginID != null) {
                         for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
-                            if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassName().equals(active)) {
+                            if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getID().equals(pluginID)) {
                                 selectIndex = i;
                                 break;
                             }
                         }
                     }
                     searchCombobox.setSelectedIndex(selectIndex);
-                    // show((LazyPlugin<?>) selector.getModel().getElementAt(selectIndex));
-                } else {
-                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(class1.getName());
+                }
+            }
+        };
+    }
+
+    public void setPlugin(final LazyPlugin<?> plugin) {
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                if (plugin != null) {
+                    if (searchCombobox.getModel().getSize() > 0) {
+                        setPlugin(plugin.getID());
+                    } else {
+                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(plugin.getID());
+                    }
                 }
             }
         };
@@ -256,13 +256,19 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
             @Override
             public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
-                int o1Num = 0;
+                final int o1Num;
                 if (o1 instanceof LazyHostPlugin && ((LazyHostPlugin) o1).isPremium()) {
                     o1Num = AccountController.getInstance().getAccountsSize(o1.getDisplayName());
+                } else {
+                    o1Num = 0;
                 }
-                int o2Num = 0;
-                if (o2 instanceof LazyHostPlugin && ((LazyHostPlugin) o2).isPremium()) {
+                final int o2Num;
+                if (o1 == o2) {
+                    o2Num = o1Num;
+                } else if (o2 instanceof LazyHostPlugin && ((LazyHostPlugin) o2).isPremium()) {
                     o2Num = AccountController.getInstance().getAccountsSize(o2.getDisplayName());
+                } else {
+                    o2Num = 0;
                 }
                 return compare(o2Num, o1Num);
             }
@@ -279,9 +285,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public void actionPerformed(ActionEvent e) {
-        LazyPlugin<?> selected = searchCombobox.getSelectedItem();
+        final LazyPlugin<?> selected = searchCombobox.getSelectedItem();
         if (selected != null) {
-            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassName());
+            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getID());
             show(selected);
         }
     }

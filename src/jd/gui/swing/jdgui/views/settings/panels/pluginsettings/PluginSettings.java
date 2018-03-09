@@ -2,17 +2,17 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
 import javax.swing.Icon;
 
+import jd.plugins.Account;
+
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
-
-import jd.plugins.Account;
-import jd.plugins.PluginForHost;
 
 public class PluginSettings extends AbstractConfigPanel {
     private static final long   serialVersionUID = 1L;
@@ -35,15 +35,14 @@ public class PluginSettings extends AbstractConfigPanel {
     protected void onShow() {
         this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PLUGIN, 32));
         this.addDescriptionPlain(_JDT.T.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
-
         add(getPanel());
-
         super.onShow();
     }
 
     private PluginSettingsPanel getPanel() {
-        if (psp != null) {
-            return psp;
+        final PluginSettingsPanel lpsp = psp;
+        if (lpsp != null) {
+            return lpsp;
         }
         psp = new PluginSettingsPanel();
         return psp;
@@ -51,7 +50,7 @@ public class PluginSettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
-        PluginSettingsPanel lpsp = psp;
+        final PluginSettingsPanel lpsp = psp;
         if (lpsp != null) {
             lpsp.setHidden();
         }
@@ -61,17 +60,18 @@ public class PluginSettings extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        PluginSettingsPanel lpsp = psp;
+        final PluginSettingsPanel lpsp = psp;
         if (lpsp != null) {
             lpsp.setShown();
         }
     }
 
-    public void setPlugin(Class<? extends PluginForHost> class1) {
-        if (psp == null) {
-            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(class1.getName());
+    public void setPlugin(final LazyPlugin<?> plugin) {
+        final PluginSettingsPanel lpsp = psp;
+        if (lpsp == null) {
+            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(plugin.getID());
         } else {
-            psp.setPlugin(class1);
+            lpsp.setPlugin(plugin);
         }
     }
 

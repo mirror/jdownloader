@@ -18,16 +18,13 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
-
     private final byte[]                                   patternBytes;
     private volatile MinTimeWeakReference<Pattern>         compiledPattern = null;
     private final String                                   displayName;
     protected volatile WeakReference<Class<T>>             pluginClass;
-
     protected volatile WeakReference<T>                    prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
     private volatile WeakReference<PluginClassLoaderChild> classLoader;
-
     private volatile MinTimeWeakReference<Matcher>         matcher         = null;
 
     public PluginWrapper getPluginWrapper() {
@@ -62,6 +59,10 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (classLoader != null) {
             this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
         }
+    }
+
+    public String getID() {
+        return getLazyPluginClass().getClassName() + "/" + getDisplayName();
     }
 
     public boolean equals(Object lazyPlugin) {

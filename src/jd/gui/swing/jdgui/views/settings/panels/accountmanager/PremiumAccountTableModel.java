@@ -25,11 +25,8 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerEventListener;
 import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -66,7 +63,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         private final PremiumAccountTableModel tableModel;
         private final DecimalFormat            formatter;
         private final SIZEUNIT                 maxSizeUnit;
-
         {
             setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
                 private int compareLong(long x, long y) {
@@ -104,7 +100,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             this.tableModel = tableModel;
             maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
             this.formatter = new DecimalFormat("0.00") {
-
                 final StringBuffer        sb               = new StringBuffer();
                 /**
                  *
@@ -367,7 +362,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             {
                 replaceSorter(this);
             }
-
             private static final long serialVersionUID = -8070328156326837828L;
 
             @Override
@@ -429,7 +423,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
     protected void addStatusColumn() {
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_status()) {
             private static final long serialVersionUID = -3693931358975303164L;
-
             {
                 replaceSorter(this);
             }
@@ -568,27 +561,20 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         });
     }
 
-    protected void onSettingsClick(AccountEntry editing) {
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-        ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
-        ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(editing.getAccount().getPlugin().getClass());
-        ConfigurationView.getInstance().getSubPanel(PluginSettings.class).scrollToAccount(editing.getAccount());
-    }
-
     protected void addColumnSettingsButton() {
         this.addColumn(new ExtComponentColumn<AccountEntry>(_GUI.T.lit_settings()) {
             private ColumnButton button;
             private ColumnButton rbutton;
             private AccountEntry editing;
-
             {
                 button = new ColumnButton(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
                 rbutton = new ColumnButton(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
                 rbutton.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        onSettingsClick(editing);
+                        if (editing != null) {
+                            editing.showConfiguration();
+                        }
                     }
                 });
             }
@@ -684,7 +670,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             {
                 replaceSorter(this);
             }
-
             private static final long serialVersionUID = -3693931358975303164L;
 
             @Override
