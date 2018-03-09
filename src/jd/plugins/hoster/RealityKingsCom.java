@@ -42,7 +42,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|realitykingsdecrypted://.+" })
 public class RealityKingsCom extends PluginForHost {
-
     public RealityKingsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.realitykings.com/tour/join/");
@@ -67,6 +66,7 @@ public class RealityKingsCom extends PluginForHost {
     private boolean              server_issues        = false;
 
     public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
         return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.RealityKingsCom.DOMAIN_BASE);
     }
 
@@ -229,6 +229,10 @@ public class RealityKingsCom extends PluginForHost {
                     postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
                 }
                 br.postPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
+                final String redirect_http = br.getRedirectLocation();
+                if (redirect_http != null) {
+                    br.getPage(redirect_http);
+                }
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
@@ -258,7 +262,9 @@ public class RealityKingsCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (this.br.containsHTML("class=\"js\\-upgrade\\-banner hidden\"")) {
+        br.getPage("/member/profile/");
+        final boolean isPremium = br.containsHTML("<dt>Membership type:</dt>\\s*?<dd>Paying</dd>");
+        if (!isPremium) {
             /*
              * 2017-02-28: Added free account support. Advantages: View trailers (also possible without account), view picture galleries
              * (only possible via free/premium account, free is limited to max 99 viewable pictures!)
@@ -266,6 +272,11 @@ public class RealityKingsCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
+            final String days_remaining = br.getRegex("Remaining membership:</dt>\\s*?<dd>(\\d+) days</dd>").getMatch(0);
+            if (days_remaining != null) {
+                /* 2018-03-09: Expiredate might not always be available */
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_remaining) * 24 * 60 * 60 * 1000, br);
+            }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
         }

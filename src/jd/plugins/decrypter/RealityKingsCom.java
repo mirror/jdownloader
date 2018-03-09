@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -39,8 +41,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)|https?://(?:www\\.)?realitykings\\.com/tour/video/watch/\\d+/(?:[a-z0-9\\-_]+/?)?" })
 public class RealityKingsCom extends PluginForDecrypt {
     public RealityKingsCom(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class RealityKingsCom extends PluginForDecrypt {
     private static final String TYPE_MEMBER           = "https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)";
     private static final String TYPE_VIDEO_FREE       = ".+/tour/video/watch/.+";
     public static String        DOMAIN_BASE           = "realitykings.com";
-    public static String        DOMAIN_PREFIX_PREMIUM = "new.members.";
+    public static String        DOMAIN_PREFIX_PREMIUM = "members.";
     private final List<String>  all_known_qualities   = Arrays.asList("GRAB_1080", "GRAB_3000", "GRAB_1500", "GRAB_800", "GRAB_mp4v_480", "GRAB_mp4v_320", "GRAB_3gp");
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

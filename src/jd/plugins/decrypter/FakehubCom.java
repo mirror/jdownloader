@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,11 +36,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://ma\\.fakehub\\.com/(?:watch/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?|model/\\d+(?:/[a-z0-9\\-_]+/?)?)" })
 public class FakehubCom extends PluginForDecrypt {
-
     public FakehubCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,7 +45,6 @@ public class FakehubCom extends PluginForDecrypt {
     private static final String TYPE_VIDEO            = "https?://(?:new\\.)?ma\\.fakehub\\.com/watch/\\d+(?:/[a-z0-9\\-_]+/?)?";
     private static final String TYPE_PHOTO            = "https?://(?:new\\.)?ma\\.fakehub\\.com/pics/\\d+(?:/[a-z0-9\\-_]+/?)?";
     private static final String TYPE_MEMBER           = "https?://(?:new\\.)?ma\\.fakehub\\.com/model/\\d+(?:/[a-z0-9\\-_]+/?)?";
-
     public static String        DOMAIN_BASE           = "fakehub.com";
     public static String        DOMAIN_PREFIX_PREMIUM = "ma.";
 
@@ -128,7 +125,6 @@ public class FakehubCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -149,7 +145,6 @@ public class FakehubCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.FakehubCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }
@@ -174,7 +169,7 @@ public class FakehubCom extends PluginForDecrypt {
     }
 
     public static String getProtocol() {
-        return "http://";
+        return "https://";
     }
 
     public static boolean isOffline(final Browser br) {
@@ -190,5 +185,4 @@ public class FakehubCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.PornPortal;
     }
-
 }

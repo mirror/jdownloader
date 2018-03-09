@@ -79,8 +79,6 @@ public class HighWayMe extends UseNet {
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
     private static HashMap<String, Integer>                hostRabattMap                       = new HashMap<String, Integer>();
     private static Object                                  UPDATELOCK                          = new Object();
-    /* Last updated: 31.03.15 */
-    private static final int                               defaultMAXDOWNLOADS                 = 10;
     private static final int                               defaultMAXCHUNKS                    = -4;
     private static final boolean                           defaultRESUME                       = false;
     private int                                            statuscode                          = 0;
@@ -106,6 +104,7 @@ public class HighWayMe extends UseNet {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
+        // br.setAllowedResponseCodes(new int[] { 503 });
         return br;
     }
 
@@ -548,10 +547,6 @@ public class HighWayMe extends UseNet {
         handleAPIErrors(this.br);
     }
 
-    private String getXML(final String key) {
-        return br.getRegex("<" + key + ">([^<>\"]*?)</" + key + ">").getMatch(0);
-    }
-
     private void tempUnavailableHoster(long timeout) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -742,6 +737,11 @@ public class HighWayMe extends UseNet {
             case 8:
                 /* Temp error, try again in some minutes */
                 statusMessage = "Temporary error";
+                /** 2018-03-09: TODO but not yet clear at which situation this header will be present. */
+                // final String waitHeader = br.getRequest().getResponseHeader("Please Retry");
+                // if (waitHeader != null && waitHeader.matches("\\d+")) {
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Long.parseLong(waitHeader) * 1000l);
+                // }
                 tempUnavailableHoster(1 * 60 * 1000l);
             case 9:
                 /* No account found -> Disable link for 10 minutes */
