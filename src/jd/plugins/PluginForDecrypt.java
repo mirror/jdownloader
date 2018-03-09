@@ -389,9 +389,9 @@ public abstract class PluginForDecrypt extends Plugin {
                 /* User entered password captcha (too many times) */
                 throwable = null;
                 pwfailed = true;
+                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PASSWORD);
             } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
                 throwable = null;
-                final String reason = e.getMessage();
                 tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.NO_ACCOUNT);
             } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                 throwable = null;
