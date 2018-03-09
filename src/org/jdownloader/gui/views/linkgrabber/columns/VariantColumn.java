@@ -14,6 +14,17 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
+import jd.plugins.DownloadLink;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.JScrollPopupMenu;
@@ -28,19 +39,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
-import jd.plugins.DownloadLink;
-
 public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
-
     private boolean autoVisible;
     private boolean alwaysVisible;
 
@@ -62,7 +61,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
             }
 
             public void setVisible(final boolean b) {
-
                 super.setVisible(b);
                 if (!b) {
                     lastHide = System.currentTimeMillis();
@@ -71,7 +69,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                 } else {
                     // updateIcon(false);
                 }
-
             };
         };
     }
@@ -92,7 +89,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     @Override
     protected void fillPopup(final JPopupMenu popup, AbstractNode value, LinkVariant selected, ComboBoxModel<LinkVariant> dm) {
-
         JComponent ret = null;
         if (value instanceof CrawledLink) {
             final CrawledLink link = (CrawledLink) value;
@@ -101,13 +97,11 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                     return;
                 }
             }
-
             fillPopupWithVariants(popup, value, selected, dm);
             popup.add(new JSeparator());
             JMenu m = new JMenu(_GUI.T.VariantColumn_fillPopup_add());
             m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
             fillPopupWithAddAdditionalSubmenu(popup, m, dm, link);
-
             fillPopupWithPluginSettingsButton(popup, link);
         }
     }
@@ -115,10 +109,8 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     public void fillPopupWithPluginSettingsButton(final JPopupMenu popup, final CrawledLink link) {
         popup.add(new JMenuItem(new BasicAction() {
             {
-
                 setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(18, 18));
                 setName(_GUI.T.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
-
             }
 
             @Override
@@ -127,9 +119,8 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
                 JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
                 ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
-                ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(link.getDownloadLink().getDefaultPlugin().getClass());
+                ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(link.getDownloadLink().getDefaultPlugin().getLazyP());
             }
-
         }));
     }
 
@@ -144,15 +135,11 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         } finally {
             parent.getModifyLock().readUnlock(readL);
         }
-
         for (int i = 0; i < dm.getSize(); i++) {
             final LinkVariant o = dm.getElementAt(i);
-
             ExtMenuItem mi;
             m.add(mi = new ExtMenuItem(new BasicAction() {
-
                 private CrawledLink cl;
-
                 {
                     DownloadLink dl = link.getDownloadLink();
                     final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
@@ -161,20 +148,16 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                     cl = new CrawledLink(dllink);
                     setSmallIcon(o._getIcon(link));
                     setName(o._getName(link));
-
                     cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
-
                     setEnabled(!dupeSet.contains(cl.getLinkID()));
                 }
 
                 @Override
                 public void actionPerformed(final ActionEvent e) {
                     if (!isEnabled()) {
-
                         Toolkit.getDefaultToolkit().beep();
                         return;
                     }
-
                     final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
                     list.add(cl);
                     dupeSet.add(cl.getLinkID());
@@ -182,12 +165,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                     //
                     // } else {
                     LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                         @Override
                         protected Void run() throws RuntimeException {
-
                             LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
-
                             java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                             checkableLinks.add(cl);
                             LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
@@ -195,12 +175,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                             return null;
                         }
                     });
-
                     // }
                     setEnabled(false);
-
                 }
-
             }));
             mi.setHideOnClick(false);
         }
@@ -226,7 +203,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
             return null;
         }
         return variant._getTooltipDescription(obj);
-
     }
 
     protected Icon modelItemToIcon(LinkVariant selectedItem, AbstractNode value) {
@@ -307,5 +283,4 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         this.autoVisible = b;
         return true;
     }
-
 }

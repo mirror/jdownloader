@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -31,11 +30,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/view/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/view/[A-Za-z0-9]+" })
 public class CoubCom extends PluginForHost {
-
     public CoubCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -50,14 +49,12 @@ public class CoubCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               DLLINK            = null;
 
     @SuppressWarnings("unchecked")
@@ -120,7 +117,9 @@ public class CoubCom extends PluginForHost {
             /* This should never happen! */
             filename = fid;
         }
-        filename += ".mp4";
+        if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4") && !StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
+            filename += ".mp4";
+        }
         filename = plugin.encodeUnicode(filename);
         return filename;
     }
@@ -271,7 +270,6 @@ public class CoubCom extends PluginForHost {
     // /* workaround for free/premium issue on stable 09581 */
     // return maxPrem.get();
     // }
-
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -284,5 +282,4 @@ public class CoubCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

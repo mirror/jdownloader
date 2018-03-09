@@ -17,8 +17,17 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.nutils.Formatter;
+import jd.plugins.AccountInfo;
+
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
@@ -39,21 +48,7 @@ import org.jdownloader.gui.components.ColumnButton;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerEventListener;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
-import jd.nutils.Formatter;
-import jd.plugins.AccountInfo;
 
 public class AccountListTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener, AccountControllerListener {
     private static final long        serialVersionUID = 3120481189794897020L;
@@ -112,12 +107,10 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
                 public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
                     final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-                        private final Icon ok = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
-
+                        private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                         {
                             AccountListTable.setHeaderRendererColors(this);
                         }
-
                         private static final long serialVersionUID = 3224931991570756349L;
 
                         @Override
@@ -161,7 +154,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         }
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_hoster()) {
             private static final long serialVersionUID = -3693931358975303164L;
-
             {
                 replaceSorter(this);
             }
@@ -220,7 +212,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_status()) {
             private static final long serialVersionUID = -3693931358975303164L;
-
             {
                 replaceSorter(this);
             }
@@ -309,7 +300,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_user()) {
             private static final long serialVersionUID = -8070328156326837828L;
-
             {
                 replaceSorter(this);
             }
@@ -355,7 +345,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         });
         this.addColumn(new ExtDateColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
-
             {
                 replaceSorter(this);
             }
@@ -414,7 +403,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         });
         this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
-
             {
                 setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
                     private int compareLong(long x, long y) {
@@ -528,18 +516,15 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 private ColumnButton button;
                 private ColumnButton rbutton;
                 private AccountEntry editing;
-
                 {
                     button = new ColumnButton(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
                     rbutton = new ColumnButton(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
                     rbutton.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-                            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-                            ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
-                            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(editing.getAccount().getPlugin().getClass());
-                            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).scrollToAccount(editing.getAccount());
+                            if (editing != null) {
+                                editing.showConfiguration();
+                            }
                         }
                     });
                 }
