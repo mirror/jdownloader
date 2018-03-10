@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,9 +23,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/.*?\\d+\\.html" })
 public class StileProjectComDecrypter extends PornEmbedParser {
-
     public StileProjectComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,5 +45,4 @@ public class StileProjectComDecrypter extends PornEmbedParser {
         }
         return decryptedLinks;
     }
-
 }
