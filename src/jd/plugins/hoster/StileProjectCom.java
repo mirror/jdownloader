@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -28,9 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/.*?\\d+\\.html" })
 public class StileProjectCom extends PluginForHost {
-
     private String dllink = null;
 
     public StileProjectCom(PluginWrapper wrapper) {
@@ -58,6 +56,9 @@ public class StileProjectCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
+        // String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+).html$").getMatch(0);
+        // String embedURL = "https://www.stileproject.com/embed/" + fid;
+        // br.getPage(embedURL);
         getdllink();
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -99,6 +100,9 @@ public class StileProjectCom extends PluginForHost {
     // Same code as for CelebrityCuntNet
     private void getdllink() throws Exception {
         dllink = br.getRegex("file: \\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
             final String type = videoMETA.getMatch(0);
