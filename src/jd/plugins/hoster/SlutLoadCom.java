@@ -13,10 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +26,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slutload.com" }, urls = { "http://(www\\.)?slutload\\.com/(video/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+|(embed_player|watch)/[A-Za-z0-9]+)" })
 public class SlutLoadCom extends PluginForHost {
-
     public SlutLoadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,7 +62,7 @@ public class SlutLoadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.getURL().equals("http://www.slutload.com/")) {
+        if (br.getURL().equals("http://www.slutload.com/") || br.containsHTML(">This video is unavailable")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!br.getURL().contains("slutload.com/")) {
@@ -101,7 +99,6 @@ public class SlutLoadCom extends PluginForHost {
              * Some videos are officially not available but still work when embedded in other sites, lets try to download those too
              */
             br.getPage("http://emb.slutload.com/xplayerconfig/" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + ".css");
-
             dllink = br.getRegex("\\&ec_seek=;URL: (http://[^<>\"]+);type:").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
