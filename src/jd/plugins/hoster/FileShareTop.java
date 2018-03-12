@@ -13,19 +13,15 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -40,19 +36,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-share.top" }, urls = { "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" })
 public class FileShareTop extends PluginForHost {
-
     private static final String  TYPE_CURRENT                 = "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+";
     private static final String  MAINPAGE                     = "http://file-share.top/";
-    private static Object        LOCK                         = new Object();
-
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
@@ -119,12 +110,7 @@ public class FileShareTop extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         long realTraffic = 0l;
         String trafficleft = null;
         /**
@@ -140,7 +126,6 @@ public class FileShareTop extends PluginForHost {
             if (expireUnlimited != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireUnlimited, "dd.MM.yyyy", Locale.ENGLISH), br);
             }
-
         }
         if (expireUnlimited != null) {
             /* TODO: Check if this case still exists */
@@ -215,7 +200,7 @@ public class FileShareTop extends PluginForHost {
         if (dllink == null) {
             requestFileInformation(downloadLink);
             br = new Browser();
-            login(account, false);
+            final long cookieTimeStamp = login(account, false);
             br.setCookie(getHost(), "arp_scroll_position", "0");
             br.getPage(downloadLink.getDownloadURL());
             dllink = downloadLink.getDownloadURL().replace("/file/", "/file/download/");
@@ -230,7 +215,11 @@ public class FileShareTop extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (dllink.endsWith("/login")) {
-                dumpSession(account);
+                synchronized (account) {
+                    if (account.getCookiesTimeStamp("") == cookieTimeStamp) {
+                        account.clearCookies("");
+                    }
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Expired Session");
             }
         }
@@ -241,7 +230,6 @@ public class FileShareTop extends PluginForHost {
         br2.getHeaders().put("Referer", br.getHeaders().get("Referer"));
         logger.info("Final downloadlink = " + dllink);
         final BrowserDownloadInterface brAd = new BrowserDownloadInterface() {
-
             @Override
             public void handleBlockedRedirect(final String redirect) throws PluginException {
                 if (redirect.matches(".+/\\?error=2$")) {
@@ -252,7 +240,6 @@ public class FileShareTop extends PluginForHost {
                 }
                 super.handleBlockedRedirect(redirect);
             };
-
         };
         dl = brAd.openDownload(br2, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
@@ -277,39 +264,22 @@ public class FileShareTop extends PluginForHost {
         dl.startDownload();
     }
 
-    private void dumpSession(final Account account) throws PluginException {
-        if (account == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        account.setProperty("cookies", Property.NULL);
-
-    }
-
-    @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public long login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
                 /** Load cookies */
                 br.setFollowRedirects(false);
                 br.setDebug(true);
                 prepBr(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            if (!key.matches("RMT|RMU")) {
-                                br.setCookie(MAINPAGE, key, value);
-                            }
-                        }
-                        return;
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(getHost(), cookies);
+                    br.getPage(MAINPAGE);
+                    if (this.br.getCookies(MAINPAGE).get("PHPSESSID", Cookies.NOTDELETEDPATTERN) == null) {
+                        br.clearCookies(getHost());
+                    } else {
+                        return account.saveCookies(br.getCookies(getHost()), "");
                     }
                 }
                 br.setFollowRedirects(true);
@@ -319,17 +289,13 @@ public class FileShareTop extends PluginForHost {
                 final String lang = System.getProperty("user.language");
                 final Form form = this.br.getFormbyKey("password");
                 if (form == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 form.put("email", Encoding.urlEncode(account.getUser()));
                 form.put("password", Encoding.urlEncode(account.getPass()));
                 form.put("remember", "yes");
                 br.submitForm(form);
-                if (!br.containsHTML("class=\"fa fa-power}\\-off\"") && this.br.getCookie(MAINPAGE, "RMT") == null) {
+                if (!br.containsHTML("class=\"fa fa-power-off\"") || this.br.getCookies(MAINPAGE).get("PHPSESSID", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -337,18 +303,11 @@ public class FileShareTop extends PluginForHost {
                     }
                 }
                 /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    if (!c.getKey().matches("RMT|RMU")) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                return account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
-                dumpSession(account);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(ifr);
@@ -359,10 +318,6 @@ public class FileShareTop extends PluginForHost {
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     private void prepBr(final Browser br) throws IOException {
-        if (agent.get() == null) {
-            agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
-        }
-        br.getHeaders().put("User-Agent", agent.get());
         br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         br.setCustomCharset("UTF-8");
         // DO NOT SET LANGUAGE HERE, its stored within COOKIE!

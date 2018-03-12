@@ -90,7 +90,7 @@ public class Account extends Property {
         return getLongProperty(OBJECT_STORAGE + ".ts." + storageID, -1);
     }
 
-    public synchronized void saveCookies(final Cookies cookies, final String ID) {
+    public synchronized long saveCookies(final Cookies cookies, final String ID) {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
         /*
@@ -106,7 +106,9 @@ public class Account extends Property {
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
         setProperty(COOKIE_STORAGE_ID, JSonStorage.toString(cookieStorables));
         final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
-        setProperty(COOKIE_STORAGE_TIMESTAMP_ID, System.currentTimeMillis());
+        final long ret = System.currentTimeMillis();
+        setProperty(COOKIE_STORAGE_TIMESTAMP_ID, ret);
+        return ret;
     }
 
     public synchronized void clearCookies(final String ID) {
