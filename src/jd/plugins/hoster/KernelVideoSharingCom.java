@@ -265,7 +265,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         String dllink = null;
@@ -331,6 +331,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (inValidate(dllink, plugin)) {
             /* 2016-11-01 - bravotube.net */
             dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (inValidate(dllink, plugin)) {
+            /* 2018-03-12 - wankoz.com */
+            dllink = br.getRegex("source[^']+src:\\s*'([^']*?)'").getMatch(0);
         }
         if (dllink != null && dllink.contains(".m3u8")) {
             /* 2016-12-02 - txxx.com, tubecup.com, hdzog.com */
