@@ -105,7 +105,7 @@ public class Tube8Com extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 500) {
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("<span class=\"item\">\\s+(.*?)\\s+</span>").getMatch(0);
+        String filename = br.getRegex("<span class=\"item\">\\s*(.*?)\\s*</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) - Porn Video \\d+[^<]*<").getMatch(0);
         }
