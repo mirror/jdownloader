@@ -15,12 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,6 +40,7 @@ public class XnXxCom extends PluginForHost {
     /* Porn_plugin */
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
+    private String               dllink                          = null;
 
     private void setConfigElements() {
         String user_text;
@@ -82,19 +82,7 @@ public class XnXxCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("flv_url=(http.*?)\\&amp;").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         // The regex only takes the short urls but these ones redirect to the real ones to if follow redirects is false the plugin doesn't
         // work at all!
@@ -120,7 +108,49 @@ public class XnXxCom extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(filename.trim() + ".mp4");
         }
+        dllink = br.getRegex("setVideoUrlHigh\\('(http.*?)'").getMatch(0);
+        if (dllink != null) {
+            checkDllink(downloadLink, dllink);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("setVideoUrlLow\\('(http.*?)'").getMatch(0);
+            if (dllink != null) {
+                checkDllink(downloadLink, dllink);
+            }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private String checkDllink(final DownloadLink link, final String flink) throws Exception {
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openHeadConnection(flink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = flink;
+            } else {
+                dllink = null;
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return dllink;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override
