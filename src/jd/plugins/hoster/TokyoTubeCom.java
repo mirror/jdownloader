@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "http://(www\\.)?tokyo\\-tube\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "https?://(www\\.)?tokyo\\-tube\\.com/video/\\d+" })
 public class TokyoTubeCom extends PluginForHost {
-
     /** DEVNOTES: this hoster has broken gzip, which breaks stable support, that's why we disable it */
     private String dllink = null;
 
@@ -84,8 +82,11 @@ public class TokyoTubeCom extends PluginForHost {
         requestFileInformation(downloadLink);
         /* 2017-01-05: Changed from: "http://www.tokyo-tube.com/media/player/config.php?vkey=" */
         br.getPage("http://www.tokyo-tube.com/media/videojs/mediainfo.php?vid=" + new Regex(downloadLink.getDownloadURL(), "tokyo\\-tube\\.com/video/(\\d+)").getMatch(0));
-        dllink = PluginJSonUtils.getJsonValue(this.br, "src");
-        if (dllink == null) {
+        dllink = PluginJSonUtils.getJsonValue(br, "src");
+        if (dllink.isEmpty() && PluginJSonUtils.getJsonValue(br, "type").equals("private_video")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Private video");
+        }
+        if (dllink == null || dllink.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // this.br.getPage(dllink);
