@@ -7,6 +7,8 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
@@ -18,7 +20,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" }) public class UseNetEwekaNl extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" })
+public class UseNetEwekaNl extends UseNet {
     public UseNetEwekaNl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.eweka.nl/en/usenet_toegang/specificaties/");
@@ -56,8 +59,13 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
             if (br.getCookie(getHost(), "PHPSESSID") == null) {
                 account.clearCookies("");
                 br.getPage("https://www.eweka.nl/myeweka/?lang=en");
-                final String response = br.getPage("https://www.eweka.nl/myeweka/auth.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(getHost(), "PHPSESSID") == null || br.containsHTML("\\$\\('#login-form'\\);") || !"1".equals(response)) {
+                final Form form = new Form();
+                form.setAction("auth.php");
+                form.setMethod(MethodType.POST);
+                form.put("u", Encoding.urlEncode(account.getUser()));
+                form.put("p", Encoding.urlEncode(account.getPass()));
+                br.submitForm(form);
+                if (br.getCookie(getHost(), "PHPSESSID") == null || br.containsHTML("\\$\\('#login-form'\\);") || !"1".equals(br.toString())) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
