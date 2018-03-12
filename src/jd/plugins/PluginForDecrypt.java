@@ -391,7 +391,6 @@ public abstract class PluginForDecrypt extends Plugin {
             if (isAbort()) {
                 throwable = null;
             } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
-                /* User entered wrong captcha (too many times) */
                 throwable = null;
                 hostFailed = true;
                 tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.HOST, null);
