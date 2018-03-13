@@ -52,6 +52,9 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     @APIParameterNames({ "id" })
     public CaptchaJob getCaptchaJob(final long id) throws InvalidCaptchaIDException;
 
+    @APIParameterNames({ "id" })
+    public long keepAlive(final long id);
+
     @APIParameterNames({ "id", "result" })
     public boolean solve(final long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException;
 
