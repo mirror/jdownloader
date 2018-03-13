@@ -253,10 +253,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         String description = (String) entries.get("caption");
         if (description == null) {
             try {
-                Map<String, Object> edge_media_to_caption = ((Map<String, Object>) entries.get("edge_media_to_caption"));
-                List<Map<String, Object>> edges = (List<Map<String, Object>>) edge_media_to_caption.get("edges");
-                Map<String, Object> node = (Map<String, Object>) edges.get(0).get("node");
-                description = (String) node.get("text");
+                final Map<String, Object> edge_media_to_caption = ((Map<String, Object>) entries.get("edge_media_to_caption"));
+                final List<Map<String, Object>> edges = (List<Map<String, Object>>) edge_media_to_caption.get("edges");
+                if (edges.size() > 0) {
+                    final Map<String, Object> node = (Map<String, Object>) edges.get(0).get("node");
+                    description = (String) node.get("text");
+                }
             } catch (final Throwable e) {
                 logger.log(e);
             }
