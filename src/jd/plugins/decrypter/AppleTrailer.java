@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,11 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,7 +31,6 @@ import jd.http.Request;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -46,12 +39,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * @author raztoki
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://[\\w\\.]*?apple\\.com/trailers/(?:disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|ifcfilms|lions_gate|lucasfilm|magnolia|marvel|mgm|oscilloscope|paramount|picturehouse|relativity|roadsideattractions|sony|sony_pictures|summit|(?:universial|universal)|wb|(?:weinstein|weinstien))/([a-zA-Z0-9_\\-]+)/" })
 public class AppleTrailer extends PluginForDecrypt {
-
     public AppleTrailer(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,10 +57,9 @@ public class AppleTrailer extends PluginForDecrypt {
     // public int getMaxConcurrentProcessingInstances() {
     // return 1;
     // }
-
     private String                        parameter      = null;
     private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();;
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(); ;
     private final HashSet<String>         dupe           = new HashSet<String>();
 
     @Override
@@ -71,12 +67,10 @@ public class AppleTrailer extends PluginForDecrypt {
         // prevent results from carying over when debugging
         decryptedLinks.clear();
         dupe.clear();
-
         // cleanup required
         parameter = param.toString().replaceAll("://(\\w+\\.)?apple", "://trailers.apple");
         br = new Browser();
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-
         // make sure they don't have any stupid redirects here
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -90,55 +84,46 @@ public class AppleTrailer extends PluginForDecrypt {
             // 02-2016-2017+ (first in jd)}
             // http://trailers.apple.com/trailers/independent/valerian-and-the-city-of-a-thousand-planets/
             processVersion4();
-
         } else if (isVersion3()) {
             // http://trailers.apple.com/trailers/fox/thefantasticfour/
             // 2015(date made) http://www.imdb.com/title/tt1502712/
             processVersion3();
-
         } else if (isItunes()) {
             // http://trailers.apple.com/trailers/independent/myoneandonly/
             // 2009(date made) http://www.imdb.com/title/tt1185431/
             // 25 September 2009
             processItunes(br);
-
         } else if (isDropdownTrigger()) {
             // http://trailers.apple.com/trailers/disney/walle/
             // 2008(date made) http://www.imdb.com/title/tt0910970/
             // 27 June 2008
             processDropdownTrigger();
-
         } else if (isAreaPoster()) {
             // https://trailers.apple.com/trailers/paramount/tropicthunder/
             // 2008(date made) http://www.imdb.com/title/tt0942385/
             // 15 August 2008
             processAreaPoster();
-
         } else if (isDivPoster()) {
             // http://trailers.apple.com/trailers/lions_gate/slowburn/
             // 2005(date made) http://www.imdb.com/title/tt0376196
             // 13 April 2007
             processDivPoster();
-
         } else if (isPoster()) {
             // http://trailers.apple.com/trailers/universal/curious_george/
             // 2006(date made) http://www.imdb.com/title/tt0381971/
             // 10 February 2006
             processPoster();
-
         } else {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (decryptedLinks.isEmpty()) {
             System.out.println("debug");
         }
-
         if (StringUtils.isNotEmpty(title)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title.trim());
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -148,7 +133,7 @@ public class AppleTrailer extends PluginForDecrypt {
             title = br.getRegex("<title>(.*)\\s*-\\s*Movie Trailers\\s*-\\s*iTunes</title>").getMatch(0);
             // title can have htmlEntities
             if (title == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             title = HTMLEntities.unhtmlentities(title);
         }
@@ -171,7 +156,6 @@ public class AppleTrailer extends PluginForDecrypt {
             names = br2.getRegex("<h3>(.*?)</h3>").getColumn(0);
         }
         String[] hits = br2.getRegex("(<div class=\"section.+?</ul></div>)").getColumn(0);
-
         if ((hits == null || hits.length == 0) || (names == null || names.length == 0)) {
             logger.warning("Plugin defect, could not find 'filters or names' : " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -209,7 +193,6 @@ public class AppleTrailer extends PluginForDecrypt {
                     temp.add(dlLink);
                 }
             }
-
             if (sdFilter != null && sdFilter.length != 0) {
                 for (String sd : sdFilter) {
                     String[] url = new Regex(sd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.(mov|m4v))").getRow(0);
@@ -222,7 +205,6 @@ public class AppleTrailer extends PluginForDecrypt {
                     dlLink.setFinalFileName(name);
                     dlLink.setProperty("Referer", br.getURL());
                     dlLink.setProperty("pSize", pSize);
-
                     dlLink.setAvailable(true);
                     temp.add(dlLink);
                 }
@@ -237,7 +219,7 @@ public class AppleTrailer extends PluginForDecrypt {
         title = br.getRegex("<title>Apple\\s*-\\s*Trailers\\s*-\\s*(.*?)</title>").getMatch(0);
         // title can have htmlEntities
         if (title == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = HTMLEntities.unhtmlentities(title);
         final ArrayList<DownloadLink> temp = new ArrayList<DownloadLink>();
@@ -277,7 +259,7 @@ public class AppleTrailer extends PluginForDecrypt {
     private void processDropdownTrigger() throws Exception {
         title = br.getRegex("<title>Apple\\s*-\\s*Trailers\\s*-\\s*(.*?)</title>").getMatch(0);
         if (title == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = HTMLEntities.unhtmlentities(title);
         final String[] results = br.getRegex("<div[^>]+class=(\"|')dropdown-trigger[^>]+>").getColumn(-1);
@@ -392,7 +374,7 @@ public class AppleTrailer extends PluginForDecrypt {
     private void processDivPoster() throws Exception {
         title = br.getRegex("<title>Apple - Trailers - (.*?)</title>").getMatch(0);
         if (title == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = HTMLEntities.unhtmlentities(title);
         // could have multiples
@@ -430,7 +412,6 @@ public class AppleTrailer extends PluginForDecrypt {
                 dlLink.setAvailable(true);
                 dlLink.setProperty("Referer", br.getURL());
                 temp.add(dlLink);
-
             } else {
                 logger.warning("Possible plugin error! Please confirm if videos are present in your browser. If so, please report plugin error to JDownloader Development Team! page : " + br2.getURL() + " parameter : " + parameter);
             }
@@ -452,7 +433,7 @@ public class AppleTrailer extends PluginForDecrypt {
                 }
             }
             if (title == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         title = HTMLEntities.unhtmlentities(title);
@@ -525,7 +506,6 @@ public class AppleTrailer extends PluginForDecrypt {
         prepAjax(br2);
         br2.getHeaders().put("Accept", "text/xml");
         br2.getPage("includes/playlists/web.inc");
-
         if (br2.getHttpConnection().getResponseCode() == 404) {
             // tryposter = true;
             return;
@@ -556,7 +536,6 @@ public class AppleTrailer extends PluginForDecrypt {
         if (hits.length == 1) {
             hits = new String[] { br2.toString() };
         }
-
         for (String hit : hits) {
             final ArrayList<DownloadLink> temp = new ArrayList<DownloadLink>();
             String hitname = new Regex(hit, "<h3[^>]*>(.*?)</h3>").getMatch(0);
@@ -565,7 +544,6 @@ public class AppleTrailer extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String filename = title + " - " + hitname;
-
             // mostly the remainder of the old code, only useful when they show 'download links'
             String[] oldHits = new Regex(hit, "class=\"hd\".*?href=\"((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)\"").getColumn(0);
             if (oldHits != null && oldHits.length != 0) {
@@ -691,13 +669,12 @@ public class AppleTrailer extends PluginForDecrypt {
             }
             decryptedLinks.addAll(analyseUserSettings(temp));
         }
-
     }
 
     private void processVersion4() throws Exception {
         final String filmID = br.getRegex("var\\s*FilmId\\s*=\\s*'(\\d+)'").getMatch(0);
         if (filmID == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Browser br2 = br.cloneBrowser();
         br2.getPage("//trailers.apple.com/trailers/feeds/data/" + filmID + ".json");
@@ -811,5 +788,4 @@ public class AppleTrailer extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

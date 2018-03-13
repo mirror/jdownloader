@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -25,20 +24,19 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protege-ddl.com" }, urls = { "http://(www\\.)?protege\\-ddl\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protege-ddl.com" }, urls = { "http://(www\\.)?protege\\-ddl\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" })
 public class ProtegeDdlCom extends PluginForDecrypt {
-
     // DEV NOTES
     // - No https
-
     public ProtegeDdlCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,6 @@ public class ProtegeDdlCom extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setFollowRedirects(true);
         br.getPage(parameter);
-
         // error clauses
         if (br.containsHTML(">Not Found</h1>")) {
             logger.info("Invalid URL: " + parameter);
@@ -74,13 +71,13 @@ public class ProtegeDdlCom extends PluginForDecrypt {
                 }
             }
             if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
         // find tables
         final String table = br.getRegex("<table(.*?)</table>").getMatch(0);
         if (table == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // find links
         final String[] links = HTMLParser.getHttpLinks(table, null);
@@ -103,5 +100,4 @@ public class ProtegeDdlCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -23,16 +22,16 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upmirror.com" }, urls = { "http://(www\\.)?upmirror\\.com/[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upmirror.com" }, urls = { "http://(www\\.)?upmirror\\.com/[a-z0-9]+" })
 public class UpMirrorCom extends PluginForDecrypt {
-
     public UpMirrorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,7 +59,7 @@ public class UpMirrorCom extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML(CAPTCHATEXT)) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String finallink = br.getRegex("HTTP\\-EQUIV=\\'Refresh\\' CONTENT=\\'\\d+;URL=(.*?)\\'").getMatch(0);
         if (finallink == null) {
@@ -75,5 +74,4 @@ public class UpMirrorCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -23,7 +22,6 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -46,7 +44,6 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(?:www\\.)?(?:urlink\\.biz|ur-link\\.biz|url-ink\\.biz|url-ink\\.com|urli-nk\\.com)/[A-Za-z0-9]{4,6}" })
 public class UrLnkBz extends PluginForDecrypt {
-
     public UrLnkBz(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -70,20 +67,21 @@ public class UrLnkBz extends PluginForDecrypt {
         int counter = 0;
         final int retryCount = 4;
         String dl = null;
-        while (dl == null && counter++ <= retryCount) {
+        while (dl == null && counter++ <= retryCount && !isAbort()) {
             final Form captchaForm = br.getForm(0);
             if (captchaForm != null && captchaForm.containsHTML("capcode")) {
                 String result = null;
                 try {
                     result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
-                } catch (final DecrypterException d) {
-                    if (DecrypterException.CAPTCHA.equals(d.getMessage())) {
+                } catch (final PluginException d) {
+                    if (d.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
                         continue;
+                    } else {
+                        throw d;
                     }
-                    throw d;
                 }
                 if (StringUtils.isEmpty(result)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 if ("CANCEL".equals(result)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL);
@@ -97,10 +95,10 @@ public class UrLnkBz extends PluginForDecrypt {
         if (dl == null) {
             if (counter >= retryCount) {
                 logger.info("Exceeded counter");
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             logger.info("Can't find 'dl'");
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl != null) {
             decryptedLinks.add(createDownloadlink(dl));
@@ -112,5 +110,4 @@ public class UrLnkBz extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

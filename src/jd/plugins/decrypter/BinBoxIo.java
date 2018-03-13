@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -24,8 +23,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +30,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -41,9 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(?:www\\.)?binbox\\.io/\\w+(?:#\\w+)?" })
 public class BinBoxIo extends PluginForDecrypt {
-
     private String sjcl, uid, salt, token, paste;
 
     public BinBoxIo(PluginWrapper wrapper) {
@@ -66,7 +63,6 @@ public class BinBoxIo extends PluginForDecrypt {
             Form captcha = br.getFormbyProperty("id", "captchaForm");
             if (captcha != null && captcha.containsHTML("solvemedia\\.com/papi/")) {
                 for (int i = 1; i <= 3; i++) {
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -92,7 +88,7 @@ public class BinBoxIo extends PluginForDecrypt {
                     break;
                 }
                 if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 getPaste();
             } else {
@@ -137,7 +133,6 @@ public class BinBoxIo extends PluginForDecrypt {
                 }
             }
         }
-
         if (decryptedLinks.size() == 0) {
             if (br.containsHTML(/* password content.. unsupported feature */">Password Required</h1>")) {
                 try {
@@ -146,8 +141,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-            /* suspended or deactivated account */"|This link is unavailable because |" +
-            /* content deleted */"The content you have requested has been deleted\\.")) {
+                    /* suspended or deactivated account */"|This link is unavailable because |" +
+                    /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
@@ -158,13 +153,11 @@ public class BinBoxIo extends PluginForDecrypt {
                 return null;
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -211,5 +204,4 @@ public class BinBoxIo extends PluginForDecrypt {
     private void getPaste() {
         paste = br.getRegex("<div id=\"paste\\-json\" style=\"[^\"]+\">([^<]+)</div>").getMatch(0);
     }
-
 }

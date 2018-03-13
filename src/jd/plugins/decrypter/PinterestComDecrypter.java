@@ -22,11 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -40,11 +35,17 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de|fr)/(?!pin/)[^/]+/[^/]+/(?:[^/]+/)?" })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -430,7 +431,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return json_source_from_html;
     }
 
-    private boolean proccessLinkedHashMap(LinkedHashMap<String, Object> single_pinterest_data, final String board_id, final String source_url) throws DecrypterException {
+    private boolean proccessLinkedHashMap(LinkedHashMap<String, Object> single_pinterest_data, final String board_id, final String source_url) throws PluginException {
         final String type = getStringFromJson(single_pinterest_data, "type");
         if (type == null || !(type.equals("pin") || type.equals("interest"))) {
             /* Skip invalid objects! */
@@ -477,7 +478,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         // final String pinner_name = pinner_nameo != null ? (String) pinner_nameo : null;
         if (pin_id == null || directlink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dupeList.contains(pin_id)) {
             logger.info("Skipping duplicate: " + pin_id);
             return true;
@@ -538,7 +539,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
      *
      */
     @SuppressWarnings("unchecked")
-    private void processPinsKamikaze(final Object jsono, final String board_id, final String source_url) throws DecrypterException {
+    private void processPinsKamikaze(final Object jsono, final String board_id, final String source_url) throws PluginException {
         LinkedHashMap<String, Object> test;
         if (jsono instanceof LinkedHashMap) {
             test = (LinkedHashMap<String, Object>) jsono;

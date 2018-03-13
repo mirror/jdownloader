@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -23,17 +22,17 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "likeur.org" }, urls = { "http://(?:www\\.)?likeur\\.org/lien/[^/]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "likeur.org" }, urls = { "http://(?:www\\.)?likeur\\.org/lien/[^/]+\\.html" })
 public class LikeurOrg extends PluginForDecrypt {
-
     public LikeurOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,7 +57,6 @@ public class LikeurOrg extends PluginForDecrypt {
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode("recaptcha", cf, param);
-
             this.br.postPage(this.br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             if (!this.br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 failed = false;
@@ -66,7 +64,7 @@ public class LikeurOrg extends PluginForDecrypt {
             }
         }
         if (failed) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String fpName = null;
         final String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
@@ -77,14 +75,11 @@ public class LikeurOrg extends PluginForDecrypt {
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }

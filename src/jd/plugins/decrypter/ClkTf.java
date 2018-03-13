@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -46,11 +44,10 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClkTf extends PluginForDecrypt {
-
     // add new domains here.
     private static final String[] domains = { "click.tf", "ssh.yt", "ssh.tf", "yep.pm", "adlink.wf", "kyc.pm", "lan.wf", "led.wf" };
-    // all other domains mentioned within /services.html do not match expected.
 
+    // all other domains mentioned within /services.html do not match expected.
     public ClkTf(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,7 +76,6 @@ public class ClkTf extends PluginForDecrypt {
         }
         handleCaptcha(param);
         addLinks(decryptedLinks, parameter);
-
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -112,14 +108,14 @@ public class ClkTf extends PluginForDecrypt {
             if (captchaImage != null) {
                 final String c = getCaptchaCode(captchaImage, param);
                 if (c == null) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 captcha.put("ent_code", Encoding.urlEncode(c));
             }
             br.submitForm(captcha);
             if (br.containsHTML("<p style='color:\\s*red;'>Wrong CAPTCHA</p>")) {
                 if (i + 1 > retry) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
                     captcha = br.getForm(0);
                     continue;
@@ -187,5 +183,4 @@ public class ClkTf extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.URLShortnerLLP_URLShortner;
     }
-
 }

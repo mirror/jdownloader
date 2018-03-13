@@ -13,16 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.areyouahuman.CaptchaHelperCrawlerPluginAreYouHuman;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,16 +25,19 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.captcha.v2.challenge.areyouahuman.CaptchaHelperCrawlerPluginAreYouHuman;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+" })
 public class IvPasteCom extends PluginForDecrypt {
-
     public IvPasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -76,7 +73,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 break;
             }
             if (i >= 5) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (form.containsHTML("pluscaptcha\\.com/") || /* ads captcha */form.containsHTML("api\\.minteye\\.com/|api\\.adscaptcha\\.com/")) {
                 logger.info(i + "/3:Unsupported captchatype: " + parameter);
@@ -115,12 +112,11 @@ public class IvPasteCom extends PluginForDecrypt {
                 if (auto < 3) {
                     auto++;
                     result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
-
                 } else {
                     result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(true, this));
                 }
                 if (result == null || "CANCEL".equals(result)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
             } else if (form.containsHTML("solvemedia\\.com")) {
@@ -162,5 +158,4 @@ public class IvPasteCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

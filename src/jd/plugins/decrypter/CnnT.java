@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -23,14 +22,14 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://(?:uu\\.canna\\.to|ru\\.canna\\.to|85\\.17\\.36\\.224)/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://(?:uu\\.canna\\.to|ru\\.canna\\.to|85\\.17\\.36\\.224)/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+" })
 public class CnnT extends PluginForDecrypt {
-
     public CnnT(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -103,7 +102,7 @@ public class CnnT extends PluginForDecrypt {
         }
         if (valid == false) {
             logger.info("Captcha for the following link was entered wrong for more than 5 times: " + parameter);
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         return decryptedLinks;
     }
@@ -112,5 +111,4 @@ public class CnnT extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

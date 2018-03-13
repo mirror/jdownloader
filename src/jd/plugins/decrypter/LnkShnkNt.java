@@ -13,12 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-import org.appwork.utils.StringUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,11 +24,13 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Earn money sharing shrinked links<br />
@@ -43,7 +40,6 @@ import jd.plugins.PluginException;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=(?:https?|ftp)://.+)" })
 public class LnkShnkNt extends antiDDoSForDecrypt {
-
     public LnkShnkNt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -90,7 +86,6 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                 if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
                     /* This part was coded blindly! */
                     for (int i = 0; i <= 3; i++) {
-
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = null;
                         try {
@@ -110,7 +105,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                         break;
                     }
                     if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
                 String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1 (?:onClick)?[^>]*>Continue").getMatch(1);
@@ -153,5 +148,4 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -34,10 +34,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
@@ -315,7 +316,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         // return ret;
         // }
         if (inValidate(contentType) || inValidate(title) || inValidate(editorialDate) || inValidate(tvStation) || inValidate(player_url_template)) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Show is not always available - merge it with the title, if tvShow is available. */
         if (tvShow != null) {
@@ -324,7 +325,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final String date_formatted = new Regex(editorialDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         id = new Regex(player_url_template, "/([^/]+)$").getMatch(0);
         if (date_formatted == null || id == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String filename_packagename_base_title = String.format("%s_%s_%s", date_formatted, tvStation, title);
         short counter = 0;

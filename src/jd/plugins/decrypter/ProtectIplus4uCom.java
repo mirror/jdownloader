@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -25,23 +24,22 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.iplus4u.com" }, urls = { "http://(www\\.)?protect\\.iplus4u\\.com/[A-Za-z0-9\\-_\\.]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.iplus4u.com" }, urls = { "http://(www\\.)?protect\\.iplus4u\\.com/[A-Za-z0-9\\-_\\.]+\\.html" })
 public class ProtectIplus4uCom extends PluginForDecrypt {
-
     public ProtectIplus4uCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DecrypterScript_linkid=_linkcheck.php Version 0.1 */
-
     private static final String  RECAPTCHATEXT  = "api\\.recaptcha\\.net";
     private static final String  RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
     private static final boolean SKIP_CAPTCHA   = true;
@@ -57,7 +55,6 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-
         if (!SKIP_CAPTCHA) {
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
@@ -81,10 +78,9 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
                 break;
             }
             if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-
         if (br.getURL().contains("check.")) {
             br.postPage("/linkid.php", "linkid=" + linkid + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
         }
@@ -115,5 +111,4 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

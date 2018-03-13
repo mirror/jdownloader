@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,9 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hides.at" }, urls = { "https?://(www\\.)?hides\\.at/(link/)?[a-f0-9]{32}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hides.at" }, urls = { "https?://(www\\.)?hides\\.at/(link/)?[a-f0-9]{32}" })
 public class HidsAt extends PluginForDecrypt {
-
     public HidsAt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,9 +59,7 @@ public class HidsAt extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML(CAPTCHATEXT)) {
-
             String linkID = new Regex(parameter, "hides\\.at/(link/)?(.+)").getMatch(1);
-
             Browser br2 = br.cloneBrowser();
             URLConnectionAdapter con = null;
             try {
@@ -82,7 +78,7 @@ public class HidsAt extends PluginForDecrypt {
                         Browser cap = br.cloneBrowser();
                         cap.getPage("http://hides.at/link/" + linkID + "?captcha_code=" + code + "&hash=" + linkID + "&btnSubmit=Submit");
                         if (i + 1 == repeat && cap.containsHTML(CAPTCHATEXT)) {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else if (cap.containsHTML(CAPTCHATEXT)) {
                             continue;
                         } else {
@@ -123,5 +119,4 @@ public class HidsAt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

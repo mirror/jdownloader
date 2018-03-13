@@ -13,14 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,17 +24,20 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * @author raztoki, psp
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.us" }, urls = { "https?://(?:www\\.)?pururin\\.us/gallery/\\d+/[a-z0-9\\-]+\\.html" })
 public class PururinUs extends antiDDoSForDecrypt {
-
     public PururinUs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,7 +57,6 @@ public class PururinUs extends antiDDoSForDecrypt {
         }
         // correct cryptedUrl
         param.setCryptedUrl(parameter);
-
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found|This gallery was deleted\\.")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -85,7 +83,7 @@ public class PururinUs extends antiDDoSForDecrypt {
         if (pages_string == null) {
             pages_string = br.getRegex("<td>(\\d+)</td>\\s*</tr>\\s*</tbody>").getMatch(0);
             if (pages_string == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final int pages_int = Integer.parseInt(pages_string);
@@ -118,12 +116,10 @@ public class PururinUs extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
     protected void getPage(final String parameter) throws Exception {
         super.getPage(parameter);
     }
-
 }

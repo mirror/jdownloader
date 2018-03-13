@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -29,9 +28,10 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
@@ -45,9 +45,8 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youpaste.co" }, urls = { "http://(www\\.)?youpaste\\.co/(?:index\\.php/paste|p)/[a-zA-Z0-9_/\\+\\=\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youpaste.co" }, urls = { "http://(www\\.)?youpaste\\.co/(?:index\\.php/paste|p)/[a-zA-Z0-9_/\\+\\=\\-]+" })
 public class YouPasteCo extends antiDDoSForDecrypt {
-
     public YouPasteCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,24 +59,22 @@ public class YouPasteCo extends antiDDoSForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-
         if (br.containsHTML("name=\"capcode\" id=\"capcode\"")) {
             final int repeat = 3;
             // using dummie DownloadLink for auto retry code within handleKeyCaptcha
             final DownloadLink dummie = createDownloadlink(parameter);
             for (int i = 0; i < repeat; i++) {
-
                 String result = handleCaptchaChallenge(new KeyCaptcha(this, br, dummie).createChallenge(this));
                 if ("CANCEL".equals(result)) {
                     return decryptedLinks;
                 }
                 if (result == null) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result));
                 if (br.containsHTML("name=\"capcode\" id=\"capcode\"")) {
                     if (i + 1 == repeat) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     continue;
                 } else {
@@ -86,7 +83,6 @@ public class YouPasteCo extends antiDDoSForDecrypt {
             }
         }
         processLinks(decryptedLinks, parameter);
-
         return decryptedLinks;
     }
 
@@ -116,7 +112,6 @@ public class YouPasteCo extends antiDDoSForDecrypt {
                     }
                 }
             }
-
             for (final String c : crypted) {
                 // here they go to linkbucks but we should be able to bypass this
                 Browser br2 = br.cloneBrowser();
@@ -133,12 +128,10 @@ public class YouPasteCo extends antiDDoSForDecrypt {
                 } catch (final Exception e) {
                     continue;
                 }
-
                 /* use cnl2 button if available */
                 String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
                 if (br2.containsHTML(cnlUrl)) {
                     final Browser cnlbr = br2.cloneBrowser();
-
                     Form cnlForm = null;
                     for (Form f : cnlbr.getForms()) {
                         if (f.containsHTML(cnlUrl)) {
@@ -198,5 +191,4 @@ public class YouPasteCo extends antiDDoSForDecrypt {
         }
         return inputfields;
     }
-
 }

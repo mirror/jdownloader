@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -26,15 +25,14 @@ import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ref.so" }, urls = { "http://(www\\.)?ref\\.so/[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ref.so" }, urls = { "http://(www\\.)?ref\\.so/[a-z0-9]+" })
 public class RefSo extends PluginForDecrypt {
-
     public RefSo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,7 +61,7 @@ public class RefSo extends PluginForDecrypt {
                     final String caphash = JDHash.getMD5(cf);
                     if (caphash.equals("517b6c33551ee6f755bbe486225ab9a6")) {
                         logger.info("Blank captcha - try again later!");
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     final String code = getCaptchaCode(cf, param);
                     if (code == null || code.equals("")) {
@@ -81,7 +79,7 @@ public class RefSo extends PluginForDecrypt {
                     break;
                 }
                 if (captchaurl != null) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
         }
@@ -94,7 +92,6 @@ public class RefSo extends PluginForDecrypt {
             return null;
         }
         decryptedLinks.add(createDownloadlink(link));
-
         return decryptedLinks;
     }
 
@@ -113,5 +110,4 @@ public class RefSo extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
-
 }

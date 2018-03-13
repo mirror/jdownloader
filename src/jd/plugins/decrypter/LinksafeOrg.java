@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -37,7 +36,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksafe.org" }, urls = { "https?://(?:www\\.)?linksafe\\.org/folder/[A-Za-z0-9]+" })
 public class LinksafeOrg extends PluginForDecrypt {
-
     public LinksafeOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -89,9 +87,8 @@ public class LinksafeOrg extends PluginForDecrypt {
             counter++;
         }
         if (captchaForm != null) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-
         /* Second - handle password */
         counter = 0;
         Form passwordForm = this.br.getFormByInputFieldKeyValue("do", "password");
@@ -105,7 +102,6 @@ public class LinksafeOrg extends PluginForDecrypt {
         if (passwordForm != null) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-
         /* Third - Decrypt links */
         this.br.setFollowRedirects(false);
         String fpName = br.getRegex("<h3>([^<>]+)</h3>").getMatch(0);
@@ -122,14 +118,11 @@ public class LinksafeOrg extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }

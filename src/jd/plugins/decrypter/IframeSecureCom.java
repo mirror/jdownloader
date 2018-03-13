@@ -21,9 +21,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -31,9 +28,13 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "protect-iframe.com", "ifp.re" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+" })
 public class IframeSecureCom extends antiDDoSForDecrypt {
@@ -74,10 +75,10 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         final String finallink = getPacked();
         if (finallink == null) {
             if (hasCaptcha) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(Request.getLocation(finallink, br.getRequest())));
         return decryptedLinks;

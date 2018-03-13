@@ -1,11 +1,5 @@
 package org.jdownloader.plugins.components;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import org.appwork.utils.StringUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +28,11 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
  * Google "Secure your links with a captcha, a password and much more" to find such sites
@@ -44,7 +43,6 @@ import jd.utils.JDUtilities;
  * @author psp - parts of the original
  */
 public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
-
     public abstractSafeLinking(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -140,7 +138,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                                     continue;
                                 } else {
                                     // unknown error
-                                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
                             }
                         }
@@ -169,7 +167,6 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         // refresh/toggle
                         switch (0) { // Integer.parseInt(captchaType)) {
                         case 0: {
-
                             org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                             sm.setChallengeKey(br.getHost().equalsIgnoreCase("safelinking.net") ? "OZ987i6xTzNs9lw5.MA-2Vxbc-UxFrLu" : "t62EJ1oSPvEIEl.tnmC0la5sdfLHDPsl");
                             File cf = sm.downloadCaptcha(getLocalCaptchaFile());
@@ -214,7 +211,6 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             postPage(captchaBr, "/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
                             if (!captchaBr.containsHTML("\"error\":false")) {
                                 logger.warning("Decrypter broken for link: " + parameter + "\n");
-
                             }
                             nextPost = PluginJSonUtils.ammendJson(nextPost, "iQapTcha", "");
                             nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 5);
@@ -253,7 +249,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                                 continue;
                             } else if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "captchaFail"))) {
                                 if (i + 1 > tries) {
-                                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                                 }
                                 // {"message":"SolveMedia response is not valid (checksum error).","captchaFail":true}
                                 // {"message":"puzzle expired","captchaFail":true}
@@ -261,7 +257,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                                 continue;
                             } else {
                                 // unknown error
-                                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
                     }
@@ -506,14 +502,12 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         captchaRegex.put("qaptcha", regexCaptchaQaptcha());
         captchaRegex.put("simplecaptcha", regexCaptchaSimplecaptcha());
         captchaRegex.put("cats", regexCaptchaCatAndDog());
-
         /* search for protected form */
         Form protectedForm = formProtected();
         if (protectedForm != null) {
             String psw = null;
             boolean password = formInputFieldContainsProperties(protectedForm, formPasswordInputProperties());
             prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
-
             final int repeat = 5;
             for (int i = 0; i < repeat; i++) {
                 while (protectedForm.hasInputFieldByName("%5C")) {
@@ -532,12 +526,10 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                     protectedForm.put(formPasswordInputKeyName(), Encoding.urlEncode(psw));
                 }
-
                 Browser captchaBr = null;
                 if (!"notDetected".equals(cType)) {
                     captchaBr = br.cloneBrowser();
                 }
-
                 switch (getCaptchaTypeNumber()) {
                 case 1:
                     if (i == 0 && isCaptchaSkipable()) {
@@ -658,7 +650,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                      */
                     if (protectedForm != null) {
                         if (i + 1 > repeat) {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                         prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
                         continue;
@@ -748,19 +740,15 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     private void prepareCaptchaAdress(String captcha, LinkedHashMap<String, String> captchaRegex) {
         br.getRequest().setHtmlCode(captcha);
-
         // nullify cType, this is so feedback is correct on retries etc.
         cType = "notDetected";
-
         for (Entry<String, String> next : captchaRegex.entrySet()) {
             if (br.containsHTML(next.getValue())) {
                 cType = next.getKey();
                 break;
             }
         }
-
         logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\".");
-
         /* detect javascript */
         String javaScript = null;
         for (String js : br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0)) {
@@ -772,7 +760,6 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         if (javaScript == null) {
             return;
         }
-
         /* execute javascript */
         Object result = new Object();
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
@@ -841,7 +828,6 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     protected ArrayList<DownloadLink> decryptMultipleLinks(final CryptedLink param) throws Exception {
         ArrayList<String> cryptedLinks = new ArrayList<String>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         // TODO: Add handling for offline links/containers
         if (supportsContainers()) {
             /* Container handling (if no containers found, use webprotection) */
@@ -858,13 +844,11 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-
         // TODO: don't think this is needed! confirm -raztoki, not required by keeplinks or safemylink
         /* Webprotection decryption */
         if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) {
             getPage(parameter);
         }
-
         for (String[] s : br.getRegex(regexLinks()).getMatches()) {
             for (String[] ss : new Regex(s[0], "<a href=\"(.*?)\"").getMatches()) {
                 for (String sss : ss) {
@@ -875,7 +859,6 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
             }
         }
-
         for (final String link : cryptedLinks) {
             DownloadLink dl = null;
             if (link.matches(".*" + regexSupportedDomains() + "/d/.+")) {
@@ -941,5 +924,4 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             return null;
         }
     }
-
 }

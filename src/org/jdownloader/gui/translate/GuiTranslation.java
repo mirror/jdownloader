@@ -2089,6 +2089,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped Downloads: %s1. Click here to retry them." })
     String StatusBarImpl_skippedLinksMarker_desc(int i);
 
+    @Default(lngs = { "en" }, values = { "Skipped Crawlers: %s1. Click here to retry them." })
+    String StatusBarImpl_skippedCrawlersMarker_desc(int i);
+
     @Default(lngs = { "en" }, values = { "Refresh" })
     String CaptchaDialog_layoutDialogContent_refresh();
 

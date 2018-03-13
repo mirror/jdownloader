@@ -13,17 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.PasswordUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,11 +28,14 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.PasswordUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * NOTE: <br />
@@ -49,7 +47,6 @@ import jd.plugins.PluginException;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" })
 public class SpasteCom extends antiDDoSForDecrypt {
-
     public SpasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -72,13 +69,13 @@ public class SpasteCom extends antiDDoSForDecrypt {
             if (form == null) {
                 // need a way to break.
                 if (zz == 0) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     break;
                 }
             }
             if (zz > 4) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             // they can have captcha, ive seen solvemedia and there own
             String captchaScript = null;
@@ -116,7 +113,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
                 final String[] getQuestion = getJSArray(captchaScript, "myCaptchaAns");
                 final String[] getImgArray = getJSArray(captchaScript, "myCaptchaImages");
                 if (hash == null || getQuestion == null || getImgArray == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // stupid
                 String result = "";
@@ -160,7 +157,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
             // we need some info
             final String id = br.getRegex("\\$\\.post\\(\"/site/getRedirectLink\",\\{id:'(\\d+)'\\}").getMatch(0);
             if (id == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // ajax request
             br.getHeaders().put("Accept", "*/*");
@@ -215,5 +212,4 @@ public class SpasteCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

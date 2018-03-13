@@ -25,17 +25,17 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/" })
 public class NexusmodsCom extends PluginForDecrypt {
-
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -69,7 +69,7 @@ public class NexusmodsCom extends PluginForDecrypt {
             links = br.getRegex("href=\"([^\"]+)\" onclick=").getColumn(0);
         }
         if (links == null || links.length == 0) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
@@ -79,5 +79,4 @@ public class NexusmodsCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }

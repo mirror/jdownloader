@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,8 +26,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lesen.to" }, urls = { "https?://(?:www\\.)?lesen\\.to/(?:protection/folder_\\d+\\.html|wp/tipp/Download/\\d+/)" })
 public class LsnTo extends PluginForDecrypt {
@@ -85,7 +87,7 @@ public class LsnTo extends PluginForDecrypt {
                 break;
             }
             if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (this.br.containsHTML("g\\-recaptcha")) {
             /* 2017-07-20: reCaptchaV2 */

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,15 +23,15 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "links-protection.com" }, urls = { "http://(www\\.)?links\\-protection\\.com/l=[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "links-protection.com" }, urls = { "http://(www\\.)?links\\-protection\\.com/l=[A-Za-z0-9]+" })
 public class LinksProtectionCom extends PluginForDecrypt {
-
     public LinksProtectionCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +40,6 @@ public class LinksProtectionCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-
         if (br.containsHTML(">Invalid Link|>The link you are looking for has been deleted")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -50,7 +48,6 @@ public class LinksProtectionCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         }
-
         Form cform = br.getFormbyProperty("name", "linkprotect");
         if (cform == null) {
             cform = br.getForm(2);
@@ -59,7 +56,6 @@ public class LinksProtectionCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         for (int i = 1; i <= 5; i++) {
             final String c = getCaptchaCode("http://links-protection.com/captcha/captcha.php", param);
             cform.put("captcha", c);
@@ -69,9 +65,8 @@ public class LinksProtectionCom extends PluginForDecrypt {
             }
         }
         if (br.containsHTML("\"captcha/captcha\\.php\"")) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-
         final String[] links = br.getRegex("href=s=([A-Za-z0-9=]+)\\&ID=[A-Za-z0-9]+ target=_blank").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -80,12 +75,9 @@ public class LinksProtectionCom extends PluginForDecrypt {
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(singleLink)));
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }

@@ -84,7 +84,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                         rcFallback.reload(jobs.size() + 1);
                     } catch (Throwable e) {
                         LogSource.exception(logger, e);
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, null, -1, e);
                     }
                     if (rcFallback.doRunAntiDDosProtection()) {
                         runDdosPrevention();
@@ -98,7 +98,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 }
             }
             if (!c.isSolved()) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (c.getResult() != null) {
                 for (AbstractResponse<String> r : c.getResult()) {
@@ -108,7 +108,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                             for (int i = 0; i < jobs.size(); i++) {
                                 jobs.get(i).invalidate();
                             }
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else {
                             for (int i = 0; i < jobs.size(); i++) {
                                 jobs.get(i).validate();
@@ -143,6 +143,11 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(plugin.getCrawler(), plugin.getCurrentLink()));
                 break;
             case REFRESH:
+                break;
+            case TIMEOUT:
+                plugin.onCaptchaTimeout(plugin.getCurrentLink(), c);
+                // TIMEOUT may fallthrough to SINGLE
+            case SINGLE:
                 break;
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {

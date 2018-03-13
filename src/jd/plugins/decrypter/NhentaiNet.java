@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,10 +24,13 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -39,7 +39,6 @@ import jd.plugins.FilePackage;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhentai.net" }, urls = { "https?://(?:www\\.)?nhentai\\.net/g/(\\d+)/" })
 public class NhentaiNet extends antiDDoSForDecrypt {
-
     public NhentaiNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,17 +47,14 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         getPage(parameter);
-
         final String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
-
         // images
         final String[] imgs = br.getRegex("<img is=\"lazyload-image\" class=\"lazyload\"[^>]+data-src=\"(.*?)\"").getColumn(0);
         if (imgs == null || imgs.length == 0) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final int numberOfPages = imgs.length;
         final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
-
         int i = 0;
         for (final String img : imgs) {
             final String link = Request.getLocation(img.replace("//t.", "//i.").replaceFirst("/(\\d+)t(\\.[a-z0-9]+)$", "/$1$2"), br.getRequest());
@@ -67,7 +63,6 @@ public class NhentaiNet extends antiDDoSForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
@@ -78,5 +73,4 @@ public class NhentaiNet extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

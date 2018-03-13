@@ -188,7 +188,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 final Form pwform = br.getForm(0);
                 if (pwform == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 pwform.setAction(parameter);
                 String latestPassword = null;
@@ -314,7 +314,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             for (int i = 0; i < max; i++) {
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
                 if (Captchamap == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
@@ -324,7 +324,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                 final String nexturl = getNextUrl(cp.getX(), cp.getY());
                 if (nexturl == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // they can switch to german here, within REDIRECT we can't have that!
                 // br.setFollowRedirects(true);
@@ -335,7 +335,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<")) {
                     invalidateLastChallengeResponse();
                     if (i + 1 >= max) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     getPage(parameter);
                     continue;

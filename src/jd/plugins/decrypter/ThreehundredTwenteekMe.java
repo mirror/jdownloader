@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,16 +23,16 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.me" }, urls = { "https?://(?:www\\.)?320k\\.(?:in|me)/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+(?:\\&uploadid=\\d+)?)" })
 public class ThreehundredTwenteekMe extends antiDDoSForDecrypt {
-
     public ThreehundredTwenteekMe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -88,7 +87,6 @@ public class ThreehundredTwenteekMe extends antiDDoSForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         }
-
         return decryptedLinks;
     }
 
@@ -109,10 +107,9 @@ public class ThreehundredTwenteekMe extends antiDDoSForDecrypt {
             invalidateLastChallengeResponse();
         }
         if (finallink == null && br.containsHTML("cap\\.php")) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         validateLastChallengeResponse();
         return finallink;
     }
-
 }

@@ -23,9 +23,10 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -86,7 +87,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             submitForm(form);
             if (br.containsHTML("g-recaptcha")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
         final String[] links = br.getRegex("\\s+href=\"([^\"]+)\"\\s+").getColumn(0);

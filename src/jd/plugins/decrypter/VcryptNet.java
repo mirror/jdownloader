@@ -13,13 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,13 +24,16 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/(?:[^/]+/([a-z0-9]+)|[a-z0-9]{6})" })
 public class VcryptNet extends antiDDoSForDecrypt {
-
     public VcryptNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -80,7 +79,7 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 // can be a list of links
                 final String button = br.getRegex("<button id=\"tt\" class=\"clickme\" value=\"(.*?)\"").getMatch(0);
                 if (button == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String[] links = HTMLParser.getHttpLinks(button, null);
                 for (final String link : links) {
@@ -99,8 +98,6 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 }
             }
         }
-
         return decryptedLinks;
     }
-
 }

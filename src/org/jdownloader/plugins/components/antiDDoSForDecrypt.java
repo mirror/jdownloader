@@ -32,7 +32,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -601,7 +600,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
                                 final String rayId = getRayID(ibr);
                                 if (inValidate(rayId)) {
-                                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
                                 cloudflare.put("id", Encoding.urlEncode(rayId));
                                 cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));

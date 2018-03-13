@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -22,16 +21,16 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "http://(www\\.)?compupaste\\.com/\\?v=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "http://(www\\.)?compupaste\\.com/\\?v=\\d+" })
 public class CompuPasteCom extends PluginForDecrypt {
-
     public CompuPasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +58,7 @@ public class CompuPasteCom extends PluginForDecrypt {
                 break;
             }
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
         final String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
@@ -72,8 +71,6 @@ public class CompuPasteCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
-
         return decryptedLinks;
     }
-
 }

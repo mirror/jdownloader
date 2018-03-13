@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import java.util.ArrayList;
 
@@ -30,17 +27,19 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "linx.2ddl.link", "protect.dmd247.com" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?linx\\.(?:2ddl|twoddl|tddl)\\.(?:[a-z]+)/(?:[;\\.A-Za-z0-9]+|%27)+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
-
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Tags: Daddy's Link Protector */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -78,7 +77,7 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
             counter++;
         } while (confirmationForm != null && counter <= 2);
         if (captchaFail) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (passwordFail) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
@@ -94,13 +93,11 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -108,5 +105,4 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.DaddyScripts_DaddysLinkProtector;
     }
-
 }

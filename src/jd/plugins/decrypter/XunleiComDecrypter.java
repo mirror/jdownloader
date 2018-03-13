@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -30,11 +29,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9\\.]+|download\\?[^\"\\'<>]+|s/[\\w\\-]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)" })
 public class XunleiComDecrypter extends PluginForDecrypt {
-
     public XunleiComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -86,7 +86,6 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                 dl.setDownloadSize(Long.parseLong(fsize));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
-
             }
             parseDownload(decryptedLinks, parameter, parameter);
         } else if (parameter.matches("http://(www\\.)?kuai\\.xunlei\\.com/s/[\\w\\-]+")) {
@@ -124,7 +123,7 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                 }
             }
             if (br.containsHTML("http://verify")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             logger.info("Captcha passed!");
         }
@@ -239,5 +238,4 @@ public class XunleiComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }
