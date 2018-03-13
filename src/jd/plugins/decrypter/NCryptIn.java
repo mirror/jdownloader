@@ -37,6 +37,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
@@ -147,7 +148,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                         } else if (isCaptchaIncorrect()) {
                             invalidateLastChallengeResponse();
                             if (i + 1 == maxRetries) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             }
                             continue;
                         } else {
@@ -186,7 +187,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                         } else if (isCaptchaIncorrect()) {
                             invalidateLastChallengeResponse();
                             if (i + 1 == maxRetries) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             }
                             continue;
                         } else {
@@ -221,7 +222,7 @@ public class NCryptIn extends antiDDoSForDecrypt {
                         } else if (isCaptchaIncorrect()) {
                             invalidateLastChallengeResponse();
                             if (i + 1 == maxRetries) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             }
                             continue;
                         } else {

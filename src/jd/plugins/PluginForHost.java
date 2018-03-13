@@ -579,9 +579,9 @@ public abstract class PluginForHost extends Plugin {
             if (UIOManager.I().showConfirmDialog(0, _GUI.T.gui_captchaWindow_askForInput(link.getDomainInfo().getTld()), _GUI.T.StatusBarImpl_skippedLinksMarker_desc(1), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.CaptchaDialog_layoutDialogContent_refresh(), _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel())) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-        default:
+            break;
         case SKIP:
-            CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
+        default:
             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                 HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
             }

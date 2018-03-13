@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -24,10 +23,11 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -35,7 +35,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{2,}" })
 public class GldSlTo extends antiDDoSForDecrypt {
-
     public GldSlTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +51,6 @@ public class GldSlTo extends antiDDoSForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-
         String fpName = br.getRegex("<title>([^<>\"]*?) \\&raquo; goldesel\\.to</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -158,7 +156,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
         }
         /* Only 1 link + wrong captcha --> */
         if (decryptedLinks.size() == 0 && captchafailed) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -177,5 +175,4 @@ public class GldSlTo extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

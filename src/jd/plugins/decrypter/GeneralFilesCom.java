@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.UnknownHostException;
@@ -24,16 +23,16 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "generalfil.es" }, urls = { "http://(www\\.)?(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" })
 public class GeneralFilesCom extends PluginForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
         // working domains
@@ -68,7 +67,6 @@ public class GeneralFilesCom extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter, "Link offline (server error)"));
             return decryptedLinks;
         }
-
         br.setFollowRedirects(false);
         String fpName = br.getRegex("<h4 class=\"file-header-2\">([^<>\"]*?)</h4>").getMatch(0);
         if (fpName == null) {
@@ -105,7 +103,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
                 break;
             }
             if (br.containsHTML(">Please enter captcha and")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else {
             br.getPage(goLink);
@@ -135,7 +133,6 @@ public class GeneralFilesCom extends PluginForDecrypt {
         }
         final DownloadLink dl = createDownloadlink(finallink);
         decryptedLinks.add(dl);
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
@@ -146,5 +143,4 @@ public class GeneralFilesCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

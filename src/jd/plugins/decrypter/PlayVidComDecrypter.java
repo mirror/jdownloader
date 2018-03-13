@@ -29,10 +29,10 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -253,7 +253,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 break;
             }
             if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
     }

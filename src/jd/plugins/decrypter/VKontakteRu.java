@@ -43,6 +43,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -1892,14 +1893,14 @@ public class VKontakteRu extends PluginForDecrypt {
             if (br.containsHTML("server number not set \\(0\\)")) {
                 logger.info("Server says 'server number not set' --> Retrying");
                 if (i > 3) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 sleep(3000, CRYPTEDLINK);
                 continue;
             } else if (br.containsHTML(TEMPORARILYBLOCKED)) {
                 if (i > 10) {
                     logger.info("Could not bypass ");
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 logger.info("Trying to avoid block " + i + " / 10");
                 sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS), CRYPTEDLINK);
@@ -2184,7 +2185,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean siteHandleSecurityCheck(final String parameter) throws Exception {
         // this task shouldn't be done without an account!, ie. login should have taken place
         if (account == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // this is effectively a login (verification) task! We should synchronise before continuing!
         synchronized (jd.plugins.hoster.VKontakteRuHoster.LOCK) {

@@ -15,15 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,14 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -66,9 +49,16 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
-
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
@@ -144,7 +134,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     // when previous provided password has failed, or not provided we should ask
                     passCode = getUserInput("Password?", param);
                     if (passCode == null) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
                         if (!avoidRetry.add(passCode)) {
                             // no need to submit password that has already been tried!
@@ -208,7 +198,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         if (counter + 1 < retry) {
                             continue;
                         } else {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                     }
                     final String chid = sm.getChallenge(code);
@@ -250,7 +240,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         if (counter + 1 < retry) {
                             continue;
                         } else {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                     }
                     captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
@@ -266,7 +256,7 @@ public class FileCryptCc extends PluginForDecrypt {
             }
         }
         if (counter == retry && containsCaptcha()) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
         // mirrors - note: containers no longer have uid within path! -raztoki20160117

@@ -62,10 +62,10 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
         try {
             ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (!c.isCaptchaResponseValid()) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
@@ -84,6 +84,11 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
                 CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(getPlugin().getCrawler(), getPlugin().getCurrentLink()));
                 break;
             case REFRESH:
+                break;
+            case TIMEOUT:
+                plugin.onCaptchaTimeout(plugin.getCurrentLink(), c);
+                // TIMEOUT may fallthrough to SINGLE
+            case SINGLE:
                 break;
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {

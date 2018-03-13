@@ -106,7 +106,7 @@ public class Rlnks extends antiDDoSForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         if (allForm != null && allForm.getRegex("captcha").matches()) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String page = br.toString();
         String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);

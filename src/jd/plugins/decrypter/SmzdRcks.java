@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -36,9 +35,10 @@ import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
@@ -52,9 +52,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/(folder/[A-Za-z0-9\\-_]+|redirect/[A-Za-z0-9\\-_]+\\?_link=[A-Za-z0-9\\-_]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/(folder/[A-Za-z0-9\\-_]+|redirect/[A-Za-z0-9\\-_]+\\?_link=[A-Za-z0-9\\-_]+)" })
 public class SmzdRcks extends antiDDoSForDecrypt {
-
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS   = new WeakHashMap<Account, Map<String, Object>>();
     private ArrayList<DownloadLink>                          decryptedLinks = new ArrayList<DownloadLink>();
     private String                                           ssid;
@@ -82,7 +81,6 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("https://", getProtocol());
         boolean premiumActive = false;
-
         final PluginForHost smoozed_moch = JDUtilities.getPluginForHost("smoozed.com");
         final Account aa = AccountController.getInstance().getValidAccount(smoozed_moch);
         if (aa != null) {
@@ -106,9 +104,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                 smzd_id = session_Key;
             }
         }
-
         getPage(parameter);
-
         String redirect = this.br.getRedirectLocation();
         if (redirect != null && redirect.contains("smoozed.rocks/404")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -118,7 +114,6 @@ public class SmzdRcks extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
-
         if (br.containsHTML("\"download_free\"")) {
             // redirect url
             String base64 = br.getRegex("atob\\('([A-Za-z0-9\\-_]+)'\\)").getMatch(0);
@@ -128,7 +123,6 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         if (rcID != null) {
             // Form[] forms = br.getForms();
@@ -147,19 +141,15 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                     rc.reload();
                     continue;
                 }
-
                 final Form rcForm = br.getFormbyKey("recaptcha_response_field");
                 rcForm.getInputField("ssid").setValue(ssid);
                 rcForm.getInputField("recaptcha_response_field").setValue(c);
-
                 rcForm.addInputField(new InputField("recaptcha_challenge_field", rc.getChallenge()));
                 rcForm.addInputField(new InputField("mode", "free"));
                 rcForm.setAction(parameter + "/access");
                 Cookies cookies = br.getCookies(getProtocol() + "www.smoozed.rocks");
-
                 cookies.add(new Cookie("smoozed.rocks", "sid", ssid));
                 cookies.add(new Cookie("smoozed.rocks", "jid", ssid));
-
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 // waittime is not evaluated
                 // Thread.sleep(15000);
@@ -170,10 +160,9 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                 } else {
                     rc.reload();
                 }
-
             }
             if (StringUtils.isEmpty(secretKey)) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             getPage(parameter + "/" + secretKey);
         } else {
@@ -196,15 +185,12 @@ public class SmzdRcks extends antiDDoSForDecrypt {
     }
 
     private void parse(final String htmlCode) throws Exception {
-
         final ArrayList<Object> obj = JSonStorage.restoreFromString(br.toString(), new TypeRef<ArrayList<Object>>() {
         });
         // String cnl = (String) obj.get(0);
         // String dlc = (String) obj.get(1);
         final String accessKey = (String) obj.get(3);
-
         final Map<String, List<List<String>>> mirrorMap = (Map<String, List<List<String>>>) obj.get(2);
-
         for (final Entry<String, List<List<String>>> es : mirrorMap.entrySet()) {
             for (final List<String> linkInfo : es.getValue()) {
                 if (this.isAbort()) {
@@ -219,7 +205,6 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                 final String link = getProtocol() + "www.smoozed.rocks/dl/" + id + "/" + accessKey + "?direct=1";
                 decryptSingleID(link);
             }
-
         }
     }
 
@@ -272,5 +257,4 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         }
         return null;
     }
-
 }

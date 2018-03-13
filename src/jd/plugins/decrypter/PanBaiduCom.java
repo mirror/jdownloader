@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,8 +31,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9-_]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -247,7 +249,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 final String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
                 if (json == null) {
                     logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
@@ -299,7 +301,8 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
             if (link_password != null) {
                 /*
-                 * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for each subfolder :)
+                 * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for
+                 * each subfolder :)
                  */
                 subdir_link += "&linkpassword=" + Encoding.urlEncode(link_password);
             }

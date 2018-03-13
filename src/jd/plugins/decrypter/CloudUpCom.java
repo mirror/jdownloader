@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -25,10 +24,11 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -42,7 +42,6 @@ import org.appwork.utils.StringUtils;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/c[a-zA-Z0-9_\\-]{10}" })
 public class CloudUpCom extends PluginForDecrypt {
-
     private String  csrfToken      = null;
     private String  mydb_socket_id = null;
     private Browser ajax           = null;
@@ -74,12 +73,11 @@ public class CloudUpCom extends PluginForDecrypt {
         // get the json url coded info
         final String preloader = br.getRegex("JSON\\.parse\\(decodeURIComponent\\('(.*?)'\\)\\)").getMatch(0);
         if (preloader == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // we need some session info here, these are not actually verified....
         mydb_socket_id = br.getRegex("mydb_socket_id\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
         csrfToken = br.getRegex("csrfToken\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
-
         final String de_loaded = Encoding.urlDecode(preloader, false);
         final String[] ids = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(de_loaded, "items"));
         String fpName = PluginJSonUtils.getJsonValue(de_loaded, "title");
@@ -112,7 +110,7 @@ public class CloudUpCom extends PluginForDecrypt {
         }
         if (decryptedLinks.isEmpty()) {
             logger.warning("'decrptedLinks' isEmpty!, Please report this to JDownloader Development Team : " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fpName != null) {
             fpName = fpName.replaceAll("share your \\w+ with family and friends|share clips and home movies", "") + new Regex(parameter, "/([^/]+)$").getMatch(0);
@@ -127,5 +125,4 @@ public class CloudUpCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

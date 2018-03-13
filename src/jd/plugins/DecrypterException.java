@@ -13,19 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import org.jdownloader.translate._JDT;
 
 public class DecrypterException extends Exception {
-
     private static final long serialVersionUID = -413359039728789194L;
-
-    public static String      CAPTCHA          = _JDT.T.decrypter_wrongcaptcha();
     public static String      PASSWORD         = _JDT.T.decrypter_wrongpassword();
     public static String      ACCOUNT          = _JDT.T.decrypter_invalidaccount();
-    public static String      PLUGIN_DEFECT    = _JDT.T.decrypter_plugindefect();
 
     public DecrypterException() {
         super(_JDT.T.decrypter_unknownerror());

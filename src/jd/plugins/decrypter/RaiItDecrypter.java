@@ -26,12 +26,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,7 +36,15 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
 public class RaiItDecrypter extends PluginForDecrypt {
@@ -339,7 +341,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             } else {
                 /* TODO */
                 logger.warning("Unsupported media type!");
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             extension = "mp4";
             dllink = (String) entries.get("h264");
@@ -393,7 +395,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         } else {
             final String cont = jd.plugins.hoster.RaiTv.getContFromRelinkerUrl(relinker_url);
             if (cont == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Drop previous Headers & Cookies */
             this.br = jd.plugins.hoster.RaiTv.prepVideoBrowser(new Browser());
@@ -412,7 +414,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             dllink = jd.plugins.hoster.RaiTv.getDllink(this.br);
             if (dllink == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (extension == null && dllink.contains(".mp4")) {
                 extension = "mp4";
@@ -424,7 +426,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             if (!jd.plugins.hoster.RaiTv.dllinkIsDownloadable(dllink)) {
                 logger.info("Unsupported streaming protocol");
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final Regex hdsconvert = new Regex(dllink, "(https?://[^/]+/z/podcastcdn/.+\\.csmil)/manifest\\.f4m");

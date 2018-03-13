@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -22,17 +21,17 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" })
 public class ExtremeProtectCom extends PluginForDecrypt {
-
     public ExtremeProtectCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -67,7 +66,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
             break;
         }
         if (failed) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (br.containsHTML("<a href= target=_blank></a>")) {
             logger.info("Link offline: " + parameter);
@@ -98,5 +97,4 @@ public class ExtremeProtectCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

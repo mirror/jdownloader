@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,9 +24,12 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * NOTE: sharelinked.com and rawfile.co are run by the same people. <br/>
@@ -42,7 +42,6 @@ import jd.plugins.DownloadLink;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawfile.co", "sharelinked.com", "sharelinked.net" }, urls = { "https?://(?:www\\.)?rawfile\\.co/\\?p=(\\d+)", "https?://(?:www\\.)?sharelinked\\.com/\\?p=(\\d+)", "https?://(?:www\\.)?sharelinked\\.net/\\?p=(\\d+)" })
 public class SharelinkedCom extends antiDDoSForDecrypt {
-
     public SharelinkedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +58,7 @@ public class SharelinkedCom extends antiDDoSForDecrypt {
         final String[] links = br.getRegex("href=(\"|')(https?://(?!" + Pattern.quote(getHost()) + "/)[^<>\"]+|https?://" + Pattern.quote(getHost()) + "/\\?across[^\"]+)\\1").getColumn(1);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String singleLink : links) {
             if (singleLink.contains(getHost() + "/?across")) {
@@ -71,8 +70,6 @@ public class SharelinkedCom extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         return decryptedLinks;
     }
-
 }

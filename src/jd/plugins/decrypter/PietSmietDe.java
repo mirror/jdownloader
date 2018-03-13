@@ -17,19 +17,20 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.PietsmietDeConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.PietsmietDeConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -68,7 +69,7 @@ public class PietSmietDe extends antiDDoSForDecrypt {
         String[] sources = br.getRegex("\\{ 'file': '\\/\\/e\\w{1}\\.pietcdn\\.de\\/hls\\/\\w{2}\\/\\w{2}\\/\\w{2}\\/,(\\w{32}),(\\w{32}),(\\w{32}),\\.mp4\\.us\\/hmt\\.m3u8' \\},").getRow(0);
         if (fpName == null || baseURL == null || sources == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fpName = Encoding.htmlOnlyDecode(fpName).trim();
         if (grabBEST) {

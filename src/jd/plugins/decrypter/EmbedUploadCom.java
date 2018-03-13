@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,21 +25,22 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "embedupload.com" }, urls = { "http://(www\\.)?embedupload\\.(com|to)/\\?([A-Z0-9]{2}|d)=[A-Z0-9]+" })
 public class EmbedUploadCom extends PluginForDecrypt {
-
     public EmbedUploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private String recaptcha            = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private String captchaSecurityImage = "<img[^>]+src=\"(lib/CaptchaSecurityImages\\.php)\"";
-
     private String fuid                 = null;
 
     @Override
@@ -82,7 +80,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 break;
             }
             if (br.containsHTML(recaptcha)) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (br.containsHTML(captchaSecurityImage)) {
             Form captcha = br.getFormbyKey("capcode");
@@ -116,7 +114,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 }
                 if (br.containsHTML(captchaSecurityImage) && !br.containsHTML("<meta http-equiv=\"refresh\"[^>]+")) {
                     if (i + 1 == 3) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     continue;
                 } else {
@@ -125,7 +123,6 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 }
             }
         }
-
         if (parameter.matches(".+/\\?d=[A-Za-z0-9]+")) {
             String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\n\r ]+<a href=\"(https?://.*?)\"").getMatch(0);
             if (embedUploadDirectlink == null) {
@@ -193,5 +190,4 @@ public class EmbedUploadCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

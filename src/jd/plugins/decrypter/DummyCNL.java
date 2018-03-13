@@ -27,10 +27,11 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
@@ -157,7 +158,7 @@ public class DummyCNL extends PluginForDecrypt {
             baseDecoded = Base64.decode(crypted.replaceAll("\\s", "+"));
         }
         if (baseDecoded == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String ret = decrypt(baseDecoded, key);
         if (ret != null) {

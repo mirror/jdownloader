@@ -87,6 +87,11 @@ public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelpe
             case REFRESH:
                 // refresh is not supported from the pluginsystem right now.
                 return "";
+            case TIMEOUT:
+                plugin.onCaptchaTimeout(plugin.getCurrentLink(), c);
+                // TIMEOUT may fallthrough to SINGLE
+            case SINGLE:
+                break;
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {
                     final LinkCrawler linkCrawler = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
@@ -107,7 +112,7 @@ public class CaptchaHelperCrawlerPluginSweetCaptcha extends AbstractCaptchaHelpe
             throw new CaptchaException(e.getSkipRequest());
         }
         if (!c.isSolved()) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         return c.getResult().getValue();
     }

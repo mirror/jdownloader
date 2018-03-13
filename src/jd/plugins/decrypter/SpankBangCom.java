@@ -227,7 +227,7 @@ public class SpankBangCom extends PluginForDecrypt {
      * @return
      * @throws DecrypterException
      */
-    public static String getQuality(final String q) throws DecrypterException {
+    public static String getQuality(final String q) throws PluginException {
         if ("super".equalsIgnoreCase(q) || "1080p".equalsIgnoreCase(q)) {
             return "1080p";
         } else if ("high".equalsIgnoreCase(q) || "720p".equalsIgnoreCase(q)) {
@@ -239,7 +239,7 @@ public class SpankBangCom extends PluginForDecrypt {
         } else if ("low".equalsIgnoreCase(q) || "240p".equalsIgnoreCase(q)) {
             return "240p";
         }
-        throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     /**

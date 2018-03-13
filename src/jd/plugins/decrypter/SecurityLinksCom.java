@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,11 +25,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(?:www\\.)?security-links\\.com/(?:\\d+/(\\S+)|[A-Za-z0-9]+)" })
 public class SecurityLinksCom extends PluginForDecrypt {
-
     public SecurityLinksCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -71,7 +71,7 @@ public class SecurityLinksCom extends PluginForDecrypt {
                 break;
             }
             if (br.containsHTML("\"generate\\.php\"")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (br.containsHTML("le lien est protegé par un mot de passe")) {
             for (int i = 0; i <= 3; i++) {
@@ -101,8 +101,6 @@ public class SecurityLinksCom extends PluginForDecrypt {
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         return decryptedLinks;
     }
-
 }

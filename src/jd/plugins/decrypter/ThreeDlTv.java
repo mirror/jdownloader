@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,10 +24,13 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -39,7 +39,6 @@ import jd.plugins.FilePackage;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3ddl.tv" }, urls = { "https?://(www\\.)?3ddl\\.tv/download/\\S+/" })
 public class ThreeDlTv extends antiDDoSForDecrypt {
-
     public ThreeDlTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,14 +52,13 @@ public class ThreeDlTv extends antiDDoSForDecrypt {
         final String pid = br.getRegex(",t=\"(\\d+)\"").getMatch(0);
         final String[] mirrors = br.getRegex("data-dl=\"(dl-\\d+)\"").getColumn(0);
         if (mirrors == null || pid == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String password = br.getRegex(">Passwort:</th>\\s*<td[^>]*>\\s*(.*?)\\s*</td>").getMatch(0);
         if (password != null) {
             passwords.add(password);
         }
         final String fpName = br.getRegex(">Release:</th>\\s*<td[^>]*>\\s*(.*?)\\s*</td>").getMatch(0);
-
         for (final String mirror : mirrors) {
             final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("Accept", "*/*");
@@ -68,12 +66,11 @@ public class ThreeDlTv extends antiDDoSForDecrypt {
             postPage(ajax, "/drop.php", "option=" + mirror + "&pid=" + pid + "&ceck=sec");
             // they also use relinks and hoster links either base encoded or raw within source.
             // we will use link found within base encoding or clicknload
-
             // clicknload is easiest // clicknloaw (raw)
             {
                 final String link = ajax.getRegex("VALUE=\"(.*?)\"></form>").getMatch(0);
                 if (link == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String[] links = link.split("[\r\n]+");
                 for (final String ink : links) {
@@ -88,7 +85,7 @@ public class ThreeDlTv extends antiDDoSForDecrypt {
                 // failover, standard href (base64 encoded)
                 String[] links = ajax.getRegex("<div id=\"dlstatus\"></div><a rel=\"nofollow\" href=\"(.*?)\"").getColumn(0);
                 if (links == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (final String link : links) {
                     final String go = new Regex(link, "/go/(.+)").getMatch(0);
@@ -108,7 +105,6 @@ public class ThreeDlTv extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -116,5 +112,4 @@ public class ThreeDlTv extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

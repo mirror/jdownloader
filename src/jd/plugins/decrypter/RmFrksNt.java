@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.awt.Point;
@@ -25,15 +24,15 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://(www\\.)?rom\\-freaks\\.net/(download\\-[0-9]+\\-file\\-.+|link\\-[0-9]\\-[0-9]+\\-file\\-.+|.+desc\\-name.+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://(www\\.)?rom\\-freaks\\.net/(download\\-[0-9]+\\-file\\-.+|link\\-[0-9]\\-[0-9]+\\-file\\-.+|.+desc\\-name.+)\\.html" })
 public class RmFrksNt extends PluginForDecrypt {
-
     public RmFrksNt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,7 +52,9 @@ public class RmFrksNt extends PluginForDecrypt {
         br.getPage(parameter);
         if (parameter.contains("desc-name")) {
             String[] thelinks = br.getRegex("\"(link-[0-9]+-[0-9]+-file-.*?\\.html)\"").getColumn(0);
-            if (thelinks == null || thelinks.length == 0) return null;
+            if (thelinks == null || thelinks.length == 0) {
+                return null;
+            }
             for (String link : thelinks) {
                 decryptedLinks.add(createDownloadlink("http://www.rom-freaks.net/" + link));
             }
@@ -64,9 +65,13 @@ public class RmFrksNt extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>Download - NDS ROMs \\- \\d+(.*?)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<td width=\"100%\" class=\"aligncenter\" colspan=\"2\">[\t\n\r ]+\\d+ \\- (.*?)</td>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<td width=\"100%\" class=\"aligncenter\" colspan=\"2\">[\t\n\r ]+\\d+ \\- (.*?)</td>").getMatch(0);
+            }
             String fastWay = br.getRegex("<p align=\"center\"><b><a href=\"(.*?)\"").getMatch(0);
-            if (fastWay == null) fastWay = br.getRegex("<p align=\"center\"><b><a href=\"(.*?)\"").getMatch(0);
+            if (fastWay == null) {
+                fastWay = br.getRegex("<p align=\"center\"><b><a href=\"(.*?)\"").getMatch(0);
+            }
             if (fastWay != null) {
                 br.getPage("http://www.rom-freaks.net/" + fastWay);
                 if (br.containsHTML("url=google\\.com\"")) {
@@ -96,15 +101,21 @@ public class RmFrksNt extends PluginForDecrypt {
                 if (br.containsHTML("/captcha/go")) {
                     captchaurl = "http://www.rom-freaks.net/captcha/go.php";
                 }
-                if (captchaurl == null) return null;
+                if (captchaurl == null) {
+                    return null;
+                }
                 Form captchaForm = br.getFormbyProperty("name", "form1");
-                if (captchaForm == null) return null;
+                if (captchaForm == null) {
+                    return null;
+                }
                 String downlink = null;
                 for (int i = 0; i <= 3; i++) {
                     File file = this.getLocalCaptchaFile();
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://www.rom-freaks.net/captcha/go.php"));
                     String code = getCaptchaCode(file, param);
-                    if (code == null) continue;
+                    if (code == null) {
+                        continue;
+                    }
                     String[] codep = code.split(":");
                     Point p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
                     captchaForm.put("button.x", p.x + "");
@@ -113,7 +124,6 @@ public class RmFrksNt extends PluginForDecrypt {
                     downlink = br.getRegex("\"(http://www\\.rom-freaks\\.net/down-.*?\\.html)\"").getMatch(0);
                     String[] links = br.getRegex("<FORM ACTION=\"(.*?)\"").getColumn(0);
                     if (links != null && links.length != 0 && downlink == null) {
-
                         progress.setRange(links.length);
                         for (String link : links) {
                             decryptedLinks.add(createDownloadlink(link));
@@ -125,22 +135,31 @@ public class RmFrksNt extends PluginForDecrypt {
                             fp.addLinks(decryptedLinks);
                         }
                         return decryptedLinks;
-
                     }
-                    if (downlink != null) break;
+                    if (downlink != null) {
+                        break;
+                    }
                 }
-                if (downlink == null && br.containsHTML("/captcha/go")) throw new DecrypterException(DecrypterException.CAPTCHA);
-                if (downlink == null) return null;
+                if (downlink == null && br.containsHTML("/captcha/go")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                if (downlink == null) {
+                    return null;
+                }
                 br.getPage(downlink);
                 // Last change was here
                 String gotu = br.getRegex("\"(http://www\\.rom-freaks\\.net/got.*?_[a-zA-Z0-9]+.*?\\.html)\"").getMatch(0);
                 if (gotu == null && br.containsHTML("http-equiv=\"refresh\"")) {
                     logger.warning("Found one non-working link, link = " + dlink);
                 }
-                if (gotu == null) return null;
+                if (gotu == null) {
+                    return null;
+                }
                 br.getPage(gotu);
                 String frameto = br.getRegex("\"(http://www.rom-freaks\\.net/frameto-.*?\\.html)\"").getMatch(0);
-                if (frameto == null) return null;
+                if (frameto == null) {
+                    return null;
+                }
                 br.getPage(frameto);
                 String[] links0 = br.getRegex("<iframe src=\"(.*?)\"").getColumn(0);
                 if (links0 == null || links0.length == 0) {
@@ -162,12 +181,10 @@ public class RmFrksNt extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

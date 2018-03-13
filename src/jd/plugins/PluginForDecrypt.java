@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
@@ -41,8 +42,10 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -51,6 +54,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
@@ -68,6 +72,9 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -267,20 +274,15 @@ public abstract class PluginForDecrypt extends Plugin {
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     private boolean processCaptchaException(Throwable e) {
-        if (e instanceof DecrypterException && DecrypterException.CAPTCHA.equals(e.getMessage())) {
-            invalidateLastChallengeResponse();
-            return true;
-        } else if (e instanceof RuntimeDecrypterException && DecrypterException.CAPTCHA.equals(e.getMessage())) {
-            invalidateLastChallengeResponse();
-            return true;
-        } else if (e instanceof CaptchaException) {
+        if (e instanceof CaptchaException) {
             invalidateLastChallengeResponse();
             return true;
         } else if (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
             invalidateLastChallengeResponse();
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public ArrayList<DownloadLink> decryptIt(CrawledLink link) throws Exception {
@@ -355,110 +357,114 @@ public abstract class PluginForDecrypt extends Plugin {
         if (link.getCryptedLink() == null) {
             return null;
         }
-        ArrayList<DownloadLink> tmpLinks = null;
-        Throwable throwable = null;
-        boolean linkstatusOffline = false;
-        boolean pwfailed = false;
-        boolean captchafailed = false;
-        boolean hostFailed = false;
-        try {
-            challenges = null;
-            setCurrentLink(link);
-            /*
-             * we now lets log into plugin specific loggers with all verbose/debug on
-             */
-            // prevent NPE when breakpointing
-            if (br == null) {
-                br = new Browser();
+        while (true) {
+            ArrayList<DownloadLink> ret = null;
+            Throwable throwable = null;
+            boolean linkstatusOffline = false;
+            boolean pwfailed = false;
+            boolean captchafailed = false;
+            boolean hostFailed = false;
+            try {
+                challenges = null;
+                setCurrentLink(link);
+                /*
+                 * we now lets log into plugin specific loggers with all verbose/debug on
+                 */
+                // prevent NPE when breakpointing
+                if (br == null) {
+                    br = new Browser();
+                }
+                br.setLogger(logger);
+                br.setVerbose(true);
+                br.setDebug(true);
+                /* now we let the decrypter do its magic */
+                ret = decryptIt(link);
+                validateLastChallengeResponse();
+            } catch (final Throwable e) {
+                if (logger instanceof LogSource) {
+                    if (logger instanceof LogSource) {
+                        /* make sure we use the right logger */
+                        ((LogSource) logger).clear();
+                        ((LogSource) logger).log(e);
+                    } else {
+                        LogSource.exception(logger, e);
+                    }
+                }
+                throwable = e;
+                if (isAbort()) {
+                    throwable = null;
+                } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
+                    throwable = null;
+                    hostFailed = true;
+                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.HOST, null);
+                } else if (processCaptchaException(e)) {
+                    /* User entered wrong captcha (too many times) */
+                    throwable = null;
+                    captchafailed = true;
+                    String message = null;
+                    if (e instanceof CaptchaException) {
+                        message = ((CaptchaException) e).getSkipRequest().name();
+                    }
+                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.CAPTCHA, message);
+                } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
+                    /* User entered password captcha (too many times) */
+                    throwable = null;
+                    pwfailed = true;
+                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.PASSWORD, null);
+                } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
+                    throwable = null;
+                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.NO_ACCOUNT, null);
+                } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
+                    throwable = null;
+                } else if (e instanceof PluginException) {
+                    // offline file linkstatus exception, this should not be treated as crawler error..
+                    if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        throwable = null;
+                        linkstatusOffline = true;
+                        ret = addLinkCrawlerRetryTask(ret, link, RetryReason.PLUGIN_DEFECT, null);
+                    } else if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                        throwable = null;
+                        linkstatusOffline = true;
+                        ret = onPluginDefect(e, ret, link);
+                    } else if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_RETRY) {
+                        continue;
+                    }
+                }
+            } finally {
+                clean();
+                challenges = null;
             }
-            br.setLogger(logger);
-            br.setVerbose(true);
-            br.setDebug(true);
-            /* now we let the decrypter do its magic */
-            tmpLinks = decryptIt(link);
-            validateLastChallengeResponse();
-        } catch (final Throwable e) {
-            if (logger instanceof LogSource) {
+            if ((ret == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed && !linkstatusOffline && !hostFailed) {
+                /*
+                 * null as return value? something must have happened, do not clear log
+                 */
+                ret = onPluginDefect(throwable, ret, link);
+                /* lets forward the log */
                 if (logger instanceof LogSource) {
                     /* make sure we use the right logger */
-                    ((LogSource) logger).clear();
-                    ((LogSource) logger).log(e);
-                } else {
-                    LogSource.exception(logger, e);
+                    ((LogSource) logger).flush();
                 }
             }
-            throwable = e;
-            if (isAbort()) {
-                throwable = null;
-            } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
-                throwable = null;
-                hostFailed = true;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.HOST, null);
-            } else if (processCaptchaException(e)) {
-                /* User entered wrong captcha (too many times) */
-                throwable = null;
-                captchafailed = true;
-                String message = null;
-                if (e instanceof CaptchaException) {
-                    message = ((CaptchaException) e).getSkipRequest().name();
-                }
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.CAPTCHA, message);
-            } else if (DecrypterException.PLUGIN_DEFECT.equals(e.getMessage())) {
-                // leave alone.
-            } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
-                /* User entered password captcha (too many times) */
-                throwable = null;
-                pwfailed = true;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PASSWORD, null);
-            } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
-                throwable = null;
-                tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.NO_ACCOUNT, null);
-            } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
-                throwable = null;
-            } else if (e instanceof PluginException) {
-                // offline file linkstatus exception, this should not be treated as crawler error..
-                if (((PluginException) e).getLinkStatus() == 32) {
-                    throwable = null;
-                    linkstatusOffline = true;
-                    tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT, null);
-                }
-            }
-        } finally {
-            clean();
-            challenges = null;
-        }
-        if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed && !linkstatusOffline && !hostFailed) {
-            /*
-             * null as return value? something must have happened, do not clear log
-             */
-            errLog(throwable, br, link);
-            logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
-            logger.severe("URL was: " + link.getURL());
-            tmpLinks = addLinkCrawlerRetryTask(tmpLinks, link, RetryReason.PLUGIN_DEFECT, null);
-            /* lets forward the log */
             if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
-                ((LogSource) logger).flush();
+                ((LogSource) logger).clear();
             }
+            return ret;
         }
-        if (logger instanceof LogSource) {
-            /* make sure we use the right logger */
-            ((LogSource) logger).clear();
-        }
-        return tmpLinks;
     }
 
-    public void errLog(Throwable e, Browser br, CrawledLink link) {
-        LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
+    protected ArrayList<DownloadLink> onPluginDefect(Throwable throwable, ArrayList<DownloadLink> list, CrawledLink link) {
+        final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
         try {
             errlogger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             errlogger.severe("URL was: " + link.getURL());
-            if (e != null) {
-                errlogger.log(e);
+            if (throwable != null) {
+                errlogger.log(throwable);
             }
         } finally {
             errlogger.close();
         }
+        return addLinkCrawlerRetryTask(list, link, RetryReason.PLUGIN_DEFECT, null);
     }
 
     /**
@@ -494,6 +500,25 @@ public abstract class PluginForDecrypt extends Plugin {
 
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws Exception {
         return getCaptchaCode(br, method, captchaAddress, param);
+    }
+
+    public void onCaptchaTimeout(final CrawledLink link, Challenge<?> challenge) throws CaptchaException, PluginException {
+        switch (JsonConfig.create(CaptchaSettings.class).getCrawlerCaptchaTimeoutAction()) {
+        case RETRY:
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        case ASK:
+            DomainInfo domainInfo = link.getDomainInfo();
+            if (domainInfo == null) {
+                domainInfo = DomainInfo.getInstance(Browser.getHost(link.getURL()));
+            }
+            if (UIOManager.I().showConfirmDialog(0, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), _GUI.T.StatusBarImpl_skippedCrawlersMarker_desc(1), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.CaptchaDialog_layoutDialogContent_refresh(), _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel())) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            break;
+        case SKIP:
+        default:
+            break;
+        }
     }
 
     protected String getCaptchaCode(final Browser br, final String method, final String captchaAddress, final CryptedLink param) throws Exception {
@@ -552,7 +577,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return handleCaptchaChallenge(c);
     }
 
-    protected <ReturnType> ReturnType handleCaptchaChallenge(Challenge<ReturnType> c) throws CaptchaException, InterruptedException, DecrypterException {
+    protected <ReturnType> ReturnType handleCaptchaChallenge(Challenge<ReturnType> c) throws PluginException, CaptchaException, InterruptedException {
         if (c instanceof ImageCaptchaChallenge) {
             final File captchaFile = ((ImageCaptchaChallenge) c).getImageFile();
             cleanUpCaptchaFiles.add(captchaFile);
@@ -587,6 +612,11 @@ public abstract class PluginForDecrypt extends Plugin {
             case REFRESH:
                 // refresh is not supported from the pluginsystem right now.
                 return c.getRefreshTrigger();
+            case TIMEOUT:
+                onCaptchaTimeout(getCurrentLink(), c);
+                // TIMEOUT may fallthrough to SINGLE
+            case SINGLE:
+                break;
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {
                     final LinkCrawler linkCrawler = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
@@ -607,7 +637,7 @@ public abstract class PluginForDecrypt extends Plugin {
             throw new CaptchaException(e.getSkipRequest());
         }
         if (!c.isSolved()) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         return c.getResult().getValue();
     }

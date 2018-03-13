@@ -13,21 +13,21 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * DEV NOTE: uid are 1 digit, tested with uplds.com/1 /2 /20 /100 etc<br/>
@@ -41,7 +41,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d+" })
 public class UpldsCom extends antiDDoSForDecrypt {
-
     public UpldsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,13 +57,13 @@ public class UpldsCom extends antiDDoSForDecrypt {
         final Form decryptform = br.getFormbyProperty("name", "F1");
         if (decryptform == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         submitForm(decryptform);
         final String finallink = br.getRegex("<span.*?>\\s*<a href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
@@ -79,5 +78,4 @@ public class UpldsCom extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XLinker;
     }
-
 }

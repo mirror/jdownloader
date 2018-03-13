@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,16 +25,17 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?bs\\.to/(serie/[^/]+/\\d+/[^/]+(/[^/]+)?|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
-
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("bs.to", 200);
@@ -85,7 +83,7 @@ public class BsTo extends PluginForDecrypt {
                 }
             }
             if (finallink == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (finallink.contains("bs.to/out/")) {
                 br.setFollowRedirects(false);
                 br.getPage(finallink);

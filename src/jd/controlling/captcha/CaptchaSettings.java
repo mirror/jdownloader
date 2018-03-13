@@ -59,6 +59,13 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
+    @DefaultEnumValue("SKIP")
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If the Dialog Countdown is reached, the crawler will be skipped. Disable this option to retry instead")
+    CAPTCHA_TIMEOUT_ACTION getCrawlerCaptchaTimeoutAction();
+
+    void setCrawlerCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
+
+    @AboutConfig
     @DefaultIntValue(300000)
     @SpinnerValidator(min = 10000, max = 900000)
     @DescriptionForConfigEntry("MS to wait until captcha dialog gets answered. Close dialog after this timeout unanswered")

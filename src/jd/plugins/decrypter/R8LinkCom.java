@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -24,7 +23,6 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -34,9 +32,8 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "r8link.com" }, urls = { "http://(www\\.)?r8link\\.com/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "r8link.com" }, urls = { "http://(www\\.)?r8link\\.com/[A-Za-z0-9]+" })
 public class R8LinkCom extends PluginForDecrypt {
-
     public R8LinkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -71,7 +68,7 @@ public class R8LinkCom extends PluginForDecrypt {
                 if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
                     continue;
                 } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
-                    throw new Exception(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
                     break;
                 }
@@ -86,7 +83,6 @@ public class R8LinkCom extends PluginForDecrypt {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
@@ -94,5 +90,4 @@ public class R8LinkCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

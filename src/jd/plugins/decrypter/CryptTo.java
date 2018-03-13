@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -27,9 +26,9 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
@@ -37,7 +36,6 @@ import org.appwork.utils.Application;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crypt.to" }, urls = { "https?://(?:www\\.)?crypt\\.to/(?:fid|links),[A-Za-z0-9]+" })
 public class CryptTo extends PluginForDecrypt {
-
     public CryptTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,7 +53,6 @@ public class CryptTo extends PluginForDecrypt {
         final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         /* First try to load container - this is the quickest way! */
         decryptedLinks = loadcontainer(folderid);
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             /* Some urls do not have containers --> Server will return 0b DLC --> We'll have to check for captcha & password */
             /*
@@ -84,11 +81,9 @@ public class CryptTo extends PluginForDecrypt {
                 break;
             }
             if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-
             // String fpName = null;
-
             final String[] linkkeys = br.getRegex("out\\(\\\\'([^<>\"\\']*?)\\\\'").getColumn(0);
             if (linkkeys == null || linkkeys.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -105,7 +100,6 @@ public class CryptTo extends PluginForDecrypt {
                 }
                 /* Add current linkkey to our dupelist */
                 dupelist.add(linkkey);
-
                 this.br.getPage("http://crypt.to/iframe.php?row=0&linkkey=" + linkkey);
                 final String finallink = this.br.getRedirectLocation();
                 if (finallink == null || finallink.matches(".+crypt\\.to/.+")) {
@@ -113,14 +107,12 @@ public class CryptTo extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
-
             // if (fpName != null) {
             // final FilePackage fp = FilePackage.getInstance();
             // fp.setName(Encoding.htmlDecode(fpName.trim()));
             // fp.addLinks(decryptedLinks);
             // }
         }
-
         return decryptedLinks;
     }
 
@@ -151,9 +143,7 @@ public class CryptTo extends PluginForDecrypt {
             if (file != null && file.exists()) {
                 file.delete();
             }
-
         }
         return links;
     }
-
 }

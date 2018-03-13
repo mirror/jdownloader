@@ -13,13 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,14 +26,17 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})" })
 public class MirStkCm extends antiDDoSForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
         if ("uploadmagnet.com".equals(getHost())) {
@@ -51,12 +50,11 @@ public class MirStkCm extends antiDDoSForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     *
+     * 
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
      */
-
     // 16/12/2012
     // mirrorstack.com = up, multiple pages deep, requiring custom r_counter, link offline errorhandling
     // uploading.to = down/sudoparked = 173.192.223.71-static.reverse.softlayer.com
@@ -64,16 +62,12 @@ public class MirStkCm extends antiDDoSForDecrypt {
     // onmirror.com = up, finallink are redirects on first singleLink page
     // multiupload.biz = up, multiple pages deep, with waits on last page
     // mirrorhive.com = up, finallink are redirects on first singleLink page
-
     // 05/07/2013
     // filesuploader.com = up, finallink are redirects on first singleLink page
     // 09/09/2013
     // pdownload.net = up, finallinks are redriects on first singleLink page
-
     // version 0.6
-
     // Tags: Multi file upload, mirror, mirrorstack, GeneralMultiuploadDecrypter
-
     // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
     private final String regexSingleLink = "(https?://[^/]+/(?:en/)?[a-z0-9]{1,2}_(?:[a-z0-9]{12}|[a-zA-Z0-9]{16}))";
     // Normal link format eg. http://sitedomain/uid
@@ -112,7 +106,6 @@ public class MirStkCm extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (singleLinks == null || singleLinks.length == 0) {
-
             logger.warning("Couldn't find singleLinks... :" + parameter);
             return null;
         }
@@ -145,7 +138,7 @@ public class MirStkCm extends antiDDoSForDecrypt {
                                 }
                             }
                             if (f == null) {
-                                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                             String js_source = brc.getRegex("var\\s*?hp=\\s*?\\[(.*?)\\]").getMatch(0);
                             if (js_source != null) {
@@ -251,5 +244,4 @@ public class MirStkCm extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_MirrorStack;
     }
-
 }

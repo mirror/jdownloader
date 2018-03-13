@@ -23,9 +23,10 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -50,7 +51,7 @@ public class ShortAm extends antiDDoSForDecrypt {
         if (continueform == null) {
             continueform = br.getForm(0);
             if (continueform == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
@@ -58,7 +59,7 @@ public class ShortAm extends antiDDoSForDecrypt {
         submitForm(continueform);
         continueform = br.getForm(0);
         if (continueform == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         sleep(6123l, param);
         submitForm(continueform);

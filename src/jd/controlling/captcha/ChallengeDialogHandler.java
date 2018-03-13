@@ -149,11 +149,11 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
             /* no external response available */
             if (e.isCausedByInterrupt()) {
                 throw new InterruptedException("Dialog Interrupted");
-            }
-            if (e.isCausedByTimeout()) {
+            } else if (e.isCausedByTimeout()) {
                 throw new SkipException(captchaChallenge, SkipRequest.TIMEOUT);
+            } else {
+                throw new SkipException(captchaChallenge, SkipRequest.SINGLE);
             }
-            throw new SkipException(captchaChallenge, SkipRequest.SINGLE);
         } catch (HideCaptchasByHostException e) {
             throw new SkipException(captchaChallenge, SkipRequest.BLOCK_HOSTER);
         } catch (HideCaptchasByPackageException e) {

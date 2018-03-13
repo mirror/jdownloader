@@ -24,9 +24,10 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -87,7 +88,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             if (decryptedLinks.size() > 0) {
                 return decryptedLinks;
             }
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // insert some magic
         final String magic = getSoup();
@@ -103,7 +104,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         // link
         final String link = br.getRegex("<div class=\"lienet\"><a href=\"(.*?)\">").getMatch(0);
         if (link == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final DownloadLink dl = createDownloadlink(link);
         decryptedLinks.add(dl);

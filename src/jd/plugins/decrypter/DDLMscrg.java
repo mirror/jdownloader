@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,19 +20,20 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.to" }, urls = { "http://(?:www\\.)?ddl-music\\.(?:org|to)/(download/\\d+/.*?/|download/links/[a-z0-9]+/(mirror/\\d+/)?)" })
 public class DDLMscrg extends antiDDoSForDecrypt {
@@ -75,7 +75,7 @@ public class DDLMscrg extends antiDDoSForDecrypt {
                         break;
                     } else {
                         if (i >= 8) {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                     }
                     add += 500;
@@ -123,7 +123,6 @@ public class DDLMscrg extends antiDDoSForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         }
-
         return decryptedLinks;
     }
 
@@ -131,5 +130,4 @@ public class DDLMscrg extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

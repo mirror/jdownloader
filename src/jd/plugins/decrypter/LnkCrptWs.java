@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.awt.Point;
@@ -46,7 +45,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
@@ -63,13 +64,11 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+(?:\\?hostid=all&clearing=[a-f0-9]+)?" })
 public class LnkCrptWs extends antiDDoSForDecrypt {
-
     /**
      * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
      * decodeURIComponent('\u00ad') --> is empty.
      */
     public static class JavaScriptUnpacker {
-
         public static String decode(String packedJavaScript) {
             /* packed with extended ascii */
             if (new Regex(packedJavaScript, "c%a\\+161").matches()) {
@@ -108,7 +107,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         private static String e(int c, int a) {
             return (c < a ? "" : e(c / a, a)) + String.valueOf((char) (c % a + 161));
         }
-
     }
 
     public static String IMAGEREGEX(final String b) {
@@ -145,7 +143,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         if (!loadAndSolveCaptcha(param, progress, decryptedLinks, parameter, containerId)) {
             return decryptedLinks;
         }
-
         return doThis(param, progress, decryptedLinks, parameter, containerId);
     }
 
@@ -201,7 +198,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 break;
             }
         }
-
         // Look for containers
         String[] containers = br.getRegex("eval(.*?)[\r\n]+").getColumn(0);
         final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
@@ -257,14 +253,11 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                         map.put(new Random().nextInt(1000) + "", unknown[3]);
                     }
                 }
-
             }
         }
-
         if (Boolean.TRUE.equals(CnLSuccessful) && !decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
-
         final Form preRequest = br.getForm(0);
         if (preRequest != null) {
             final String url = preRequest.getRegex("https?://.*/captcha\\.php\\?id=\\d+").getMatch(-1);
@@ -280,13 +273,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 }
             }
         }
-
         /* CNL --> Container --> Webdecryption */
         final Form[] webDecryptForms = br.getFormsByActionRegex(".*linkcrypt\\.ws/out\\.html");
         boolean webDecryption = webDecryptForms != null ? true : false;
-
         // CNL proccessed above!
-
         // Container
         for (Entry<String, String> next : map.entrySet()) {
             if (!next.getKey().equalsIgnoreCase("cnl")) {
@@ -309,7 +299,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 }
             }
         }
-
         // Webdecryption
         if (webDecryption) {
             // new 20152216
@@ -382,7 +371,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                             decryptedLinks.add(dl);
                         }
                     }
-
                     try {
                         if (this.isAbort()) {
                             return decryptedLinks;
@@ -442,7 +430,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
     }
 
     private final String  captchaTypeKeyCaptcha = "<!-- KeyCAPTCHA code|<input [^>]*name=(\"|')capcode\\1";
-
     private static Object LOCK                  = new Object();
 
     public boolean loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
@@ -488,7 +475,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 }
                 return false;
             }
-
             final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
             URLConnectionAdapter con = null;
             for (final String template : important) {
@@ -504,18 +490,14 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     }
                 }
             }
-
             // Different captcha types
             if (br.containsHTML(captchaTypeKeyCaptcha)) {
                 boolean done = false;
                 KeyCaptcha kc;
-
                 // START solve keycaptcha automatically
                 for (int i = 0; i < 3; i++) {
                     String result = null;
-
                     result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
-
                     postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                     if (!br.containsHTML(captchaTypeKeyCaptcha)) {
                         done = true;
@@ -530,7 +512,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                             continue;
                         }
                         if ("CANCEL".equals(result)) {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                         postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                         if (!br.containsHTML(captchaTypeKeyCaptcha)) {
@@ -538,7 +520,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                         }
                     }
                     if (br.containsHTML(captchaTypeKeyCaptcha)) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
             }
@@ -591,7 +573,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     }
                 }
                 if (!valid) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
             return true;
@@ -604,7 +586,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         try {
             ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
         } catch (Throwable e) {
-
         }
         return ret;
     }
@@ -637,5 +618,4 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

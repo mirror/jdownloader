@@ -13,15 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,17 +25,20 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/(\\d+/.+|[A-Za-z0-9]{5,7})" })
 public class BcVc extends antiDDoSForDecrypt {
-
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -85,10 +84,8 @@ public class BcVc extends antiDDoSForDecrypt {
         // - parameters containing www. will always be offline.
         // - https never returns results, doesn't work in browser either.
         parameter = parameter.replaceFirst("://www.", "://").replaceFirst("https://", "http://");
-
         br.setFollowRedirects(false);
         getPage(parameter);
-
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
@@ -114,7 +111,6 @@ public class BcVc extends antiDDoSForDecrypt {
                 // first
                 data.put("opt", "checks_log");
                 ajaxPostPage("/fly/ajax.fly.php", data);
-
                 // second repeated twice
                 data.put("opt", "check_log");
                 data.put(Encoding.urlEncode("args[aid]"), matches[0]);
@@ -123,11 +119,9 @@ public class BcVc extends antiDDoSForDecrypt {
                 data.put(Encoding.urlEncode("args[ref]"), "");
                 ajaxPostPage("/fly/ajax.fly.php", data);
                 ajaxPostPage("/fly/ajax.fly.php", data);
-
                 // waittime is 5 seconds. but somehow this often results in an error.
                 // we use 5.5 seconds to avoid them
                 sleep(5500, param);
-
                 // third
                 data.put("opt", "make_log");
                 data.put(Encoding.urlEncode("args[nok]"), "no");
@@ -146,7 +140,7 @@ public class BcVc extends antiDDoSForDecrypt {
                 // new method, way less requests.. really should use inhouse js
                 String javascript = br.getRegex("(\\$\\.post\\('https?://bc\\.vc/fly/ajax\\.php\\?.*?\\}),\\s*function").getMatch(0);
                 if (javascript == null) {
-                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // from here we have construct some ajax request
                 javascript = javascript.replaceFirst(":\\s*tZ(,?)", ": '480'$1");
@@ -164,7 +158,7 @@ public class BcVc extends antiDDoSForDecrypt {
                 if (parm != null) {
                     final String[][] keyValue = new Regex(parm[1], "\\s*(\\w+):\\s*'(.*?)',?\\s*").getMatches();
                     if (keyValue == null) {
-                        throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     for (final String[] kV : keyValue) {
                         data.put(parm[0] + Encoding.urlEncode("[" + kV[0] + "]"), Encoding.urlEncode(kV[1]));
@@ -183,9 +177,7 @@ public class BcVc extends antiDDoSForDecrypt {
                     decryptedLinks.add(createDownloadlink(link));
                 }
             }
-
         }
-
         return decryptedLinks;
     }
 
@@ -193,5 +185,4 @@ public class BcVc extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
