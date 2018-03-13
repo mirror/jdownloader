@@ -797,19 +797,28 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    public class MegaDownloadLinkDownloadable extends DownloadLinkDownloadable {
+        final private Browser br;
+
+        public MegaDownloadLinkDownloadable(DownloadLink downloadLink, final Browser br) {
+            super(downloadLink);
+            this.br = br;
+        }
+
+        @Override
+        public Browser getContextBrowser() {
+            return br.cloneBrowser();
+        }
+
+        @Override
+        public boolean isHashCheckEnabled() {
+            return false;
+        }
+    }
+
     @Override
     public Downloadable newDownloadable(final DownloadLink downloadLink, final Browser br) {
-        return new DownloadLinkDownloadable(downloadLink) {
-            @Override
-            public Browser getContextBrowser() {
-                return br.cloneBrowser();
-            }
-
-            @Override
-            public boolean isHashCheckEnabled() {
-                return false;
-            }
-        };
+        return new MegaDownloadLinkDownloadable(downloadLink, br);
     }
 
     @Override
@@ -920,14 +929,11 @@ public class MegaConz extends PluginForHost {
             tmp = new File(path + ".decrypted");
             dst = new File(path);
         }
-        if (tmp != null) {
-            if (tmp.exists() && tmp.delete() == false) {
-                throw new IOException("Could not delete " + tmp);
-            }
-        } else {
-            if (dst.exists() && dst.delete() == false) {
-                throw new IOException("Could not delete " + dst);
-            }
+        if (tmp != null && tmp.exists() && tmp.delete() == false) {
+            throw new IOException("Could not delete temp:" + tmp);
+        }
+        if (dst.exists() && dst.delete() == false) {
+            throw new IOException("Could not delete dest:" + dst);
         }
         FileInputStream fis = null;
         FileOutputStream fos = null;
@@ -1006,18 +1012,21 @@ public class MegaConz extends PluginForHost {
                     } finally {
                         fis.close();
                     }
+                    if (tmp == null) {
+                        src.delete();
+                    } else {
+                        if (tmp.renameTo(dst)) {
+                            src.delete();
+                        } else {
+                            throw new IOException("Could not rename:" + tmp + "->" + dst);
+                        }
+                    }
                     deleteDst = false;
                     link.getLinkStatus().setStatusText("Finished");
                     try {
                         link.setInternalTmpFilenameAppend(null);
                         link.setInternalTmpFilename(null);
                     } catch (final Throwable e) {
-                    }
-                    if (tmp == null) {
-                        src.delete();
-                    } else {
-                        src.delete();
-                        tmp.renameTo(dst);
                     }
                     new MegaHashCheck(link, dst).finalHashResult();
                 }
