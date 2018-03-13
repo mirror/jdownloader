@@ -24,14 +24,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +32,7 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -50,9 +43,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
-    private static final String            CAPTCHATEXT           = "includes/vvc\\.php\\?vvcid=";
+    private static final String            CAPTCHATEXT           = "(/includes/vvc\\d?\\.php\\?vvcid=)";
     private static AtomicReference<String> MAINPAGE              = new AtomicReference<String>("https://depfile.com/");
     private static Object                  LOCK                  = new Object();
     private static final long              FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1001L;
@@ -198,16 +199,20 @@ public class DepfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
             }
         }
-        String verifycode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
-        if (verifycode == null) {
-            verifycode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
-        }
-        if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {
-            logger.warning("Captchatext not found or verifycode null...");
+        final String verifycode = getVerifyCode();
+        final String captchaURL = br.getRegex(CAPTCHATEXT).getMatch(0);
+        if (captchaURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (verifycode == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String code = getCaptchaCode("/includes/vvc.php?vvcid=" + verifycode, downloadLink);
-        br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&FREE=Download+for+free");
+        final String code = getCaptchaCode(captchaURL + verifycode, downloadLink);
+        final Form form = br.getFormbyKey("verifycode");
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        form.put("verifycode", Encoding.urlEncode(code));
+        br.submitForm(form);
         if (br.getURL().endsWith("/premium")) {
             // no reason why
             // jdlog://2883963166931/ = maybe hit some known session limit?? I could not reproduce this myself -raztoki
@@ -397,16 +402,17 @@ public class DepfileCom extends PluginForHost {
                 // they now have captcha for premium users, nice hey?
                 int count = -1;
                 String verifycode = getVerifyCode();
+                final String captchaURL = br.getRegex(CAPTCHATEXT).getMatch(0);
                 if (verifycode != null) {
                     do {
                         if (++count > 5) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        final String code = getCaptchaCode("/includes/vvc.php?vvcid=" + verifycode, downloadLink);
+                        final String code = getCaptchaCode(captchaURL + verifycode, downloadLink);
                         if (StringUtils.isEmpty(code)) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&prem_plus=Next");
+                        br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + Encoding.urlEncode(code) + "&prem_plus=Next");
                     } while ((verifycode = getVerifyCode()) != null);
                     // can be another output after captcha... Link; 7944971887641.log; 4880971; jdlog://7944971887641
                     checkForStupidFileDownloadQuotaAndSetQuota(account);
@@ -575,9 +581,9 @@ public class DepfileCom extends PluginForHost {
     }
 
     private String getVerifyCode() {
-        String verifyCode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
+        String verifyCode = br.getRegex("name='vvcid'\\s*value='([a-f0-9%]+)'").getMatch(0);
         if (verifyCode == null) {
-            verifyCode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
+            verifyCode = br.getRegex("\\?vvcid=[a-f0-9%]+").getMatch(0);
         }
         return verifyCode;
     }
