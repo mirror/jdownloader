@@ -235,15 +235,14 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         return skip(id, SkipRequest.SINGLE);
     }
 
-    @SuppressWarnings("static-access")
     public boolean skip(long id, SkipRequest type) throws InvalidCaptchaIDException {
-        final SolverJob<Object> job = (SolverJob<Object>) ChallengeResponseController.getInstance().getJobByChallengeId(id);
+        final SolverJob<?> job = getJobByChallengeId(id);
         if (job == null) {
             throw new InvalidCaptchaIDException();
+        } else {
+            ChallengeResponseController.getInstance().setSkipRequest(type, this, job.getChallenge());
+            return true;
         }
-        final Challenge<Object> challenge = job.getChallenge();
-        ChallengeResponseController.getInstance().setSkipRequest(type, this, challenge);
-        return true;
     }
 
     public void kill(SolverJob<Object> job) {

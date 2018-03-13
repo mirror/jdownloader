@@ -216,7 +216,7 @@ public class ChallengeResponseController {
      * @param solver
      * @param challenge
      */
-    public <T> void setSkipRequest(SkipRequest skipRequest, ChallengeSolver<T> solver, Challenge<T> sourceChallenge) {
+    public void setSkipRequest(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> sourceChallenge) {
         synchronized (activeJobs) {
             for (SolverJob<?> job : activeJobs) {
                 if (job.getChallenge() == sourceChallenge) {
