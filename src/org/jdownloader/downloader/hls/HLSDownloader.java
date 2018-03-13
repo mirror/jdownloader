@@ -1044,7 +1044,6 @@ public class HLSDownloader extends DownloadInterface {
                                     } else {
                                         outputStream = requestOutputStream;
                                     }
-                                    boolean writeToOutputStream = true;
                                     while (true) {
                                         final int len;
                                         try {
@@ -1054,26 +1053,16 @@ public class HLSDownloader extends DownloadInterface {
                                             }
                                         } catch (IOException e) {
                                             requestLogger.log(e);
-                                            if (fileBytesMap.getFinalSize() > 0) {
-                                                Thread.sleep(250 + (retry * 50));
-                                                continue retryLoop;
-                                            } else {
-                                                throw e;
-                                            }
+                                            Thread.sleep(250 + (retry * 250));
+                                            continue retryLoop;
                                         }
                                         if (len > 0) {
                                             ffmpeg.updateLastUpdateTimestamp();
-                                            if (writeToOutputStream) {
-                                                try {
-                                                    outputStream.write(readWriteBuffer, 0, len);
-                                                } catch (IOException e) {
-                                                    requestLogger.log(e);
-                                                    if (length != -1) {
-                                                        throw e;
-                                                    } else {
-                                                        writeToOutputStream = false;
-                                                    }
-                                                }
+                                            try {
+                                                outputStream.write(readWriteBuffer, 0, len);
+                                            } catch (IOException e) {
+                                                requestLogger.log(e);
+                                                throw e;
                                             }
                                             fileBytesMap.mark(position, len);
                                             position += len;
@@ -1081,10 +1070,8 @@ public class HLSDownloader extends DownloadInterface {
                                             break;
                                         }
                                     }
-                                    if (writeToOutputStream) {
-                                        outputStream.flush();
-                                        outputStream.close();
-                                    }
+                                    outputStream.flush();
+                                    outputStream.close();
                                     if (fileBytesMap.getSize() > 0) {
                                         requestOkay = fileBytesMap.getUnMarkedBytes() == 0;
                                     } else {
@@ -1097,9 +1084,6 @@ public class HLSDownloader extends DownloadInterface {
                                             requestLogger.info("Segment:" + segment.getUrl() + "|Loaded:" + segment.isLoaded());
                                             if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
                                                 segment.setSize(Math.max(length, fileBytesMap.getSize()));
-                                            }
-                                            if (segment.isLoaded() == false) {
-                                                System.out.println("WTF");
                                             }
                                         }
                                         requestLogger.info(fileBytesMap.toString());
