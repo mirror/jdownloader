@@ -1259,6 +1259,7 @@ StatusBarImpl_initGUI_linkgrabber=Aktivnost GrabiocaLinkova
 StatusBarImpl_initGUI_linkgrabber_desc=JDownloader traži linkove za vas. Otvorite GrabilacLinkova da vidite rezultate.
 StatusBarImpl_initGUI_linkgrabber_desc_inactive=- u praznom hodu -
 StatusBarImpl_initGUI_reconnect=Akcija Ponovnog konektovanja
+StatusBarImpl_skippedCrawlersMarker_desc=Preskočeni Pretraživači: %s1. Kliknite ovdje da ih vratite.
 StatusBarImpl_skippedLinksMarker_desc=Preskočeni Download-i: %s1. Kliknite ovdje da ih ponovo pokrenete.
 StatusBarImpl_skippedLinksMarker_title=Preskočeni Download-i!
 StatusColumn_StatusColumn2=Status
