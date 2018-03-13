@@ -7,10 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -36,6 +32,10 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
@@ -266,7 +266,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             ret.setHoster(challenge.getHost());
             ret.setCaptchaCategory(challenge.getTypeID());
             ret.setExplain(challenge.getExplain());
-            ret.setTimeout(challenge.getRemainingTimeout());
+            ret.setRemaining(challenge.getRemainingTimeout());
+            ret.setTimeout(challenge.getTimeout());
             ret.setCreated(challenge.getCreated());
             final DownloadLink link = challenge.getDownloadLink();
             if (link != null) {
@@ -304,6 +305,16 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
         if (suc != null) {
             suc.fireDoneAndAfterSolveEvents();
+        }
+    }
+
+    public long keepAlive(final long jobId) {
+        ChallengeResponseController.getInstance().keepAlivePendingChallenges();
+        final SolverJob<?> entry = getJobByChallengeId(jobId);
+        if (entry == null) {
+            return -1;
+        } else {
+            return entry.getChallenge().getRemainingTimeout();
         }
     }
 

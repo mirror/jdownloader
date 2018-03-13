@@ -3,14 +3,23 @@ package org.jdownloader.api.captcha;
 import org.appwork.storage.Storable;
 
 public class CaptchaJob implements Storable {
-    private long   captchaID;
+    private long   captchaID = -1;
     private String hosterID;
     private long   linkID;
     private String type;
     private String captchaCategory;
     private String explain;
-    private int    timeout;
-    private long   created;
+    private int    timeout   = -1;
+    private long   created   = -1;
+    private int    remaining = -1;
+
+    public int getRemaining() {
+        return remaining;
+    }
+
+    public void setRemaining(int remaining) {
+        this.remaining = remaining;
+    }
 
     /**
      * @return the type
