@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,7 +32,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xtwisted.com", "dansmovies.com", "pornsteep.com", "frigtube.com", "porndull.com" }, urls = { "https?://(?:www\\.)?xtwisted\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornsteep\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?frigtube\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?porndull\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class UnknownPornScript1 extends PluginForHost {
-
     public UnknownPornScript1(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,14 +41,11 @@ public class UnknownPornScript1 extends PluginForHost {
     /* V0.1 */
     // Tags: For porn sites using the flowplayer videoplayer
     // other:
-
     private static final String  default_extension = ".mp4";
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -64,7 +59,6 @@ public class UnknownPornScript1 extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
-
         final String host = downloadLink.getHost();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -90,6 +84,10 @@ public class UnknownPornScript1 extends PluginForHost {
                 /* E.g. xtwisted.com */
                 dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
             }
+        }
+        if (dllink == null && br.containsHTML("/embed/")) {
+            br.getPage(br.getRegex("(http[^<>\"]+/embed/[^<>\"]+)\"").getMatch(0));
+            dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
