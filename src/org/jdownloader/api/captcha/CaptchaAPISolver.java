@@ -2,6 +2,8 @@ package org.jdownloader.api.captcha;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -125,28 +127,28 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     public List<CaptchaJob> list() {
         final List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
-        if (!isEnabled()) {
-            return ret;
-        }
-        for (final SolverJob<?> entry : listJobs()) {
-            if (entry.isDone()) {
-                continue;
-            }
-            final Challenge<?> challenge = entry.getChallenge();
-            if (challenge instanceof RecaptchaV2Challenge || challenge instanceof ImageCaptchaChallenge || challenge instanceof AccountLoginOAuthChallenge) {
-                final CaptchaJob job = new CaptchaJob();
-                Class<?> cls = challenge.getClass();
-                while (cls != null && StringUtils.isEmpty(job.getType())) {
-                    job.setType(cls.getSimpleName());
-                    cls = cls.getSuperclass();
+        if (isEnabled()) {
+            for (final SolverJob<?> entry : listJobs()) {
+                if (!entry.isDone()) {
+                    final Challenge<?> challenge = entry.getChallenge();
+                    if (challenge instanceof RecaptchaV2Challenge || challenge instanceof ImageCaptchaChallenge || challenge instanceof AccountLoginOAuthChallenge) {
+                        final CaptchaJob captchaJob = getCaptchaJob(challenge.getId().getID());
+                        if (captchaJob != null) {
+                            ret.add(captchaJob);
+                        }
+                    }
                 }
-                job.setID(challenge.getId().getID());
-                job.setHoster(challenge.getHost());
-                job.setCaptchaCategory(challenge.getTypeID());
-                job.setTimeout(challenge.getRemainingTimeout());
-                job.setCreated(challenge.getCreated());
-                ret.add(job);
             }
+            Collections.sort(ret, new Comparator<CaptchaJob>() {
+                private final int compare(long x, long y) {
+                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                }
+
+                @Override
+                public int compare(CaptchaJob o1, CaptchaJob o2) {
+                    return compare(o1.getTimeout(), o2.getTimeout());
+                }
+            });
         }
         return ret;
     }
@@ -252,27 +254,28 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     @Override
     public CaptchaJob getCaptchaJob(long id) {
         final SolverJob<?> entry = getJobByChallengeId(id);
-        if (entry == null) {
+        if (entry != null) {
+            final CaptchaJob ret = new CaptchaJob();
+            final Challenge<?> challenge = entry.getChallenge();
+            Class<?> cls = challenge.getClass();
+            while (cls != null && StringUtils.isEmpty(ret.getType())) {
+                ret.setType(cls.getSimpleName());
+                cls = cls.getSuperclass();
+            }
+            ret.setID(challenge.getId().getID());
+            ret.setHoster(challenge.getHost());
+            ret.setCaptchaCategory(challenge.getTypeID());
+            ret.setExplain(challenge.getExplain());
+            ret.setTimeout(challenge.getRemainingTimeout());
+            ret.setCreated(challenge.getCreated());
+            final DownloadLink link = challenge.getDownloadLink();
+            if (link != null) {
+                ret.setLink(link.getUniqueID().getID());
+            }
+            return ret;
+        } else {
             return null;
         }
-        final CaptchaJob ret = new CaptchaJob();
-        final Challenge<?> challenge = entry.getChallenge();
-        Class<?> cls = challenge.getClass();
-        while (cls != null && StringUtils.isEmpty(ret.getType())) {
-            ret.setType(cls.getSimpleName());
-            cls = cls.getSuperclass();
-        }
-        ret.setID(challenge.getId().getID());
-        ret.setHoster(challenge.getHost());
-        ret.setCaptchaCategory(challenge.getTypeID());
-        ret.setExplain(challenge.getExplain());
-        ret.setTimeout(challenge.getRemainingTimeout());
-        ret.setCreated(challenge.getCreated());
-        final DownloadLink link = challenge.getDownloadLink();
-        if (link != null) {
-            ret.setLink(link.getUniqueID().getID());
-        }
-        return ret;
     }
 
     @Override
@@ -290,11 +293,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         eventPublisher.fireJobDoneEvent(job);
         synchronized (map) {
             dispose(job);
-            if (map.size() > 0) {
-                MyJDownloaderController.getInstance().pushCaptchaFlag(true);
-            } else {
-                MyJDownloaderController.getInstance().pushCaptchaFlag(false);
-            }
+            MyJDownloaderController.getInstance().pushCaptchaFlag(map.size() > 0);
         }
     }
 
