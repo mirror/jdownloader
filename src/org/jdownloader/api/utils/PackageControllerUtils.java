@@ -427,7 +427,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         return false;
     }
 
-    public boolean shouldDeleteLink(CleanupActionOptions.Action action, ChildType ct) {
+    protected boolean shouldDeleteLink(CleanupActionOptions.Action action, ChildType ct) {
         switch (action) {
         case DELETE_ALL:
             return true;
