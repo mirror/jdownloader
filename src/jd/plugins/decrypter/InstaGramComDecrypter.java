@@ -54,6 +54,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                   fp                     = null;
     private String                        parameter              = null;
 
+    private Object get(Map<String, Object> entries, final String... paths) {
+        for (String path : paths) {
+            final Object ret = JavaScriptEngineFactory.walkJson(entries, path);
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
@@ -117,22 +127,21 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             /* Crawl all items of a user */
-            String id_owner = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/id");
+            String id_owner = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
             if (id_owner == null) {
                 id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
             }
             username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
-            final boolean isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
+            final boolean isPrivate = ((Boolean) get(entries, "entry_data/ProfilePage/{0}/user/is_private", "entry_data/ProfilePage/{0}/graphql/user/is_private")).booleanValue();
             if (username_url != null) {
                 fp.setName(username_url);
             }
             final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
             final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
             final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
-            String nextid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
-            final String maxid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
-            resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
-            final long count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/count"), -1);
+            String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
+            resource_data_list = (ArrayList) get(entries, "entry_data/ProfilePage/{0}/user/media/nodes", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/edges");
+            final long count = JavaScriptEngineFactory.toLong(get(entries, "entry_data/ProfilePage/{0}/user/media/count", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/count"), -1);
             if (isPrivate && !logged_in && count != -1 && resource_data_list == null) {
                 logger.info("Cannot parse url as profile is private");
                 decryptedLinks.add(this.createOfflinelink(parameter));
