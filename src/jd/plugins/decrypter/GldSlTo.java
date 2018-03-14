@@ -103,7 +103,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         return null;
                     }
                     final File file = this.getLocalCaptchaFile();
-                    br.cloneBrowser().getDownload(file, "http://goldesel.to/" + capLink);
+                    getCaptchaBrowser(br).getDownload(file, "http://goldesel.to/" + capLink);
                     String click_on;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         click_on = "Klicke in den gestrichelten Kreis!";

@@ -285,7 +285,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     container.createNewFile();
                 }
                 try {
-                    br.cloneBrowser().getDownload(container, next.getValue());
+                    getCaptchaBrowser(br).getDownload(container, next.getValue());
                     if (container != null) {
                         logger.info("Container found: " + container);
                         decryptedLinks.addAll(loadContainerFile(container));
@@ -540,7 +540,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                                 valid = false;
                                 final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
                                 final File file = this.getLocalCaptchaFile();
-                                br.cloneBrowser().getDownload(file, url);
+                                getCaptchaBrowser(br).getDownload(file, url);
                                 // remove black bars
                                 final Point p;
                                 final byte[] bytes = IO.readFile(file);

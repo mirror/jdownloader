@@ -69,7 +69,7 @@ public class Rlnks extends antiDDoSForDecrypt {
         final String containerURL = new Regex(page, "(/?download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
         if (containerURL != null) {
             final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
-            final Browser browser = br.cloneBrowser();
+            final Browser browser = getCaptchaBrowser(br);
             browser.getHeaders().put("Referer", cryptedLink);
             browser.getDownload(container, Encoding.htmlDecode(containerURL));
             decryptedLinks.addAll(loadContainerFile(container));
