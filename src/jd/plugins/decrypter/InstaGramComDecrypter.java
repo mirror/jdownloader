@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -64,9 +65,33 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return null;
     }
 
+    private void getPage(CryptedLink link, final Browser br, String url) throws IOException, InterruptedException {
+        int retry = 0;
+        while (retry < 10) {
+            br.getPage(url);
+            final int responsecode = br.getHttpConnection().getResponseCode();
+            if (responsecode == 502) {
+                sleep(20000 + 5000 * retry++, link);
+            } else if (responsecode == 403 || responsecode == 429) {
+                if (SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED)) {
+                    logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
+                    break;
+                } else {
+                    sleep(20000 + 5000 * retry++, link);
+                }
+            } else {
+                break;
+            }
+        }
+        if (br.getHttpConnection().getResponseCode() == 502) {
+            throw br.new BrowserException(new IOException("ResponseCode:502"), br.getRequest());
+        }
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
+        br.addAllowedResponseCodes(502);
         prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
         fp = FilePackage.getInstance();
         fp.setProperty("ALLOW_MERGE", true);
@@ -97,7 +122,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
-        br.getPage(parameter);
+        br.addAllowedResponseCodes(502);
+        getPage(param, br, parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -121,6 +147,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 }
                 decryptAlbum(entries);
             }
+            if (decryptedLinks.size() == 0) {
+                System.out.println("WTF");
+            }
+            return decryptedLinks;
         } else {
             if (!this.br.containsHTML("user\\?username=.+")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -136,7 +166,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (username_url != null) {
                 fp.setName(username_url);
             }
-            final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
             final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
             final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
             String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
@@ -163,59 +192,24 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     break;
                 }
                 if (page > 0) {
-                    Browser br = null;
-                    // prepBRAjax(br, username_url, maxid);
-                    int retrycounter = 1;
-                    int errorcounter_403_wtf = 0;
-                    int errorcounter_429_ratelimit_reached = 0;
-                    boolean failed = true;
-                    int responsecode;
+                    final Browser br = this.br.cloneBrowser();
                     /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
-                    do {
-                        if (this.isAbort()) {
-                            logger.info("User aborted decryption");
-                            return decryptedLinks;
-                        }
-                        br = this.br.cloneBrowser();
-                        if (retrycounter > 1) {
-                            if (abort_on_rate_limit_reached) {
-                                logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
-                                return decryptedLinks;
-                            }
-                            /*
-                             * Try to bypass rate-limit - usually kicks in after about 4000 items and it is bound to IP, not User-Agent or
-                             * cookies! Also we need to continue with the cookies we got at the beginning otherwise we'll get a 403! After
-                             * about 60 seconds wait we should be able to continue but it might happen than we only get one batch of items
-                             * and are blocked again then.
-                             */
-                            this.sleep(30000, param);
-                        }
-                        // prepBRAjax(br, username_url, maxid);
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getHeaders().put("Accept", "*/*");
-                        final String p = "query_id=17880160963012870&id=" + id_owner + "&first=" + decryptedLinks.size() + "&after=" + nextid;
-                        br.getPage("/graphql/query/?" + p);
-                        responsecode = br.getHttpConnection().getResponseCode();
-                        if (responsecode == 404) {
-                            logger.warning("Error occurred: 404");
-                            return decryptedLinks;
-                        }
-                        if (responsecode == 403 || responsecode == 429) {
-                            failed = true;
-                            if (responsecode == 403) {
-                                errorcounter_403_wtf++;
-                            } else {
-                                errorcounter_429_ratelimit_reached++;
-                            }
-                            logger.info("403 errors so far: " + errorcounter_403_wtf);
-                            logger.info("429 errors so far: " + errorcounter_429_ratelimit_reached);
-                        } else {
-                            failed = false;
-                        }
-                        retrycounter++;
-                        /* Stop on too many 403s as 403 is not a rate limit issue! */
-                    } while (failed && retrycounter <= 300 && errorcounter_403_wtf < 20);
-                    if (failed) {
+                    if (this.isAbort()) {
+                        logger.info("User aborted decryption");
+                        return decryptedLinks;
+                    }
+                    // prepBRAjax(br, username_url, maxid);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "*/*");
+                    final String p = "query_id=17880160963012870&id=" + id_owner + "&first=100log&after=" + nextid;
+                    getPage(param, br, "/graphql/query/?" + p);
+                    final int responsecode = br.getHttpConnection().getResponseCode();
+                    if (responsecode == 404) {
+                        logger.warning("Error occurred: 404");
+                        return decryptedLinks;
+                    }
+                    /* Stop on too many 403s as 403 is not a rate limit issue! */
+                    if (responsecode == 403 || responsecode == 429) {
                         logger.warning("Failed to bypass rate-limit!");
                         return decryptedLinks;
                     } else if (responsecode == 439) {
@@ -243,8 +237,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 decryptedLinksCurrentSize = decryptedLinks.size();
                 page++;
             } while (nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
+            if (decryptedLinks.size() == 0) {
+                System.out.println("WTF");
+            }
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
     private void decryptAlbum(LinkedHashMap<String, Object> entries) {
