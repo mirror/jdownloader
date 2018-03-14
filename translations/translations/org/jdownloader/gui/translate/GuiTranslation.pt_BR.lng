@@ -1259,6 +1259,7 @@ StatusBarImpl_initGUI_linkgrabber=Atividade da Captura de Links
 StatusBarImpl_initGUI_linkgrabber_desc=O JDownloader está capturando links para você. Abra a Captura de Links para ver os resultados.
 StatusBarImpl_initGUI_linkgrabber_desc_inactive=- inativo -
 StatusBarImpl_initGUI_reconnect=Atividade da Reconexão
+StatusBarImpl_skippedCrawlersMarker_desc=Capturas ignoradas: %s1. Clique aqui para tentar novamente.
 StatusBarImpl_skippedLinksMarker_desc=Downloads Ignorados: %s1. Clique aqui para tentar novamente.
 StatusBarImpl_skippedLinksMarker_title=Downloads Ignorados!
 StatusColumn_StatusColumn2=Status
