@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "protect-iframe.com", "ifp.re" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "protect-iframe.com", "ifp.re", "ifrp.xyz" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+", "https?://ifrp\\.xyz/[a-z0-9]+" })
 public class IframeSecureCom extends antiDDoSForDecrypt {
     public IframeSecureCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +52,12 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         boolean hasCaptcha = false;
-        if ("ifp.re".equals(getHost())) {
+        if ("ifrp.xyz".equals(getHost())) {
+            final String url_embed = String.format("/embed.php?u=%s&d=ifp.re", fid);
+            br.setCookie(br.getHost(), "cookie_name", "popads");
+            br.setCookie(br.getHost(), "cookie_name2", "popads");
+            getPage(url_embed);
+        } else if ("ifp.re".equals(getHost())) {
             hasCaptcha = true;
             final String url_embed = String.format("/embed.php?u=%s&d=ifp.re", fid);
             br.setCookie(br.getHost(), "cookie_name", "popads");
