@@ -100,7 +100,7 @@ public class MvWrldNt extends PluginForDecrypt {
                 return null;
             }
             captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
-            Browser brc = br.cloneBrowser();
+            final Browser brc = getCaptchaBrowser(br);
             captchaUrl = MAINPAGE + captchaUrl;
             final File captchaFile = getLocalCaptchaFile();
             brc.getDownload(captchaFile, captchaUrl);

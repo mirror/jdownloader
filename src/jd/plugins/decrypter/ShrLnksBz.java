@@ -318,7 +318,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 }
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
-                final Browser temp = br.cloneBrowser();
+                final Browser temp = getCaptchaBrowser(br);
                 temp.getDownload(file, Captchamap + "&legend=1");
                 temp.getDownload(file, Captchamap);
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));

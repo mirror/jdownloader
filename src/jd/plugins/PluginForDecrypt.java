@@ -528,10 +528,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         final File captchaFile = this.getLocalCaptchaFile();
         try {
-            final Browser brc = br.cloneBrowser();
-            // most captcha are images?
-            brc.getHeaders().put("Accept", "image/webp,image/*,*/*;q=0.8");
-            brc.getHeaders().put("Cache-Control", null);
+            final Browser brc = getCaptchaBrowser(br);
             brc.getDownload(captchaFile, captchaAddress);
             // erst im Nachhinein das der Bilddownload nicht gestört wird
             final String captchaCode = getCaptchaCode(method, captchaFile, param);
@@ -541,6 +538,13 @@ public abstract class PluginForDecrypt extends Plugin {
                 FileCreationManager.getInstance().delete(captchaFile, null);
             }
         }
+    }
+
+    protected Browser getCaptchaBrowser(Browser br) {
+        final Browser ret = br.cloneBrowser();
+        ret.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+        ret.getHeaders().put("Cache-Control", null);
+        return ret;
     }
 
     protected String getCaptchaCode(File captchaFile, CryptedLink param) throws Exception {

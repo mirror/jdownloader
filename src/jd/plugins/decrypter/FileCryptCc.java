@@ -171,7 +171,7 @@ public class FileCryptCc extends PluginForDecrypt {
             final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
-                br.cloneBrowser().getDownload(file, captcha);
+                getCaptchaBrowser(br).getDownload(file, captcha);
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
                 captchaForm.put("button.x", String.valueOf(cp.getX()));
                 captchaForm.put("button.y", String.valueOf(cp.getY()));

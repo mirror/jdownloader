@@ -449,10 +449,17 @@ public abstract class PluginForHost extends Plugin {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final File captchaFile = getLocalCaptchaFile();
-        final Browser brc = br.cloneBrowser();
+        final Browser brc = getCaptchaBrowser(br);
         brc.getDownload(captchaFile, captchaAddress);
         final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
         return captchaCode;
+    }
+
+    protected Browser getCaptchaBrowser(Browser br) {
+        final Browser ret = br.cloneBrowser();
+        ret.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+        ret.getHeaders().put("Cache-Control", null);
+        return ret;
     }
 
     protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws Exception {
