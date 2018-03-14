@@ -394,8 +394,8 @@ public class AlfafileNet extends PluginForHost {
         br.setFollowRedirects(false);
         if (account.getType() == AccountType.FREE) {
             /*
-             * No API --> We're actually not downloading via free account but it doesnt matter as there are no known free account advantages compared to
-             * unregistered mode.
+             * No API --> We're actually not downloading via free account but it doesnt matter as there are no known free account advantages
+             * compared to unregistered mode.
              */
             br.getPage(link.getDownloadURL());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
@@ -442,7 +442,7 @@ public class AlfafileNet extends PluginForHost {
                 if (errormessage == null) {
                     errormessage = "File does not exist according to API";
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:
