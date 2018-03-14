@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,7 +55,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(?:d[ei]pfile\\.com|depfile\\.us)/(downloads/i/\\d+/f/.+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
     private static final String            CAPTCHATEXT           = "(/includes/vvc\\d?\\.php\\?vvcid=)";
-    private static AtomicReference<String> MAINPAGE              = new AtomicReference<String>("https://depfile.com/");
+    private static AtomicReference<String> MAINPAGE              = new AtomicReference<String>("https://depfile.us/");
     private static Object                  LOCK                  = new Object();
     private static final long              FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1001L;
     private String                         PROPERTY_LASTIP       = "DEPFILECOM_PROPERTY_LASTIP";
@@ -580,10 +581,13 @@ public class DepfileCom extends PluginForHost {
         return !currIP.equals(lastIP);
     }
 
-    private String getVerifyCode() {
-        String verifyCode = br.getRegex("name='vvcid'\\s*value='([a-f0-9%]+)'").getMatch(0);
+    private String getVerifyCode() throws Exception {
+        String verifyCode = br.getRegex("\\?vvcid=([a-f0-9%]+)").getMatch(0);
         if (verifyCode == null) {
-            verifyCode = br.getRegex("\\?vvcid=[a-f0-9%]+").getMatch(0);
+            verifyCode = br.getRegex("name='vvcid'\\s*value='([a-f0-9%]+)'").getMatch(0);
+            if (verifyCode != null) {
+                verifyCode = URLEncoder.encode(verifyCode, "UTF-8");
+            }
         }
         return verifyCode;
     }
