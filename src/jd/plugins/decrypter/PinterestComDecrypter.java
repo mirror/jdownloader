@@ -108,7 +108,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final LinkedHashMap<String, Object> json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_html);
         boolean foundTargetSection = false;
         final String section_count = PluginJSonUtils.getJson(json_source_html, "section_count");
-        if (section_count != null && Integer.parseInt(section_count) > 0) {
+        if (section_count != null && Integer.parseInt(section_count) > 0 && loggedIN) {
             /* Crawl sections - only available when loggedIN (2017-11-22) */
             foundTargetSection = this.crawlSections(ajax.cloneBrowser(), targetSection);
         }
