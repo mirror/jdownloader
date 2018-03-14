@@ -1204,11 +1204,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private boolean useTMP() {
-        if (getPluginConfig().getBooleanProperty(USE_TMP, false)) {
-            return true;
-        } else {
-            return false;
-        }
+        return getPluginConfig().getBooleanProperty(USE_TMP, false);
     }
 
     @Override
