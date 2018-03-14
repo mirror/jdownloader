@@ -7,6 +7,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -22,20 +36,6 @@ import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 
 public class PackageControllerUtils<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> {
     private final PackageController<PackageType, ChildType> packageController;
@@ -432,35 +432,35 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         case DELETE_ALL:
             return true;
         case DELETE_DISABLED:
-            if (!ct.isEnabled()) {
-                return true;
-            }
-            break;
+            return !ct.isEnabled();
         case DELETE_FAILED:
             if (ct instanceof DownloadLink) {
                 return FinalLinkState.CheckFailed(((DownloadLink) ct).getFinalLinkState());
+            } else {
+                return false;
             }
-            return false;
         case DELETE_FINISHED:
             if (ct instanceof DownloadLink) {
                 return FinalLinkState.CheckFinished(((DownloadLink) ct).getFinalLinkState());
+            } else {
+                return false;
             }
-            return false;
         case DELETE_OFFLINE:
             if (ct instanceof DownloadLink) {
                 return ((DownloadLink) ct).getFinalLinkState() == FinalLinkState.OFFLINE;
             } else if (ct instanceof CrawledLink) {
-                return ((CrawledLink) ct).getDownloadLink().isAvailabilityStatusChecked() && ((CrawledLink) ct).getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE;
+                return ((CrawledLink) ct).getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE;
+            } else {
+                return false;
             }
-            return false;
         case DELETE_DUPE:
             if (ct instanceof CrawledLink) {
-                return LinkCollector.getInstance().containsLinkId(((CrawledLink) ct).getLinkID());
+                return DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) ct).getLinkID());
+            } else {
+                return false;
             }
-            return false;
         default:
             return false;
         }
-        return false;
     }
 }
