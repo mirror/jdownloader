@@ -73,7 +73,7 @@ public class FilecadCom extends PluginForHost {
     private static final boolean supportshttps                                = true;
     private static final boolean supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
+    private boolean              available_CHECK_OVER_INFO_PAGE               = false;
     private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -524,7 +524,14 @@ public class FilecadCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        available_CHECK_OVER_INFO_PAGE = true;
+        try {
+            requestFileInformation(link);
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() != LinkStatus.ERROR_IP_BLOCKED) {
+                throw e;
+            }
+        }
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             if (!available_CHECK_OVER_INFO_PAGE) {
