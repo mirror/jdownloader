@@ -332,7 +332,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 while (br.getRedirectLocation() != null) {
                     getPage(br.getRedirectLocation());
                 }
-                if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<")) {
+                if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<") || br.getFormBySubmitvalue("Try+again") != null) {
                     invalidateLastChallengeResponse();
                     if (i + 1 >= max) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
