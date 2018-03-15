@@ -2,6 +2,12 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackageView;
+
 import org.jdownloader.api.downloads.ChannelCollector;
 import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
@@ -12,21 +18,13 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackageView;
-
 public class WaitingSkipReason implements ConditionalSkipReason, TimeOutCondition, ValidatableConditionalSkipReason {
-
     public static enum CAUSE {
         IP_BLOCKED(_JDT.T.downloadlink_status_error_download_limit()),
         FILE_TEMP_UNAVAILABLE(_JDT.T.downloadlink_status_error_temp_unavailable()),
         CONNECTION_TEMP_UNAVAILABLE(_JDT.T.download_error_message_networkreset()),
         HOST_TEMP_UNAVAILABLE(_JDT.T.downloadlink_status_error_hoster_temp_unavailable()),
         RETRY_IN(null);
-
         private final String exp;
 
         private CAUSE(String exp) {
@@ -93,12 +91,13 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
     }
 
     public long getTimeOutLeft() {
-        return Math.max(0, timeOutTimeStamp - System.currentTimeMillis());
+        return Math.max(0, getTimeOutTimeStamp() - System.currentTimeMillis());
     }
 
     @Override
     public boolean isConditionReached() {
-        return System.currentTimeMillis() > timeOutTimeStamp;
+        final long left = getTimeOutLeft();
+        return left == 0;
     }
 
     @Override
@@ -148,5 +147,4 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
     public void invalidate() {
         valid = false;
     }
-
 }
