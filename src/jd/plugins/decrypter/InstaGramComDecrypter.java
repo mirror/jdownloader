@@ -17,7 +17,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,10 +36,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -88,6 +93,32 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    private static Map<String, String> QUERY_HASH = new HashMap<String, String>();
+
+    // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
+    private static String getByUserIDQueryHash(Browser br) throws Exception {
+        synchronized (QUERY_HASH) {
+            final String profilePageContainer = br.getRegex("(/static/bundles/ProfilePageContainer.js/[a-f0-9]+.js)").getMatch(0);
+            if (profilePageContainer != null) {
+                final String ret = QUERY_HASH.get(profilePageContainer);
+                if (ret != null) {
+                    return ret;
+                }
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(profilePageContainer);
+                final String queryHash = brc.getRegex("byUserId.get\\(t\\)\\)\\?o\\.pagination:o\\},queryID\\s*:\\s*\"([0-9A-z]{32,32})\"").getMatch(0);
+                if (queryHash != null) {
+                    QUERY_HASH.put(profilePageContainer, queryHash);
+                    return queryHash;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                return null;
+            }
+        }
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
@@ -124,6 +155,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.addAllowedResponseCodes(502);
         getPage(param, br, parameter);
+        final String queryHash = getByUserIDQueryHash(br);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -201,8 +233,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     // prepBRAjax(br, username_url, maxid);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "*/*");
-                    final String p = "query_id=17880160963012870&id=" + id_owner + "&first=100log&after=" + nextid;
-                    getPage(param, br, "/graphql/query/?" + p);
+                    final Map<String, Object> varliables = new HashMap<String, Object>();
+                    varliables.put("id", id_owner);
+                    varliables.put("first", 100);
+                    varliables.put("after", nextid);
+                    if (queryHash == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    getPage(param, br, "/graphql/query/?query_hash=" + queryHash + "&variables=" + URLEncoder.encode(JSonStorage.toString(varliables), "UTF-8"));
                     final int responsecode = br.getHttpConnection().getResponseCode();
                     if (responsecode == 404) {
                         logger.warning("Error occurred: 404");
