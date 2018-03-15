@@ -156,8 +156,8 @@ public abstract class RecaptchaV1Handler {
                         final BufferedImage niceImage = IconIO.toBufferedImage(ImageIO.read(con.getInputStream()));
                         final Browser br = new Browser();
                         br.getPage("https://www.google.com/recaptcha/api/challenge?k=" + siteKey);
-                        final String challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-                        final String server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+                        final String challenge = br.getRegex("challenge\\s*:\\s*'([^']*)'").getMatch(0);
+                        final String server = br.getRegex("server\\s*:\\s*'(https?://[^']*)'").getMatch(0);
                         final BufferedImage badImage = IconIO.toBufferedImage(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
                         final Graphics2D niceGraphics = (Graphics2D) niceImage.getGraphics();
                         final Graphics2D badGraphics = (Graphics2D) badImage.getGraphics();

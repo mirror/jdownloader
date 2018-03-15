@@ -388,7 +388,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
             selection = getSelectionInfo(linkIds, pkgIds);
         }
         if (selection.isEmpty()) {
-            throw new BadParameterException("empty selection");
+            return false;
         } else {
             final List<ChildType> nodesToDelete = new ArrayList<ChildType>();
             switch (selectionType) {

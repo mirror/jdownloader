@@ -47,16 +47,13 @@ public class Recaptcha {
         this.rcBr.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-
             track("download/" + helperID);
             Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
-
             FileInputStream is = null;
             try {
                 is = new FileInputStream(captchaFile);
                 RecaptchaType type = RecaptchaTypeTester.getType(captchaFile);
                 track("imagetype/" + type + "/" + helperID);
-
             } catch (IOException e) {
                 track("imagetype/" + e.getMessage() + "/" + helperID);
             } finally {
@@ -67,7 +64,6 @@ public class Recaptcha {
                     }
                 }
             }
-
         } catch (final IOException e) {
             captchaFile.delete();
             throw e;
@@ -123,7 +119,11 @@ public class Recaptcha {
             // recaptcha still found. so it is not solved yet
             return false;
         } catch (final Exception e) {
-            e.printStackTrace();
+            if (plg != null) {
+                plg.getLogger().log(e);
+            } else {
+                e.printStackTrace();
+            }
             return true;
         }
     }
@@ -142,7 +142,6 @@ public class Recaptcha {
              */
             /* we first have to load the plugin, before we can reference it */
             this.rcBr.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-
             // this prevents google/recaptcha group from seeing referrer
             if (this.clearReferer) {
                 this.rcBr.setRequest(null);
@@ -157,40 +156,55 @@ public class Recaptcha {
                     }
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
+                if (plg != null) {
+                    plg.getLogger().log(e);
+                } else {
+                    e.printStackTrace();
+                }
             }
             // end of privacy protection
         }
     }
 
+    private final boolean isSupported(final String url) {
+        return url != null && !StringUtils.containsIgnoreCase(url, "v1_unsupported.png");
+    }
+
     public void load() throws IOException, PluginException {
         runDdosProtection();
         prepRcBr();
+        String challenge = null;
         try {
             challenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
-            if (challenge != null) {
+            if (isSupported(challenge)) {
+                setChallenge(challenge);
                 helperID = "BrowserLoop";
-
                 server = "https://www.google.com/recaptcha/api/";
-                this.captchaAddress = this.server + "image?c=" + this.challenge;
+                this.captchaAddress = this.server + "image?c=" + getChallenge();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (plg != null) {
+                plg.getLogger().log(e);
+            } else {
+                e.printStackTrace();
+            }
         }
-        if (challenge == null) {
+        if (!isSupported(challenge)) {
             /* follow redirect needed as google redirects to another domain */
             this.rcBr.setFollowRedirects(true);
             // new primary. 20141211
             this.rcBr.getPage("https://www.google.com/recaptcha/api/challenge?k=" + this.id);
             // old
             // this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
-            this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-            this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
-            if (this.challenge == null || this.server == null) {
-                System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
+            challenge = this.rcBr.getRegex("challenge\\s*:\\s*'([^']*)'").getMatch(0);
+            this.server = this.rcBr.getRegex("server\\s*:\\s*'(https?://[^']*)'").getMatch(0);
+            if (!isSupported(challenge)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (this.server == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.captchaAddress = this.server + "image?c=" + this.challenge;
+            setChallenge(challenge);
+            this.captchaAddress = this.server + "image?c=" + getChallenge();
         }
     }
 
@@ -219,11 +233,9 @@ public class Recaptcha {
         if (this.br.containsHTML("Recaptcha\\.create\\(\".*?\"\\,\\s*\".*?\"\\,.*?\\)")) {
             this.id = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
             final String div = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getMatch(1);
-
             // find form that contains the found div id
             if (div == null || this.id == null) {
                 System.out.println("reCaptcha ID or div couldn't be found...");
-
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final Form f : this.br.getForms()) {
@@ -232,7 +244,6 @@ public class Recaptcha {
                     break;
                 }
             }
-
         } else {
             final Form[] forms = this.br.getForms();
             this.form = null;
@@ -263,19 +274,19 @@ public class Recaptcha {
         }
         if (this.form == null) {
             System.out.println("reCaptcha form couldn't be found...");
-
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
     }
 
     /* do not use for plugins at the moment */
     private void prepareForm(final String code) throws PluginException {
-        if (this.challenge == null || code == null) {
-            System.out.println("Recaptcha Module fail: challenge or code equals null!");
+        final String challenge = getChallenge();
+        if (!isSupported(challenge)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (code == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.form.put("recaptcha_challenge_field", this.challenge);
+        this.form.put("recaptcha_challenge_field", challenge);
         this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
     }
 
@@ -284,22 +295,23 @@ public class Recaptcha {
         String newChallenge = null;
         try {
             newChallenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
-
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (plg != null) {
+                plg.getLogger().log(e);
+            } else {
+                e.printStackTrace();
+            }
         }
-        if (newChallenge == null) {
-            this.rcBr.getPage("https://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
+        if (!isSupported(newChallenge)) {
+            this.rcBr.getPage("https://www.google.com/recaptcha/api/reload?c=" + getChallenge() + "&k=" + this.id + "&reason=r&type=image&lang=en");
             newChallenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'").getMatch(0);
-
+            if (!isSupported(newChallenge)) {
+                System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-
-        if (newChallenge == null) {
-            System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        challenge = newChallenge;
-        this.captchaAddress = this.server + "image?c=" + this.challenge;
+        setChallenge(newChallenge);
+        this.captchaAddress = this.server + "image?c=" + getChallenge();
     }
 
     public void setCaptchaAddress(final String captchaAddress) {
