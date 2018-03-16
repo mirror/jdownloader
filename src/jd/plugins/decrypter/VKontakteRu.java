@@ -1768,6 +1768,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /* 2016-11-25: This might prevent their bot-protection from kicking in (too early). */
         jd.plugins.hoster.VKontakteRuHoster.setHeaderRefererPhoto(this.br);
         int addedLinks = 0;
+        int realOffset = 0;
         for (int i = 0; i <= maxLoops; i++) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user, stopping...");
@@ -1776,7 +1777,8 @@ public class VKontakteRu extends PluginForDecrypt {
             final String correctedBR;
             final String[] theData;
             if (i > 0) {
-                postPageSafe(postPage, postData + offset);
+                // offset is including! so must be -1
+                postPageSafe(postPage, postData + Math.max(0, realOffset - 1));
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 correctedBR = br.toString().replace("\\", "");
                 theData = new Regex(correctedBR, regexesAllOthers[0]).getColumn(Integer.parseInt(regexesAllOthers[1]));
@@ -1794,7 +1796,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     continue;
                 }
                 decryptedData.add(data);
-                offset++;
+                realOffset++;
             }
             if (addedLinks < entries_per_page || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
                 logger.info("Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1) + ", returned " + decryptedData.size() + " results.");
