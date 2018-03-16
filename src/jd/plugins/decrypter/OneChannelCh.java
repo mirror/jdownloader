@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,14 +29,15 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * note: primewire.ag using cloudflare. -raztoki20150225
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.ag|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(ag|is)|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+" })
 public class OneChannelCh extends antiDDoSForDecrypt {
-
     public OneChannelCh(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,7 +45,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        String parameter = param.toString().replace("vodly.to/", "primewire.ag/");
+        String parameter = param.toString().replace("vodly.to/", "primewire.is/").replace("primewire.ag/", "primewire.is/");
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
@@ -129,5 +127,4 @@ public class OneChannelCh extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
