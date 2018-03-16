@@ -58,7 +58,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.1channel.ch" + singleLink));
             }
         } else {
-            if (br.getURL().equals("http://www.primewire.ag/") || br.getURL().contains("/index.php")) {
+            if (br.getURL().equals("http://www.primewire.is/") || br.getURL().contains("/index.php")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             } else if (br.containsHTML(">No episodes listed<")) {
