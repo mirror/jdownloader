@@ -17,6 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.PietsmietDeConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,11 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.PietsmietDeConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -65,7 +65,7 @@ public class PietSmietDe extends antiDDoSForDecrypt {
         final boolean grab720p = pluginConfig.isGrab720pVideoEnabled();
         final boolean grab480p = pluginConfig.isGrab480pVideoEnabled();
         String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^\"]*)\"\\/>").getMatch(0);
-        String baseURL = "https://" + br.getRegex("\\{ 'file': '\\/\\/(e\\w{1}\\.pietcdn\\.de\\/media\\/com_hwdmediashare\\/files\\/\\w{2}\\/\\w{2}\\/\\w{2}\\/)\\w{32}\\.mp4', type: 'mp4', label: '720p', \"default\": \"true\" \\}").getMatch(0);
+        String baseURL = "https://" + br.getRegex("\\{ 'file': '\\/\\/(e\\w{1}\\.pietcdn\\.de\\/media\\/com_hwdmediashare\\/files\\/\\w{2}\\/\\w{2}\\/\\w{2}\\/)\\w{32}\\.mp4', type: 'mp4', label: '(?:480p|720p|1080p)', \"default\": \"true\" \\}").getMatch(0);
         String[] sources = br.getRegex("\\{ 'file': '\\/\\/e\\w{1}\\.pietcdn\\.de\\/hls\\/\\w{2}\\/\\w{2}\\/\\w{2}\\/,(\\w{32}),(\\w{32}),(\\w{32}),\\.mp4\\.us\\/hmt\\.m3u8' \\},").getRow(0);
         if (fpName == null || baseURL == null || sources == null) {
             logger.warning("Decrypter broken for link: " + parameter);
