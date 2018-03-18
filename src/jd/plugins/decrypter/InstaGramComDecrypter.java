@@ -98,7 +98,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
     private static String getByUserIDQueryHash(Browser br) throws Exception {
         synchronized (QUERY_HASH) {
-            final String profilePageContainer = br.getRegex("(/static/bundles/ProfilePageContainer.js/[a-f0-9]+.js)").getMatch(0);
+            final String profilePageContainer = br.getRegex("(/static/bundles/base/ProfilePageContainer.js/[a-f0-9]+.js)").getMatch(0);
             if (profilePageContainer != null) {
                 final String ret = QUERY_HASH.get(profilePageContainer);
                 if (ret != null) {
@@ -155,11 +155,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.addAllowedResponseCodes(502);
         getPage(param, br, parameter);
-        final String queryHash = getByUserIDQueryHash(br);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String queryHash = getByUserIDQueryHash(br);
         final String json = br.getRegex(">window\\._sharedData\\s*?=\\s*?(\\{.*?);</script>").getMatch(0);
         if (json == null) {
             return null;
@@ -220,7 +220,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     logger.info("User aborted decryption");
                     return decryptedLinks;
                 } else if (only_grab_x_items && decryptedLinks.size() >= maX_items) {
-                    logger.info("Number of items selected by user has been crawled --> Done");
+                    logger.info("Number of items selected in plugin setting has been crawled --> Done");
                     break;
                 }
                 if (page > 0) {
