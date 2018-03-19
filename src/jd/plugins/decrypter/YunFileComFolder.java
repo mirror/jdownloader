@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk|pwpan|srcpan|gmpan)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" })
 public class YunFileComFolder extends PluginForDecrypt {
     public YunFileComFolder(PluginWrapper wrapper) {
         super(wrapper);
