@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:tube|videos)\\.rampant\\.tv/videos/[A-Za-z0-9\\-_\\(\\)%]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:tube|videos)\\.rampant\\.tv/videos/[A-Za-z0-9\\-_\\(\\)%,]+\\.html" })
 public class TubeRampantTv extends PluginForHost {
     public TubeRampantTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -91,6 +91,9 @@ public class TubeRampantTv extends PluginForHost {
             if (dllink == null) {
                 // iframe && then multiple qualities.
                 dllink = br.getRegex("<\\s*source\\s+[^>]*src=(\"|')((?:https?://|/).*?)\\1").getMatch(1);
+            }
+            if (dllink == null && br.containsHTML("https?://[A-Za-z0-9]*?\\.rampant\\.tv/playerConfig\\.php\\?\\.(mp4|flv)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
