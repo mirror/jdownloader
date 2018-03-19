@@ -53,7 +53,6 @@ import org.jdownloader.plugins.config.AccountJsonConfig;
 public class BrowserSolverService extends AbstractSolverService {
     public static final String                ID       = "browser";
     private static final BrowserSolverService INSTANCE = new BrowserSolverService();
-
     static {
         GenericConfigEventListener<String> cookiesTester = new GenericConfigEventListener<String>() {
             @Override
@@ -124,11 +123,12 @@ public class BrowserSolverService extends AbstractSolverService {
         CFG_BROWSER_CAPTCHA_SOLVER.GOOGLE_COM_COOKIE_VALUE_HSID.getEventSender().addListener(cookiesTester);
         CFG_BROWSER_CAPTCHA_SOLVER.GOOGLE_COM_COOKIE_VALUE_SID.getEventSender().addListener(cookiesTester);
     }
-
     private static BrowserCaptchaSolverConfig config;
 
     public static BrowserSolverService getInstance() {
-        config = JsonConfig.create(BrowserCaptchaSolverConfig.class);
+        if (config == null) {
+            config = JsonConfig.create(BrowserCaptchaSolverConfig.class);
+        }
         return INSTANCE;
     }
 

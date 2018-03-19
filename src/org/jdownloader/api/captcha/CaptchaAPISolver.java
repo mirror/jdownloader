@@ -7,6 +7,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
+
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -30,12 +34,9 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2Fallb
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
@@ -95,7 +96,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         });
         MyJDownloaderController.getInstance().pushCaptchaFlag(true);
         eventPublisher.fireNewJobEvent(job, challenge);
-        if (Application.isHeadless() || !DialogSolverService.getInstance().isEnabled()) {
+        if (Application.isHeadless() || (challenge instanceof RecaptchaV2Challenge && !BrowserSolverService.getInstance().isEnabled()) || !DialogSolverService.getInstance().isEnabled()) {
             // in headless mode, we should wait, because we have no gui dialog
             job.getLogger().info("Wait for Answer");
             try {
