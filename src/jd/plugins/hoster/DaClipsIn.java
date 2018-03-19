@@ -160,6 +160,9 @@ public class DaClipsIn extends antiDDoSForHost {
             try {
                 con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
+                    if (con.getLongContentLength() < 1000) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("freelink", dllink);
                 } else {
