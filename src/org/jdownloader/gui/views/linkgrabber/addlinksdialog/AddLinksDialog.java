@@ -11,6 +11,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -338,6 +339,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 return null;
             }
 
+            @Override
+            protected String getProtoType(SearchComboBox<String> comboBox, List<String> model) {
+                return "";
+            }
+
             protected String getHelpText() {
                 return _GUI.T.AddLinksDialog_layoutDialogContent_help_destination();
             }
@@ -350,6 +356,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
             @Override
             protected Icon getIconForValue(PackageHistoryEntry value) {
+                return null;
+            }
+
+            @Override
+            public PackageHistoryEntry getProtoType(List<PackageHistoryEntry> model) {
                 return null;
             }
 
