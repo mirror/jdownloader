@@ -361,7 +361,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
             @Override
             public PackageHistoryEntry getProtoType(List<PackageHistoryEntry> model) {
-                return null;
+                final PackageHistoryEntry ret = new PackageHistoryEntry("");
+                return ret;
             }
 
             @Override
