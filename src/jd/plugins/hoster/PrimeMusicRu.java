@@ -26,11 +26,11 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "https?://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me)/Media\\-page\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru", "freshmusic.club" }, urls = { "", "https?://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club)/Media\\-page\\-\\d+\\.html" })
 public class PrimeMusicRu extends antiDDoSForHost {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "primemusic.ru", "prime-music.net", "primemusic.cc", "primemusic.me" };
+        return new String[] { "primemusic.ru", "prime-music.net", "primemusic.cc", "primemusic.me", "freshmusic.club" };
     }
 
     public PrimeMusicRu(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class PrimeMusicRu extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(primemusic\\.ru|prime-music\\.net|primemusic\\.cc)/", "primemusic.me/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me)/", "freshmusic.club/"));
     }
 
     @SuppressWarnings("deprecation")
@@ -81,7 +81,7 @@ public class PrimeMusicRu extends antiDDoSForHost {
             if (finallink == null) {
                 finallink = br.getRegex("class=\"download_link\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
-                    finallink = br.getRegex("\"(https?://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
+                    finallink = br.getRegex("\"(https?://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
                     if (finallink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
