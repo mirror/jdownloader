@@ -16,6 +16,7 @@ import jd.plugins.Account;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.ProxyData;
 
@@ -94,7 +95,6 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
      * by default a proxy supports resume
      */
     private boolean                                               resumeIsAllowed                 = true;
-
     protected final CopyOnWriteArraySet<SingleDownloadController> activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
     protected final CopyOnWriteArrayList<SelectProxyByURLHook>    selectProxyByURLHooks           = new CopyOnWriteArrayList<SelectProxyByURLHook>();
     private boolean                                               reconnectSupported;
@@ -108,7 +108,6 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public AbstractProxySelectorImpl() {
-
     }
 
     public boolean add(final SingleDownloadController singleDownloadController) {
@@ -141,16 +140,19 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     public void addSessionBan(final ConnectionBan newBan) {
         if (newBan != null) {
+            boolean addFlag = true;
             for (final ConnectionBan oldBan : banList) {
                 if (oldBan.isExpired()) {
                     banList.remove(oldBan);
                 } else if (oldBan.canSwallow(newBan)) {
-                    return;
+                    addFlag = false;
                 } else if (newBan.canSwallow(oldBan)) {
                     banList.remove(oldBan);
                 }
             }
-            banList.addIfAbsent(newBan);
+            if (addFlag && banList.addIfAbsent(newBan)) {
+                LogController.CL().severe(newBan.toString());
+            }
         }
     }
 
