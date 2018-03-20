@@ -13,17 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,13 +49,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
-
     private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
     private final String         apiURL   = "http://nitroflare.com/api/v2";
-
     /* don't touch the following! */
     private static AtomicInteger maxFree  = new AtomicInteger(1);
 
@@ -168,11 +164,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 getPage(br, apiURL + "/getFileInfo?" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
-
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later");
                         dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-
                     }
                     return true;
                 }
@@ -316,29 +310,48 @@ public class NitroFlareCom extends antiDDoSForHost {
             final long t = System.currentTimeMillis();
             final String waittime = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
             // register wait i guess, it should return 1
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.findID();
+            Recaptcha rc = null;
             final int repeat = 5;
             for (int i = 1; i <= repeat; i++) {
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                if (inValidate(c)) {
-                    // fixes timeout issues or client refresh, we have no idea at this stage
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                if (i == 1) {
-                    long wait = 60;
-                    if (waittime != null) {
-                        // remove one second from past, to prevent returning too quickly.
-                        final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
-                        wait = Long.parseLong(waittime) - passedTime;
+                if (br.containsHTML("plugins/cool-captcha/captcha.php")) {
+                    final String captchaCode = getCaptchaCode(br.getURL("/plugins/cool-captcha/captcha.php").toString(), downloadLink);
+                    if (i == 1) {
+                        long wait = 60;
+                        if (waittime != null) {
+                            // remove one second from past, to prevent returning too quickly.
+                            final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
+                            wait = Long.parseLong(waittime) - passedTime;
+                        }
+                        if (wait > 0) {
+                            sleep(wait * 1000l, downloadLink);
+                        }
                     }
-                    if (wait > 0) {
-                        sleep(wait * 1000l, downloadLink);
+                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
+                } else {
+                    if (rc == null) {
+                        rc = new Recaptcha(br, this);
+                        rc.findID();
                     }
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    if (inValidate(c)) {
+                        // fixes timeout issues or client refresh, we have no idea at this stage
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    if (i == 1) {
+                        long wait = 60;
+                        if (waittime != null) {
+                            // remove one second from past, to prevent returning too quickly.
+                            final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
+                            wait = Long.parseLong(waittime) - passedTime;
+                        }
+                        if (wait > 0) {
+                            sleep(wait * 1000l, downloadLink);
+                        }
+                    }
+                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 }
-                ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                     if (i + 1 == repeat) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -468,7 +481,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                 // return "user=&premiumKey=" + pass;
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
-
                         @Override
                         public void run() {
                             try {
@@ -487,7 +499,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                     });
                 } catch (Throwable e) {
                 }
-
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (inValidate(user) || !user.matches(".+@.+")) {
@@ -648,7 +659,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                 } else {
                     fullLogin = true;
                 }
-
                 if (fullLogin) {
                     getPage("https://nitroflare.com/login");
                     Form f = br.getFormbyProperty("id", "login");
@@ -679,7 +689,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCould not find Account Cookie", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-
                 final AccountInfo ai = new AccountInfo();
                 getPage("https://nitroflare.com/member?s=premium");
                 // status
@@ -917,7 +926,6 @@ public class NitroFlareCom extends antiDDoSForHost {
         // 8 => ﻿{"type":"error","message":"Wrong login","code":8}
         if (br.containsHTML("In these moments we are upgrading the site system")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Nitroflare.com is maintenance mode. Try again later", 60 * 60 * 1000);
-
         }
         final String type = PluginJSonUtils.getJsonValue(br, "type");
         final String code = PluginJSonUtils.getJsonValue(br, "code");
@@ -1082,5 +1090,4 @@ public class NitroFlareCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
         }
     }
-
 }
