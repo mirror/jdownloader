@@ -19,7 +19,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class FFmpeg extends AbstractFFmpegBinary {
-
     public FFmpeg() {
         super(null);
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
@@ -53,6 +52,10 @@ public class FFmpeg extends AbstractFFmpegBinary {
             }
         }
         return true;
+    }
+
+    public boolean muxToMkv(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
+        return mux(progress, out, videoIn, audioIn, config.getMuxToMkvCommand());
     }
 
     public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
@@ -204,7 +207,6 @@ public class FFmpeg extends AbstractFFmpegBinary {
                 String res = runCommand(null, infoCommand);
                 //
             } catch (FFMpegException e) {
-
                 String[][] audioStreams = new Regex(e.getError(), "Stream \\#0\\:(\\d+)[^\\:]*\\: Audio\\: ([\\w\\d]+)").getMatches();
                 int i = 0;
                 ret = new ArrayList<File>();
@@ -215,12 +217,9 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     map.put("%map", new String[] { "-map", "0:" + audioStream[0] });
                     audioStream[1] = codecToContainer(audioStream[1]);
                     String tempout = out + "." + i + "." + audioStream[1];
-
                     String command = null;
-
                     try {
                         command = runCommand(progress, fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand()));
-
                     } catch (FFMpegException e1) {
                         // some systems have problems with special chars to find the in or out file.
                         if (e.getError() != null && e.getError().contains("No such file or directory")) {
@@ -232,22 +231,17 @@ public class FFmpeg extends AbstractFFmpegBinary {
                                 command = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), map, config.getDemuxGenericCommand()));
                                 outFile.delete();
                                 tmpOut.renameTo(outFile);
-
                             } finally {
                                 tmpAudioIn.delete();
-
                             }
                         } else {
                             throw e;
                         }
                     }
-
                     if (command != null) {
-
                         if (i > 1) {
                             File f;
                             ret.add(f = new File(tempout));
-
                             try {
                                 if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                                     f.setLastModified(lastModifiedAudio);
@@ -267,9 +261,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                                 LoggerFactory.log(logger, e1);
                             }
                         }
-
                     }
-
                 }
             }
             return ret;
@@ -294,5 +286,4 @@ public class FFmpeg extends AbstractFFmpegBinary {
     public boolean generateOggAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
         return demux(progress, out, audioIn, config.getDash2OggAudioCommand());
     }
-
 }
