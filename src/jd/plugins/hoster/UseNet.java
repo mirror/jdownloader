@@ -57,18 +57,6 @@ public class UseNet extends PluginForHost {
         return (UsenetAccountConfigInterface) super.getAccountJsonConfig(acc);
     }
 
-    // @Override
-    // public PluginConfigPanelNG createConfigPanel() {r
-    // if (!"usenet".equals(getHost())) {
-    // UsenetConfigPanel<?> panel = this.configPanel;
-    // if (panel == null) {
-    // panel = new UsenetConfigPanel(getHost(), getAvailableUsenetServer().toArray(new UsenetServer[0]), getUsenetConfig());
-    // this.configPanel = panel;
-    // }
-    // return panel;
-    // }
-    // return null;
-    // }
     @Override
     protected PluginConfigPanelNG createConfigPanel() {
         return new UsenetConfigPanel() {
@@ -131,6 +119,16 @@ public class UseNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return null;
+    }
+
+    @Override
+    public String buildContainerDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        if (buildForThisPlugin != null && StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
+            /* TODO: finish me */
+            return null;
+        } else {
+            return null;
+        }
     }
 
     @Override
