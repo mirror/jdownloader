@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,9 +35,8 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "overthumbs.com" }, urls = { "http://(www\\.)?overthumbs\\.com/galleries/[a-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "overthumbs.com" }, urls = { "http://(www\\.)?overthumbs\\.com/galleries/[a-z0-9\\-]+" })
 public class OverThumbsCom extends PluginForHost {
-
     private String DLLINK = null;
 
     public OverThumbsCom(PluginWrapper wrapper) {
@@ -69,7 +67,10 @@ public class OverThumbsCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
-        final String vid = br.getRegex("\"/jwplayer/playvideo\\.php\\?id=(\\d+)\"").getMatch(0);
+        if (filename.isEmpty() || filename.equals(" ")) {
+            filename = br.getRegex("<title>([^<>\"]*?)( On Overthumbs)?</title>").getMatch(0);
+        }
+        final String vid = br.getRegex("\"/[a-z]+player/playvideo\\.php\\?id=(\\d+)\"").getMatch(0);
         if (filename == null || vid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -89,7 +90,6 @@ public class OverThumbsCom extends PluginForHost {
                 e.printStackTrace();
             }
             DLLINK = PluginJSonUtils.getJsonValue(result, "file");
-
         } else {
             /* Use old way - avoids packed JS althougs js is just packed, nothing else. */
             br.getPage("http://overthumbs.com/flvplayer/player/xml_connect.php?code=" + vid);
