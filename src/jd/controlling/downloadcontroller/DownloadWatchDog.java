@@ -3965,7 +3965,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                      */
                     return;
                 }
-                boolean fileInProgress = false;
+                DownloadLink fileInProgress = null;
                 if (!fileExists) {
                     final String fileName;
                     if (MirrorDetectionDecision.SAFE.equals(mirrorDetectionDecision)) {
@@ -4004,19 +4004,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             } else {
-                                fileInProgress = true;
+                                fileInProgress = block;
                                 break;
                             }
                         }
                     }
                 }
-                if (fileExists || fileInProgress) {
+                if (fileExists || fileInProgress != null) {
                     IfFileExistsAction doAction = config.getIfFileExistsAction();
                     if (doAction == null || IfFileExistsAction.ASK_FOR_EACH_FILE == doAction) {
                         final DownloadSession currentSession = getSession();
                         doAction = currentSession.getOnFileExistsAction(downloadLink.getFilePackage());
                         if (doAction == null || doAction == IfFileExistsAction.ASK_FOR_EACH_FILE) {
-                            IfFileExistsDialogInterface io = new IfFileExistsDialog(downloadLink).show();
+                            IfFileExistsDialogInterface io = new IfFileExistsDialog(downloadLink, fileInProgress).show();
                             if (io.getCloseReason() == CloseReason.TIMEOUT) {
                                 throw new SkipReasonException(SkipReason.FILE_EXISTS);
                             }
@@ -4042,7 +4042,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     case SKIP_FILE:
                         switch (CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction()) {
                         case SET_FILE_TO_SUCCESSFUL_MIRROR:
-                            if (!fileInProgress) {
+                            if (fileInProgress == null) {
                                 throw new DeferredRunnableException(new ExceptionRunnable() {
                                     @Override
                                     public void run() throws Exception {
@@ -4085,13 +4085,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                     case OVERWRITE_FILE:
-                        if (fileInProgress) {
+                        if (fileInProgress != null) {
                             /* we cannot overwrite a file that is currently in progress */
-                            controller.getLogger().severe("Cannot not overwrite file in progress! " + fileOutput);
+                            controller.getLogger().severe("Cannot not overwrite file:" + fileOutput + "|Blocked by:" + fileInProgress);
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                         if (!fileOutput.delete()) {
-                            controller.getLogger().severe("Could not overwrite file! " + fileOutput);
+                            controller.getLogger().severe("Could not overwrite file:" + fileOutput);
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                         break;
