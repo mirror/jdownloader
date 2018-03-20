@@ -417,8 +417,10 @@ public abstract class PluginForDecrypt extends Plugin {
                 } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                     throwable = null;
                 } else if (e instanceof PluginException) {
-                    // offline file linkstatus exception, this should not be treated as crawler error..
-                    if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                        throwable = null;
+                        ret = addLinkCrawlerRetryTask(ret, link, RetryReason.NO_ACCOUNT, null);
+                    } else if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         throwable = null;
                         linkstatusOffline = true;
                         ret = addLinkCrawlerRetryTask(ret, link, RetryReason.PLUGIN_DEFECT, null);
