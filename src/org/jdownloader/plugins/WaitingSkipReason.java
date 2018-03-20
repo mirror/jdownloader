@@ -90,6 +90,11 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
         return message;
     }
 
+    @Override
+    public String toString() {
+        return getCause() + ":" + getMessage() + "|Timeout:" + getTimeOutLeft();
+    }
+
     public long getTimeOutLeft() {
         return Math.max(0, getTimeOutTimeStamp() - System.currentTimeMillis());
     }
