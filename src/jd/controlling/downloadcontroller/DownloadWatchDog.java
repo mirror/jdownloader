@@ -477,9 +477,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     @Override
                     public void execute(DownloadSession currentSession) {
                         if (event.getResult() == ReconnectResult.SUCCESSFUL) {
-                            ProxyInfoHistory proxyInfoHistory = currentSession.getProxyInfoHistory();
+                            final ProxyInfoHistory proxyInfoHistory = currentSession.getProxyInfoHistory();
                             proxyInfoHistory.validate();
-                            List<WaitingSkipReasonContainer> reconnects = proxyInfoHistory.list(WaitingSkipReason.CAUSE.IP_BLOCKED, null);
+                            final List<WaitingSkipReasonContainer> reconnects = proxyInfoHistory.list(WaitingSkipReason.CAUSE.IP_BLOCKED, null);
                             if (reconnects != null) {
                                 for (WaitingSkipReasonContainer reconnect : reconnects) {
                                     if (reconnect.getProxySelector().isReconnectSupported()) {
@@ -3103,7 +3103,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             if (isReconnectRequired(currentSession, reconnectRequest)) {
                                 currentSession.compareAndSetSessionState(DownloadSession.SessionState.NORMAL, DownloadSession.SessionState.RECONNECT_REQUESTED);
                                 if (currentSession.getSessionState() == DownloadSession.SessionState.RECONNECT_REQUESTED && isReconnectPossible(reconnectRequests)) {
-                                    invokeReconnect();
+                                    invokeReconnect(currentSession);
                                 }
                                 return;
                             }
@@ -3124,7 +3124,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         });
     }
 
-    private ReconnectThread invokeReconnect() {
+    private ReconnectThread invokeReconnect(final DownloadSession currentSession) {
         while (true) {
             Thread ret = reconnectThread.get();
             if (ret != null) {
@@ -3132,6 +3132,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             ret = new ReconnectThread();
             if (reconnectThread.compareAndSet(null, ret)) {
+                if (isWatchDogThread() && currentSession != null) {
+                    currentSession.setSessionState(DownloadSession.SessionState.RECONNECT_RUNNING);
+                }
                 final DownloadWatchDogJob job = new DownloadWatchDogJob() {
                     @Override
                     public void execute(DownloadSession currentSession) {
@@ -3163,11 +3166,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public Reconnecter.ReconnectResult requestReconnect(boolean waitForResult) throws InterruptedException {
-        ReconnectThread thread = invokeReconnect();
+        final ReconnectThread thread = invokeReconnect(null);
         if (waitForResult) {
             return thread.waitForResult();
+        } else {
+            return null;
         }
-        return null;
     }
 
     protected DownloadWatchDogJob getCurrentDownloadWatchDogJob() {
@@ -3611,11 +3615,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.DATA_UPDATE));
                         }
                         try {
-                            validateProxyInfoHistory();
-                            processJobs();
                             final ArrayList<DownloadLink> downloadLinksWithConditionalSkipReasons = new ArrayList<DownloadLink>();
-                            final Set<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(getSession(), downloadLinksWithConditionalSkipReasons);
-                            handleFinalLinkStates(finalLinkStateLinks, getSession(), logger, null);
+                            while (true) {
+                                final int before = getSession().getControllers().size();
+                                validateProxyInfoHistory();
+                                processJobs();
+                                final Set<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(getSession(), downloadLinksWithConditionalSkipReasons);
+                                handleFinalLinkStates(finalLinkStateLinks, getSession(), logger, null);
+                                if (before == getSession().getControllers().size()) {
+                                    break;
+                                }
+                            }
                             if (newDLStartAllowed(getSession())) {
                                 DownloadWatchDog.this.activateDownloads(downloadLinksWithConditionalSkipReasons);
                             }
