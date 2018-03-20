@@ -60,6 +60,11 @@ public class UseNet extends PluginForHost {
     @Override
     protected PluginConfigPanelNG createConfigPanel() {
         return new UsenetConfigPanel() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
             @Override
             protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
                 extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
