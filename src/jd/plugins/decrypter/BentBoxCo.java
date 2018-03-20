@@ -62,8 +62,13 @@ public class BentBoxCo extends PluginForDecrypt {
         final String downloadFiles[][] = br.getRegex("data-fileurl=\"(https?://.*?)\"\\s*data-filename=\"(.*?)\"[^<>]*onclick='downloadFile").getMatches();
         for (final String downloadFile[] : downloadFiles) {
             // TODO: links do expire! add support for dedicated plugin
-            final DownloadLink downloadLink = createDownloadlink("directhttp://" + br.getURL("/downloadFile_fromBox.php?path=" + Encoding.urlEncode(downloadFile[0])).toString());
+            final DownloadLink downloadLink = createDownloadlink("directhttp://" + br.getURL("/downloadFile_fromBox.php?path=" + Encoding.urlEncode(downloadFile[0])).toString() + "&boxId=" + boxID, false);
             downloadLink.setAvailable(true);
+            final String cookie = br.getRequest().getHttpConnection().getRequestProperty("Cookie");
+            if (StringUtils.isNotEmpty(cookie)) {
+                downloadLink.setProperty("cookies", cookie);
+            }
+            downloadLink.setProperty("Referer", parameter.getCryptedUrl());
             String fileName = downloadFile[1];
             if (!StringUtils.endsWithCaseInsensitive(fileName, ".mp4") && !StringUtils.endsWithCaseInsensitive(fileName, ".jpg")) {
                 final String urlExtension = getFileNameExtensionFromURL(downloadFile[0]);
