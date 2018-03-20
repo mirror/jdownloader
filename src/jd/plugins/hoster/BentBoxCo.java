@@ -43,7 +43,7 @@ public class BentBoxCo extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(host, cookies);
-                    br.getPage("https://bentbox.co/");
+                    br.getPage("https://bentbox.co/explorer");
                 }
                 if (!isCookieSet(br, "userId") || !isCookieSet(br, "accessToken")) {
                     final String userName = account.getUser();
@@ -58,7 +58,7 @@ public class BentBoxCo extends PluginForHost {
                     login.put("email_address", Encoding.urlEncode(userName));
                     login.put("password", Encoding.urlEncode(account.getPass()));
                     // login.put("robot_check", "notarobot");
-                    login.put("robot_check", br.getRegex("robot_check=\"([^<>\"]+)\"").getMatch(0));
+                    login.put("robot_check", br.getRegex("robot_check\\s*=\\s*\"([^<>\"]+)\"").getMatch(0));
                     login.put("redirectURL", "?");
                     br.submitForm(login);
                     if (!isCookieSet(br, "userId") || !isCookieSet(br, "accessToken")) {
