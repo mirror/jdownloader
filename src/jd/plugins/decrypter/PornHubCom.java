@@ -36,13 +36,14 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/(?:view_video\\.php\\?viewkey=|embed/)[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -52,7 +53,6 @@ public class PornHubCom extends PluginForDecrypt {
 
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String                parameter      = null;
-    private Account               aa             = null;
     private static final String   DOMAIN         = "pornhub.com";
     private static final String   BEST_ONLY      = jd.plugins.hoster.PornHubCom.BEST_ONLY;
     private static final String   FAST_LINKCHECK = jd.plugins.hoster.PornHubCom.FAST_LINKCHECK;
@@ -64,15 +64,21 @@ public class PornHubCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
         Boolean premium = false;
-        aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            jd.plugins.hoster.PornHubCom.login(br, aa, false);
-            if (aa.getType().toString().equals("PREMIUM")) {
-                premium = true;
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        if (account != null) {
+            try {
+                jd.plugins.hoster.PornHubCom.login(br, account, false);
+                if (account.getType().toString().equals("PREMIUM")) {
+                    premium = true;
+                }
+            } catch (PluginException e) {
+                logger.log(e);
             }
         }
         if (premium) {
             parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
+        } else {
+            parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
         }
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.containsHTML("class=\"g-recaptcha\"")) {
@@ -82,9 +88,9 @@ public class PornHubCom extends PluginForDecrypt {
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(form);
         }
-        if (br.containsHTML(">Sorry, but this video is private") && br.containsHTML("href=\"/login\"") && aa != null) {
+        if (br.containsHTML(">Sorry, but this video is private") && br.containsHTML("href=\"/login\"") && account != null) {
             logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
-            jd.plugins.hoster.PornHubCom.login(br, aa, true);
+            jd.plugins.hoster.PornHubCom.login(br, account, true);
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
             if (br.containsHTML("href=\"/login\"")) {
                 logger.info("Debug info: href= /login is found for registered user, re-login failed?");
