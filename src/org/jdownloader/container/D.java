@@ -877,13 +877,7 @@ public class D extends PluginsC {
                 it.remove();
                 continue;
             }
-            final String contentURL = downloadLink.getContentUrl();
-            final String url;
-            if (contentURL != null) {
-                url = contentURL;
-            } else {
-                url = downloadLink.getPluginPatternMatcher();
-            }
+            final String url = downloadLink.getDefaultPlugin().buildContainerDownloadURL(downloadLink, downloadLink.getDefaultPlugin());
             if (url == null || !urls.add(url)) {
                 it.remove();
                 continue;
