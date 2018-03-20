@@ -85,6 +85,10 @@ public class CamwhoresTv extends PluginForHost {
         return "http://www.camwhores.tv/terms/";
     }
 
+    private String getVideoID(final String url) {
+        return new Regex(url, "/(?:videos|embed)/(\\d+)").getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -93,7 +97,14 @@ public class CamwhoresTv extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(getCurrentDomain(), "kt_tcookie", "1");
         br.setCookie(getCurrentDomain(), "kt_is_visited", "1");
-        br.getPage(link.getDownloadURL());
+        final String videoID = getVideoID(link.getDownloadURL());
+        if (videoID != null && StringUtils.equals(videoID, getVideoID(link.getContentUrl()))) {
+            br.getPage(link.getContentUrl());
+        } else if (videoID != null) {
+            br.getPage("http://www." + getCurrentDomain() + "/videos/" + videoID + "/video/");
+        } else {
+            br.getPage(link.getDownloadURL());
+        }
         if (isOffline(this.br)) {
             /* 2017-01-21: For now, we do not support private videos --> Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -185,7 +196,7 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     private String getCurrentDomain() {
-        return "camwhores.cc";
+        return "camwhores.tv";
     }
 
     private void login(final Account account, final boolean force, final boolean test) throws Exception {
