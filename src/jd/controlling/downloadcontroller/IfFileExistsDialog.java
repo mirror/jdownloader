@@ -28,7 +28,6 @@ import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
 public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface, FocusListener {
-
     private final String       path;
     private IfFileExistsAction result;
     private final String       packagename;
@@ -51,14 +50,16 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private JRadioButton       rename;
     private final String       packageID;
     private final DownloadLink downloadLink;
+    private final DownloadLink downloadLinkInProgress;
 
-    public IfFileExistsDialog(DownloadLink downloadLink) {
+    public IfFileExistsDialog(DownloadLink downloadLink, DownloadLink downloadLinkInProgress) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
         this.packagename = downloadLink.getFilePackage().getName();
         this.packageID = downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated();
         this.path = downloadLink.getFileOutput();
         this.downloadLink = downloadLink;
+        this.downloadLinkInProgress = downloadLinkInProgress;
         setTimeout(60000);
     }
 
@@ -85,7 +86,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     }
 
     protected String getDontShowAgainLabelText() {
-
         return _GUI.T.IfFileExistsDialog_getDontShowAgainLabelText_();
     }
 
@@ -95,50 +95,47 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         ExtTextArea txt = new ExtTextArea();
         txt.setLabelMode(true);
         txt.setToolTipText(path);
-        File localFile = new File(downloadLink.getFileOutput());
-        if (!localFile.exists()) {
-            localFile = new File(downloadLink.getFileOutput() + ".part");
-        }
-
         txt.setText(_JDT.T.jd_controlling_SingleDownloadController_askexists3());
         p.add(txt);
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filename())), "split 2,sg 1");
         p.add(new JLabel(new File(path).getName()));
-
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(downloadLink.getView().getBytesTotalEstimated())));
-
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "split 2,sg 1");
-        p.add(new JLabel(SizeFormatter.formatBytes(localFile.length())));
-
+        final String fileOutput = downloadLink.getFileOutput();
+        File localFile = new File(fileOutput);
+        if (!localFile.exists()) {
+            localFile = new File(fileOutput + ".part");
+        }
+        final long existingSize;
+        if (downloadLinkInProgress != null) {
+            existingSize = Math.max(downloadLinkInProgress.getKnownDownloadSize(), localFile.length());
+        } else {
+            existingSize = localFile.length();
+        }
+        p.add(new JLabel(SizeFormatter.formatBytes(existingSize)));
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sg 1");
         p.add(new JLabel(packagename));
-
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_hoster())), "split 2,sg 1");
         p.add(new JLabel(downloadLink.getDomainInfo().getTld()));
-
         skip = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_skip_());
         skip.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.SKIP_FILE;
             }
         });
         overwrite = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_overwrite_());
         overwrite.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.OVERWRITE_FILE;
             }
         });
         rename = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_rename_());
         rename.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.AUTO_RENAME;
             }
         });
-
         // Group the radio buttons.
         ButtonGroup group = new ButtonGroup();
         group.add(skip);
