@@ -16,9 +16,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
 public interface FFmpegSetup extends ConfigInterface {
-
     class BinayPathValidator extends AbstractValidator<String> {
-
         @Override
         public void validate(String binaryPath) throws ValidationException {
             if (StringUtils.isNotEmpty(binaryPath)) {
@@ -54,7 +52,6 @@ public interface FFmpegSetup extends ConfigInterface {
             }
             return null;
         }
-
     }
 
     class DefaultFFProbeBinary extends AbstractDefaultFactory<String> {
@@ -75,7 +72,6 @@ public interface FFmpegSetup extends ConfigInterface {
             }
             return null;
         }
-
     }
 
     @AboutConfig
@@ -99,6 +95,12 @@ public interface FFmpegSetup extends ConfigInterface {
     String[] getMuxToMp4Command();
 
     void setMuxToMp4Command(String[] command);
+
+    @AboutConfig
+    @DefaultStringArrayValue({ "-i", "%video", "-i", "%audio", "-map", "0:0", "-c:v", "copy", "-map", "1:0", "-c:a", "copy", "-f", "matroska", "%out", "-y" })
+    String[] getMuxToMkvCommand();
+
+    void setMuxToMkvCommand(String[] command);
 
     @AboutConfig
     @DefaultStringArrayValue({ "-i", "%audio", "-f", "mp4", "-c:a", "copy", "%out", "-y" })
