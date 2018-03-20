@@ -167,8 +167,8 @@ public class ItagHelper {
         }
         VideoResolution resolution = dashVideo.getVideoResolution();
         AudioBitrate bitrate = dashAudio.getAudioBitrate();
-        FileContainer videoContainer = getVideoContainer(dashVideo);
-        FileContainer audioContainer2 = getAudioContainer(dashAudio);
+        FileContainer videoContainer = getVideoContainer(dashVideo, dashAudio);
+        FileContainer audioContainer2 = getAudioContainer(dashVideo, dashAudio);
         boolean is3DItag = dashVideo.name().contains("3D");
         VideoFrameRate fps = dashVideo.getVideoFrameRate();
         VideoCodec videoCodec = dashVideo.getVideoCodec();
@@ -224,7 +224,7 @@ public class ItagHelper {
         }
     }
 
-    private static FileContainer getVideoContainer(YoutubeITAG dashVideo) {
+    private static FileContainer getVideoContainer(YoutubeITAG dashVideo, YoutubeITAG dashAudio) {
         switch (dashVideo.getRawContainer()) {
         case DASH_VIDEO:
             switch (dashVideo.getVideoCodec()) {
@@ -233,7 +233,14 @@ public class ItagHelper {
             case H263:
                 throw new WTFException();
             default:
-                return FileContainer.WEBM;
+                switch (dashAudio.getAudioCodec()) {
+                case AAC:
+                case AAC_SPATIAL:
+                case MP3:
+                    return FileContainer.MKV;
+                default:
+                    return FileContainer.WEBM;
+                }
             }
         case FLV:
             return FileContainer.FLV;
@@ -248,7 +255,7 @@ public class ItagHelper {
         }
     }
 
-    private static FileContainer getAudioContainer(YoutubeITAG audioCodec) {
+    private static FileContainer getAudioContainer(YoutubeITAG dashVideo, YoutubeITAG audioCodec) {
         switch (audioCodec.getRawContainer()) {
         case DASH_AUDIO:
             switch (audioCodec.getAudioCodec()) {
@@ -332,9 +339,9 @@ public class ItagHelper {
         VideoResolution resolution = itag.getVideoResolution();
         AudioBitrate bitrate = itag.getAudioBitrate();
         VideoCodec videoCodec = itag.getVideoCodec();
-        FileContainer container = getVideoContainer(itag);
+        FileContainer container = getVideoContainer(itag, itag);
         AudioCodec audioCodec = itag.getAudioCodec();
-        FileContainer audioContainer = getAudioContainer(itag);
+        FileContainer audioContainer = getAudioContainer(itag, itag);
         boolean is3DItag = itag.name().contains("3D");
         // String audioCodec = new Regex(dashAudio.name(), "(opus|aac)").getMatch(0);
         String baseName = container.name() + "_" + videoCodec.name() + "_" + resolution.getHeight() + "P_" + (int) Math.ceil(fps.getFps()) + "FPS_" + audioCodec.name() + "_" + bitrate.getKbit() + "KBIT";
@@ -473,6 +480,7 @@ public class ItagHelper {
         case VP9_WORSE_PROFILE_1:
             switch (audioCodec) {
             case AAC:
+                return true;
             case AAC_SPATIAL:
             case MP3:
                 return false;
