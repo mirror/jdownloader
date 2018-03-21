@@ -4,11 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -31,12 +28,6 @@ public class WindowsShutdownInterface extends ShutdownInterface {
     @Override
     public Mode[] getSupportedModes() {
         return new Mode[] { Mode.SHUTDOWN, Mode.HIBERNATE, Mode.STANDBY, Mode.LOGOFF, Mode.CLOSE };
-    }
-
-    private void stopActivity() {
-        DownloadWatchDog.getInstance().stopDownloads();
-        LinkCollector.getInstance().abort();
-        StorageHandler.flushWrites();
     }
 
     @Override

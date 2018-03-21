@@ -1,13 +1,10 @@
 package org.jdownloader.extensions.shutdown;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.utils.JDUtilities;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
-import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
@@ -25,16 +22,11 @@ public class UnixShutdownInterface extends ShutdownInterface {
         return new Mode[] { Mode.SHUTDOWN, Mode.HIBERNATE, Mode.STANDBY, Mode.CLOSE };
     }
 
-    private void stopActivity() {
-        DownloadWatchDog.getInstance().stopDownloads();
-        LinkCollector.getInstance().abort();
-        StorageHandler.flushWrites();
-    }
-
     @Override
     public void requestMode(Mode mode, boolean force) {
         switch (mode) {
         case SHUTDOWN:
+            stopActivity();
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
                 @Override
                 public int getHookPriority() {
@@ -71,7 +63,6 @@ public class UnixShutdownInterface extends ShutdownInterface {
                     }
                 }
             });
-            stopActivity();
             RestartController.getInstance().exitAsynch(new ForcedShutdown());
             break;
         case HIBERNATE:
