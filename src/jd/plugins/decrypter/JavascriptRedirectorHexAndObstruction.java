@@ -13,15 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
-
-import org.appwork.utils.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -29,13 +21,21 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
 
 /**
  * @keywords hex, 'var link', 'var _0xdc0b'
@@ -43,8 +43,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  *
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jerkplanet.org", "superload.me", "topcookbox.com" }, urls = { "https?://(www\\.)?jerkplanet\\.org/file/[0-9a-zA-Z]+", "(?:http://(www\\.)?superload\\.me|https://(?:www\\.)?superload\\.me(?:443)?)/file/[0-9a-zA-Z]+", "https?://(?:www\\.)?topcookbox\\.com/file/[0-9a-zA-Z]+" })
-public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
-
+public class JavascriptRedirectorHexAndObstruction extends antiDDoSForDecrypt {
     public JavascriptRedirectorHexAndObstruction(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,8 +52,8 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString();
+        getPage(parameter);
         final EnvJSBrowser envJs = new EnvJSBrowser(br) {
-
             @Override
             public String onBeforeSourceCompiling(String source, net.sourceforge.htmlunit.corejs.javascript.Evaluator compiler, net.sourceforge.htmlunit.corejs.javascript.ErrorReporter compilationErrorReporter, String sourceName, int lineno, Object securityDomain) {
                 if (this.isInitDone() && StringUtils.isNotEmpty(source)) {
@@ -62,11 +61,14 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
                 }
                 return super.onBeforeSourceCompiling(source, compiler, compilationErrorReporter, sourceName, lineno, securityDomain);
             };
+
+            @Override
+            protected URLConnectionAdapter openRequestConnection(Browser br, Request request) throws Exception {
+                return JavascriptRedirectorHexAndObstruction.this.openAntiDDoSRequestConnection(br, request);
+            }
         };
         envJs.setDebugLevel(DebugLevel.INFO);
-
         envJs.setPermissionFilter(new PermissionFilter() {
-
             @Override
             public String onBeforeExecutingInlineJavaScript(String type, String js) {
                 if (js.contains("liveinternet")) {
@@ -87,7 +89,6 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
-
                 // do not load the request
                 return null;
             }
@@ -105,18 +106,15 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
 
             @Override
             public String onAfterLoadingExternalJavaScript(String type, String src, String sourceCode, Request request) {
-
                 return sourceCode;
             }
         });
-
         envJs.getPage(parameter);
         final String decoded = envJs.getDocument();
         final String link = new Regex(decoded, "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
         if (link != null) {
             decryptedLinks.add(createDownloadlink(link));
         }
-
         return decryptedLinks;
     }
 
@@ -124,5 +122,4 @@ public class JavascriptRedirectorHexAndObstruction extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_JavascriptRedirectorHexAndObstruction;
     }
-
 }

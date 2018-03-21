@@ -20,6 +20,7 @@ import javax.swing.SwingUtilities;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import net.sourceforge.htmlunit.corejs.javascript.Callable;
@@ -63,18 +64,15 @@ public class EnvJSBrowser implements ContextCallback {
             // already set globally
         }
     }
-
     // private Context cx;
     private Global                                                      scope;
     private long                                                        id;
     private Browser                                                     br;
     private LogSource                                                   logger;
-
     private static AtomicLong                                           CCOUNTER  = new AtomicLong(0l);
     private static ConcurrentHashMap<Long, WeakReference<EnvJSBrowser>> INSTANCES = new ConcurrentHashMap<Long, WeakReference<EnvJSBrowser>>();
 
     public static EnvJSBrowser get(long id) {
-
         return INSTANCES.get(id).get();
     }
 
@@ -88,14 +86,11 @@ public class EnvJSBrowser implements ContextCallback {
 
     public void logToConsole(String message) {
         logger.info("console.log >" + message);
-
     }
 
     public void setCookie(String url, String cookie) {
-
         final String date = br.getRequest().getHttpConnection().getHeaderField("Date");
         final String host = Browser.getHost(br.getRequest().getURL());
-
         Cookies cookies = Cookies.parseCookies(cookie, host, date);
         br.getCookies(host).add(cookies);
     }
@@ -111,19 +106,27 @@ public class EnvJSBrowser implements ContextCallback {
         return js;
     }
 
+    protected URLConnectionAdapter openRequestConnection(Browser br, Request request) throws Exception {
+        return br.openRequestConnection(request);
+    }
+
     //
     public String loadExternalScript(String type, String src, String url, Object window) {
         Request request;
-
         try {
             final Browser xbr = br.cloneBrowser();
             request = xbr.createGetRequest(url);
-
             if (permissionFilter != null) {
                 request = permissionFilter.onBeforeLoadingExternalJavaScript(type, src, request);
             }
             if (request != null) {
-                xbr.loadConnection(xbr.openRequestConnection(request));
+                try {
+                    xbr.loadConnection(openRequestConnection(xbr, request));
+                } catch (IOException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new IOException(e);
+                }
                 String ret = request.getHtmlCode();
                 if (permissionFilter != null) {
                     return permissionFilter.onAfterLoadingExternalJavaScript(type, src, ret, request);
@@ -132,12 +135,10 @@ public class EnvJSBrowser implements ContextCallback {
             } else {
                 return "console.log(\"Script Blocked: " + url + "\");";
             }
-
         } catch (IOException e) {
             logger.log(e);
             return "console.log(\"Script Loading Error: " + e + "\");";
         }
-
     }
 
     private HashMap<Object, Object> toMap(NativeObject obj, HashMap<Object, HashMap<Object, Object>> refMap) {
@@ -156,13 +157,11 @@ public class EnvJSBrowser implements ContextCallback {
             } else {
                 ret.put(e.getKey().toString(), v == null ? null : v.toString());
             }
-
         }
         return ret;
     }
 
     public String xhrRequest(String url, String method, String data, String requestHeaders) throws IOException {
-
         HashMap<String, String> headers = JSonStorage.restoreFromString(requestHeaders, new TypeRef<HashMap<String, String>>() {
         });
         // br.getHeaders().put(new HTTPHeader("User-Agent",
@@ -179,7 +178,6 @@ public class EnvJSBrowser implements ContextCallback {
             request = br.createGetRequest(url);
         } else if ("post".equalsIgnoreCase(method)) {
             request = br.createPostRequest(url, data);
-
         } else {
             throw new WTFException("Not Supported");
         }
@@ -187,17 +185,20 @@ public class EnvJSBrowser implements ContextCallback {
             request = permissionFilter.onBeforeXHRRequest(request);
         }
         if (request != null) {
-            br.loadConnection(br.openRequestConnection(request));
+            try {
+                br.loadConnection(openRequestConnection(br, request));
+            } catch (IOException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
         } else {
-
             XHRResponse ret = new XHRResponse();
             ret.setReponseMessage(ResponseCode.ERROR_NOT_FOUND.getDescription());
             ret.setResponseCode(ResponseCode.ERROR_NOT_FOUND.getCode());
             ret.setResponseText("Blocked by EnvJS");
-
             return JSonStorage.serializeToJson(ret);
         }
-
         XHRResponse ret = new XHRResponse();
         for (Entry<String, List<String>> s : br.getRequest().getResponseHeaders().entrySet()) {
             ret.getResponseHeader().put(s.getKey(), s.getValue().get(0));
@@ -225,10 +226,8 @@ public class EnvJSBrowser implements ContextCallback {
     public EnvJSBrowser() {
         id = CCOUNTER.incrementAndGet();
         br = createBrowserInstance();
-
         INSTANCES.put(id, new WeakReference<EnvJSBrowser>(this));
         logger = LogController.getInstance().getLogger(EnvJSBrowser.class.getName());
-
     }
 
     public EnvJSBrowser(Browser br2) {
@@ -261,9 +260,7 @@ public class EnvJSBrowser implements ContextCallback {
             path = path.substring(6);
         }
         logger.info("Require: " + path);
-
         if ("platform/rhino".equals(path)) {
-
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
         if ("platform/core".equals(path)) {
@@ -275,11 +272,9 @@ public class EnvJSBrowser implements ContextCallback {
         if ("init".equals(path)) {
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
-
         if ("timer".equals(path)) {
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
-
         if ("local_settings".equals(path)) {
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
@@ -292,7 +287,6 @@ public class EnvJSBrowser implements ContextCallback {
         if ("html".equals(path)) {
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
-
         if ("event".equals(path)) {
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
@@ -309,11 +303,9 @@ public class EnvJSBrowser implements ContextCallback {
             return IO.readURLToString(EnvJSBrowser.class.getResource(path + ".js"));
         }
         throw new WTFException("Unknown Resource required: " + path);
-
     }
 
     public static final class JsDebugger implements Debugger {
-
         @Override
         public void handleCompilationDone(Context paramContext, DebuggableScript paramDebuggableScript, String paramString) {
             // System.out.println(" ----> " + paramString);
@@ -323,9 +315,7 @@ public class EnvJSBrowser implements ContextCallback {
 
         @Override
         public DebugFrame getFrame(Context paramContext, final DebuggableScript paramDebuggableScript) {
-
             return new DebugFrame() {
-
                 private static final String KEY_LAST_LINE   = "DebugFrameImpl#line";
                 private static final String KEY_LAST_SOURCE = "DebugFrameImpl#source";
 
@@ -334,9 +324,7 @@ public class EnvJSBrowser implements ContextCallback {
                  */
                 @Override
                 public void onEnter(final Context cx, final Scriptable activation, final Scriptable thisObj, final Object[] args) {
-
                     final StringBuilder sb = new StringBuilder();
-
                     final String line = getFirstLine(cx);
                     final String source = getSourceName(cx);
                     if (source.startsWith("envjs/parser")) {
@@ -346,14 +334,11 @@ public class EnvJSBrowser implements ContextCallback {
                         return;
                     }
                     sb.append(source).append(":").append(line);
-
                     max = Math.max(sb.length(), max);
-
                     while (sb.length() < max + 3) {
                         sb.append(" ");
                     }
                     Scriptable parent = activation.getParentScope();
-
                     while (parent != null) {
                         sb.append(" ->");
                         parent = parent.getParentScope();
@@ -374,7 +359,6 @@ public class EnvJSBrowser implements ContextCallback {
                     if ("envjs/platform/core".equals(source) && "log".equals(functionName)) {
                         return;
                     }
-
                     if (functionName == null) {
                         return;
                     }
@@ -393,7 +377,6 @@ public class EnvJSBrowser implements ContextCallback {
                         }
                     }
                     sb.append(")");
-
                     System.out.println(sb);
                 }
 
@@ -427,18 +410,13 @@ public class EnvJSBrowser implements ContextCallback {
                  */
                 @Override
                 public void onExceptionThrown(final Context cx, final Throwable t) {
-
                     ScriptRuntime.constructError("Stacktrace", t.getMessage()).printStackTrace();
-
                     if (t instanceof JavaScriptException) {
                         final JavaScriptException e = (JavaScriptException) t;
-
                         System.out.println(getSourceName(cx) + ":" + getFirstLine(cx) + " Exception thrown: " + Context.toString(e.getValue()));
-
                     } else if (true) {
                         System.out.println(getSourceName(cx) + ":" + getFirstLine(cx) + " Exception thrown: " + t.getCause());
                     }
-
                 }
 
                 /**
@@ -471,14 +449,11 @@ public class EnvJSBrowser implements ContextCallback {
                         // An anonymous function -- try to figure out how it was referenced.
                         // For example, someone may have set foo.prototype.bar = function() { ... };
                         // And then called fooInstance.bar() -- in which case it's "named" bar.
-
                         // on our SimpleScriptable we need to avoid looking at the properties we have defined => TODO: improve it
                         if (thisObj instanceof ScriptableObject) {
                             // return null;
                         }
-
                         Scriptable obj = thisObj;
-
                         while (obj != null) {
                             for (final Object id : obj.getIds()) {
                                 if (id instanceof String) {
@@ -502,7 +477,6 @@ public class EnvJSBrowser implements ContextCallback {
                                             if ("debug".equals(s)) {
                                                 return null;
                                             }
-
                                             return s;
                                         }
                                     }
@@ -569,9 +543,7 @@ public class EnvJSBrowser implements ContextCallback {
                 @Override
                 public void onDebuggerStatement(Context paramContext) {
                 }
-
             };
-
         }
     }
 
@@ -603,7 +575,6 @@ public class EnvJSBrowser implements ContextCallback {
     // ("exception",this.category,arguments);
     public boolean logger(String level, String category, String message) {
         try {
-
             DebugLevel debugLevel = DebugLevel.valueOf(level);
             if (debugLevel.ordinal() >= getDebugLevel().ordinal()) {
                 switch (debugLevel) {
@@ -620,7 +591,6 @@ public class EnvJSBrowser implements ContextCallback {
                     logger.warning(category + "> " + message);
                     break;
                 case NONE:
-
                 }
                 return true;
             }
@@ -632,19 +602,15 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public void init() {
-
         scope = new Global();
         if (getDebugLevel() == DebugLevel.DEBUG) {
             initGuiDebugger();
-
         }
         cx = Context.enter(JSHtmlUnitPermissionRestricter.makeContext(this));
         cx.setOptimizationLevel(-1);
         scope.init(cx);
-
         cx.setOptimizationLevel(-1);
         cx.setLanguageVersion(Context.VERSION_1_5);
-
         tick = cx.compileString("var e=envjsglobals.Envjs;delete envjsglobals;  e.tick();  ", "ticker", 1, null);
         if (br == null) {
             throw new NullPointerException("browser is null");
@@ -654,7 +620,6 @@ public class EnvJSBrowser implements ContextCallback {
         try {
             // evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
             // evaluateTrustedString(cx, scope, "var DEBUG_LEVEL='" + debugLevel + "';", "setDebugLevel", 1, null);
-
             // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
             String preloadClasses = "";
             Class[] classes = new Class[] { Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, WTFException.class };
@@ -662,32 +627,25 @@ public class EnvJSBrowser implements ContextCallback {
                 preloadClasses += "load=" + c.getName() + ";\r\n";
             }
             preloadClasses += "delete load;";
-
             evalTrusted(preloadClasses);
-
             String initSource = readRequire("envjs/init");
             initSource = initSource.replace("%EnvJSinstanceID%", id + "");
             evaluateTrustedString(cx, scope, initSource, "setInstance", 1, null);
             evalTrusted("       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJSBrowser.get(" + id + ");stacktrace=function(){javaInstance.printStacktrace();};");
             ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
-
             Collections.sort(list, new Comparator<String>() {
-
                 @Override
                 public int compare(String o1, String o2) {
                     return o2.length() - o1.length();
                 }
             });
-
             // Cleanup
-
             eval("delete Packages;");
             for (String s : list) {
                 while (true) {
                     System.out.println("Delete " + s);
                     try {
                         eval("delete " + s + ";");
-
                     } catch (Throwable e) {
                         // e.printStackTrace();
                     }
@@ -706,7 +664,6 @@ public class EnvJSBrowser implements ContextCallback {
             // }
             initDone = true;
             // evaluateTrustedString(cx, scope, "delete EnvJs;delete After;", "CleanUp", 1, null);
-
             // var __context__=__context__;
             // var Envjs=Envjs;
             // var javaInstance=javaInstance;
@@ -721,7 +678,6 @@ public class EnvJSBrowser implements ContextCallback {
         } catch (Throwable e) {
             throw new WTFException(e);
         } finally {
-
         }
     }
 
@@ -729,16 +685,12 @@ public class EnvJSBrowser implements ContextCallback {
         try {
             final ContextFactory factory = ContextFactory.getGlobal();
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 @Override
                 public void run() {
-
                     JSHtmlUnitPermissionRestricter.TRUSTED_THREAD.put(Thread.currentThread(), true);
                     Main main = new Main("JS Debugger");
                     main.doBreak();
-
                     main.attachTo(factory);
-
                     if ((scope instanceof Global)) {
                         Global global = scope;
                         global.setIn(main.getIn());
@@ -746,18 +698,15 @@ public class EnvJSBrowser implements ContextCallback {
                         global.setErr(main.getErr());
                     }
                     main.setScope(scope);
-
                     main.pack();
                     main.setSize(600, 460);
                     main.setVisible(true);
                     main.setSourceProvider(new SourceProvider() {
-
                         @Override
                         public String getSource(DebuggableScript paramDebuggableScript) {
                             return null;
                         }
                     });
-
                 }
             });
         } catch (InvocationTargetException e1) {
@@ -778,17 +727,14 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public Object eval(String js) {
-
         try {
             return cx.evaluateString(scope, js, "eval:" + js, 1, null);
         } finally {
-
         }
         //
     }
 
     public void setDocument(String url, String html) {
-
         String js = " document.async=true; document.baseURI = '" + url + "';HTMLParser.parseDocument(\"" + html.replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\", document);Envjs.wait();";
         evaluateTrustedString(cx, scope, js, "setDoc", 1, null);
     }
@@ -803,27 +749,22 @@ public class EnvJSBrowser implements ContextCallback {
     private Object evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
         scriptStack.add(string);
         try {
-
             return JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx2, scope, js, string, i, object);
         } catch (EcmaError e) {
             logger.log(e);
             throw e;
         } finally {
-
             if (string != scriptStack.removeLast()) {
                 throw new WTFException("Stack problem");
             }
-
         }
     }
 
     public void setGlobals(Object o) {
         this.globals = o;
-
     }
 
     public String getDocument() {
-
         Object result = evalTrusted("var f=function(){return document.innerHTML;}; f();");
         if (result != null) {
             return result + "";
@@ -843,7 +784,6 @@ public class EnvJSBrowser implements ContextCallback {
         // put global variables in to reference. and delete it immediately.
         ScriptableObject.putProperty(scope, "envjsglobals", globals);
         tick.exec(cx, scope);
-
     }
 
     public Global getScope() {
@@ -867,7 +807,6 @@ public class EnvJSBrowser implements ContextCallback {
         eval("var loading=true");
         eval("window.addEventListener(\"load\",function(){loading=false})");
         eval("document.location = '" + parameter + "';");
-
         final Script script = cx.compileString("loading", "loading", 1, null);
         final long until;
         if (timeout > 0) {
@@ -887,7 +826,6 @@ public class EnvJSBrowser implements ContextCallback {
                 break;
             }
         }
-
     }
 
     private void ensureInit() {
@@ -916,5 +854,4 @@ public class EnvJSBrowser implements ContextCallback {
     public void setVariable(String property, String c) {
         ScriptableObject.putProperty(scope, property, c);
     }
-
 }
