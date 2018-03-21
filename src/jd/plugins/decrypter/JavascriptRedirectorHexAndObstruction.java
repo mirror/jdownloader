@@ -52,7 +52,6 @@ public class JavascriptRedirectorHexAndObstruction extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString();
-        getPage(parameter);
         final EnvJSBrowser envJs = new EnvJSBrowser(br) {
             @Override
             public String onBeforeSourceCompiling(String source, net.sourceforge.htmlunit.corejs.javascript.Evaluator compiler, net.sourceforge.htmlunit.corejs.javascript.ErrorReporter compilationErrorReporter, String sourceName, int lineno, Object securityDomain) {
