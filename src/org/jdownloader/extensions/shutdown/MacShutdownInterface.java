@@ -2,12 +2,9 @@ package org.jdownloader.extensions.shutdown;
 
 import java.io.File;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.Executer;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
@@ -37,16 +34,11 @@ public class MacShutdownInterface extends ShutdownInterface {
         }
     }
 
-    private void stopActivity() {
-        DownloadWatchDog.getInstance().stopDownloads();
-        LinkCollector.getInstance().abort();
-        StorageHandler.flushWrites();
-    }
-
     @Override
     public void requestMode(Mode mode, boolean force) {
         switch (mode) {
         case SHUTDOWN:
+            stopActivity();
             if (force) {
                 try {
                     JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
@@ -58,18 +50,18 @@ public class MacShutdownInterface extends ShutdownInterface {
                 } catch (Throwable e) {
                     logger.log(e);
                 }
+                try {
+                    JDUtilities.runCommand(osascript.getAbsolutePath(), new String[] { "-e", "tell application \"System Events\" to shut down" }, null, 0);
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
             } else {
-                if (osascript.isFile() && osascript.canExecute()) {
-                    try {
-                        JDUtilities.runCommand(osascript.getAbsolutePath(), new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
-                    } catch (Throwable e) {
-                        logger.log(e);
-                    }
-                } else {
-                    return;
+                try {
+                    JDUtilities.runCommand(osascript.getAbsolutePath(), new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
+                } catch (Throwable e) {
+                    logger.log(e);
                 }
             }
-            stopActivity();
             RestartController.getInstance().exitAsynch(new ForcedShutdown());
             break;
         case STANDBY:
