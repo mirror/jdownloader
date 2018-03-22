@@ -28,9 +28,13 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
      * {@link #getInstance()}.
      */
     private PackageHistoryManager() {
-        super(CFG_LINKGRABBER.CFG.getPackageNameHistory(), CFG_LINKGRABBER.CFG.getPackageNameHistoryLength());
+        super(CFG_LINKGRABBER.CFG.getPackageNameHistory());
         CFG_LINKGRABBER.PACKAGE_NAME_HISTORY.getEventSender().addListener(this);
+    }
 
+    @Override
+    protected int getMaxLength() {
+        return CFG_LINKGRABBER.CFG.getPackageNameHistoryLength();
     }
 
     @Override
@@ -42,7 +46,6 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
     protected void save(List<PackageHistoryEntry> list) {
         final Thread thread = Thread.currentThread();
         final EventSuppressor<ConfigEvent> eventSuppressor = new EventSuppressor<ConfigEvent>() {
-
             @Override
             public boolean suppressEvent(ConfigEvent eventType) {
                 return Thread.currentThread() == thread;
