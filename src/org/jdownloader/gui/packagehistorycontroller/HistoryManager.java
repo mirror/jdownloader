@@ -25,7 +25,7 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                     save(list());
                 }
             });
-        } catch (IllegalStateException e) {
+        } catch (Throwable e) {
             /* prevent ClassNotFound exception on shutdown */
         }
         if (packageNameHistory == null) {
