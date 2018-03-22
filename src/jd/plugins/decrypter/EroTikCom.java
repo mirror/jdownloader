@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ero-tik.com" }, urls = { "http://(?:www\\.)?ero\\-tik\\.com/[^<>\"/]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ero-tik.com" }, urls = { "https?://(?:www\\.)?ero\\-tik\\.com/[^<>\"/]+\\.html" })
 public class EroTikCom extends PluginForDecrypt {
-
     public EroTikCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,10 +38,11 @@ public class EroTikCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches("http://www\\.ero-tik\\.com/(article|browse|contact_us|login|memberlist|profile|register)\\.html")) {
+        if (parameter.matches("https?://www\\.ero-tik\\.com/(article|browse|contact_us|login|memberlist|profile|register)\\.html")) {
             logger.info("Unsupported/invalid link: " + parameter);
             return crawledLinks;
         }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().contains("/index.html")) {
             crawledLinks.add(this.createOfflinelink(parameter));
@@ -52,7 +51,7 @@ public class EroTikCom extends PluginForDecrypt {
         if (br.containsHTML("video-watch")) { // Single links
             crawlSingleLink(crawledLinks, parameter);
         } else { // Multi links
-            final String fpName = "Ero-tik " + new Regex(parameter, "http://www\\.ero-tik\\.com/(.*)\\.html").getMatch(0);
+            final String fpName = "Ero-tik " + new Regex(parameter, "https?://www\\.ero-tik\\.com/(.*)\\.html").getMatch(0);
             logger.info("fpName: " + fpName);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -84,7 +83,7 @@ public class EroTikCom extends PluginForDecrypt {
         // src="http://videomega.tv/iframe.js"
         // src="http://www.ero-tik.com/embed.php?vid=188412d51"
         String externID = br.getRegex("\"(https?://videomega\\.tv/[^<>\"]*?)\"").getMatch(0);
-        String embed = br.getRegex("src=\"(http://www\\.ero-tik\\.com/embed[^<>\"]*?)\"").getMatch(0);
+        String embed = br.getRegex("src=\"(https?://www\\.ero-tik\\.com/embed[^<>\"]*?)\"").getMatch(0);
         if (externID == null && embed == null) {
             logger.info("externID & embed not found");
             crawledLinks.add(this.createOfflinelink(parameter));
@@ -132,5 +131,4 @@ public class EroTikCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
