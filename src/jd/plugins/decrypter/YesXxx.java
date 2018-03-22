@@ -23,6 +23,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yes.xxx" }, urls = { "https?://(www\\.)?yes\\.xxx/\\?v=[A-Z0-9]+" })
@@ -35,6 +37,9 @@ public class YesXxx extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Video Not Exists")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String rdl = br.getRedirectLocation();
         if (rdl == null) {
             rdl = br.getRegex("<iframe frameborder=\"0\"\\s*src=\"(.*?)\"").getMatch(0);
