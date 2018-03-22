@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -22,20 +21,19 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filthdump.com" }, urls = { "http://(www\\.)?filthdump\\.com/\\d+/.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filthdump.com" }, urls = { "http://(www\\.)?filthdump\\.com/\\d+/.*?\\.html" })
 public class FilthDumpCom extends PluginForDecrypt {
-
     public FilthDumpCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
@@ -46,8 +44,7 @@ public class FilthDumpCom extends PluginForDecrypt {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
         if (filename == null) {
-            logger.warning("Couldn't decrypt link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         filename = filename.trim();
         if (filename.equals("")) {
@@ -59,6 +56,10 @@ public class FilthDumpCom extends PluginForDecrypt {
             br.setFollowRedirects(true);
             try {
                 br.getPage(tempID);
+                if (br.containsHTML("Page Not Found")) {
+                    decryptedLinks.add(createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
             } catch (Exception UnknownHostException) {
                 logger.info("Embeded video provider DNS is down.! This is not a bug: " + parameter);
                 // throw UnknownHostException;
@@ -66,8 +67,7 @@ public class FilthDumpCom extends PluginForDecrypt {
             }
             String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setFinalFileName(filename + ".flv");
@@ -85,8 +85,7 @@ public class FilthDumpCom extends PluginForDecrypt {
         if (tempID != null) {
             tempID = Encoding.Base64Decode(tempID);
             if (tempID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             dl.setFinalFileName(filename + ".flv");
@@ -96,11 +95,14 @@ public class FilthDumpCom extends PluginForDecrypt {
         tempID = br.getRegex("(http://(www\\.)?mygirlfriendporn\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
         if (tempID != null) {
             br.getPage(Encoding.htmlDecode(tempID));
+            if (br.containsHTML("Page Not Found")) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             tempID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
             final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             if (tempID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
@@ -117,13 +119,11 @@ public class FilthDumpCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        logger.warning("Decrypter or link broken: " + parameter);
-        return null;
+        throw new DecrypterException("Decrypter broken for link: " + parameter);
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
