@@ -20,9 +20,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -41,6 +40,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
@@ -506,8 +508,13 @@ public class FlickrCom extends PluginForDecrypt {
                 break;
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            final ArrayList<Object> resourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
+            ArrayList<Object> resourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "favorite-models/{0}/photoPageList/_data");
+            if (resourcelist == null) {
+                resourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "main/favorite-models/{0}/photoPageList/_data");
+            }
             int resourcelistCount = 0;
+            LinkedHashMap<String, Object> lastOwner = null;
+            final List<LinkedHashMap<String, Object>> knownOwner = new ArrayList<LinkedHashMap<String, Object>>();
             for (final Object pico : resourcelist) {
                 LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) pico;
                 if (entry == null) {
@@ -521,7 +528,21 @@ public class FlickrCom extends PluginForDecrypt {
                 if (title == null) {
                     title = "";
                 }
-                LinkedHashMap<String, Object> owner = (LinkedHashMap<String, Object>) entry.get("owner");
+                final LinkedHashMap<String, Object> owner;
+                if (entry.get("owner") instanceof Map) {
+                    owner = (LinkedHashMap<String, Object>) entry.get("owner");
+                } else if (entry.get("owner").toString().startsWith("~")) {
+                    final int index = Integer.parseInt(entry.get("owner").toString().substring(1));
+                    if (knownOwner.size() > index) {
+                        owner = knownOwner.get(index);
+                    } else {
+                        owner = lastOwner;
+                        knownOwner.add(owner);
+                    }
+                } else {
+                    owner = null;
+                }
+                lastOwner = owner;
                 String pathAlias = (String) owner.get("pathAlias"); // standard
                 if (pathAlias == null) {
                     // flickr 'Model' will be under the following (not username)
