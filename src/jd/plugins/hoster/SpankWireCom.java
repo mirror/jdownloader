@@ -15,8 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -50,7 +48,7 @@ public class SpankWireCom extends PluginForHost {
     // main code by external user "hpdub33"
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://spankwire.com/", "performance_timing", "video");
@@ -106,14 +104,21 @@ public class SpankWireCom extends PluginForHost {
         }
         downloadLink.setName(filename.trim());
         // File not found can have good name
-        if (br.containsHTML("playerData\\.isVideoUnavailable\\s*=\\s*true;")) {
+        if (br.containsHTML("playerData.isVideoUnavailable\\s*=\\s*true;|playerData.cdnPath180\\s+= encodeURIComponent\\(''\\)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = finddllink();
         if (dllink == null) {
-            if (br.containsHTML("playerData.cdnPath180\\s+= encodeURIComponent\\(''\\)")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String embed = br.getRegex("iframe src=\"([^<>\"]*?)\"").getMatch(0);
+            if (embed != null) {
+                br.getPage(embed);
+                if (br.containsHTML("playerData.articleTitle\\s*= null")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                dllink = finddllink();
             }
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -150,7 +155,7 @@ public class SpankWireCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String finddllink() throws PluginException {
+    private String finddllink() throws Exception {
         final String[] qualities = { "720", "480", "240", "180", "144" };
         final int count_max = qualities.length;
         int count_offline = 0;
