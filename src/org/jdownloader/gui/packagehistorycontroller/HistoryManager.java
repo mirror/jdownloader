@@ -15,13 +15,11 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 
 public abstract class HistoryManager<T extends HistoryEntry> {
-
     protected final ArrayList<T> packageHistory;
 
-    public HistoryManager(final List<T> packageNameHistory, final int max) {
+    public HistoryManager(final List<T> packageNameHistory) {
         try {
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
                 @Override
                 public void onShutdown(ShutdownRequest shutdownRequest) {
                     save(list());
@@ -37,6 +35,7 @@ public abstract class HistoryManager<T extends HistoryEntry> {
         }
         Collections.sort(packageHistory);
         int packageHistoryIndex = 0;
+        final int max = Math.max(0, getMaxLength());
         for (Iterator<T> it = packageHistory.iterator(); it.hasNext();) {
             final T next = it.next();
             if (next == null || StringUtils.isEmpty(next.getName()) || !isValid(next.getName())) {
@@ -47,8 +46,9 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                 it.remove();
             }
         }
-
     }
+
+    protected abstract int getMaxLength();
 
     public synchronized List<T> list() {
         return new ArrayList<T>(packageHistory);
@@ -103,9 +103,12 @@ public abstract class HistoryManager<T extends HistoryEntry> {
             } else {
                 Collections.sort(packageHistory);
             }
+            final int max = Math.max(0, getMaxLength());
+            while (packageHistory.size() > max) {
+                packageHistory.remove(packageHistory.size() - 1);
+            }
             final long saveRequest = this.saveRequest.incrementAndGet();
             TaskQueue.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     if (saveRequest == HistoryManager.this.saveRequest.get()) {
@@ -113,7 +116,6 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                     }
                     return null;
                 }
-
             });
         }
     }
@@ -121,5 +123,4 @@ public abstract class HistoryManager<T extends HistoryEntry> {
     abstract protected T createNew(String name);
 
     abstract protected void save(List<T> list);
-
 }

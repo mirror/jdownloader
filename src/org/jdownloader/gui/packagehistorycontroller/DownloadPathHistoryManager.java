@@ -32,15 +32,20 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
      * {@link #getInstance()}.
      */
     private DownloadPathHistoryManager() {
-        super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory(), CFG_GENERAL.CFG.getDownloadDestinationHistoryLength());
+        super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory());
         CFG_LINKGRABBER.DOWNLOAD_DESTINATION_HISTORY.getEventSender().addListener(this);
+    }
+
+    @Override
+    protected int getMaxLength() {
+        return CFG_GENERAL.CFG.getDownloadDestinationHistoryLength();
     }
 
     @Override
     public void add(String packageName) {
         if (isValid(packageName)) {
             CFG_LINKGRABBER.CFG.setLatestDownloadDestinationFolder(packageName);
-            super.add(packageName);
+            superadd(packageName);
         }
     }
 
