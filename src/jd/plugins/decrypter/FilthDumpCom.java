@@ -115,6 +115,16 @@ public class FilthDumpCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        tempID = br.getRegex("<iframe[^<>]*?(http[^<>\"]*?)\"").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink(tempID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("config=http://www.dump1.com|<div id=\"mask\"></div>\\s*<div id=\"extras\">")) { // Dump1.com is for sale
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if (br.containsHTML("\"http://(www\\.)?videos\\.cdn\\.filthmedia\\.net/hackedgfvideosf\\.php\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
