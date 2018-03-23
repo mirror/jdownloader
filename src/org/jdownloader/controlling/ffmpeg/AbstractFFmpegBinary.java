@@ -74,19 +74,20 @@ public class AbstractFFmpegBinary {
     public Set<FLAG> getSupportedFlags() {
         try {
             HashSet<FLAG> ret = null;
-            for (final FLAG flag : FLAG.values()) {
-                final Boolean isSupported = isSupported(flag);
-                if (isSupported != null) {
-                    if (isSupported.booleanValue()) {
-                        if (ret == null) {
-                            ret = new HashSet<AbstractFFmpegBinary.FLAG>();
-                        }
-                        ret.add(flag);
+            for (final FLAGTYPE flagType : FLAGTYPE.values()) {
+                final Set<FLAG> supported = getSupported(flagType);
+                if (supported != null) {
+                    if (ret == null) {
+                        ret = new HashSet<AbstractFFmpegBinary.FLAG>();
                     }
+                    ret.addAll(supported);
                 }
             }
             return ret;
         } catch (Throwable e) {
+            if (logger != null) {
+                logger.log(e);
+            }
         }
         return null;
     }
@@ -96,6 +97,42 @@ public class AbstractFFmpegBinary {
 
     public AbstractFFmpegBinary(Browser br) {
         this.sourceBrowser = br;
+    }
+
+    protected Set<FLAG> getSupported(FLAGTYPE flagType) throws InterruptedException, IOException {
+        final String fullPath = getFullPath();
+        if (fullPath != null) {
+            final int timeout = 10 * 1000;
+            final File root = Application.getApplicationRoot();
+            final String ret[];
+            switch (flagType) {
+            case CODEC:
+                ret = execute(timeout, null, root, fullPath, "-codecs");
+                break;
+            case FORMAT:
+                ret = execute(timeout, null, root, fullPath, "-formats");
+                break;
+            default:
+            case LIB:
+                ret = execute(timeout, null, root, fullPath);
+                break;
+            }
+            if (ret != null) {
+                final Set<FLAG> supported = new HashSet<FLAG>();
+                for (final FLAG flag : FLAG.values()) {
+                    if (flag.getType() == flagType) {
+                        for (final String output : ret) {
+                            if (flag.isSupported(output)) {
+                                supported.add(flag);
+                                break;
+                            }
+                        }
+                    }
+                }
+                return supported;
+            }
+        }
+        return null;
     }
 
     protected Boolean isSupported(FLAG flag) throws InterruptedException, IOException {
@@ -141,12 +178,13 @@ public class AbstractFFmpegBinary {
             pb.directory(runin);
         }
         final Process process = pb.start();
+        final AtomicBoolean processExitedFlag = new AtomicBoolean(false);
         final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();
         final AccessibleByteArrayOutputStream stderr = new AccessibleByteArrayOutputStream();
         final Thread stdoutThread = new Thread("ffmpegReader:stdout") {
             public void run() {
                 try {
-                    readInputStreamToString(stdout, process.getInputStream(), true);
+                    readInputStreamToString(stdout, processExitedFlag, process.getInputStream(), true);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -155,53 +193,57 @@ public class AbstractFFmpegBinary {
         final Thread stderrThread = new Thread("ffmpegReader:stderr") {
             public void run() {
                 try {
-                    readInputStreamToString(stderr, process.getErrorStream(), false);
+                    readInputStreamToString(stderr, processExitedFlag, process.getErrorStream(), false);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
             }
         };
-        stdoutThread.start();
-        stderrThread.start();
-        if (timeout > 0) {
-            final AtomicBoolean timeoutReached = new AtomicBoolean(false);
-            final AtomicBoolean processAlive = new AtomicBoolean(true);
-            final Thread timouter = new Thread("ffmpegReaderTimeout") {
-                public void run() {
-                    try {
-                        Thread.sleep(timeout);
-                    } catch (InterruptedException e) {
-                        return;
+        try {
+            stdoutThread.start();
+            stderrThread.start();
+            if (timeout > 0) {
+                final AtomicBoolean timeoutReached = new AtomicBoolean(false);
+                final AtomicBoolean processAlive = new AtomicBoolean(true);
+                final Thread timouter = new Thread("ffmpegReaderTimeout") {
+                    public void run() {
+                        try {
+                            Thread.sleep(timeout);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
+                        if (processAlive.compareAndSet(true, false)) {
+                            timeoutReached.set(true);
+                            process.destroy();
+                        }
                     }
-                    if (processAlive.compareAndSet(true, false)) {
-                        timeoutReached.set(true);
-                        process.destroy();
-                    }
+                };
+                timouter.start();
+                logger.info("ExitCode1: " + process.waitFor());
+                processAlive.set(false);
+                timouter.interrupt();
+                if (timeoutReached.get()) {
+                    throw new InterruptedException("Timeout!");
                 }
-            };
-            timouter.start();
-            logger.info("ExitCode1: " + process.waitFor());
-            processAlive.set(false);
-            timouter.interrupt();
-            if (timeoutReached.get()) {
-                throw new InterruptedException("Timeout!");
+                if (stdoutThread.isAlive()) {
+                    stdoutThread.join(100);
+                }
+                if (stderrThread.isAlive()) {
+                    stderrThread.join(100);
+                }
+                return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
+            } else {
+                logger.info("ExitCode2: " + process.waitFor());
+                if (stdoutThread.isAlive()) {
+                    stdoutThread.join(100);
+                }
+                if (stderrThread.isAlive()) {
+                    stderrThread.join(100);
+                }
+                return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
             }
-            if (stdoutThread.isAlive()) {
-                stdoutThread.join(100);
-            }
-            if (stderrThread.isAlive()) {
-                stderrThread.join(100);
-            }
-            return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
-        } else {
-            logger.info("ExitCode2: " + process.waitFor());
-            if (stdoutThread.isAlive()) {
-                stdoutThread.join(100);
-            }
-            if (stderrThread.isAlive()) {
-                stderrThread.join(100);
-            }
-            return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
+        } finally {
+            processExitedFlag.set(true);
         }
     }
 
@@ -219,19 +261,21 @@ public class AbstractFFmpegBinary {
         }
     }
 
-    private void readInputStreamToString(final AccessibleByteArrayOutputStream bos, final InputStream fis, final boolean isStdout) throws IOException {
+    private void readInputStreamToString(final AccessibleByteArrayOutputStream bos, final AtomicBoolean processExitedFlag, final InputStream fis, final boolean isStdout) throws IOException {
         long size = 0;
         try {
             final byte[] buf = new byte[8192];
             final boolean isInstantFlush = logger.isInstantFlush();
             int lastReadPosition = 0;
             int lastSize = 0;
+            boolean retryAvailable = true;
             while (true) {
                 if (fis.available() > 0) {
                     final int read = fis.read(buf);
                     if (read == -1) {
                         return;
                     } else if (read > 0) {
+                        retryAvailable = true;
                         size += read;
                         synchronized (bos) {
                             if (bos.size() < lastSize) {
@@ -257,9 +301,23 @@ public class AbstractFFmpegBinary {
                             }
                         }
                     } else {
+                        if (processExitedFlag.get()) {
+                            if (retryAvailable) {
+                                retryAvailable = false;
+                            } else {
+                                return;
+                            }
+                        }
                         Thread.sleep(100);
                     }
                 } else {
+                    if (processExitedFlag.get()) {
+                        if (retryAvailable) {
+                            retryAvailable = false;
+                        } else {
+                            return;
+                        }
+                    }
                     Thread.sleep(100);
                 }
             }
@@ -271,9 +329,9 @@ public class AbstractFFmpegBinary {
             throw new IOException(e);
         } finally {
             if (isStdout) {
-                logger.info("Read(Stdout):" + size);
+                logger.info("Read(Stdout):" + size + "|Exited:" + processExitedFlag.get());
             } else {
-                logger.info("Read(Stderr):" + size);
+                logger.info("Read(Stderr):" + size + "|Exited:" + processExitedFlag.get());
             }
         }
     }
@@ -714,11 +772,12 @@ public class AbstractFFmpegBinary {
         final Process process = pb.start();
         final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();
         final AccessibleByteArrayOutputStream stderr = new AccessibleByteArrayOutputStream();
+        final AtomicBoolean processExitedFlag = new AtomicBoolean(false);
         try {
             final Thread stdoutThread = new Thread("ffmpegReader:stdout") {
                 public void run() {
                     try {
-                        readInputStreamToString(stdout, process.getInputStream(), true);
+                        readInputStreamToString(stdout, processExitedFlag, process.getInputStream(), true);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
@@ -727,7 +786,7 @@ public class AbstractFFmpegBinary {
             final Thread stderrThread = new Thread("ffmpegReader:stderr") {
                 public void run() {
                     try {
-                        readInputStreamToString(stderr, process.getErrorStream(), false);
+                        readInputStreamToString(stderr, processExitedFlag, process.getErrorStream(), false);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
@@ -868,6 +927,7 @@ public class AbstractFFmpegBinary {
             logger.log(e);
             throw e;
         } finally {
+            processExitedFlag.set(true);
             if (process != null) {
                 process.destroy();
             }
