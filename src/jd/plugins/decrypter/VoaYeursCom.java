@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
@@ -46,7 +47,7 @@ public class VoaYeursCom extends PornEmbedParser {
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.isEmpty()) {
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         return decryptedLinks;
     }
