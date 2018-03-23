@@ -15,16 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.mozilla.javascript.ConsString;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,9 +37,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
-
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
     private String                         ddlink    = null;
@@ -145,12 +143,12 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
-        final String[] qual = { /* original */ "pic_o", "ori", /* big */ "pic_b", "bip" };
+        final String[] qual = { /* original */"pic_o", "ori", /* big */"pic_b", "bip" };
         boolean done = false;
         String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
         Object result = null;
         if (js != null) {
-            final String[] var = new Regex(js, "(var (\\w+)\\s*=\\s*document\\.getElementById\\('([\\w_]+)'\\).(\\w+),)").getRow(0);
+            final String[] var = new Regex(js, "((?:var\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('([\\w_]+)'\\).(\\w+),)").getRow(0);
             final String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
             final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
             js = js.replace(var[0], "");
