@@ -532,6 +532,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        externID = br.getRegex("<source src=\"[^\"]+extremetube.spankcdn.net/media/\\d+/\\d*/(\\d+)[^\"]+\"").getMatch(0);
+        if (externID != null) {
+            externID = "https://www.extremetube.com/video/-" + externID;
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         externID = br.getRegex("\"((?:https?:)?//embeds\\.ah-me\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
@@ -967,10 +975,13 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2018-01-07 Can't convert back - directHTTP
+        // 2018-01-07 Can't convert back (final link) - directHTTP
         externID = br.getRegex("(https://cdn[^/]+.xtube.com/[^\"]+)\"").getMatch(0);
         if (externID == null) {
             externID = br.getRegex("(https://cdn[^/]+.tnaflix.com/[^\"]+)\"").getMatch(0);
+        }
+        if (externID == null) { // <source src="https://smog-02.tnaflix.com/15/15845fb87f8c5eae3cbf/.+
+            externID = br.getRegex("<source src=\"([^\"]+(cdn|smog)[^\"]+)\"").getMatch(0);
         }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
