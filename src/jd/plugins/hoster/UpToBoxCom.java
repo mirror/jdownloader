@@ -72,10 +72,10 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXCHUNKS               = -1;
     private static final int     FREE_MAXDOWNLOADS            = 5;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 5;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
