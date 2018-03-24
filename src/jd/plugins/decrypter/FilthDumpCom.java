@@ -67,6 +67,9 @@ public class FilthDumpCom extends PluginForDecrypt {
             }
             String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
             if (finallink == null) {
+                finallink = br.getRegex("<frame[^<>]*?src=\"(http[^<>\"]*?)\"").getMatch(0);
+            }
+            if (finallink == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
@@ -121,7 +124,14 @@ public class FilthDumpCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("config=http://www.dump1.com|<div id=\"mask\"></div>\\s*<div id=\"extras\">")) { // Dump1.com is for sale
+        tempID = br.getRegex("<embed[^<>]*?src=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (tempID != null) {
+            logger.info("Creating download link: " + tempID);
+            final DownloadLink dl = createDownloadlink(tempID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("http://www.dump1.com|<div id=\"mask\"></div>\\s*<div id=\"extras\">")) { // Dump1.com is for sale
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
