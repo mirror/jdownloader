@@ -24,6 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,17 +54,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
     private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?)forced_referer=[A-Za-z0-9=]+)?";
     private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?)forced_referer=[A-Za-z0-9=]+";
+    /*
+     * 2018-03-26: Such URLs will later have an important parameter "s" inside player.vimeo.com URL. Without this String, we cannot
+     * watch/download them!!
+     */
+    public static final String  type_private_special_id             = ".+vimeo\\.com/\\d+/([a-f0-9]+)";
     public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+.+";
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
@@ -185,13 +190,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
             }
             final boolean new_way_allowed = true;
-            final String videoID = new Regex(parameter, "/(\\d+)").getMatch(0);
+            final String videoID = getVideoID(parameter);
+            String specialVideoID = null;
             String date = null;
             String channelName = null;
             String title = null;
             final String cleanVimeoURL;
-            if (videoID != null && !StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
-                cleanVimeoURL = "https://vimeo.com/" + videoID;
+            if (parameter.matches(type_private_special_id)) {
+                specialVideoID = new Regex(parameter, type_private_special_id).getMatch(0);
+                cleanVimeoURL = String.format("https://vimeo.com/%s/%s", videoID, specialVideoID);
+            } else if (videoID != null && !StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                cleanVimeoURL = String.format("https://vimeo.com/%s", videoID);
             } else {
                 cleanVimeoURL = parameter;
             }
@@ -256,8 +265,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             } else {
                 // maybe required
                 // br.setCookie(this.getHost(), "player", "");
-                parameter = cleanVimeoURL;
-                if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                if (StringUtils.containsIgnoreCase(cleanVimeoURL, "/ondemand/")) {
+                    logger.info("Account required to crawl this link");
                     final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
                     if (accs != null) {
                         // not optimized
@@ -277,25 +286,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     } else {
+                        logger.info("Cannot crawl this link without account");
                         return decryptedLinks;
                     }
                 }
                 try {
-                    br.getPage(parameter);
+                    br.getPage(cleanVimeoURL);
                 } catch (final BrowserException e) {
                     // HTTP/1.1 451 Unavailable For Legal Reasons
                     if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 451) {
-                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                        decryptedLinks.add(createOfflinelink(cleanVimeoURL, videoID, null));
                         return decryptedLinks;
                     }
                     throw e;
                 }
-                /* Workaround for User from Iran */
-                if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
-                    br.getPage("//player.vimeo.com/config/" + videoID);
-                }
+                iranWorkaround(this.br, videoID);
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
-                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                    decryptedLinks.add(createOfflinelink(cleanVimeoURL, videoID, null));
                     return decryptedLinks;
                 }
                 if (br.containsHTML(containsPass())) {
@@ -305,15 +312,15 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                          * After successful password input we'll get json but we want the "normal" html which suits the code below -->
                          * Access main video url again!
                          */
-                        br.getPage(parameter);
+                        br.getPage(cleanVimeoURL);
                     } catch (final DecrypterException edc) {
-                        logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
-                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                        logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + cleanVimeoURL);
+                        decryptedLinks.add(createOfflinelink(cleanVimeoURL, videoID, null));
                         return decryptedLinks;
                     }
                 }
                 if (br.containsHTML(">There was a problem loading this video")) {
-                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                    decryptedLinks.add(createOfflinelink(cleanVimeoURL, videoID, null));
                     return decryptedLinks;
                 }
                 // document.cookie = 'vuid=' + encodeURIComponent('35533916.335958829')
@@ -350,6 +357,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin://"));
                 link.setLinkID(linkdupeid);
                 link.setProperty("videoID", videoID);
+                if (specialVideoID != null) {
+                    link.setProperty("specialVideoID", specialVideoID);
+                }
                 // videoTitle is required!
                 link.setProperty("videoTitle", title);
                 link.setContentUrl(cleanVimeoURL);
@@ -424,6 +434,20 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    private String getVideoID(final String url) {
+        return new Regex(url, "https?://[^/]+/(?:video?/)(\\d+)").getMatch(0);
+    }
+
+    public static boolean iranWorkaround(final Browser br, final String videoID) throws IOException {
+        /* Workaround for User from Iran */
+        if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
+            br.getPage("//player.vimeo.com/config/" + videoID);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private DownloadLink determineBest(HashMap<String, DownloadLink> bestMap) throws Exception {
