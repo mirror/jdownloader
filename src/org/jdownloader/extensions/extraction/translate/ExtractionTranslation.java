@@ -72,6 +72,9 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Queued for extracting" })
     String plugins_optional_extraction_status_queued();
 
+    @Default(lngs = { "en" }, values = { "Paused - waiting for other crc check to finish" })
+    String plugins_optional_extraction_status_pausedForOtherCrc();
+
     @Default(lngs = { "en" }, values = { "Delete Archive Files after suc. extraction?" })
     String settings_remove_after_extract();
 
