@@ -525,7 +525,7 @@ public class Multi extends IExtraction {
                     final File extractTo = getExtractFilePath(item, ctrl, skippedFlag);
                     if (skippedFlag.get()) {
                         if (size != null && size >= 0) {
-                            ctrl.addAndGetProcessedBytes(size);
+                            ctrl.addProcessedBytesAndPauseIfNeeded(size);
                         }
                         continue;
                     } else if (extractTo == null) {
@@ -541,7 +541,7 @@ public class Multi extends IExtraction {
                                     throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                                 }
                                 final int ret = super.write(data);
-                                ctrl.addAndGetProcessedBytes(ret);
+                                ctrl.addProcessedBytesAndPauseIfNeeded(ret);
                                 return ret;
                             }
                         };

@@ -267,7 +267,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                                     throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                                 }
                                 final int ret = super.write(data);
-                                ctrl.addAndGetProcessedBytes(ret);
+                                ctrl.addProcessedBytesAndPauseIfNeeded(ret);
                                 return ret;
                             }
 
@@ -303,7 +303,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                         throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                     }
                     if (countBytesAsProcessed) {
-                        ctrl.addAndGetProcessedBytes(data.length);
+                        ctrl.addProcessedBytesAndPauseIfNeeded(data.length);
                     }
                     return data.length;
                 }
@@ -316,7 +316,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                         throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                     }
                     if (countBytesAsProcessed) {
-                        ctrl.addAndGetProcessedBytes(data.length);
+                        ctrl.addProcessedBytesAndPauseIfNeeded(data.length);
                     }
                     return data.length;
                 }

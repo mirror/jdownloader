@@ -82,7 +82,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         this.processedBytes.set(Math.max(0, processedBytes));
     }
 
-    public long addAndGetProcessedBytes(long processedBytes) {
+    public void addProcessedBytesAndPauseIfNeeded(long processedBytes) {
         try {
             while (ExtractionExtension.getInstance().isPauseExtractionForCrcHashing()) {
                 Thread.sleep(1000);
@@ -90,7 +90,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return this.processedBytes.addAndGet(Math.max(0, processedBytes));
+        this.processedBytes.addAndGet(Math.max(0, processedBytes));
     }
 
     private final ExtractionExtension extension;
