@@ -325,7 +325,7 @@ public class Tube8Com extends PluginForHost {
             postRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postRequest.addVariable("rememberme", "NO");
             br.getPage(postRequest);
-            if (br.containsHTML("invalid") || br.containsHTML("0\\|") || br.getCookie(getHost(), "ubl") == null) {
+            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) { // || br.getCookie(getHost(), "ubl") == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } finally {
