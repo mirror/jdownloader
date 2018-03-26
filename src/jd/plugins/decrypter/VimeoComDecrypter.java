@@ -189,8 +189,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            final boolean new_way_allowed = true;
             final String videoID = getVideoID(parameter);
+            if (videoID == null) {
+                /* This should never happen but can happen when adding support for new linktypes. */
+                return null;
+            }
+            final boolean new_way_allowed = true;
             String specialVideoID = null;
             String date = null;
             String channelName = null;
