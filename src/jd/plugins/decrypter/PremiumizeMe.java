@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -20,11 +24,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files(?:\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?|\\?file_id=[a-zA-Z0-9\\-_]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files(?:\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?|\\?file_id=[a-zA-Z0-9\\-_]+(?:\\&folder_id=[a-zA-Z0-9\\-_]+)?)" })
 public class PremiumizeMe extends PluginForDecrypt {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -160,6 +160,7 @@ public class PremiumizeMe extends PluginForDecrypt {
             }
             return browseNodes;
         }
+        /* E.g. {"status":"error","message":"Nicht dein Ordner"} */
         return null;
     }
 

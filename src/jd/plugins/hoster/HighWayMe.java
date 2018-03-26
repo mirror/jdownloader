@@ -104,7 +104,6 @@ public class HighWayMe extends UseNet {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
-        // br.setAllowedResponseCodes(new int[] { 503 });
         return br;
     }
 
@@ -268,11 +267,21 @@ public class HighWayMe extends UseNet {
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-        if (dl.getConnection().getResponseCode() == 416) {
+        final long responsecode = dl.getConnection().getResponseCode();
+        if (responsecode == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
             link.setProperty(HighWayMe.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (responsecode == 503) {
+            final String waitHeader = br.getRequest().getResponseHeader("Retry-After");
+            if (waitHeader != null && waitHeader.matches("\\d+")) {
+                logger.info("Waiting serverside 503 waittime: " + waitHeader);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503: 'Please retry'", Long.parseLong(waitHeader) * 1000l);
+            } else {
+                logger.info("Waiting default 503 waittime: 60");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 60 * 1000l);
+            }
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -737,11 +746,6 @@ public class HighWayMe extends UseNet {
             case 8:
                 /* Temp error, try again in some minutes */
                 statusMessage = "Temporary error";
-                /** 2018-03-09: TODO but not yet clear at which situation this header will be present. */
-                // final String waitHeader = br.getRequest().getResponseHeader("Please Retry");
-                // if (waitHeader != null && waitHeader.matches("\\d+")) {
-                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Long.parseLong(waitHeader) * 1000l);
-                // }
                 tempUnavailableHoster(1 * 60 * 1000l);
             case 9:
                 /* No account found -> Disable link for 10 minutes */
