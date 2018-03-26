@@ -31,6 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -38,10 +39,12 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkDownloadable implements Downloadable {
     /**
@@ -246,6 +249,8 @@ public class DownloadLinkDownloadable implements Downloadable {
             case SHA512:
                 DigestInputStream is = null;
                 try {
+                    if(JsonConfig.create(GeneralSettings.class).isPauseExctractingForCrcHashing())
+                        ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(true);
                     is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.getDigest()));
                     while ((n = is.read(b)) >= 0) {
                         cur += n;
@@ -255,6 +260,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 } catch (final Throwable e) {
                     LogSource.exception(getLogger(), e);
                 } finally {
+                    ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(false);
                     try {
                         is.close();
                     } catch (final Throwable e) {
@@ -268,6 +274,8 @@ public class DownloadLinkDownloadable implements Downloadable {
             case CRC32:
                 CheckedInputStream cis = null;
                 try {
+                    if(JsonConfig.create(GeneralSettings.class).isPauseExctractingForCrcHashing())                    
+                        ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(true);
                     fis = new FileInputStream(outputPartFile);
                     cis = new CheckedInputStream(fis, new CRC32());
                     while ((n = cis.read(b)) >= 0) {
@@ -280,6 +288,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 } catch (final Throwable e) {
                     LogSource.exception(getLogger(), e);
                 } finally {
+                    ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(false);
                     try {
                         cis.close();
                     } catch (final Throwable e) {

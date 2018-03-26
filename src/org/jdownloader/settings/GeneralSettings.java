@@ -657,4 +657,11 @@ public interface GeneralSettings extends ConfigInterface {
     // boolean isJxBrowserEnabled();
     //
     // void setJxBrowserEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If Enabled, JDownloader will pause extracting while crc hashing for downloads is done")
+    boolean isPauseExctractingForCrcHashing();
+
+    void setPauseExctractingForCrcHashing(boolean b);
 }
