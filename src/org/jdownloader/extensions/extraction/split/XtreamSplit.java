@@ -219,7 +219,7 @@ public class XtreamSplit extends IExtraction {
                                 throw ioException.get();
                             }
                             // Sum up bytes for control
-                            getExtractionController().addAndGetProcessedBytes(dataRead);
+                            getExtractionController().addProcessedBytesAndPauseIfNeeded(dataRead);
                             partRead += dataRead;
                             if (md5) {
                                 // Update MD5

@@ -179,7 +179,7 @@ class SplitUtil {
                         }
                         cache.write(flusher, fileWritePosition, buffer, read);
                         fileWritePosition += read;
-                        controller.addAndGetProcessedBytes(read);
+                        controller.addProcessedBytesAndPauseIfNeeded(read);
                         if (controller.gotKilled()) {
                             throw new IOException("Extraction has been aborted!");
                         }
