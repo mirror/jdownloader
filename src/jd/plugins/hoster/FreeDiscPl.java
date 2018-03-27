@@ -136,7 +136,7 @@ public class FreeDiscPl extends PluginForHost {
         if (storedfileName != null) {
             storedExt = storedfileName.substring(storedfileName.lastIndexOf(".") + 1);
         }
-        if (link.getName() == null || true || (storedExt != null && !("." + storedExt).matches(DirectHTTP.ENDINGS))) {
+        if (link.getName() == null || (storedExt != null && !("." + storedExt).matches(DirectHTTP.ENDINGS))) {
             final String fileNameExt = fileName.substring(fileName.lastIndexOf(".") + 1);
             if (storedExt != null && (fileNameExt == null || !("." + fileNameExt).matches(DirectHTTP.ENDINGS))) {
                 fileName = fileName + "." + storedExt;
