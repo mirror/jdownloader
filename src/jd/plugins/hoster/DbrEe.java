@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -25,11 +25,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbr.ee" }, urls = { "https?://(www\\.)?dbr\\.ee/[A-Za-z0-9]+" })
 public class DbrEe extends antiDDoSForHost {
-
     public DbrEe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -72,12 +72,21 @@ public class DbrEe extends antiDDoSForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL() + "/d", resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        final Form form = br.getFormbyActionRegex(".*/d$");
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+        final String recaptchaV2Response = rc2.getToken();
+        if (recaptchaV2Response == null) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resumable, maxchunks);
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -93,5 +102,4 @@ public class DbrEe extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
