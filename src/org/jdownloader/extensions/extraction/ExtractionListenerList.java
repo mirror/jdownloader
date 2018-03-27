@@ -318,7 +318,7 @@ public class ExtractionListenerList implements ExtractionListener {
             setProgress(controller, rootArchive, x, y, yellow);
             break;
         case EXTRACTING:
-            if (ExtractionExtension.getInstance().isPauseExtractionForCrcHashing()) {
+            if (ExtractionController.pauseExtractionForCrcHashing()) {
                 setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_pausedForOtherCrc());
             } else {
                 setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_extracting2());

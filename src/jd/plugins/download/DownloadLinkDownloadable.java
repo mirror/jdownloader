@@ -47,6 +47,7 @@ import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkDownloadable implements Downloadable {
+    private static volatile boolean crcHashingInProgress = false;    
     /**
      *
      */
@@ -249,8 +250,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             case SHA512:
                 DigestInputStream is = null;
                 try {
-                    if(JsonConfig.create(GeneralSettings.class).isPauseExctractingForCrcHashing())
-                        ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(true);
+                    crcHashingInProgress = true;
                     is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.getDigest()));
                     while ((n = is.read(b)) >= 0) {
                         cur += n;
@@ -260,7 +260,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 } catch (final Throwable e) {
                     LogSource.exception(getLogger(), e);
                 } finally {
-                    ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(false);
+                    crcHashingInProgress = false;
                     try {
                         is.close();
                     } catch (final Throwable e) {
@@ -274,8 +274,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             case CRC32:
                 CheckedInputStream cis = null;
                 try {
-                    if(JsonConfig.create(GeneralSettings.class).isPauseExctractingForCrcHashing())                    
-                        ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(true);
+                    crcHashingInProgress = true;
                     fis = new FileInputStream(outputPartFile);
                     cis = new CheckedInputStream(fis, new CRC32());
                     while ((n = cis.read(b)) >= 0) {
@@ -288,7 +287,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 } catch (final Throwable e) {
                     LogSource.exception(getLogger(), e);
                 } finally {
-                    ExtractionExtension.getInstance().setPauseExtractionForCrcHashing(false);
+                    crcHashingInProgress = false;
                     try {
                         cis.close();
                     } catch (final Throwable e) {
@@ -625,4 +624,8 @@ public class DownloadLinkDownloadable implements Downloadable {
     public int getChunks() {
         return downloadLink.getChunks();
     }
+    
+    public static boolean isCrcHashingInProgress() {
+        return crcHashingInProgress;
+    }    
 }

@@ -31,6 +31,7 @@ import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRE
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.raf.FileBytesCache;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -84,13 +85,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     public void addProcessedBytesAndPauseIfNeeded(long processedBytes) {
         try {
-            while (ExtractionExtension.getInstance().isPauseExtractionForCrcHashing()) {
+            while (pauseExtractionForCrcHashing()) {
                 Thread.sleep(1000);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         this.processedBytes.addAndGet(Math.max(0, processedBytes));
+    }
+
+    public static boolean pauseExtractionForCrcHashing() {
+        return DownloadLinkDownloadable.isCrcHashingInProgress() && CFG_EXTRACTION.CFG.isPauseExctractingForCrcHashing();
     }
 
     private final ExtractionExtension extension;

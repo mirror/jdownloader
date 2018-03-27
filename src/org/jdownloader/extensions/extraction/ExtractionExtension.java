@@ -127,7 +127,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     private ShutdownVetoListener       listener          = null;
     private boolean                    lazyInitOnStart   = false;
     private final Object               PWLOCK            = new Object();
-    private volatile boolean           pauseExtractionForCrcHashing = false;    
 
     public ExtractionExtension() throws StartException {
         super();
@@ -138,14 +137,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     public boolean isDefaultEnabled() {
         return true;
-    }
-
-    public boolean isPauseExtractionForCrcHashing() {
-        return pauseExtractionForCrcHashing;
-    }
-
-    public void setPauseExtractionForCrcHashing(boolean stopExtractionForCrcHashing) {
-        this.pauseExtractionForCrcHashing = stopExtractionForCrcHashing;
     }
 
     public static ExtractionExtension getInstance() {
