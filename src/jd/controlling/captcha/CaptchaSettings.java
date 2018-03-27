@@ -88,7 +88,7 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaMode(MODE mode);
 
     @AboutConfig
-    @DefaultIntValue(10 * 60 * 1000)
+    @DefaultIntValue(10 * 180 * 1000)
     @DescriptionForConfigEntry("Timeout after which a challenge (captcha) invalidates (e.g sessions run out...) this timeout should be set by the plugins")
     int getDefaultChallengeTimeout();
 
