@@ -326,7 +326,7 @@ public class XHamsterCom extends PluginForHost {
             qualities.add("240p");
             break;
         }
-        final String newPlayer = br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0);
+        final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
         if (newPlayer != null) {
             // new player
             final Map<String, Object> map = JSonStorage.restoreFromString(JSonStorage.restoreFromString("\"" + newPlayer + "\"", TypeRef.STRING), TypeRef.HASHMAP);
