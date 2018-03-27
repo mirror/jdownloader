@@ -13,12 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import java.util.ArrayList;
 
@@ -38,9 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "https?://(www\\.)?freedisc\\.pl/[A-Za-z0-9_\\-]+,d-\\d+([A-Za-z0-9_,\\-]+)?" })
 public class FreeDiscPlFolder extends PluginForDecrypt {
-
     public FreeDiscPlFolder(PluginWrapper wrapper) {
         super(wrapper);
         try {
@@ -50,18 +47,15 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     }
 
     private static final String TYPE_FOLDER    = "https?://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d-\\d+";
-
     protected static Cookies    botSafeCookies = new Cookies();
 
     private Browser prepBR(final Browser br) {
         jd.plugins.hoster.FreeDiscPl.prepBRStatic(br);
-
         synchronized (botSafeCookies) {
             if (!botSafeCookies.isEmpty()) {
                 br.setCookies(this.getHost(), botSafeCookies);
             }
         }
-
         return br;
     }
 
@@ -98,6 +92,9 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                 final String filename = new Regex(e, fileEntry).getMatch(2);
                 final String filesize = new Regex(e, "info\">Rozmiar :(.*?)<").getMatch(0);
                 final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
+                if (filesize == null && e.contains("Katalogów")) { // Folder, unmatched filter above
+                    continue;
+                }
                 dl.setName(filename);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize.replace("Bajty", "Bytes")));
                 dl.setAvailableStatus(AvailableStatus.TRUE);
@@ -123,7 +120,6 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                 }
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -146,7 +142,6 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             if (isBotBlocked()) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
             }
-
             // save the session!
             synchronized (botSafeCookies) {
                 botSafeCookies = br.getCookies(this.getHost());
@@ -162,5 +157,4 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
