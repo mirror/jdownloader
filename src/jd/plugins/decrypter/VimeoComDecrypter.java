@@ -441,7 +441,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     private String getVideoID(final String url) {
-        return new Regex(url, "https?://[^/]+/(?:video/)?(\\d+)").getMatch(0);
+        String ret = new Regex(url, "https?://[^/]+/(?:video/)?(\\d+)").getMatch(0);
+        if (ret == null) {
+            ret = new Regex(url, "/(\\d+)").getMatch(0);
+        }
+        return ret;
     }
 
     public static boolean iranWorkaround(final Browser br, final String videoID) throws IOException {
