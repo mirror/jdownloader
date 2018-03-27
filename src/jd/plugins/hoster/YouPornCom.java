@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -31,6 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -135,23 +139,44 @@ public class YouPornCom extends PluginForHost {
         }
         /* Find highest quality */
         int qualityMax = 0;
-        int qualityTemp = 0;
-        String qualityTempStr;
         /* Must not be present */
         String filesize = null;
         final String[] htmls = br.getRegex("class='callBox downloadOption[^~]*?downloadVideoLink clearfix'([^~]*?)</span>").getColumn(0);
         for (final String html : htmls) {
-            qualityTempStr = new Regex(html, "(\\d+)p_\\d+k").getMatch(0);
-            if (qualityTempStr == null) {
+            final String quality = new Regex(html, "(\\d+)p_\\d+k").getMatch(0);
+            if (quality == null) {
                 continue;
             }
-            qualityTemp = Integer.parseInt(qualityTempStr);
+            final int qualityTemp = Integer.parseInt(quality);
             if (qualityTemp > qualityMax) {
                 qualityMax = qualityTemp;
                 dllink = new Regex(html, "(https?://[^'\"]+\\d+p[^'\"]+\\.mp4[^\\'\"\\|]+)").getMatch(0);
                 if (dllink != null) {
                     /* Only attempt to grab filesize if it corresponds to the current videoquality! */
                     filesize = new Regex(html, "class=\\'downloadsize\\'>\\((\\d+[^<>\"]+)\\)").getMatch(0);
+                }
+            }
+        }
+        final String mediaDefinition = br.getRegex("video\\.mediaDefinition\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+        if (mediaDefinition != null) {
+            qualityMax = 0;
+            final List<Object> list = JSonStorage.restoreFromString(mediaDefinition, TypeRef.LIST);
+            if (list != null) {
+                for (Object entry : list) {
+                    final Map<String, Object> video = (Map<String, Object>) entry;
+                    final Object quality = video.get("quality");
+                    if (quality == null) {
+                        continue;
+                    }
+                    final String videoUrl = (String) video.get("videoUrl");
+                    if (videoUrl == null) {
+                        continue;
+                    }
+                    final int qualityTemp = Integer.parseInt(quality.toString());
+                    if (qualityTemp > qualityMax) {
+                        qualityMax = qualityTemp;
+                        dllink = videoUrl;
+                    }
                 }
             }
         }
