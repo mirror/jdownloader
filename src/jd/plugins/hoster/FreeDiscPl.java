@@ -108,14 +108,15 @@ public class FreeDiscPl extends PluginForHost {
         if (br.containsHTML("Ten plik nie jest publicznie dostępny")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+        String fileName = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
         // itemprop="name" style=" font-size: 17px; margin-top: 6px;">Alternatywne Metody Analizy technicznej .pdf</h1>
-        if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
-            if (filename == null) {
+        if (fileName == null) {
+            fileName = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
+            if (fileName == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        fileName = fileName.trim();
         final String fpat = "\\s*([0-9]+(?:[\\.,][0-9]+)?\\s*[A-Z]{1,2})";
         String filesize = br.getRegex("class='frameFilesSize'>Rozmiar pliku</div>[\t\n\r ]+<div class='frameFilesCountNumber'>" + fpat).getMatch(0);
         if (filesize == null) {
@@ -135,8 +136,12 @@ public class FreeDiscPl extends PluginForHost {
         if (storedfileName != null) {
             storedExt = storedfileName.substring(storedfileName.lastIndexOf(".") + 1);
         }
-        if (link.getName() == null || (storedExt != null && !storedExt.matches(KNOWN_EXTENSIONS))) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+        if (link.getName() == null || true || (storedExt != null && !("." + storedExt).matches(DirectHTTP.ENDINGS))) {
+            final String fileNameExt = fileName.substring(fileName.lastIndexOf(".") + 1);
+            if (storedExt != null && (fileNameExt == null || !("." + fileNameExt).matches(DirectHTTP.ENDINGS))) {
+                fileName = fileName + "." + storedExt;
+            }
+            link.setName(Encoding.htmlDecode(fileName.trim()));
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
