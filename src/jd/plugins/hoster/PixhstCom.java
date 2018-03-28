@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "https?://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" })
 public class PixhstCom extends antiDDoSForHost {
     public PixhstCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,7 @@ public class PixhstCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://pixhst.com/dmca.html";
+        return "https://pixhst.com/dmca.html";
     }
 
     @SuppressWarnings("deprecation")

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xfull.net" }, urls = { "http://(?:www\\.)?(?:xfull\\.net|xxxfile\\.to|x3\\.to)/download/clips(?:_[sh]d)?/[a-z0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xfull.net" }, urls = { "http://(?:www\\.)?(?:xfull\\.net|xxxfile\\.to|x3\\.to)/download/clips(?:_[sh]d)?/[a-z0-9\\-]+\\.html" })
 public class XxxFileTo extends PluginForDecrypt {
-
     /**
      * @author ohgod
      * @author raztoki
@@ -47,29 +45,22 @@ public class XxxFileTo extends PluginForDecrypt {
         br.getPage(parameter);
         correctBR();
         final String content = new Regex(correctedBR, "<div class=\"news-text clearfix\">(.*?)<div align=\"center\">").getMatch(0);
-
         if (content == null) {
             return null;
         }
-
         // test zum extracten des releasenames
-
         final String packageName = new Regex(content, "alt=\"(.*?)\"").getMatch(0);
-
         final String[] links = new Regex(content, "<a href=\"(https?://.*?)\"").getColumn(0);
-
         if (links == null || links.length == 0) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-
         for (final String link : links) {
             if (!link.matches("https?://(?:www\\.)?(?:xxxfile\\.to|x3\\.to|xfull\\.net)/.+")) {
                 decryptedLinks.add(createDownloadlink(link));
             }
         }
-
-        final String[] imgs = new Regex(content, "https?://([\\w\\.]+)?(?:pixhost\\.org/show/|picsee\\.net/)[^\"]+").getColumn(-1);
+        final String[] imgs = new Regex(content, "https?://([\\w\\.]+)?(?:pixhost\\.(?:org|to)/show/|picsee\\.net/)[^\"]+").getColumn(-1);
         if (links != null && links.length != 0) {
             for (final String img : imgs) {
                 if (!img.matches("(?i-).+thumbnails?.+")) {
@@ -77,7 +68,6 @@ public class XxxFileTo extends PluginForDecrypt {
                 }
             }
         }
-
         if (packageName != null) {
             FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(packageName);
@@ -92,9 +82,7 @@ public class XxxFileTo extends PluginForDecrypt {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
@@ -112,5 +100,4 @@ public class XxxFileTo extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

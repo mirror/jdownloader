@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import jd.plugins.components.UserAgents.BrowserName;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+/?" })
 public class NaughtyBlgOrg extends PluginForDecrypt {
-
     private enum Category {
         UNDEF,
         SITERIP,
@@ -68,11 +66,9 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         // replace en-dash with a real dash
         contentReleaseName = contentReleaseName.replace("&#8211;", "-");
         contentReleaseName = Encoding.htmlDecode(contentReleaseName).trim();
-
         String contentReleaseNamePrecise = br.getRegex("<p>\\s*<strong>(.*?)</strong>\\s*<br[/\\s]+>\\s*<em>Released:").getMatch(0);
         if (contentReleaseNamePrecise != null) {
             // remove possible link to tag-cloud
@@ -80,7 +76,6 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             // replace en-dash with a real dash
             contentReleaseNamePrecise = contentReleaseNamePrecise.replace("&#8211;", "-");
             contentReleaseNamePrecise = Encoding.htmlDecode(contentReleaseNamePrecise).trim();
-
             int pos = contentReleaseName.lastIndexOf("-");
             if (pos != -1) {
                 contentReleaseName = contentReleaseName.substring(0, pos).trim();
@@ -123,26 +118,22 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-
         for (final String link : links) {
             if (!link.matches("https?://(www\\.)?naughtyblog\\.org/.+")) {
                 final DownloadLink dl = createDownloadlink(link);
                 decryptedLinks.add(dl);
             }
         }
-
-        final String[] imgs = br.getRegex("(https?://([\\w\\.]+)?pixhost\\.org/show/[^\"]+)").getColumn(0);
+        final String[] imgs = br.getRegex("(https?://([\\w\\.]+)?pixhost\\.(?:org|to)/show/[^\"]+)").getColumn(0);
         if (links != null && links.length != 0) {
             for (final String img : imgs) {
                 final DownloadLink dl = createDownloadlink(img);
                 decryptedLinks.add(dl);
             }
         }
-
         final FilePackage linksFP = FilePackage.getInstance();
         linksFP.setName(getFpName(contentReleaseName));
         linksFP.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -174,5 +165,4 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
