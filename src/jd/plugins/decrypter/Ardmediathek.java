@@ -28,6 +28,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -54,19 +67,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
         "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -90,12 +90,12 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("576", 1728000l);
         heigth_to_bitrate.put("720", 3773000l);
     }
-    private String  subtitleLink   = null;
-    private String  parameter      = null;
-    private String  title          = null;
-    private String  date_formatted = null;
-    private boolean grabHLS        = false;
-    private String  contentID      = null;
+    private String                              subtitleLink          = null;
+    private String                              parameter             = null;
+    private String                              title                 = null;
+    private String                              date_formatted        = null;
+    private boolean                             grabHLS               = false;
+    private String                              contentID             = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -580,14 +580,6 @@ public class Ardmediathek extends PluginForDecrypt {
          * http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4
          */
         // //wdradaptiv-vh.akamaihd.net/i/medp/ondemand/weltweit/fsk0/139/1394333/,1394333_16295554,1394333_16295556,1394333_16295555,1394333_16295557,1394333_16295553,1394333_16295558,.mp4.csmil/master.m3u8
-        final String http_url_audio = brJSON.getRegex("(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
-        final String hls_master = brJSON.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
-        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
-        final String quality_string = regex_hls.getMatch(1);
-        if (StringUtils.isEmpty(hls_master) && http_url_audio == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            throw new DecrypterException("Plugin broken");
-        }
         /*
          * Grab all http qualities inside json
          */
@@ -755,8 +747,16 @@ public class Ardmediathek extends PluginForDecrypt {
          * TODO: It might only make sense to attempt this if we found more than 3 http qualities previously because usually 3 means we will
          * also only have 3 hls qualities --> There are no additional http qualities!
          */
+        final String http_url_audio = brJSON.getRegex("(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
+        final String hls_master = brJSON.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
+        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
+        final String quality_string = regex_hls.getMatch(1);
+        if (StringUtils.isEmpty(hls_master) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            throw new DecrypterException("Plugin broken");
+        }
         final boolean tryToFindAdditionalHTTPURLs = true;
-        if (tryToFindAdditionalHTTPURLs) {
+        if (tryToFindAdditionalHTTPURLs && hls_master != null) {
             final String http_url_format = getHlsToHttpURLFormat(hls_master);
             final String[] qualities_hls = quality_string != null ? quality_string.split(",") : null;
             if (http_url_format != null && qualities_hls != null && qualities_hls.length > 0) {
@@ -787,7 +787,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        addHLS(brJSON, hls_master);
+        if (hls_master != null) {
+            addHLS(brJSON, hls_master);
+        }
         if (http_url_audio != null) {
             addQuality(http_url_audio, null, 0, 0, 0);
         }
