@@ -139,7 +139,10 @@ public class GenericM3u8 extends PluginForHost {
             }
         }
         if (downloadLink.getFinalFileName() == null) {
-            String name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
+            String name = downloadLink.getStringProperty("preSetName", null);
+            if (name == null) {
+                name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
+            }
             if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
                 name = name.substring(0, name.length() - 5);
             }

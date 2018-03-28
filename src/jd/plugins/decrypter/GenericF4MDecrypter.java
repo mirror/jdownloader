@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
-
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
@@ -78,15 +76,26 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 source = source.getSourceLink();
             }
         }
+        final String urlName = getFileNameFromURL(br._getURL());
+        final ArrayList<DownloadLink> ret = parse(this, br, param.getCryptedUrl(), null, referer, cookiesString);
+        if (ret.size() > 1 && isValidURLName(urlName)) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(urlName);
+            fp.addLinks(ret);
+        }
+        return ret;
+    }
+
+    public static ArrayList<DownloadLink> parse(final PluginForDecrypt plugin, final Browser br, final String url, final String name, final String referer, final String cookiesString) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage(param.getCryptedUrl());
+        br.getPage(url);
         br.followRedirect();
         final List<HDSContainer> containers = HDSContainer.getHDSQualities(br);
         if (containers != null) {
             final String urlName = getFileNameFromURL(br._getURL());
-            final String linkURL = "f4m" + param.getCryptedUrl().substring(4);
+            final String linkURL = "f4m" + url.substring(4);
             for (final HDSContainer container : containers) {
-                final DownloadLink link = createDownloadlink(linkURL);
+                final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), linkURL, true);
                 link.setProperty("Referer", referer);
                 link.setProperty("cookies", cookiesString);
                 String fileName = null;
@@ -96,7 +105,9 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 } else {
                     fileType = null;
                 }
-                if (fileType != null) {
+                if (name != null) {
+                    fileName = name;
+                } else if (fileType != null) {
                     fileName = container.getId();
                 } else {
                     if (!isValidURLName(urlName)) {
@@ -124,16 +135,11 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 container.write(link, null);
                 ret.add(link);
             }
-            if (ret.size() > 1 && isValidURLName(urlName)) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(urlName);
-                fp.addLinks(ret);
-            }
         }
         return ret;
     }
 
-    private final boolean isValidURLName(final String urlName) {
+    private static final boolean isValidURLName(final String urlName) {
         return urlName != null && !"manifest.f4m".equalsIgnoreCase(urlName);
     }
 }
