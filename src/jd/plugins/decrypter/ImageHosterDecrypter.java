@@ -13,13 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,15 +30,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-        names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com" },
-
-        urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+" }
-
-)
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})",
+        "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www\\.)?pixhost\\.(?:org|to)/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
-
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -128,7 +121,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             finallink = parameter.replace("image.php?", "uploads/");
-        } else if (parameter.contains("pixhost.org")) {
+        } else if (parameter.contains("pixhost.org") || parameter.contains("pixhost.to")) {
             br.getPage(parameter);
             br.followRedirect();
             /* Error handling */
@@ -137,7 +130,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             }
             finallink = br.getRegex("show_image\" src=\"(https?.*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("\"(https?://img[0-9]+\\.pixhost\\.org/images/[0-9]+/.*?)\"").getMatch(0);
+                finallink = br.getRegex("\"(https?://img[0-9]+\\.pixhost\\.(?:org|to)/images/[0-9]+/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("sharenxs.com/")) {
             br.getPage(parameter + "&offset=original");
@@ -266,10 +259,8 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             return null;
         }
         finallink = Encoding.htmlDecode("directhttp://" + finallink);
-
         final DownloadLink dl = createDownloadlink(finallink);
         dl.setUrlDownload(finallink);
-
         if (finalfilename != null) {
             dl.setFinalFileName(Encoding.htmlDecode(finalfilename));
         }
@@ -309,5 +300,4 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
