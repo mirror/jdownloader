@@ -21,26 +21,21 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -275,20 +270,12 @@ public class FlickrCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, false, new Browser());
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, false, br);
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) User");
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         return ai;
     }
 
@@ -308,174 +295,59 @@ public class FlickrCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, final Browser br) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                prepBr(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (cookies.containsKey("cookie_epass") && cookies.containsKey("cookie_accid") && account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        final Browser brc = br.cloneBrowser();
-                        if (isValid(brc)) {
-                            return;
-                        }
-                        /* Clear existing cookies - get ready to do a full login */
-                        br.clearCookies(MAINPAGE);
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(getHost(), cookies);
+                    if (isValid(br)) {
+                        account.saveCookies(br.getCookies(getHost()), "");
+                        return;
+                    } else {
+                        br.clearCookies(null);
                     }
                 }
-                if (true) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account support doesn't work at this time.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                final String lang = System.getProperty("user.language");
-                br.setFollowRedirects(true);
                 br.getPage("https://www.flickr.com/signin/");
-                // they tell you country code...
-                final String countryCode = br.getRegex("<span id=\"login-country-name\" class=\"mbr-hide\">\\S+ \\(\\+(\\d+)\\)</span>").getMatch(0);
-                // DONT FIGHT FORMS! MANUAL LOGIN IS RECIPE FOR FAILURE
-                // only one form
-                Form login = br.getForm(0);
-                login.put("countrycode", countryCode != null ? countryCode : "");
-                login.put("_format", "json");
-                login.put("_loadtpl", "1");
-                login.put("signin", "authtype");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Accept", "*/*");
-                login.put("username", Encoding.urlEncode(account.getUser()));
-                login.put("passwd", "");
-                // post page
-                br.submitForm(login);
-                // should get json back! and {"status":"error","code":"7200",
-                HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                if ("error".equals(entries.get("status")) && !"7200".equals(entries.get("code"))) {
-                    // huston we have a problem!
+                Form login = br.getFormByRegex("login-username-form");
+                if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String output = (String) entries.get("tpl");
-                // action is the same, but inputfield values are not. crumb/ts/seqid values change, signin goes empty
-                login = Form.getForms(output)[0];
-                login.put("countrycode", countryCode != null ? countryCode : "");
-                login.put("_loadtpl", "1");
-                login.put("signin", "");
                 login.put("username", Encoding.urlEncode(account.getUser()));
-                login.put("passwd", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                // should work OR can result in error if 2factor kicks in {"status":"error","code":"1240","
-                entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                output = (String) entries.get("tpl");
-                if ("error".equals(entries.get("status")) && "1240".equals(entries.get("code"))) {
-                    // 2factor
-                    process2Factor(br, entries);
+                if (br.containsHTML("messages\\.ERROR_INVALID_USERNAME")) {
+                    final String message = br.getRegex("messages\\.ERROR_INVALID_USERNAME\">\\s*(.*?)\\s*<").getMatch(0);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // ok ?
-                // end of new code
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                login = br.getFormByRegex("name\\s*=\\s*\"displayName\"");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                login.remove("skip");
+                br.submitForm(login);
+                if (br.containsHTML("messages\\.ERROR_INVALID_PASSWORD")) {
+                    final String message = br.getRegex("messages\\.ERROR_INVALID_PASSWORD\">\\s*(.*?)\\s*<").getMatch(0);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
     }
 
-    public static void main(final String[] args) {
-        process2Factor(new Browser(), null);
-    }
-
-    private static void process2Factor(final Browser br, HashMap<String, Object> entries) {
-        final Browser br2 = br.cloneBrowser();
-        // construct a form from json
-        try {
-            final String uri = (String) entries.get("uri");
-            final HashMap<String, Object> params = (HashMap<String, Object>) entries.get("params");
-            Form f = new Form();
-            f.setAction(uri);
-            f.setMethod(MethodType.POST);
-            for (final Map.Entry<String, Object> e : params.entrySet()) {
-                final String key = e.getKey();
-                if (e != null) {
-                    f.put(key, Encoding.urlEncode((String) e.getValue()));
-                }
-            }
-            br.submitForm(f);
-            // should result in a single form....
-            final Form travellingSomeWhereNew = br.getForm(0);
-            // here you get selection of sms solutions to mobile phone numbers or send email to verified accounts (all solutions are partly
-            // masked)...
-            // show this html to the user in browser solver solution? and they choose selection?
-            // disable account in jd.. and ask user to verify sms / email
-            // then renable account in jd.
-            System.out.println("winning");
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void prepBr(final Browser br) {
-        br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
-        br.getHeaders().put("Accept-Charset", null);
-    }
-
     private boolean isValid(final Browser br) throws IOException {
         br.getPage("https://www.flickr.com/");
-        if (!br.containsHTML("class=\"welcome")) {
+        if (br.containsHTML("gnSignin")) {
             return false;
+        } else {
+            return true;
         }
-        return true;
-    }
-
-    private String getLoginCaptchaData(final Account acc) throws Exception, IOException {
-        if (true) {
-            // TODO: fix
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported feature");
-        }
-        String post_data = "";
-        // br.getPage("https://login.yahoo.com/captcha/CaptchaWSProxyService.php?action=createlazy&initial_view=&.intl=" + intl + "&.lang="
-        // + lang_post + "&login=" + Encoding.urlEncode(acc.getUser()) + "&rnd=" + System.currentTimeMillis());
-        final String captchaLink = br.getRegex("Enter the characters displayed\\&quot; src=\\&quot;(https?://[A-Za-z0-9\\-_\\.]+yahoo\\.com:\\d+/img/[^<>\"]*?)\\&quot;").getMatch(0);
-        if (captchaLink == null) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        final DownloadLink dummyLink = new DownloadLink(this, "Account", "flickr.com", "http://flickr.com", true);
-        final String c = getCaptchaCode(captchaLink, dummyLink);
-        final String valuesText = br.getRegex("\\&lt;div id=\\&quot;captchaV5ControlElements\\&quot;\\&gt;(.*?)\\&lt;audio id=\\&quot;captchaV5Audio\\&quot;").getMatch(0);
-        if (valuesText != null) {
-            final String[][] data = new Regex(valuesText, "type=\\&quot;hidden\\&quot; name=\\&quot;([^<>\"]*?)\\&quot; id=\\&quot;([^<>\"]*?)\\&quot; value=\\&quot;([^<>\"]*?)\\&quot;").getMatches();
-            for (final String[] single_data : data) {
-                final String name = single_data[0];
-                final String value = single_data[2];
-                post_data += "&" + name + "=" + value;
-            }
-        }
-        post_data += "&captchaView=visual&captchaAnswer=" + Encoding.urlEncode(c) + "&.saveC=&.persistent=y";
-        return post_data;
     }
 
     @SuppressWarnings("unused")
