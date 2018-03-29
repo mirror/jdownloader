@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
@@ -36,6 +35,9 @@ import jd.plugins.download.raf.FileBytesCache;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -56,16 +58,16 @@ import org.jdownloader.settings.IfFileExistsAction;
  * @author botzi
  *
  */
-public class ExtractionController extends QueueAction<Void, RuntimeException> {
+public class ExtractionController extends QueueAction<Void, RuntimeException> implements GenericConfigEventListener<Enum> {
     private List<String>       passwordList;
     private Exception          exception;
     private final Archive      archive;
     private final IExtraction  extractor;
     private ScheduledFuture<?> timer;
     private Type               latestEvent;
-
     private final AtomicLong   completeBytes  = new AtomicLong(0);
     private final AtomicLong   processedBytes = new AtomicLong(0);
+    private volatile IO_MODE   crcHashing     = IO_MODE.NORMAL;
 
     public long getCompleteBytes() {
         return completeBytes.get();
@@ -83,19 +85,41 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         this.processedBytes.set(Math.max(0, processedBytes));
     }
 
-    public void addProcessedBytesAndPauseIfNeeded(long processedBytes) {
-        try {
-            while (pauseExtractionForCrcHashing()) {
-                Thread.sleep(1000);
+    public IO_MODE getIOModeForCrcHashing() {
+        final IO_MODE mode = crcHashing;
+        switch (mode) {
+        case PAUSE:
+        case THROTTLE:
+            if (DownloadLinkDownloadable.isCrcHashingInProgress()) {
+                return mode;
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        default:
+        case NORMAL:
+            return mode;
         }
-        this.processedBytes.addAndGet(Math.max(0, processedBytes));
     }
 
-    public static boolean pauseExtractionForCrcHashing() {
-        return DownloadLinkDownloadable.isCrcHashingInProgress() && CFG_EXTRACTION.CFG.isPauseExctractingForCrcHashing();
+    public void addProcessedBytesAndPauseIfNeeded(long processedBytes) {
+        try {
+            if (!IO_MODE.NORMAL.equals(getIOModeForCrcHashing())) {
+                crcHashing: while (true) {
+                    switch (getIOModeForCrcHashing()) {
+                    case PAUSE:
+                        Thread.sleep(1000);
+                        break;
+                    case THROTTLE:
+                        Thread.sleep(100);
+                        break crcHashing;
+                    default:
+                    case NORMAL:
+                        break crcHashing;
+                    }
+                }
+            }
+        } catch (InterruptedException e) {
+            logger.log(e);
+        }
+        this.processedBytes.addAndGet(Math.max(0, processedBytes));
     }
 
     private final ExtractionExtension extension;
@@ -108,7 +132,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private Item                      currentActiveItem;
     private final ExtractionProgress  extractionProgress;
     protected final FileBytesCache    fileBytesCache;
-
     private final UniqueAlltimeID     uniqueID              = new UniqueAlltimeID();
 
     public UniqueAlltimeID getUniqueID() {
@@ -167,6 +190,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         passwordList = new CopyOnWriteArrayList<String>();
         archive.setExtractionController(this);
         fileBytesCache = DownloadSession.getDownloadWriteCache();
+        CFG_EXTRACTION.IOMODE_CRCHASHING.getEventSender().addListener(this, true);
+        crcHashing = (IO_MODE) CFG_EXTRACTION.IOMODE_CRCHASHING.getValue();
     }
 
     public ExtractionQueue getExtractionQueue() {
@@ -233,11 +258,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             crashLog.write("Date:" + new Date());
             crashLog.write("Start Extracting");
             crashLog.write("Extension Setup: \r\n" + extension.getSettings().toString());
-
             crashLog.write("Archive Setup: \r\n" + JSonStorage.toString(archive.getSettings()));
             extractor.setCrashLog(crashLog);
             crashLog.write("Start unpacking of " + firstArchiveFile.getFilePath());
-
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (!archiveFile.exists()) {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
@@ -319,7 +342,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                                 }
                             }
                         }
-
                         if (correctPW == null) {
                             fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                             crashLog.write("Ask for password");
@@ -336,7 +358,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         }
                         fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
                         crashLog.write("Found password for " + archive + "->" + archive.getFinalPassword());
-
                     }
                     if (StringUtils.isNotEmpty(archive.getFinalPassword())) {
                         getExtension().addPassword(archive.getFinalPassword());
@@ -344,9 +365,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
                 extractToFolder = getExtension().getFinalExtractToFolder(archive, false);
                 crashLog.write("Extract To: " + extractToFolder);
-
                 final DiskSpaceReservation extractReservation = new DiskSpaceReservation() {
-
                     @Override
                     public long getSize() {
                         final long completeSize = Math.max(getCompleteBytes(), archive.getContentView().getTotalSize());
@@ -395,7 +414,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                             public void run() {
                                 fireEvent(ExtractionEvent.Type.EXTRACTING);
                             }
-
                         }, 1, 1, TimeUnit.SECONDS);
                         extractor.extract(this);
                     } finally {
@@ -425,7 +443,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 if (exception != null) {
                     crashLog.write("Exception occured: \r\n" + Exceptions.getStackTrace(exception));
                 }
-
                 crashLog.write("ExitCode: " + archive.getExitCode());
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
@@ -663,4 +680,19 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return percent;
     }
 
+    @Override
+    public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+        if (keyHandler == CFG_EXTRACTION.IOMODE_CRCHASHING) {
+            final IO_MODE newMode = (IO_MODE) newValue;
+            if (newMode == null) {
+                crcHashing = IO_MODE.NORMAL;
+            } else {
+                crcHashing = newMode;
+            }
+        }
+    }
 }

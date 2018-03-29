@@ -318,10 +318,15 @@ public class ExtractionListenerList implements ExtractionListener {
             setProgress(controller, rootArchive, x, y, yellow);
             break;
         case EXTRACTING:
-            if (ExtractionController.pauseExtractionForCrcHashing()) {
+            switch (controller.getIOModeForCrcHashing()) {
+            case PAUSE:
                 setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_pausedForOtherCrc());
-            } else {
+                break;
+            default:
+            case NORMAL:
+            case THROTTLE:
                 setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_extracting2());
+                break;
             }
             setProgress(controller, rootArchive, controller.getProcessedBytes(), controller.getCompleteBytes(), green);
             break;
