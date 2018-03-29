@@ -300,7 +300,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 return true;
             } else if ("canClose".equals(pDo)) {
                 if (useractive != null) {
-                    ChallengeResponseController.getInstance().keepAlivePendingChallenges();
+                    ChallengeResponseController.getInstance().keepAlivePendingChallenges(challenge);
                 }
                 final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
                 if (challenge.isSolved() || job == null || job.isDone() || BrowserSolver.getInstance().isJobDone(job)) {
