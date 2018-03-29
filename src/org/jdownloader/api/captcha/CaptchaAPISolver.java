@@ -309,11 +309,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     public long keepAlive(final long jobId) {
-        ChallengeResponseController.getInstance().keepAlivePendingChallenges();
         final SolverJob<?> entry = getJobByChallengeId(jobId);
         if (entry == null) {
+            ChallengeResponseController.getInstance().keepAlivePendingChallenges(null);
             return -1;
         } else {
+            ChallengeResponseController.getInstance().keepAlivePendingChallenges(entry.getChallenge());
             return entry.getChallenge().getRemainingTimeout();
         }
     }

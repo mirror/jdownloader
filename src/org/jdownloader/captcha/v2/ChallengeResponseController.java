@@ -228,7 +228,7 @@ public class ChallengeResponseController {
         }
     }
 
-    public void keepAlivePendingChallenges() {
+    public void keepAlivePendingChallenges(Challenge<?> c) {
         for (final SolverJob<?> job : activeJobs) {
             job.getChallenge().keepAlive();
         }
@@ -289,6 +289,9 @@ public class ChallengeResponseController {
                 final long expired = System.currentTimeMillis() - challenge.getCreated();
                 final int jobTimeout = challenge.getTimeout();
                 logger.info("Challenge Timeout detected|Job:" + job + "|Expired:" + expired + "|Timeout:" + jobTimeout);
+            }
+            if (!SkipRequest.TIMEOUT.equals(job.getSkipRequest())) {
+                keepAlivePendingChallenges(c);
             }
             if (job.getSkipRequest() != null) {
                 throw new SkipException(c, job.getSkipRequest());
