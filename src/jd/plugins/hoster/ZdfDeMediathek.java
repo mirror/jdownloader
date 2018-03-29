@@ -472,21 +472,21 @@ public class ZdfDeMediathek extends PluginForHost {
 
         @DefaultBooleanValue(true)
         @Order(90)
-        boolean isGrabHTTPMp4LowVideoEnabled();
+        boolean isGrabHTTPMp4_170pVideoEnabled();
 
-        void setGrabHTTPMp4LowVideoEnabled(boolean b);
+        void setGrabHTTPMp4_170pVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(100)
-        boolean isGrabHTTPMp4HighVideoEnabled();
+        boolean isGrabHTTPMp4_270pVideoEnabled();
 
-        void setGrabHTTPMp4HighVideoEnabled(boolean b);
+        void setGrabHTTPMp4_270pVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(110)
-        boolean isGrabHTTPMp4VeryHighVideoEnabled();
+        boolean isGrabHTTPMp4_480pVideoEnabled();
 
-        void setGrabHTTPMp4VeryHighVideoEnabled(boolean b);
+        void setGrabHTTPMp4_480pVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(120)

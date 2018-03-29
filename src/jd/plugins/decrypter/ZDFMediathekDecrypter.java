@@ -218,9 +218,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (grabHls720) {
             all_selected_qualities.add("hls_mp4_720");
         }
-        final boolean grabHttpMp4Low = cfg.isGrabHTTPMp4LowVideoEnabled();
-        final boolean grabHttpMp4High = cfg.isGrabHTTPMp4HighVideoEnabled();
-        final boolean grabHttpMp4VeryHigh = cfg.isGrabHTTPMp4VeryHighVideoEnabled();
+        final boolean grabHttpMp4Low = cfg.isGrabHTTPMp4_170pVideoEnabled();
+        final boolean grabHttpMp4High = cfg.isGrabHTTPMp4_270pVideoEnabled();
+        final boolean grabHttpMp4VeryHigh = cfg.isGrabHTTPMp4_480pVideoEnabled();
         final boolean grabHttpMp4HD = cfg.isGrabHTTPMp4HDVideoEnabled();
         if (grabHttpMp4Low) {
             all_selected_qualities.add("http_mp4_low");
