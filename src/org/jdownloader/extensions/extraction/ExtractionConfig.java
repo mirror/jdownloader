@@ -236,11 +236,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     String getLastWorkingLibID();
 
     public void setLastWorkingLibID(String libID);
-    
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If Enabled, JDownloader will pause extracting while crc hashing for downloads is done")
-    boolean isPauseExctractingForCrcHashing();
 
-    void setPauseExctractingForCrcHashing(boolean b);    
+    @AboutConfig
+    @DefaultEnumValue("NORMAL")
+    @DescriptionForConfigEntry("If Enabled, JDownloader will pause/slow down extracting while crc hashing for downloads is done")
+    IO_MODE getIOModeForCrcHashing();
+
+    void setIOModeForCrcHashing(IO_MODE mode);
 }
