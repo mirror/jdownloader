@@ -109,7 +109,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         break;
                     case THROTTLE:
                         Thread.sleep(100);
-                        break crcHashing;
                     default:
                     case NORMAL:
                         break crcHashing;
