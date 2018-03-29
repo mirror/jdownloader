@@ -268,14 +268,12 @@ public class AbstractFFmpegBinary {
             final boolean isInstantFlush = logger.isInstantFlush();
             int lastReadPosition = 0;
             int lastSize = 0;
-            boolean retryAvailable = true;
             while (true) {
-                if (fis.available() > 0) {
+                if (fis.available() > 0 || processExitedFlag.get()) {
                     final int read = fis.read(buf);
                     if (read == -1) {
                         return;
                     } else if (read > 0) {
-                        retryAvailable = true;
                         size += read;
                         synchronized (bos) {
                             if (bos.size() < lastSize) {
@@ -301,23 +299,9 @@ public class AbstractFFmpegBinary {
                             }
                         }
                     } else {
-                        if (processExitedFlag.get()) {
-                            if (retryAvailable) {
-                                retryAvailable = false;
-                            } else {
-                                return;
-                            }
-                        }
                         Thread.sleep(100);
                     }
                 } else {
-                    if (processExitedFlag.get()) {
-                        if (retryAvailable) {
-                            retryAvailable = false;
-                        } else {
-                            return;
-                        }
-                    }
                     Thread.sleep(100);
                 }
             }
