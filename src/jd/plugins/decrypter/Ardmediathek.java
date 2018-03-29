@@ -191,7 +191,7 @@ public class Ardmediathek extends PluginForDecrypt {
         if (addHLS540) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("540") + "_540");
         }
-        if (addHLS540) {
+        if (addHLS576) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("576") + "_576");
         }
         if (addHLS720) {
