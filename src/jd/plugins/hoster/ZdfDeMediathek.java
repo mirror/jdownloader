@@ -22,6 +22,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,14 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -75,8 +75,7 @@ public class ZdfDeMediathek extends PluginForHost {
         prepBR(this.br);
         /* New urls 2016-12-21 */
         dllink = link.getDownloadURL().replace("decryptedmediathek://", "http://");
-        filename = link.getStringProperty("directName", null);
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(link.getStringProperty("directName", null));
@@ -173,7 +172,7 @@ public class ZdfDeMediathek extends PluginForHost {
             if (!convertSubtitle(downloadLink)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null).replace(".xml", ".srt"));
+                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(".xml", ".srt"));
             }
         }
     }

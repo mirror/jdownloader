@@ -81,6 +81,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /* domain names used within download links */
     private final static String  DOMAINS                            = "(?:ForDevsToPlayWith\\.com)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
+    private final static String  dllinkRegexFile_2                  = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/[a-z0-9]{50,}/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -140,14 +141,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.6.7<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.7.0<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
      * - maintain the primary domain base url (protocol://subdomain.domain.tld.cctld), everything else will be based off that! do not fubar
      * with standard browser behaviours.
      ****************************
-     * mods:<br />
+     * mods: Search code for String "Special"<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -341,8 +342,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
+                    fileInfo[1] = getHighestVideoQualityFilesize();
+                }
+                if (inValidate(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
-                    // next two are details from sharing box
+                    /* next two are details from sharing box */
                     if (inValidate(fileInfo[1])) {
                         fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                         if (inValidate(fileInfo[1])) {
@@ -370,7 +374,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Get filename via abuse-URL.<br />
      * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
-     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b>!<br />
      *
      * @throws Exception
@@ -383,7 +387,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Get filename via mass-linkchecker/alternative availablecheck.<br />
      * E.g. needed if officially only logged in users can see filesize or filesize is missing for whatever reason.<br />
-     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ALT</u></b> is <b>true</b>!<br />
      */
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
@@ -553,7 +557,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            final String highestVideoQualityHTML = getHighestQualityHTML();
+            if (highestVideoQualityHTML != null) {
+                final Regex videoinfo = new Regex(highestVideoQualityHTML, "download_video\\(\\'([a-z0-9]+)\\',\\'([^<>\"\\']*?)\\',\\'([^<>\"\\']*?)\\'");
+                // final String vid = videoinfo.getMatch(0);
+                /* Usually this will be 'o' standing for "original quality" */
+                final String q = videoinfo.getMatch(1);
+                final String hash = videoinfo.getMatch(2);
+                if (q == null || hash == null) {
+                    handlePluginBroken(downloadLink, "video_highest_quality_download_failure", 3);
+                }
+                getPage("/dl?op=download_orig_pre&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
+            }
+        }
+        if (dllink == null) {
+            Form dlForm = findFormF1();
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(downloadLink, false);
@@ -589,26 +607,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         /* 2017-12-07: New */
                         /* Do not put the result in this Form as the check is handled below already */
                         dlForm.put("g-recaptcha-response", "");
-                        final Form specialCaptchaForm = new Form();
-                        specialCaptchaForm.setMethod(MethodType.POST);
-                        specialCaptchaForm.setAction("/ddl");
+                        final Form ajaxCaptchaForm = new Form();
+                        ajaxCaptchaForm.setMethod(MethodType.POST);
+                        ajaxCaptchaForm.setAction("/ddl");
                         final InputField if_Rand = dlForm.getInputFieldByName("rand");
                         final String file_id = PluginJSonUtils.getJson(br, "file_id");
                         if (if_Rand != null) {
                             /* This is usually given */
-                            specialCaptchaForm.put("rand", if_Rand.getValue());
+                            ajaxCaptchaForm.put("rand", if_Rand.getValue());
                         }
                         if (!StringUtils.isEmpty(file_id)) {
                             /* This is usually given */
-                            specialCaptchaForm.put("file_id", file_id);
+                            ajaxCaptchaForm.put("file_id", file_id);
                         }
-                        specialCaptchaForm.put("op", "captcha1");
-                        specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        ajaxCaptchaForm.put("op", "captcha1");
+                        ajaxCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         /* User existing Browser object as we get a cookie which is required later. */
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        this.submitForm(br, specialCaptchaForm);
+                        this.submitForm(br, ajaxCaptchaForm);
                         if (!br.toString().equalsIgnoreCase("OK")) {
-                            logger.warning("Fatal reCaptchaV2 special handling failure");
+                            logger.warning("Fatal reCaptchaV2 ajax handling failure");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         br.getHeaders().remove("X-Requested-With");
@@ -774,6 +792,55 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    private Form findFormF1() {
+        Form dlForm = null;
+        /* First try to find Form for video hosts with multiple qualities. */
+        final Form[] forms = br.getForms();
+        for (final Form aForm : forms) {
+            final InputField if_op = aForm.getInputFieldByName("op");
+            /* E.g. name="op" value="download_orig" */
+            if (aForm.containsHTML("btn_download") && if_op != null && if_op.getValue().contains("download_")) {
+                dlForm = aForm;
+                break;
+            }
+        }
+        /* Nothing found? Fallback to standard download handling! */
+        if (dlForm == null) {
+            dlForm = br.getFormbyProperty("name", "F1");
+        }
+        return dlForm;
+    }
+
+    /**
+     * Checks if there are multiple video qualities available, finds html containing information of the highest video quality and sets
+     * filesize if available
+     */
+    private String getHighestQualityHTML() {
+        final String[] videoQualities = new Regex(correctedBR, "<tr>\\s*?<td>\\s*?<input[^>]*?onclick=\"download_video.*?</tr>").getColumn(-1);
+        long widthMax = 0;
+        long widthTmp = 0;
+        String targetHTML = null;
+        for (final String videoQualityHTML : videoQualities) {
+            final String filesizeTmpStr = new Regex(videoQualityHTML, "<td>(\\d+)x\\d+, \\d+[^<>\"]+</td>").getMatch(0);
+            if (filesizeTmpStr != null) {
+                widthTmp = SizeFormatter.getSize(filesizeTmpStr);
+                if (widthTmp > widthMax) {
+                    widthMax = widthTmp;
+                    targetHTML = videoQualityHTML;
+                }
+            } else {
+                /* This should not happen */
+                break;
+            }
+        }
+        return targetHTML;
+    }
+
+    private String getHighestVideoQualityFilesize() {
+        final String highestVideoQualityHTML = getHighestQualityHTML();
+        return new Regex(highestVideoQualityHTML, "<td>\\d+x\\d+, (\\d+[^<>\"]+)</td>").getMatch(0);
+    }
+
     /**
      * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
      * [NOT html]).
@@ -876,6 +943,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (dllink == null) {
                 /* Finally try without hardcoded domains */
                 dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, "[A-Za-z0-9\\-\\.]+") + ")(\"|')").getMatch(0);
+            }
+            if (dllink == null) {
+                /* Try short version */
+                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile_2, DOMAINS) + ")\\1").getMatch(1);
+            }
+            if (dllink == null) {
+                /* Try short version without hardcoded domains and wide */
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, DOMAINS) + ")").getMatch(0);
             }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -1115,7 +1190,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private void setFUID(final DownloadLink dl) throws PluginException {
         fuid = getFUIDFromURL(dl);
         /*
-         * Rare case: Hoster has special URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
+         * Rare case: Hoster has exotic URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
          * available via html
          */
         if (fuid == null) {

@@ -13,13 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -33,15 +37,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
+import jd.plugins.components.PluginJSonUtils;
 
 /*Similar websites: bca-onlive.de, asscompact.de*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatvdecrypted\\.gr/shows/.+" })
 public class AlphatvGr extends PluginForHost {
-
     public AlphatvGr(PluginWrapper wrapper) {
         super(wrapper);
         // setConfigElements();
@@ -85,14 +85,12 @@ public class AlphatvGr extends PluginForHost {
                 title = br.getURL();
             }
         }
-
         String filename = "";
         final String date_formatted = formatDate(date);
         if (date_formatted != null) {
             filename = date_formatted + "_";
         }
         filename += "alphatv_" + title + ".mp4";
-
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicodeStatic(filename);
         return filename;
@@ -103,10 +101,28 @@ public class AlphatvGr extends PluginForHost {
         requestFileInformation(downloadLink);
         final String hls_master = this.br.getRegex("(?:\\'|\")(http://[^<>\"]*?\\.m3u8)(?:\\'|\")").getMatch(0);
         final String url_rtmp = this.br.getRegex("(?:\\'|\")(rtmp://[^<>\"]*?\\.mp4)(?:\\'|\")").getMatch(0);
-        if (hls_master == null && url_rtmp == null) {
+        /* 2018-03-29: http streaming is new and the only streaming method at the moment! */
+        String url_http = this.br.getRegex("file\\s*?:\\s*?window\\.[^\"]+\\(\"(path[^<>\"]+\\.mp4)\"\\)\\s*?\\}").getMatch(0);
+        if (hls_master == null && url_rtmp == null && url_http == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (hls_master != null) {
+        if (url_http != null) {
+            br.getPage("http://www.alphatv.gr/st/st.php?i=" + Encoding.urlEncode(url_http));
+            url_http = PluginJSonUtils.getJson(this.br, "o0");
+            if (StringUtils.isEmpty(url_http)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
+        } else if (hls_master != null) {
             /* If no rtmp url is available, download HLS */
             br.getPage(hls_master);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -126,10 +142,8 @@ public class AlphatvGr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             rtmp_host += rtmp_app;
-
             dl = new RTMPDownload(this, downloadLink, url_rtmp);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
             rtmp.setPlayPath(url_playpath);
             rtmp.setPageUrl(this.br.getURL());
             rtmp.setSwfVfy("http://static.adman.gr/jwplayer.flash.swf");
@@ -204,5 +218,4 @@ public class AlphatvGr extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
