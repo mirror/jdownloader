@@ -95,7 +95,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
             }
         default:
         case NORMAL:
-            return mode;
+            return IO_MODE.NORMAL;
         }
     }
 
