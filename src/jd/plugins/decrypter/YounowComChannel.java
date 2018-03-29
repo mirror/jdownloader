@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,8 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+(?:/\\d+)?" })
 public class YounowComChannel extends PluginForDecrypt {
@@ -66,6 +66,7 @@ public class YounowComChannel extends PluginForDecrypt {
             }
             final ArrayList<String> dupecheck = new ArrayList<String>();
             boolean done = false;
+            boolean hasMore = false;
             long lastDateUploaded = 0;
             do {
                 if (this.isAbort()) {
@@ -81,6 +82,7 @@ public class YounowComChannel extends PluginForDecrypt {
                 // br.getPage("https://cdn2.younow.com/php/api/post/getBroadcasts/channelId=" + userid + "/startFrom=" + (addedlinks + 1));
                 br.getPage("https://cdn.younow.com/php/api/moment/profile/channelId=" + userid + "/createdBefore=" + timestampValue + "/records=" + maxItemsPerPage);
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                hasMore = ((Boolean) entries.get("hasMore")).booleanValue();
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("items");
                 if (ressourcelist == null) {
                     break;
@@ -129,6 +131,9 @@ public class YounowComChannel extends PluginForDecrypt {
                     distribute(dl);
                 }
             } while (addedlinks_temp >= 1 && !done);
+            if (decryptedLinks.isEmpty() && !hasMore) {
+                logger.info("Channel is empty / does not contain any recorded and downloadable content");
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

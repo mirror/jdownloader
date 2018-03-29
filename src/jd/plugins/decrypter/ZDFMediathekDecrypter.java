@@ -28,6 +28,12 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,12 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(syncvideoimport_beitrag_\\d+|[a-f0-9\\-]+)", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -473,7 +473,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                         highestHlsBandwidth = hlscontainer.getBandwidth();
                                         highestHlsDownload = dl;
                                     }
-                                    setDownloadlinkProperties(dl, date_formatted, final_filename, type, linkid);
+                                    setDownloadlinkProperties(dl, final_filename, type, linkid);
                                     dl.setProperty("hlsBandwidth", hlscontainer.getBandwidth());
                                     if (duration > 0 && hlscontainer.getBandwidth() > 0) {
                                         dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
@@ -503,7 +503,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     dl.setAvailable(true);
                                     dl.setDownloadSize(filesize);
                                 }
-                                setDownloadlinkProperties(dl, date_formatted, final_filename, type, linkid);
+                                setDownloadlinkProperties(dl, final_filename, type, linkid);
                                 all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, quality), dl);
                             }
                         }
@@ -615,7 +615,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final String final_filename = dl.getFinalFileName().replace(current_ext, ".xml");
             final String linkid = dl.getLinkID() + "_subtitle";
             final DownloadLink dl_subtitle = this.createDownloadlink(this.url_subtitle);
-            setDownloadlinkProperties(dl_subtitle, dl.getStringProperty("date", null), final_filename, "subtitle", linkid);
+            setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid);
             if (filesizeSubtitle > 0) {
                 dl_subtitle.setDownloadSize(filesizeSubtitle);
                 dl_subtitle.setAvailable(true);
@@ -624,11 +624,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void setDownloadlinkProperties(final DownloadLink dl, final String date_formatted, final String final_filename, final String type, final String linkid) {
+    private void setDownloadlinkProperties(final DownloadLink dl, final String final_filename, final String type, final String linkid) {
         dl.setFinalFileName(final_filename);
         dl.setLinkID(linkid);
-        dl.setProperty("date", date_formatted);
-        dl.setProperty("directName", final_filename);
         dl.setProperty("streamingType", type);
         dl.setContentUrl(PARAMETER_ORIGINAL);
     }

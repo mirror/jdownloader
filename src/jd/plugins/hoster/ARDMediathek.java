@@ -24,6 +24,10 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,9 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "(?:mediathek\\.)?rbb\\-online\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "(?:one\\.)?ard\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "(?:sr\\-mediathek\\.)?sr\\-online\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "checkeins\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -71,10 +72,11 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        final MediathekProperties data = link.bindData(MediathekProperties.class);
         final String itemId = link.getStringProperty("itemId");
-        final String itemSrc = link.getStringProperty("itemSrc");
-        final String itemType = link.getStringProperty("itemType");
-        final String itemRes = link.getStringProperty("itemRes");
+        final String itemSrc = data.getSourceHost();
+        final String itemType = data.getProtocol();
+        final String itemRes = data.getResolution();
         if (itemId != null && itemSrc != null && itemType != null && itemRes != null) {
             final String ret = itemSrc.concat("://").concat(itemId).concat("/").concat(itemType).concat("/").concat(itemRes);
             return ret;
@@ -96,11 +98,6 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = downloadLink.getDownloadURL();
-        final String finalName = downloadLink.getStringProperty("directName", null);
-        if (finalName == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(finalName);
         br.setFollowRedirects(true);
         if (dllink.contains(".m3u8")) {
             checkFFProbe(downloadLink, "Download a HLS Stream");
@@ -158,7 +155,7 @@ public class ARDMediathek extends PluginForHost {
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
             boolean resume = true;
             int maxChunks = 0;
-            final boolean isSubtitle = "subtitle".equals(downloadLink.getStringProperty("streamingType", null));
+            final boolean isSubtitle = isSubtitle(downloadLink);
             if (isSubtitle) {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 downloadLink.setDownloadSize(0);
@@ -192,13 +189,18 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private void postprocess(final DownloadLink downloadLink) {
-        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+        if (isSubtitle(downloadLink)) {
             if (!convertSubtitle(downloadLink)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null).replace(".xml", ".srt"));
+                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(".xml", ".srt"));
             }
         }
+    }
+
+    private boolean isSubtitle(final DownloadLink dl) {
+        final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
+        return "subtitle".equalsIgnoreCase(data_src.getStreamingType());
     }
 
     /**

@@ -28,19 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -53,6 +40,7 @@ import org.jdownloader.plugins.components.config.EurovisionConfig;
 import org.jdownloader.plugins.components.config.KikaDeConfig;
 import org.jdownloader.plugins.components.config.MdrDeConfig;
 import org.jdownloader.plugins.components.config.MediathekDasersteConfig;
+import org.jdownloader.plugins.components.config.MediathekProperties;
 import org.jdownloader.plugins.components.config.MediathekRbbOnlineConfig;
 import org.jdownloader.plugins.components.config.NdrDeConfig;
 import org.jdownloader.plugins.components.config.OneARDConfig;
@@ -66,6 +54,19 @@ import org.jdownloader.plugins.components.config.WDRMausConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
         "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
@@ -90,12 +91,12 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("576", 1728000l);
         heigth_to_bitrate.put("720", 3773000l);
     }
-    private String                              subtitleLink          = null;
-    private String                              parameter             = null;
-    private String                              title                 = null;
-    private String                              date_formatted        = null;
-    private boolean                             grabHLS               = false;
-    private String                              contentID             = null;
+    private String  subtitleLink   = null;
+    private String  parameter      = null;
+    private String  title          = null;
+    private String  date_formatted = null;
+    private boolean grabHLS        = false;
+    private String  contentID      = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -975,14 +976,14 @@ public class Ardmediathek extends PluginForDecrypt {
         final String plain_name = title + "_" + protocol + "_" + bitrate + "_" + resolution;
         final String file_name = plain_name + ext;
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
+        final MediathekProperties data = link.bindData(MediathekProperties.class);
+        data.setSourceHost(getHost());
+        data.setResolution(width + "x" + height);
+        data.setProtocol(protocol);
         link.setFinalFileName(file_name);
         link.setContentUrl(this.parameter);
         link.setProperty("plain_name", plain_name);
         link.setProperty("directName", file_name);
-        /* new properties that can be used for future linkIDs */
-        link.setProperty("itemSrc", getHost());
-        link.setProperty("itemType", protocol);
-        link.setProperty("itemRes", width + "x" + height);
         final String itemID = contentID;
         if (itemID == null) {
             logger.log(new Exception("FixMe!"));
@@ -1054,14 +1055,16 @@ public class Ardmediathek extends PluginForDecrypt {
                 final String plain_name = dl.getStringProperty("plain_name", null);
                 final String subtitle_filename = plain_name + ".xml";
                 final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", getHost() + "decrypted://"));
+                final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
+                final MediathekProperties data_subtitle = dl_subtitle.bindData(MediathekProperties.class);
+                data_subtitle.setStreamingType("subtitle");
+                data_subtitle.setSourceHost(data_src.getSourceHost());
+                data_subtitle.setProtocol(data_src.getProtocol() + "sub");
+                data_subtitle.setResolution(data_src.getResolution());
+                data_subtitle.setTitle(data_src.getTitle());
                 dl_subtitle.setAvailable(true);
                 dl_subtitle.setFinalFileName(subtitle_filename);
-                dl_subtitle.setProperty("directName", subtitle_filename);
-                dl_subtitle.setProperty("streamingType", "subtitle");
                 dl_subtitle.setProperty("mainlink", parameter);
-                dl_subtitle.setProperty("itemSrc", getHost());
-                dl_subtitle.setProperty("itemType", dl.getProperty("itemType", null) + "sub");
-                dl_subtitle.setProperty("itemRes", dl.getProperty("itemRes", null));
                 dl_subtitle.setProperty("itemId", dl.getProperty("itemId", null));
                 dl_subtitle.setContentUrl(parameter);
                 decryptedLinks.add(dl_subtitle);
