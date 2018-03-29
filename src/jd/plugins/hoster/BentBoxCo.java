@@ -35,17 +35,22 @@ public class BentBoxCo extends PluginForHost {
         return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
     }
 
-    public static void login(Browser br, Account account) throws Exception {
+    public static boolean login(Browser br, Account account, final String url) throws Exception {
         synchronized (account) {
             try {
                 br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36");
                 final String host = "bentbox.co";
-                final Cookies cookies = account.loadCookies("");
+                Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(host, cookies);
-                    br.getPage("https://bentbox.co/explorer");
+                    if (url != null) {
+                        br.getPage(url);
+                    } else {
+                        br.getPage("http://bentbox.co/openBoxes");
+                    }
                 }
-                if (!isCookieSet(br, "userId") || !isCookieSet(br, "accessToken")) {
+                if (!isCookieSet(br, "userId") || !isCookieSet(br, "accessToken") || StringUtils.endsWithCaseInsensitive(br.getURL(), "/signin")) {
+                    cookies = null;
                     final String userName = account.getUser();
                     if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for bentbox.co website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -67,6 +72,7 @@ public class BentBoxCo extends PluginForHost {
                 }
                 br.setCookie(host, "adultFilter", "off");
                 account.saveCookies(br.getCookies(host), "");
+                return cookies == null;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -80,7 +86,7 @@ public class BentBoxCo extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
-        login(br, account);
+        login(br, account, null);
         ai.setStatus("Valid Account");
         return ai;
     }

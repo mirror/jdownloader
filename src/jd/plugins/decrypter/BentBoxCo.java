@@ -31,10 +31,12 @@ public class BentBoxCo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         setBrowserExclusive();
+        br.setFollowRedirects(true);
         final Account account = AccountController.getInstance().getValidAccount(this);
+        final boolean freshLogin;
         if (account != null) {
             try {
-                jd.plugins.hoster.BentBoxCo.login(br, account);
+                freshLogin = jd.plugins.hoster.BentBoxCo.login(br, account, parameter.getCryptedUrl());
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.setError(AccountError.INVALID, -1, null);
@@ -46,9 +48,10 @@ public class BentBoxCo extends PluginForDecrypt {
         } else {
             return ret;
         }
+        if (freshLogin) {
+            br.getPage(parameter.getCryptedUrl());
+        }
         final String boxID = new Regex(parameter.getCryptedUrl(), "box(?:_view)?\\?(.+)").getMatch(0);
-        br.setFollowRedirects(true);
-        br.getPage(parameter.getCryptedUrl());
         final String title = br.getRegex("\"og:title\"\\s*content=\"(.*?)\"").getMatch(0);
         final String author = br.getRegex("meta\\s*name=\"author\"\\s*content=\"\\s*(.*?)\\s*\"").getMatch(0);
         final PostRequest boxView = new PostRequest(br.getURL("/load_box_view.php"));

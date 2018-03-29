@@ -121,10 +121,12 @@ public class VimeoCom extends PluginForHost {
         }
         /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        if (userAgent.get() == null) {
-            userAgent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
+        synchronized (userAgent) {
+            if (userAgent.get() == null) {
+                userAgent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
+            }
+            prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
-        prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.setAllowedResponseCodes(418);
         return prepBr;
     }
@@ -267,6 +269,10 @@ public class VimeoCom extends PluginForHost {
             if (br.containsHTML(containsPass)) {
                 handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
             }
+        }
+        final String vuid = br.getRegex("document\\.cookie\\s*=\\s*'vuid='\\s*\\+\\s*encodeURIComponent\\('(\\d+\\.\\d+)'\\)").getMatch(0);
+        if (vuid != null) {
+            br.setCookie(br.getURL(), "vuid", vuid);
         }
     }
 
@@ -494,7 +500,7 @@ public class VimeoCom extends PluginForHost {
             results.addAll(handleDownloadConfig(ibr, ID));
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
-        if ((stream || hls) && configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
+        if ((stream || hls || (download && results.size() == 0)) && configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
             // iconify_down_b could fail, revert to the following if statements.
             final Browser gq = ibr.cloneBrowser();
             gq.getHeaders().put("Accept", "*/*");
@@ -546,6 +552,7 @@ public class VimeoCom extends PluginForHost {
         try {
             final Browser gq = ibr.cloneBrowser();
             /* With dl button */
+            gq.getHeaders().put("Accept", "*/*");
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String json = gq.getPage("/" + ID + "?action=load_download_config");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
