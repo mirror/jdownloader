@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
@@ -406,7 +409,7 @@ public class FileflaresCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, -1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -661,6 +664,10 @@ public class FileflaresCom extends PluginForHost {
                 if (specialKey != null && !dlForm.hasInputFieldByName(specialKey)) {
                     dlForm.put(specialKey, "1");
                 }
+                final String specialKey2 = getSpecialKey2();
+                if (specialKey2 != null && !dlForm.hasInputFieldByName(specialKey2)) {
+                    dlForm.put(specialKey2, "1");
+                }
                 if (!skipWaittime) {
                     waitTime(downloadLink, timeBefore);
                 }
@@ -706,9 +713,30 @@ public class FileflaresCom extends PluginForHost {
 
     private String getSpecialKey() {
         String result = null;
-        String[] specialKeys = br.getRegex("['|\"]([a-f0-9]{35}[^'\"]+)['|\"]").getColumn(0);
+        String[] specialKeys = br.getRegex("['|\"]([a-f0-9]{33,}[^'\"]+)['|\"]").getColumn(0);
         if (specialKeys != null && specialKeys.length > 0) {
-            result = specialKeys[specialKeys.length - 1];
+            // result = specialKeys[specialKeys.length - 1];
+            result = specialKeys[0];
+        }
+        return result;
+    }
+
+    private String getSpecialKey2() {
+        String vars = br.getRegex("\\)\\{(var _0x[0-9A-F]+=(\"|')[^\2]*?\\2;)if\\(").getMatch(0);
+        String formula = br.getRegex("\\(_0x[0-9A-F]+\\[\\d+\\],(_0x[0-9A-F]+\\+.+?)\\);").getMatch(0);
+        StringBuilder sb = new StringBuilder();
+        sb.append(vars);
+        sb.append("var result=");
+        sb.append(formula);
+        sb.append(";");
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String result = null;
+        try {
+            engine.eval(sb.toString());
+            result = engine.get("result").toString();
+        } catch (final Exception e) {
+            e.printStackTrace();
         }
         return result;
     }
