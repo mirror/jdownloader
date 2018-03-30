@@ -120,7 +120,8 @@ public class PornktubeCom extends PluginForHost {
             if (items != null && items.length > 0) {
                 for (final String item[] : items) {
                     logger.info("Debug info: Preferred_format: " + Preferred_format + ", checking format: " + item[1]);
-                    dllink = "http://s" + item[7] + ".cdna.tv/cvideo/" + item[5] + "/" + item[6] + "/13000/" + item[4] + "/" + item[4] + "_" + item[1] + ".mp4";
+                    final String range = new Regex(item[4], "(\\d+)\\d{3}").getMatch(0) + "000";
+                    dllink = "http://s" + item[7] + ".cdna.tv/cvideo/" + item[5] + "/" + item[6] + "/" + range + "/" + item[4] + "/" + item[4] + "_" + item[1] + ".mp4";
                     logger.info("Debug info: checking dllink: " + dllink);
                     checkDllink(link);
                     if (dllink == null) {
