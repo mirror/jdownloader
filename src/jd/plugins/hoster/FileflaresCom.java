@@ -722,8 +722,15 @@ public class FileflaresCom extends PluginForHost {
     }
 
     private String getSpecialKey2() {
+        String specialKey2 = br.getRegex("_0x[0-9A-F]+\\[_0x[0-9A-F]+\\[\\d+\\]\\]\\(_0x[0-9A-F]+\\[\\d+\\],'([0-9a-f]{32})'\\);").getMatch(0);
+        if (specialKey2 != null) {
+            return specialKey2;
+        }
         String vars = br.getRegex("\\)\\{(var _0x[0-9A-F]+=(\"|')[^\2]*?\\2;)if\\(").getMatch(0);
         String formula = br.getRegex("\\(_0x[0-9A-F]+\\[\\d+\\],(_0x[0-9A-F]+\\+.+?)\\);").getMatch(0);
+        if (vars == null || formula == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(vars);
         sb.append("var result=");
