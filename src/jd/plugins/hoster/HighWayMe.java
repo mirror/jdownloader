@@ -65,7 +65,7 @@ public class HighWayMe extends UseNet {
     private static final String                            NICE_HOST                           = "high-way.me";
     private static final String                            NICE_HOSTproperty                   = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                            = NICE_HOSTproperty + "NORESUME";
-    private static final String                            TYPE_TV                             = ".+high\\-way\\.me/onlinetv\\.php\\?id=\\d+";
+    private static final String                            TYPE_TV                             = ".+high\\-way\\.me/onlinetv\\.php\\?id=.+";
     private static final String                            TYPE_DIRECT                         = ".+high\\-way\\.me/dlu/[a-z0-9]+/[^/]+";
     private static final int                               ERRORHANDLING_MAXLOGINS             = 2;
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
