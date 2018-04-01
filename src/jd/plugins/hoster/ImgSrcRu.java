@@ -22,6 +22,9 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,11 +40,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
+
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
     private String                         ddlink    = null;
@@ -143,58 +144,75 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
-        final String[] qual = { /* original */"pic_o", "ori", /* big */"pic_b", "bip" };
-        boolean done = false;
-        String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
-        Object result = null;
-        if (js != null) {
-            final String[] var = new Regex(js, "((?:var\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('([\\w_]+)'\\).(\\w+),)").getRow(0);
-            final String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
-            final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
-            js = js.replace(var[0], "");
-            for (final String q : qual) {
-                if (js.contains("document.getElementById('" + q + "')")) {
-                    if (!done) {
-                        js = js.replaceFirst("document.getElementById\\('" + q + "'\\)\\.\\w+=", "var result=");
-                        done = true;
-                    } else {
-                        // we don't need
-                        js = js.replaceFirst("document.getElementById\\('" + q + "'\\)[^\r\n]+", "");
+        try {
+            final String[] qual = { /* original */ "pic_o", "ori", /* big */ "pic_b", "bip" };
+            boolean done = false;
+            String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
+            Object result = null;
+            if (js != null) {
+                final String[] var = new Regex(js, "((?:var\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+),)").getRow(0);
+                String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
+                if (varres == null) {
+                    // within js as var
+                    final String t = new Regex(js, var[2] + "='?(.*?)'?[,;]").getMatch(0);
+                    if (t != null) {
+                        varres = br.getRegex("<[^>]+'" + Pattern.quote(t) + "'[^>]*>").getMatch(-1);
                     }
                 }
-            }
-            while (true) {
-                try {
-                    final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                    final ScriptEngine engine = mgr.getEngineByName("javascript");
-                    engine.put(var[1], varsrc);
-                    engine.eval(js);
-                    result = engine.get("result");
-                } catch (final Throwable e) {
-                    // my youtube approach -raztoki
-                    if (e.getMessage() != null) {
-                        // do not use language components of the error message. Only static identifies, otherwise other languages will fail!
-                        final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
-                        if (ee != null) {
-                            // lets look for missing reference
-                            final String ref = br.getRegex("var\\s+" + Pattern.quote(ee) + "\\s*=\\s*.*?;").getMatch(-1);
-                            if (ref != null) {
-                                js = ref + "\r\n" + js;
-                                continue;
-                            } else {
-                                logger.warning("Could not find missing var/function");
-                            }
+                final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
+                js = js.replace(var[0], "");
+                for (final String q : qual) {
+                    if (new Regex(js, "document.getElementById\\('?" + q + "'?\\)").matches()) {
+                        if (!done) {
+                            js = js.replaceFirst("document.getElementById\\('?" + q + "'?\\)\\.\\w+=", "var result=");
+                            done = true;
                         } else {
-                            logger.warning("Could not find reference Error");
+                            // we don't need
+                            js = js.replaceFirst("document.getElementById\\('?" + q + "'?\\)[^\r\n]+", "");
                         }
                     }
-                    logger.log(e);
                 }
-                break;
+                if (!done) {
+                    // yas
+                    js = js.replaceAll("document\\.getElementById\\((\\w+)\\)\\.src=(.*?[;,])", "var result=$2");
+                }
+                while (true) {
+                    try {
+                        final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                        final ScriptEngine engine = mgr.getEngineByName("javascript");
+                        engine.put(var[1], varsrc);
+                        engine.eval(js);
+                        result = engine.get("result");
+                    } catch (final Throwable e) {
+                        // my youtube approach -raztoki
+                        if (e.getMessage() != null) {
+                            // do not use language components of the error message. Only static identifies, otherwise other languages will
+                            // fail!
+                            final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
+                            if (ee != null) {
+                                // lets look for missing reference
+                                final String ref = br.getRegex("var\\s+" + Pattern.quote(ee) + "\\s*=\\s*.*?;").getMatch(-1);
+                                if (ref != null) {
+                                    js = ref + "\r\n" + js;
+                                    continue;
+                                } else {
+                                    logger.warning("Could not find missing var/function");
+                                }
+                            } else {
+                                logger.warning("Could not find reference Error");
+                            }
+                        }
+                        logger.log(e);
+                    }
+                    break;
+                }
+                if (result != null && result instanceof ConsString) {
+                    ddlink = result.toString();
+                }
             }
-            if (result != null && result instanceof ConsString) {
-                ddlink = result.toString();
-            }
+        } catch (Exception e) {
+            logger.log(e);
+            return;
         }
     }
 
