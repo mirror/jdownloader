@@ -145,36 +145,37 @@ public class ImgSrcRu extends PluginForHost {
 
     private void getDllink() {
         try {
-            final String[] qual = { /* original */ "pic_o", "ori", /* big */ "pic_b", "bip" };
             boolean done = false;
             String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
             Object result = null;
+            String t = null;
             if (js != null) {
                 final String[] var = new Regex(js, "((?:var\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+),)").getRow(0);
                 String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
                 if (varres == null) {
                     // within js as var
-                    final String t = new Regex(js, var[2] + "='?(.*?)'?[,;]").getMatch(0);
+                    t = new Regex(js, var[2] + "='?(.*?)'?[,;]").getMatch(0);
                     if (t != null) {
                         varres = br.getRegex("<[^>]+'" + Pattern.quote(t) + "'[^>]*>").getMatch(-1);
                     }
                 }
                 final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
                 js = js.replace(var[0], "");
+                // they are now referencing o+elementid(e) for original, and big is just elementid(e)
+                final String[] qual = { /* original */ "o'\\s*\\+\\s*" + var[2], "pic_o", "ori", /* big */ "pic_b", "bip", var[2] };
                 for (final String q : qual) {
-                    if (new Regex(js, "document.getElementById\\('?" + q + "'?\\)").matches()) {
+                    if (new Regex(js, "document.getElementById\\('?" + q + ".*?\\)").matches()) {
                         if (!done) {
-                            js = js.replaceFirst("document.getElementById\\('?" + q + "'?\\)\\.\\w+=", "var result=");
+                            js = js.replaceFirst("document.getElementById\\('?" + q + ".*?\\)\\.\\w+=", "var result=");
                             done = true;
-                        } else {
-                            // we don't need
-                            js = js.replaceFirst("document.getElementById\\('?" + q + "'?\\)[^\r\n]+", "");
+                            // replace non needed
+                            js = js.replaceAll("document.getElementById\\(.*?\\)[^\r\n]+", "");
+                            break;
                         }
                     }
                 }
                 if (!done) {
-                    // yas
-                    js = js.replaceAll("document\\.getElementById\\((\\w+)\\)\\.src=(.*?[;,])", "var result=$2");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 while (true) {
                     try {
