@@ -42,10 +42,6 @@ public class DeluxemusicTv extends PluginForHost {
     public DeluxemusicTv(PluginWrapper wrapper) {
         super(wrapper);
     }
-    /* DEV NOTES */
-    // Tags:
-    // protocol: https forced
-    // other:
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
@@ -68,7 +64,7 @@ public class DeluxemusicTv extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(500);
+        br.setAllowedResponseCodes(new int[] { 500 });
         final Regex urlregex = new Regex(link.getDownloadURL(), "/video/([^/]+).*([a-f0-9]{32})(/(\\d+))?");
         final String fid = urlregex.getMatch(1);
         final String category_id = urlregex.getMatch(3);
@@ -82,20 +78,22 @@ public class DeluxemusicTv extends PluginForHost {
          * filesize check - it speeds up the linkcheck for this plugin!
          */
         final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !this.br.getURL().matches(".*?[a-f0-9]{32}.*?")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 500) {
+        String filename = null;
+        /* 2018-04-03: Website seems to be broken sometimes which leads to 404 error here but content is still online and downloadable. */
+        final boolean probablyOffline = br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches(".*?[a-f0-9]{32}.*?");
+        if (br.getHttpConnection().getResponseCode() == 500) {
             /* Can be caused by trying to access wrong urls but also if there are server issues! */
             server_issues = true;
             return AvailableStatus.UNCHECKABLE;
-        }
-        final String description = this.br.getRegex("name=\"description\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (description != null && link.getComment() == null) {
-            link.setComment(description);
-        }
-        String filename = br.getRegex("<title>([^<>\"]+):: Medien :: DELUXE MUSIC</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"title\" content=\"([^<>\"]+)MedienDELUXE MUSIC\"").getMatch(0);
+        } else if (!probablyOffline) {
+            final String description = this.br.getRegex("name=\"description\" content=\"([^<>\"]+)\"").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]+):: Medien :: DELUXE MUSIC</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\"title\" content=\"([^<>\"]+)MedienDELUXE MUSIC\"").getMatch(0);
+            }
+            if (description != null && link.getComment() == null) {
+                link.setComment(description);
+            }
         }
         if (filename == null) {
             filename = url_filename;
