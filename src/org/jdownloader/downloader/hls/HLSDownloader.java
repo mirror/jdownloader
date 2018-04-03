@@ -504,6 +504,11 @@ public class HLSDownloader extends DownloadInterface {
                 }
 
                 @Override
+                protected long getLastUpdateTimestampTimeout() {
+                    return 2 * super.getLastUpdateTimestampTimeout();
+                }
+
+                @Override
                 protected void parseLine(boolean isStdout, String line) {
                     try {
                         final String trimmedLine = line.trim();
