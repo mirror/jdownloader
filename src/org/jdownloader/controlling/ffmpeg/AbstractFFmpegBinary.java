@@ -421,7 +421,11 @@ public class AbstractFFmpegBinary {
     private final AtomicLong lastUpdateTimeStamp = new AtomicLong(0);
 
     public void updateLastUpdateTimestamp() {
-        lastUpdateTimeStamp.set(System.currentTimeMillis());
+        updateLastUpdateTimestamp(0);
+    }
+
+    public void updateLastUpdateTimestamp(int add) {
+        lastUpdateTimeStamp.set(System.currentTimeMillis() + Math.max(0, add));
     }
 
     public long getLastUpdateTimestamp() {
@@ -436,8 +440,6 @@ public class AbstractFFmpegBinary {
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
         server.start();
-        final AtomicReference<byte[]> sharedBuffer = new AtomicReference<byte[]>();
-        sharedBuffer.set(new byte[512 * 1024]);
         final AtomicReference<M3U8Playlist> m3u8 = new AtomicReference<M3U8Playlist>();
         finalServer.registerRequestHandler(new HttpRequestHandler() {
             final byte[] readBuf = new byte[512];
@@ -635,14 +637,7 @@ public class AbstractFFmpegBinary {
                                 }
                             }
                             updateLastUpdateTimestamp();
-                            byte[] readWriteBuffer = sharedBuffer.getAndSet(null);
-                            final boolean isSharedBuffer;
-                            if (readWriteBuffer != null) {
-                                isSharedBuffer = true;
-                            } else {
-                                isSharedBuffer = false;
-                                readWriteBuffer = new byte[32 * 1024];
-                            }
+                            final byte[] readWriteBuffer = new byte[32 * 1024];
                             final long length = connection.getCompleteContentLength();
                             try {
                                 if (outputStream == null) {
@@ -691,9 +686,6 @@ public class AbstractFFmpegBinary {
                             } finally {
                                 if (segment != null && (connection.getResponseCode() == 200 || connection.getResponseCode() == 206)) {
                                     segment.setSize(Math.max(connection.getCompleteContentLength(), fileBytesMap.getSize()));
-                                }
-                                if (isSharedBuffer) {
-                                    sharedBuffer.compareAndSet(null, readWriteBuffer);
                                 }
                                 connection.disconnect();
                             }
@@ -868,8 +860,8 @@ public class AbstractFFmpegBinary {
                         lastStdout = stdout.toString("UTF-8");
                         stdoutSize = stdout.size();
                     }
-                    logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
-                    logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
+                    logger.info("LastStdout(Exited):(" + stdoutSize + ")" + lastStdout);
+                    logger.info("LastStderr(Exited):(" + stderrSize + ")" + lastStderr);
                     logger.info("ExitCode:" + exitCode);
                     final boolean okay = exitCode == 0;
                     if (!okay) {
@@ -901,8 +893,8 @@ public class AbstractFFmpegBinary {
                         lastStdout = stdout.toString("UTF-8");
                         stdoutSize = stdout.size();
                     }
-                    logger.info("LastStdout:(" + stdoutSize + ")" + lastStdout);
-                    logger.info("LastStderr:(" + stderrSize + ")" + lastStderr);
+                    logger.info("LastStdout(Timeout):(" + stdoutSize + ")" + lastStdout);
+                    logger.info("LastStderr(Timeout):(" + stderrSize + ")" + lastStderr);
                     throw new InterruptedException("FFmpeg does not answer");
                 }
                 Thread.sleep(100);
