@@ -109,7 +109,6 @@ public class HLSDownloader extends DownloadInterface {
     private Browser                                sourceBrowser;
     private long                                   processID;
     protected volatile MeteredThrottledInputStream meteredThrottledInputStream;
-    protected final AtomicReference<byte[]>        instanceBuffer       = new AtomicReference<byte[]>();
     private List<M3U8Playlist>                     m3u8Playlists;
     private final List<PartFile>                   outputPartFiles      = new ArrayList<PartFile>();
     private final AtomicInteger                    currentPlayListIndex = new AtomicInteger(0);
@@ -748,7 +747,6 @@ public class HLSDownloader extends DownloadInterface {
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
         server.start();
-        instanceBuffer.set(new byte[512 * 1024]);
         finalServer.registerRequestHandler(new HttpRequestHandler() {
             final byte[] readBuf = new byte[512];
 
@@ -946,14 +944,7 @@ public class HLSDownloader extends DownloadInterface {
                                     }
                                 }
                                 ffmpeg.updateLastUpdateTimestamp();
-                                byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
-                                final boolean instanceBuffer;
-                                if (readWriteBuffer != null) {
-                                    instanceBuffer = true;
-                                } else {
-                                    instanceBuffer = false;
-                                    readWriteBuffer = new byte[32 * 1024];
-                                }
+                                final byte[] readWriteBuffer = new byte[32 * 1024];
                                 final long length;
                                 if (fileBytesMap.getFinalSize() > 0) {
                                     length = fileBytesMap.getFinalSize();
@@ -1087,9 +1078,6 @@ public class HLSDownloader extends DownloadInterface {
                                             }
                                         }
                                         requestLogger.info(fileBytesMap.toString());
-                                        if (instanceBuffer) {
-                                            HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
-                                        }
                                     } finally {
                                         connection.disconnect();
                                     }
