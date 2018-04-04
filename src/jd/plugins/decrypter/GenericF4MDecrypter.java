@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,7 +77,7 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 source = source.getSourceLink();
             }
         }
-        final String urlName = getFileNameFromURL(br._getURL());
+        final String urlName = getFileNameFromURL(new URL(param.getCryptedUrl()));
         final ArrayList<DownloadLink> ret = parse(this, br, param.getCryptedUrl(), null, referer, cookiesString);
         if (ret.size() > 1 && isValidURLName(urlName)) {
             final FilePackage fp = FilePackage.getInstance();
