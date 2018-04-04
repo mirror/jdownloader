@@ -68,7 +68,7 @@ public class DateiTo extends PluginForHost {
     /* Switches to enable/disable API */
     private static final boolean LOGIN_API_GENERAL             = true;
     private static final boolean FREE_DOWNLOAD_API             = false;                             // rc2 not yet supported
-    private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = true;
+    private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = false;                              // rc2 not yet supported
     private static final boolean ACCOUNT_PREMIUM_DOWNLOAD_API  = true;
     private static final String  NOCHUNKS                      = "NOCHUNKS";
 
