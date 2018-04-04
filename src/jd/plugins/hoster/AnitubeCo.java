@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -34,12 +33,10 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "https?://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|es|info)/video/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "https?://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|es|info)/video/\\d+/[a-z0-9\\-]+|https?://(www\\.)?anitubebr\\.biz/vd/\\d+/" })
 public class AnitubeCo extends antiDDoSForHost {
-
     // note: .co, .tv, .com.br, .jp, .se don't respond only .info -raztoki20160716
     // https://www.facebook.com/anitubebr/ or google "anitube"
-
     private String        dllink = null;
     private boolean       hls    = false;
     private PluginForHost plugin = null;
@@ -84,6 +81,9 @@ public class AnitubeCo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?)(?:\\s*Online)?\\s*-\\s*AniTube! Animes Online</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h4>(.*?)</h4>").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -211,5 +211,4 @@ public class AnitubeCo extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
