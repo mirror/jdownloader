@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
     @Override
     protected boolean useRUA() {
