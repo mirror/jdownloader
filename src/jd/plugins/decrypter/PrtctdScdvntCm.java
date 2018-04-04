@@ -32,7 +32,7 @@ import jd.plugins.components.UserAgents;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://(www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "https?://(www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" })
 public class PrtctdScdvntCm extends antiDDoSForDecrypt {
     private String  MAINPAGE = "http://protected.socadvnet.com/";
     private Browser xhr      = null;
