@@ -1,6 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -36,12 +35,11 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" })
 public class OBoomCom extends antiDDoSForHost {
-
     private static Map<Account, Map<String, String>> ACCOUNTINFOS          = new HashMap<Account, Map<String, String>>();
     private final String                             APPID                 = "43340D9C23";
     private final String                             REF_TOKEN             = "REF_TOKEN";
@@ -131,12 +129,10 @@ public class OBoomCom extends antiDDoSForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-
         final String premium = infos.get("premium_unix");
         if (premium != null && !"null".equalsIgnoreCase(premium.trim())) {
             long premiumUntil = Long.parseLong(premium) * 1000l;
             ai.setValidUntil(premiumUntil);
-
             if (!ai.isExpired()) {
                 ai.setStatus("Premium Account");
                 return ai;
@@ -347,7 +343,6 @@ public class OBoomCom extends antiDDoSForHost {
             getPage("https://api.oboom.com/1/info?items=" + ID + "&http_errors=0&with_ref_token=true");
             response = br.toString();
         }
-
         if (response.contains("404,\"token") || response.contains("403,\"token")) {
             if (session != null) {
                 return AvailableStatus.UNCHECKABLE;
@@ -470,7 +465,6 @@ public class OBoomCom extends antiDDoSForHost {
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
-
     }
 
     private void refreshTokenHandling(Map<String, String> usedInfos, Account account, final boolean freshInfos) throws PluginException {
@@ -511,7 +505,6 @@ public class OBoomCom extends antiDDoSForHost {
         } else {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-
                     @Override
                     public void run() {
                         try {
@@ -628,12 +621,12 @@ public class OBoomCom extends antiDDoSForHost {
             }
             boolean captchaFailed = true;
             for (int i = 1; i <= 5; i++) {
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String code = getCaptchaCode("recaptcha", cf, link);
-                getPage("https://www.oboom.com/1/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lc7b0IUAAAAAJ7LJfEl9rYKtcxoqyOpuiCzw0eI");
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                getPage("https://www.oboom.com/1/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_response_field=&g-recaptcha-response=" + URLEncoder.encode(recaptchaV2Response, "UTF-8") + "&http_errors=0");
                 if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
                     continue;
                 }
@@ -667,7 +660,6 @@ public class OBoomCom extends antiDDoSForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error: " + br.toString());
                 }
-
             }
             sleep(pre_download_wait * 1001l, link);
             getPage("https://api.oboom.com/1/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
@@ -713,5 +705,4 @@ public class OBoomCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
