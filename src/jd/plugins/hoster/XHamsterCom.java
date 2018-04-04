@@ -175,6 +175,9 @@ public class XHamsterCom extends PluginForHost {
                 if (br.containsHTML("Conversion of video processing")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
                 }
+                if (br.containsHTML("<title>Page was deleted</title>")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (responsecode == 404 || responsecode == 410 || responsecode == 452) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
