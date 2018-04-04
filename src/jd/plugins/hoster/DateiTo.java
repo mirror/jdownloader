@@ -13,10 +13,8 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -43,43 +41,35 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to" }, urls = { "http://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to" }, urls = { "https?://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)" })
 public class DateiTo extends PluginForHost {
-
     private static final String  APIPAGE                       = "http://datei.to/api/jdownloader/";
     private static AtomicInteger maxPrem                       = new AtomicInteger(1);
     private static final String  MAINPAGE                      = "http://datei.to";
     private static final String  NICE_HOST                     = "datei.to";
-
     /* Limit stuff */
     private static final boolean FREE_RESUME_API               = false;
     private static final int     FREE_MAXCHUNKS_API            = 1;
     private static final int     FREE_MAXDOWNLOADS_API         = 1;
-
     private static final boolean FREE_RESUME_WEB               = false;
     private static final int     FREE_MAXCHUNKS_WEB            = 1;
     private static final int     FREE_MAXDOWNLOADS_WEB         = 1;
-
     private static final boolean ACCOUNT_FREE_RESUME_API       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS_API    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS_API = 1;
-
     private static final boolean ACCOUNT_FREE_RESUME_WEB       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS_WEB    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS_WEB = 1;
-
     private static final boolean ACCOUNT_PREMIUM_RESUME        = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
-
     /* Switches to enable/disable API */
     private static final boolean LOGIN_API_GENERAL             = true;
-    private static final boolean FREE_DOWNLOAD_API             = true;
+    private static final boolean FREE_DOWNLOAD_API             = false;                             // rc2 not yet supported
     private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = true;
     private static final boolean ACCOUNT_PREMIUM_DOWNLOAD_API  = true;
-
     private static final String  NOCHUNKS                      = "NOCHUNKS";
 
     public DateiTo(PluginWrapper wrapper) {
@@ -236,20 +226,14 @@ public class DateiTo extends PluginForHost {
         }
         this.sleep(Long.parseLong(waitAndID.getMatch(0)) * 1001l, downloadLink);
         final String id = waitAndID.getMatch(1);
-
         for (int i = 1; i <= 5; i++) {
             br.postPage(APIPAGE, "op=free&step=2&id=" + id);
-            final String reCaptchaId = br.toString().trim();
-            if (reCaptchaId == null) {
-                logger.warning("reCaptchaId is null...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdbVEIUAAAAAIU24dCbs2FiNpy8hA907xADfsBW");
+            final String recaptchaV2Response = rc2.getToken();
+            if (recaptchaV2Response == null) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.setId(reCaptchaId);
-            rc.load();
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            br.postPage(APIPAGE, "op=free&step=3&id=" + id + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+            br.postPage(APIPAGE, "op=free&step=3&id=" + id + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             if (!br.containsHTML("(wrong|no input)") && br.containsHTML("ok")) {
                 break;
             }
@@ -257,7 +241,6 @@ public class DateiTo extends PluginForHost {
         if (br.containsHTML("(wrong|no input)")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-
         br.postPage(APIPAGE, "op=free&step=4&id=" + id);
         generalFreeAPIErrorhandling();
         if (br.containsHTML("ticket expired")) {
@@ -268,14 +251,13 @@ public class DateiTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         dlUrl = dlUrl.trim();
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, resume, maxchunks);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink doesn't seem to be a file...");
             br.followConnection();
             // Shouldn't happen often
             handleGeneralServerErrors();
-            if (br.containsHTML("(window\\.location\\.href=\\'http://datei\\.to/login|form id=\"UploadForm\")")) {
+            if (br.containsHTML("(window\\.location\\.href=\\'https?://datei\\.to/login|form id=\"UploadForm\")")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             } else if (br.containsHTML("error/ticketexpired")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Ticket expired");
@@ -291,7 +273,6 @@ public class DateiTo extends PluginForHost {
         if (br.containsHTML(err_temp_unvail)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "File is unavailable for technical reasons ", 10 * 60 * 1000l);
         }
-
         final String dlid = br.getRegex("<button id=\"([AS-Za-z0-9]+)\"").getMatch(0);
         if (dlid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -300,15 +281,13 @@ public class DateiTo extends PluginForHost {
         if (br.containsHTML(">Ansonsten musst du warten, bis der aktuelle Download beendet ist")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
         }
-
         final Regex reconWait = br.getRegex("Du musst noch <strong>(\\d+):(\\d+) min</strong> warten");
         final String reconMin = reconWait.getMatch(0);
         final String reconSecs = reconWait.getMatch(1);
         if (reconMin != null && reconSecs != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconMin) * 60 * 1000l + Integer.parseInt(reconSecs) * 1001l);
         }
-
-        String dllink = br.getRegex("iframe src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("iframe src=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             final String waittime = br.getRegex("id=\"DCS\">(\\d+)</span> Sekunden").getMatch(0);
             if (waittime == null) {
@@ -317,12 +296,12 @@ public class DateiTo extends PluginForHost {
             this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
             for (int i = 1; i <= 5; i++) {
                 br.postPage("http://datei.to/response/download", "Step=2&ID=" + dlid);
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.setId("6LdBbL8SAAAAAI0vKUo58XRwDd5Tu_Ze1DA7qTao");
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                br.postPage("http://datei.to/response/recaptcha", "modul=checkDLC&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&ID=" + dlid);
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdbVEIUAAAAAIU24dCbs2FiNpy8hA907xADfsBW");
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                br.postPage("http://datei.to/response/recaptcha", "modul=checkDLC&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&ID=" + dlid);
                 if (br.containsHTML("Eingabe war leider falsch")) {
                     continue;
                 }
@@ -333,12 +312,11 @@ public class DateiTo extends PluginForHost {
             } else if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
             }
-
             br.postPage("http://datei.to/response/download", "Step=3&ID=" + dlid);
             if (br.containsHTML(">Du lädst bereits eine Datei herunter")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             }
-            dllink = br.getRegex("iframe src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("iframe src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 logger.warning(NICE_HOST + ": dllink is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -348,11 +326,9 @@ public class DateiTo extends PluginForHost {
             maxchunks = 1;
         }
         br.setFollowRedirects(true);
-
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxchunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink doesn't seem to be a file...");
@@ -514,7 +490,6 @@ public class DateiTo extends PluginForHost {
         this.setBrowserExclusive();
         prepbrowser_api(br);
         br.postPage(APIPAGE, "op=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-
         final String lang = System.getProperty("user.language");
         if (br.containsHTML("wrong login")) {
             if ("de".equalsIgnoreCase(lang)) {
