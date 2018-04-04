@@ -130,6 +130,12 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "is current script run in synchronous mode?")
+    public static boolean isSynchronous() {
+        final ScriptThread env = getScriptThread();
+        return env != null && env.isSynchronous();
+    }
+
     @ScriptAPI(description = "enable permission checks")
     public static void enablePermissionChecks() {
         final ScriptThread env = getScriptThread();
