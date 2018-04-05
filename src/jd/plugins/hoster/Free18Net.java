@@ -49,7 +49,7 @@ public class Free18Net extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\" CONTENT=\"1;URL=http://www\\.free18\\.net/\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("URL=http://www\\.free18\\.net/\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"wat_title\">([^<>\"]*?)</h1>").getMatch(0);
