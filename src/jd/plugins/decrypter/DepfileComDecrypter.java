@@ -84,7 +84,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(d);
                         distribute(d);
                     }
-                    final String fpName = br.getRegex("<th>Folder name:</th>\\s*<td>(.*?)</td>").getMatch(0);
+                    final String fpName = br.getRegex("<th[^<>]*?>Folder name:</th>\\s*<td>(.*?)</td>").getMatch(0);
                     if (fpName != null) {
                         FilePackage fp = FilePackage.getInstance();
                         fp.setName(fpName.trim());

@@ -134,9 +134,9 @@ public class DepfileCom extends PluginForHost {
         }
         String filename = new Regex(dl.getDownloadURL(), "/downloads/i/\\d+/f/(.+)").getMatch(0);
         if (!dl.getDownloadURL().matches(".+/downloads/i/\\d+/f/.+")) {
-            filename = br.getRegex("<th>File name:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+            filename = br.getRegex("<th[^<>]*?>File name:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
-        String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<th[^<>]*?>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
         if (filename != null) {
             dl.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
         }
