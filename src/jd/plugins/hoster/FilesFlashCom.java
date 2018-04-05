@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -35,7 +34,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:8001)?/[a-z0-9]+" })
 public class FilesFlashCom extends PluginForHost {
@@ -189,12 +187,12 @@ public class FilesFlashCom extends PluginForHost {
         if (rcID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Recaptcha rc = new Recaptcha(br, this);
-        rc.setId(rcID);
-        rc.load();
-        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-        br.postPage("/freedownload.php", "token=" + token + "&submit=Submit&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+        if (true) {
+            // host has not yet switched to RC2, 05 April 2018
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // br.postPage("/freedownload.php", "token=" + token + "&submit=Submit&recaptcha_challenge_field=" + rc.getChallenge() +
+        // "&recaptcha_response_field=" + Encoding.urlEncode(c));
         if (br.containsHTML("google.com/recaptcha")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
