@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdudecrypted\\.com/[a-z0-9\\-]+" })
 public class FapduCom extends PluginForHost {
-
     public FapduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,12 +44,10 @@ public class FapduCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -65,7 +61,7 @@ public class FapduCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"removed\\-top\"") || !this.br.containsHTML("id=\"video\\-title\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"removed\\-top\"") || !br.containsHTML("id=\"video\\-title\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
@@ -81,6 +77,9 @@ public class FapduCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink == null && br.containsHTML("pornative.com")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || dllink == null) {
             // stuff is embed, thats not supported (would need decrypter anyway) https://svn.jdownloader.org/issues/81442
