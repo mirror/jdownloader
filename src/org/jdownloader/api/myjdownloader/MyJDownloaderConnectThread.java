@@ -187,7 +187,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
                                 // 1,2,4,8,16,32
                                 timeout = ((long) Math.pow(2.0d, currentBackOff)) * 1000;
                             } else {
-                                timeout = 35 * 1000;
+                                timeout = 30 * 1000;
                             }
                             final long nextTimeout = timeout + new Random().nextInt(5000);
                             thread.log("Error #:" + currentBackOff + " next retry: " + nextTimeout);
