@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,11 +29,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "https?://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
 public class FileHippoCom extends PluginForHost {
-
     private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found|Sorry an error occurred processing your request)";
-    public static final String  MAINPAGE     = "http://www.filehippo.com";
+    public static final String  MAINPAGE     = "https://www.filehippo.com";
 
     public FileHippoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,10 +40,10 @@ public class FileHippoCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("/(es|en|pl|jp|de)", ""));
-        if (link.getDownloadURL().matches("http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+/tech/\\d+/")) {
+        if (link.getDownloadURL().matches("http?://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+/tech/\\d+/")) {
             final String numbers = new Regex(link.getDownloadURL(), "/(\\d+)/$").getMatch(0);
             final String linkpart = new Regex(link.getDownloadURL(), "/download_([^<>/\"]+)").getMatch(0);
-            link.setUrlDownload("http://www.filehippo.com/download_" + linkpart + "/tech/" + numbers + "/");
+            link.setUrlDownload("https://www.filehippo.com/download_" + linkpart + "/tech/" + numbers + "/");
         } else {
             if (!link.getDownloadURL().endsWith("/")) {
                 link.setUrlDownload(link.getDownloadURL() + "/tech/");
@@ -57,7 +55,7 @@ public class FileHippoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.filehippo.com/info/disclaimer/";
+        return "https://www.filehippo.com/info/disclaimer/";
     }
 
     @Override
@@ -70,7 +68,7 @@ public class FileHippoCom extends PluginForHost {
         br = new Browser();
         br.setFollowRedirects(true);
         this.setBrowserExclusive();
-        br.setCookie("http://filehippo.com/", "FH_PreferredCulture", "en-US");
+        br.setCookie("https://filehippo.com/", "FH_PreferredCulture", "en-US");
         final String url_name = new Regex(link.getDownloadURL(), "filehippo\\.com/(.+)").getMatch(0);
         br.getPage(link.getDownloadURL());
         if (this.br.getURL().equals("http://www.filehippo.com/")) {
@@ -83,7 +81,7 @@ public class FileHippoCom extends PluginForHost {
         // If the user adds a wrong link we have to find the right one here and
         // set it
         if (realLink != null) {
-            realLink = "http://www.filehippo.com" + realLink + "tech/";
+            realLink = "https://www.filehippo.com" + realLink + "tech/";
             link.setUrlDownload(realLink);
             br.getPage(link.getDownloadURL());
             if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) {
@@ -170,5 +168,4 @@ public class FileHippoCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
