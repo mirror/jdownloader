@@ -1217,6 +1217,15 @@ public class LinkCrawler {
                                                                     sb.append("\r\n");
                                                                 }
                                                                 sb.append(match);
+                                                                if (match.matches("^[^<>\"]+$")) {
+                                                                    try {
+                                                                        final String url = br.getURL(match).toString();
+                                                                        if (dups.add(url)) {
+                                                                            sb.append("\r\n").append(url);
+                                                                        }
+                                                                    } catch (final Throwable e) {
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
