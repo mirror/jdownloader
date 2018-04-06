@@ -34,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -90,7 +91,12 @@ public class SpasteCom extends antiDDoSForDecrypt {
                     }
                 }
             }
-            if (form.containsHTML("api\\.solvemedia\\.com/papi")) {
+            if (form.containsHTML("g-recaptcha")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                // form only has one input...its static
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(form);
+            } else if (form.containsHTML("api\\.solvemedia\\.com/papi")) {
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
                 try {
