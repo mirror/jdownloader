@@ -46,7 +46,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private Context                      cx;
     private final LogSource              logger;
     private final EventScripterExtension extension;
-    private final boolean                isSynchronous;
     private boolean                      checkPermissions = true;
 
     public boolean isCheckPermissions() {
@@ -66,7 +65,6 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         this.props = props;
         this.logger = logSource;
         this.extension = eventScripterExtension;
-        isSynchronous = script.getEventTrigger().isSynchronous(props);
     }
 
     @Override
@@ -97,7 +95,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public boolean isSynchronous() {
-        return isSynchronous;
+        return false;
     }
 
     @Override

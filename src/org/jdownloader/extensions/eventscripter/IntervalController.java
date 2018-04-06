@@ -11,7 +11,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 
 public class IntervalController {
-
     private final EventScripterExtension                  extension;
     private final AtomicReference<Thread>                 scheduler     = new AtomicReference<Thread>(null);
     private final AtomicReference<ArrayList<ScriptEntry>> scriptEntries = new AtomicReference<ArrayList<ScriptEntry>>(null);
@@ -110,6 +109,12 @@ public class IntervalController {
                 final HashMap<String, Object> props = new HashMap<String, Object>();
                 props.put("interval", interval);
                 final ScriptThread thread = new ScriptThread(extension, scriptEntry, props, logger) {
+                    @Override
+                    public boolean isSynchronous() {
+                        return isSynchronous;
+                    }
+
+                    @Override
                     protected void finalizeEnvironment() throws IllegalAccessException {
                         super.finalizeEnvironment();
                         try {

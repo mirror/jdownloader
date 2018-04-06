@@ -8,7 +8,6 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
 public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
-
     public ConnectExceptionInPluginBan(Plugin plg, AbstractProxySelectorImpl proxySelector, HTTPProxy proxy) {
         super(plg, proxySelector, proxy);
         created = System.currentTimeMillis();
@@ -38,7 +37,7 @@ public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
             return false;
         }
         if (ban instanceof ConnectExceptionInPluginBan) {
-            created = Math.max(((ConnectExceptionInPluginBan) ban).created, created);
+            created = Math.max(((ConnectExceptionInPluginBan) ban).getCreated(), getCreated());
             return true;
         }
         return false;
@@ -46,11 +45,10 @@ public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
 
     @Override
     public boolean isExpired() {
-        return System.currentTimeMillis() - created > 15 * 60 * 1000l || super.isExpired();
+        return System.currentTimeMillis() - getCreated() > 15 * 60 * 1000l || super.isExpired();
     }
 
     public long getCreated() {
         return created;
     }
-
 }

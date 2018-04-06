@@ -1,6 +1,5 @@
 package jd.controlling.proxy;
 
-import java.lang.ref.WeakReference;
 import java.net.URL;
 
 import jd.plugins.Plugin;
@@ -9,22 +8,15 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
 public class AuthExceptionGenericBan extends AbstractBan {
-
-    private final WeakReference<HTTPProxy> proxy;
-    private final URL                      url;
+    private final URL url;
 
     public URL getURL() {
         return url;
     }
 
     public AuthExceptionGenericBan(AbstractProxySelectorImpl proxySelector, HTTPProxy proxy, URL url) {
-        super(proxySelector);
-        this.proxy = new WeakReference<HTTPProxy>(proxy);
+        super(proxy, proxySelector);
         this.url = url;
-    }
-
-    protected HTTPProxy getProxy() {
-        return proxy.get();
     }
 
     @Override
@@ -45,11 +37,6 @@ public class AuthExceptionGenericBan extends AbstractBan {
     }
 
     @Override
-    public boolean isExpired() {
-        return getProxy() == null;
-    }
-
-    @Override
     public boolean canSwallow(ConnectionBan ban) {
         if (!(ban instanceof AuthExceptionGenericBan)) {
             return false;
@@ -59,5 +46,4 @@ public class AuthExceptionGenericBan extends AbstractBan {
         }
         return true;
     }
-
 }

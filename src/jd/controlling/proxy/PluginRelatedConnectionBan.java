@@ -1,6 +1,5 @@
 package jd.controlling.proxy;
 
-import java.lang.ref.WeakReference;
 import java.net.URL;
 
 import jd.plugins.Plugin;
@@ -10,22 +9,15 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
 public class PluginRelatedConnectionBan extends AbstractBan {
-
-    private final WeakReference<HTTPProxy> proxy;
-    private final String                   host;
+    private final String host;
 
     public PluginRelatedConnectionBan(Plugin plugin, AbstractProxySelectorImpl proxySelector, HTTPProxy proxy) {
-        super(proxySelector);
-        this.proxy = new WeakReference<HTTPProxy>(proxy);
+        super(proxy, proxySelector);
         host = plugin.getHost();
     }
 
     protected String getHost() {
         return host;
-    }
-
-    protected HTTPProxy getProxy() {
-        return proxy.get();
     }
 
     @Override
@@ -44,11 +36,6 @@ public class PluginRelatedConnectionBan extends AbstractBan {
     public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
         final HTTPProxy proxy = getProxy();
         return proxy != null && proxy.equals(orgReference);
-    }
-
-    @Override
-    public boolean isExpired() {
-        return getProxy() == null;
     }
 
     @Override
