@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.eventscripter;
 
 import java.io.File;
@@ -105,11 +104,9 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTab
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
 public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener, ReconnecterListener, ChallengeResponseListener {
-
     private EventScripterConfigPanel          configPanel = null;
     private volatile List<ScriptEntry>        entries     = new ArrayList<ScriptEntry>();
     private final AtomicReference<Subscriber> subscriber  = new AtomicReference<Subscriber>(null);
-
     private IntervalController                intervalController;
 
     @Override
@@ -153,7 +150,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
         }
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 final ExtractionExtension instance = ExtractionExtension.getInstance();
@@ -172,7 +168,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         LinkCollector.getInstance().getEventsender().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
-
         if (!Application.isHeadless()) {
             MenuManagerMainToolbar.getInstance().registerExtender(this);
             MenuManagerMainmenu.getInstance().registerExtender(this);
@@ -183,7 +178,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             MenuManagerTrayIcon.getInstance().registerExtender(this);
         }
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 final ExtractionExtension instance = ExtractionExtension.getInstance();
@@ -204,7 +198,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         }
         intervalController = new IntervalController(this);
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 setupRemoteAPIListener(entries);
@@ -220,7 +213,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
             }
         });
-
     }
 
     private void setupRemoteAPIListener(List<ScriptEntry> scriptEntries) {
@@ -295,7 +287,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     protected void initExtension() throws StartException {
-
     }
 
     @Override
@@ -305,7 +296,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-
         if (manager instanceof MenuManagerMainmenu) {
             OptionalContainer opt = new OptionalContainer(false);
             opt.add(GenericEventScriptTriggerMainmenuAction.class);
@@ -322,7 +312,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             OptionalContainer opt = new OptionalContainer(false);
             opt.add(GenericEventScriptTriggerContextMenuAction.class);
             return opt;
-
         } else if (manager instanceof MenuManagerLinkgrabberTabBottombar) {
             OptionalContainer opt = new OptionalContainer(false);
             opt.add(GenericEventScriptTriggerMainmenuAction.class);
@@ -332,11 +321,9 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             opt.add(GenericEventScriptTriggerMainmenuAction.class);
             return opt;
         } else if (manager instanceof MenuManagerMainToolbar) {
-
             OptionalContainer opt = new OptionalContainer(false);
             opt.add(GenericEventScriptTriggerToolbarAction.class);
             return opt;
-
         }
         return null;
     }
@@ -352,7 +339,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadWatchdogStateIsIdle() {
-
     }
 
     @Override
@@ -361,7 +347,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_PAUSE == script.getEventTrigger()) {
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
-
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -376,7 +361,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_RUNNING == script.getEventTrigger()) {
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
-
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -391,14 +375,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_STOPPED == script.getEventTrigger()) {
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
-
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
                 }
             }
         }
-
     }
 
     @Override
@@ -422,7 +404,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     public void runScript(ScriptEntry script, Map<String, Object> props) {
-        new ScriptThread(this, script, props, getLogger()).start();
+        final boolean isSynchronous = script.getEventTrigger().isSynchronous(script.getEventTriggerSettings());
+        new ScriptThread(this, script, props, getLogger()) {
+            @Override
+            public boolean isSynchronous() {
+                return isSynchronous;
+            }
+        }.start();
     }
 
     @Override
@@ -485,7 +473,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 getSettings().setScripts(entries);
             }
         }.start();
-
     }
 
     public void runTest(final EventTrigger eventTrigger, final String name, final String scriptSource) {
@@ -500,22 +487,17 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 runScript(script, eventTrigger.getTestProperties());
             }
         }.start();
-
     }
 
     public void runTestCompile(EventTrigger eventTrigger, String script) {
         Context cx = Context.enter();
         cx.setOptimizationLevel(-1);
-
         cx.setLanguageVersion(Context.VERSION_1_5);
-
         Global scope = new Global();
         scope.init(cx);
-
         try {
             // cx.compileString(source, sourceName, lineno, securityDomain)
             Script fcn = cx.compileString(script, "", 1, null);
-
             Dialog.getInstance().showMessageDialog(_GUI.T.lit_successfull());
         } catch (Throwable e1) {
             Dialog.getInstance().showExceptionDialog(T.syntax_error(), e1.getMessage(), e1);
@@ -694,7 +676,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         case EXTRACTION_FAILED:
         case EXTRACTION_FAILED_CRC:
         case FILE_NOT_FOUND:
-
         case NOT_ENOUGH_SPACE:
         case OPEN_ARCHIVE_SUCCESS:
         case PASSWORD_FOUND:
@@ -710,11 +691,9 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     public void refreshScripts() {
         if (intervalController != null) {
             intervalController.update();
-
         }
         if (configPanel != null) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     configPanel.refresh();
@@ -732,9 +711,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                     props.put("icon", iconKey);
                     props.put("shortCutString", shortCutString);
                     props.put("menu", downloadTableContextMenuButton.name());
-
                     View view = MainTabbedPane.getInstance().getSelectedView();
-
                     if (view instanceof DownloadsView) {
                         if (downloadTableContextMenuButton == EventTrigger.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON) {
                             props.put("dlSelection", new DownloadlistSelectionSandbox(selectionInfo));
@@ -770,7 +747,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
             }
         }
-
     }
 
     @Override
@@ -786,7 +762,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
             }
         }
-
     }
 
     @Override
@@ -800,16 +775,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
                     ArrayList<String> solver = new ArrayList<String>();
-
                     for (ChallengeSolver<?> s : job.getSolverList()) {
                         solver.add(s.getService().getID() + "." + s.getClass().getSimpleName());
                     }
                     props.put("solved", job.isSolved());
                     props.put("solver", solver.toArray(new String[] {}));
                     ResponseList<?> resp = job.getResponse();
-
                     props.put("result", resp == null ? null : resp.getValue());
-
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -824,7 +796,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
-
     }
 
     @Override
@@ -838,5 +809,4 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     @Override
     public void onLinkCrawlerFinished() {
     }
-
 }

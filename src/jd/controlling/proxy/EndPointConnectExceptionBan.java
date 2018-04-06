@@ -1,6 +1,5 @@
 package jd.controlling.proxy;
 
-import java.lang.ref.WeakReference;
 import java.net.URL;
 
 import jd.http.Browser;
@@ -11,22 +10,20 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
 public class EndPointConnectExceptionBan extends AbstractBan {
+    private final URL url;
 
-    private final WeakReference<HTTPProxy> proxy;
-    private final URL                      url;
+    public String getAuth() {
+        return auth;
+    }
 
     protected URL getURL() {
         return url;
     }
 
     public EndPointConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy proxy, URL url) {
-        super(selector);
-        this.proxy = new WeakReference<HTTPProxy>(proxy);
+        super(proxy, selector);
         this.url = url;
-    }
-
-    protected HTTPProxy getProxy() {
-        return proxy.get();
+        created = System.currentTimeMillis();
     }
 
     protected String getHost() {
@@ -46,6 +43,10 @@ public class EndPointConnectExceptionBan extends AbstractBan {
         return getURL().getProtocol();
     }
 
+    protected long getExpireTimeout() {
+        return 15 * 60 * 1000l;
+    }
+
     @Override
     public boolean isSelectorBannedByPlugin(final Plugin plugin, final boolean ignoreConnectBans) {
         final String host = plugin.getHost();
@@ -63,7 +64,13 @@ public class EndPointConnectExceptionBan extends AbstractBan {
 
     @Override
     public boolean isExpired() {
-        return getProxy() == null;
+        return System.currentTimeMillis() - getCreated() > getExpireTimeout() || super.isExpired();
+    }
+
+    private volatile long created = System.currentTimeMillis();
+
+    protected long getCreated() {
+        return created;
     }
 
     @Override
@@ -71,6 +78,7 @@ public class EndPointConnectExceptionBan extends AbstractBan {
         if (ban instanceof EndPointConnectExceptionBan) {
             final EndPointConnectExceptionBan other = (EndPointConnectExceptionBan) ban;
             if (proxyEquals(getProxy(), other.getProxy()) && getPort() == other.getPort() && StringUtils.equals(getHost(), other.getHost()) && StringUtils.equals(getProtocol(), other.getProtocol())) {
+                created = Math.max(other.getCreated(), getCreated());
                 return true;
             }
         }
