@@ -38,41 +38,46 @@ public class Recaptcha {
     }
 
     public File downloadCaptcha(final File captchaFile) throws IOException, PluginException {
-        /* follow redirect needed as google redirects to another domain */
-        if (this.getTries() > 0) {
-            this.reload();
-        }
-        // this.rcBr could be null at this stage, if we are specifying challenge id and image ourselves.
-        prepRcBr();
-        this.rcBr.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            track("download/" + helperID);
-            Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
-            FileInputStream is = null;
+        if (true) {
+            /* rc1 is shut down since 01.04.2018 */
+            return null;
+        } else {
+            /* follow redirect needed as google redirects to another domain */
+            if (this.getTries() > 0) {
+                this.reload();
+            }
+            // this.rcBr could be null at this stage, if we are specifying challenge id and image ourselves.
+            prepRcBr();
+            this.rcBr.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                is = new FileInputStream(captchaFile);
-                RecaptchaType type = RecaptchaTypeTester.getType(captchaFile);
-                track("imagetype/" + type + "/" + helperID);
-            } catch (IOException e) {
-                track("imagetype/" + e.getMessage() + "/" + helperID);
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (IOException e) {
+                track("download/" + helperID);
+                Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
+                FileInputStream is = null;
+                try {
+                    is = new FileInputStream(captchaFile);
+                    RecaptchaType type = RecaptchaTypeTester.getType(captchaFile);
+                    track("imagetype/" + type + "/" + helperID);
+                } catch (IOException e) {
+                    track("imagetype/" + e.getMessage() + "/" + helperID);
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                        }
                     }
                 }
+            } catch (final IOException e) {
+                captchaFile.delete();
+                throw e;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
-        } catch (final IOException e) {
-            captchaFile.delete();
-            throw e;
-        } finally {
-            if (con != null) {
-                con.disconnect();
-            }
+            return captchaFile;
         }
-        return captchaFile;
     }
 
     public void findID() throws PluginException {

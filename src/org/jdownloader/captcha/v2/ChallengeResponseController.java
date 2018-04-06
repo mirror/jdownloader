@@ -16,6 +16,7 @@ import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -26,6 +27,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaDialogSolver;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.AccountOAuthSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.OAuthDialogSolver;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.antiCaptchaCom.AntiCaptchaComSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
@@ -250,6 +252,22 @@ public class ChallengeResponseController {
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
         c.initController(job);
+        if (c instanceof RecaptchaV1CaptchaChallenge) {
+            final LogInterface log = c.getPlugin() != null ? c.getPlugin().getLogger() : logger;
+            if (log != null) {
+                log.info("Apply RecaptchaV1 dummy response workaround!");
+            }
+            /* rc1 is shut down since 01.04.2018 */
+            /* dummy answer */
+            final AbstractResponse<T> dummyResponse = new AbstractResponse<T>(c, null, 100, null) {
+                @Override
+                public T getValue() {
+                    return (T) "Test Test";
+                }
+            };
+            job.addAnswer(dummyResponse);
+            return job;
+        }
         final UniqueAlltimeID challengeID = c.getId();
         synchronized (activeJobs) {
             activeJobs.add(job);

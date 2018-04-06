@@ -484,11 +484,15 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private File copyCaptcha(String method, File file) throws Exception {
-        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-        copy.delete();
-        copy.getParentFile().mkdirs();
-        IO.copyFile(file, copy);
-        return copy;
+        if (file != null) {
+            final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+            copy.delete();
+            copy.getParentFile().mkdirs();
+            IO.copyFile(file, copy);
+            return copy;
+        } else {
+            return null;
+        }
     }
 
     protected <T> T handleCaptchaChallenge(final DownloadLink link, Challenge<T> c) throws CaptchaException, PluginException, InterruptedException {

@@ -564,11 +564,15 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     private File copyCaptcha(String method, File file) throws Exception {
-        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-        copy.delete();
-        copy.getParentFile().mkdirs();
-        IO.copyFile(file, copy);
-        return copy;
+        if (file != null) {
+            final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+            copy.delete();
+            copy.getParentFile().mkdirs();
+            IO.copyFile(file, copy);
+            return copy;
+        } else {
+            return null;
+        }
     }
 
     protected ClickedPoint getCaptchaClickedPoint(String method, File file, final CryptedLink link, String defaultValue, String explain) throws Exception {
