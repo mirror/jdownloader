@@ -13,16 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,24 +38,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sharedir.com" }, urls = { "https?://dl\\.sharedir\\.com/\\d+/" })
 public class ShareDirCom extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                   = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS                             = "NOCHUNKS";
-
     private static final String                            API_BASE                             = "https://sharedir.com/sdapi.php";
     private static final String                            NICE_HOST                            = "sharedir.com";
     private static final String                            NICE_HOSTproperty                    = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     /** TODO: Get these 2 constants via API. */
     /* 500 MB, checked/set 28.12.14 */
     private static final long                              default_free_account_traffic_max     = 524288000L;
     /* Max. downloadable filesize for freeusers in MB, checked/set 2014-12-28 */
     private static final long                              default_free_account_filesize_max_mb = 150;
-
     public static final long                               trust_cookie_age                     = 300000l;
-
     private Account                                        currAcc                              = null;
     private DownloadLink                                   currDownloadLink                     = null;
     private int                                            STATUSCODE                           = 0;
@@ -160,7 +154,6 @@ public class ShareDirCom extends PluginForHost {
         if (!br.toString().trim().equals("0")) {
             ac.setValidUntil(TimeFormatter.getMilliSeconds(br.toString(), "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         }
-
         ac.setProperty("multiHostSupport", Property.NULL);
         safeAPIRequest(API_BASE + "?get_dl_limit", account, null);
         int maxSim = Integer.parseInt(br.toString().trim());
@@ -169,7 +162,6 @@ public class ShareDirCom extends PluginForHost {
         }
         account.setMaxSimultanDownloads(maxSim);
         account.setConcurrentUsePossible(true);
-
         // this should done at the point of link generating (which this host doesn't do). As not every hoster would have the same value...
         safeAPIRequest(API_BASE + "?get_max_file_conn", account, null);
         int maxcon = Integer.parseInt(br.toString().trim());
@@ -216,7 +208,7 @@ public class ShareDirCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
@@ -243,7 +235,6 @@ public class ShareDirCom extends PluginForHost {
                 }
             }
         }
-
         login(account, false);
         final String dllink = "http://dl." + account.getHoster() + "/?i=" + Encoding.urlEncode(link.getDownloadURL());
         handleDl(link, account, dllink, false);
@@ -411,7 +402,6 @@ public class ShareDirCom extends PluginForHost {
                 /* Unknown errorcode -> disable account */
                 statusMessage = "Unknown errorcode";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + STATUSCODE + " statusMessage: " + statusMessage);
@@ -488,5 +478,4 @@ public class ShareDirCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
