@@ -20,9 +20,6 @@ import java.io.IOException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video(?:\\.php\\?id=|/)[A-Za-z0-9]+.+" })
 public class JavynowCom extends PluginForHost {
@@ -120,24 +120,21 @@ public class JavynowCom extends PluginForHost {
     }
 
     private String decodeDownloadLink() {
-        String js = br.getRegex("eval\\((function\\(p.+?)\\)\\s*</").getMatch(0);
-        if (js == null) {
+        final String js = br.getRegex("eval\\((function\\(p.+?)\\)\\s*</").getMatch(0);
+        if (js != null) {
+            String decoded = null;
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                engine.eval("var result=" + js);
+                decoded = (String) engine.get("result");
+            } catch (final Exception e) {
+                getLogger().log(e);
+            }
+            return new Regex(decoded, "(https?://[^\"]*\\.m3u8[^\"]*)").getMatch(0);
+        } else {
             return null;
         }
-        String decoded = null;
-        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            engine.eval("var result=" + js);
-            decoded = (String) engine.get("result");
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        String finallink = null;
-        if (decoded != null) {
-            finallink = new Regex(decoded, "file:\"([^\"]+)").getMatch(0);
-        }
-        return finallink;
     }
 
     @Override
