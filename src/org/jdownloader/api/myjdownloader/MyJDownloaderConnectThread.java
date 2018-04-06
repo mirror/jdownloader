@@ -182,16 +182,20 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
                     if (backOff.get()) {
                         long currentBackOff = requested.get();
                         try {
-                            long timeout = 120 * 1000l;
+                            final long timeout;
                             if (currentBackOff <= 5) {
-                                timeout = ((long) Math.pow(3.0d, currentBackOff)) * 1000;
+                                // 1,2,4,8,16,32
+                                timeout = ((long) Math.pow(2.0d, currentBackOff)) * 1000;
+                            } else {
+                                timeout = 35 * 1000;
                             }
-                            timeout = Math.min(180 * 1000l, timeout);
-                            timeout = timeout + new Random().nextInt(10000);
-                            thread.log("Error #:" + currentBackOff + " next retry: " + timeout);
-                            this.retryTimeStamp = System.currentTimeMillis() + timeout;
-                            Thread.sleep(timeout);
-                            refresh();
+                            final long nextTimeout = timeout + new Random().nextInt(5000);
+                            thread.log("Error #:" + currentBackOff + " next retry: " + nextTimeout);
+                            this.retryTimeStamp = System.currentTimeMillis() + nextTimeout;
+                            Thread.sleep(nextTimeout);
+                            if (currentBackOff >= 5) {
+                                refresh();
+                            }
                         } finally {
                             this.retryTimeStamp = -1;
                             requested.compareAndSet(currentBackOff, currentBackOff + 1);
