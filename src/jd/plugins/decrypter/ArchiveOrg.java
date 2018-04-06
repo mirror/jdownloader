@@ -69,6 +69,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                 final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
                 if (showAll != null) {
                     decryptedLinks.add(createDownloadlink(br.getURL(showAll).toString()));
+                    logger.info("Creating: " + br.getURL(showAll).toString());
                     break;
                 }
                 final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
@@ -99,7 +100,7 @@ public class ArchiveOrg extends PluginForDecrypt {
             final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
             final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
             // New way
-            final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^<>\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
+            final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
             String filesXML = null;
             for (final String[] finfosingle : finfo) {
                 final String filename = finfosingle[0];
