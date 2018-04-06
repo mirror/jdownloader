@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?update\\.filehippo\\.com(/(es|en|pl|jp|de))?/update/check/[a-z0-9\\-]+/detailed" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "https?://(www\\.)?update\\.filehippo\\.com(/(es|en|pl|jp|de))?/update/check/[a-z0-9\\-]+/detailed" })
 public class FileHippoComDecrypter extends PluginForDecrypt {
-
     public FileHippoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,20 +35,21 @@ public class FileHippoComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceAll("/(es|en|pl|jp|de(?!tailed))", "");
-        br.setCookie("http://filehippo.com/", "FH_PreferredCulture", "en-US");
+        br.setCookie("https://filehippo.com/", "FH_PreferredCulture", "en-US");
         br.getPage(parameter);
         if (br.containsHTML(">404 Error<|>Sorry the page you requested could not be found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
-        final String[] links = br.getRegex("\"(http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download[^<>\"]*?)\" class=\"update\\-download\\-link\"").getColumn(0);
+        final String[] links = br.getRegex("\"(https?://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download[^<>\"]*?)\" class=\"update\\-download\\-link\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
+        for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
+        }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName("filehippo.com - " + Encoding.htmlDecode(fpName.trim()));
@@ -63,5 +62,4 @@ public class FileHippoComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
