@@ -515,7 +515,7 @@ public abstract class Plugin implements ActionListener {
         cleanupLastChallengeResponse();
         br = null;
         for (final File clean : cleanUpCaptchaFiles) {
-            if (!clean.delete()) {
+            if (clean != null && !clean.delete()) {
                 clean.deleteOnExit();
             }
         }

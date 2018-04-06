@@ -19,14 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.logging.LogController;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -46,6 +38,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.TwentyOneMembersVariantInfo;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.logging.LogController;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" })
 public class TwentyOneMembersCom extends PluginForHost {
     private final String LOGIN_ERROR_REGEX = "<ul.*?class=\"loginErrors\".*?>.*?<li class=\"warning\">(.+?)</li>";
@@ -64,10 +64,7 @@ public class TwentyOneMembersCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (account) {
             try {
-                if (!login(br, account, -1)) {
-                    final String error = br.getRegex(LOGIN_ERROR_REGEX).getMatch(0);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                login(br, account, -1);
                 final AccountInfo ai = new AccountInfo();
                 parseAccountInfo(account, ai);
                 return ai;
@@ -80,7 +77,7 @@ public class TwentyOneMembersCom extends PluginForHost {
         }
     }
 
-    public boolean login(final Browser br, final Account account, final long trustCookiesAge) throws Exception {
+    public void login(final Browser br, final Account account, final long trustCookiesAge) throws Exception {
         synchronized (account) {
             final boolean followRedirect = br.isFollowingRedirects();
             br.setFollowRedirects(true);
@@ -90,15 +87,17 @@ public class TwentyOneMembersCom extends PluginForHost {
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trustCookiesAge) {
-                        return true;
+                        return;
                     }
                     br.getPage("https://members.21members.com/en");
-                    if (loggedinHTML(br)) {
-                        /* Refresh cookie timestamp */
+                    if (br.getCookies(getHost()).get("SID", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(getHost()).get("identityStatus", Cookies.NOTDELETEDPATTERN) == null) {
+                        account.clearCookies("");
+                    } else if (!loggedinHTML(br)) {
+                        account.clearCookies("");
+                    } else {
                         account.saveCookies(br.getCookies(getHost()), "");
-                        return true;
+                        return;
                     }
-                    account.clearCookies("");
                 }
                 br.getPage("https://www.21members.com/en/login");
                 final String relCaptchaUrl = br.getRegex("<span>Auth code\\:</span><img src='([^']+)\' .*?alt='captcha'").getMatch(0);
@@ -126,16 +125,24 @@ public class TwentyOneMembersCom extends PluginForHost {
                 login.setEncoding("application/x-www-form-urlencoded");
                 login.getInputField("username").setValue(Encoding.urlEncode(account.getUser()));
                 login.getInputField("password").setValue(Encoding.urlEncode(account.getPass()));
+                login.remove("Submit");
                 Request request = br.createFormRequest(login);
                 request.getHeaders().put(new HTTPHeader("Origin", "https://21members.com"));
                 br.openRequestConnection(request);
                 br.followConnection();
                 final String error = br.getRegex(LOGIN_ERROR_REGEX).getMatch(0);
                 if (error != null || !loggedinHTML(br)) {
-                    return false;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getCookies(getHost()).get("SID", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(getHost()).get("identityStatus", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
-                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             } finally {
                 br.setFollowRedirects(followRedirect);
             }
@@ -296,9 +303,8 @@ public class TwentyOneMembersCom extends PluginForHost {
             for (final Account ac : accs) {
                 try {
                     final PluginForHost hostPlugin = JDUtilities.getPluginForHost("21members.com");
-                    if (((TwentyOneMembersCom) hostPlugin).login(br, ac, 30000)) {
-                        return true;
-                    }
+                    ((TwentyOneMembersCom) hostPlugin).login(br, ac, 30000);
+                    return true;
                 } catch (final Exception e) {
                     LogController.CL().log(e);
                 }
