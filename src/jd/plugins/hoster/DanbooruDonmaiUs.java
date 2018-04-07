@@ -71,11 +71,11 @@ public class DanbooruDonmaiUs extends PluginForHost {
         } else {
             filename = url_filename;
         }
-        dllink = br.getRegex("href=\"([^<>\"]+)\">\\s*view original").getMatch(0);
+        dllink = br.getRegex("href=\"([^<>\"]+)\">\\s*view original").getMatch(0); // Not always available
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://danbooru\\.donmai\\.us/data/[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("Size: <a href=\"([^<>\"]+)\"").getMatch(0); // Picture or video
             if (dllink == null) {
-                dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]+)\"").getMatch(0);
+                dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]+)\"").getMatch(0); // Always picture
             }
         }
         final String size = br.getRegex("Size:\\s*<a href=\"(?:(?:https?://danbooru\\.donmai\\.us)?/data/[^<>\"]+)\">(.*?)<").getMatch(0);
