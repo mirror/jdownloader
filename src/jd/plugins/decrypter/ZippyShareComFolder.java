@@ -16,11 +16,14 @@
 
 package jd.plugins.decrypter;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -33,9 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/[a-z0-9\\-_%,]+(/[a-z0-9\\-_%]+/dir\\.html)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "https?://(?:www\\.)?zippyshare\\.com/[a-z0-9\\-_%,]+(/[a-z0-9\\-_%]+/dir\\.html)?" })
 public class ZippyShareComFolder extends PluginForDecrypt {
 
     public ZippyShareComFolder(PluginWrapper wrapper) {
@@ -88,13 +89,13 @@ public class ZippyShareComFolder extends PluginForDecrypt {
         }
         if (results != null) {
             for (final String result : results) {
-                final String link = new Regex(result, "\"(http://www\\d+\\.zippyshare\\.com/v/[a-zA-Z0-9]+/file\\.html)\"").getMatch(0);
+                final String link = new Regex(result, "\"((?:https?:)?(?://www\\d+\\.zippyshare\\.com)?/v/[a-zA-Z0-9]+/file\\.html)\"").getMatch(0);
                 final String name = new Regex(result, ">([^\r\n]+)</a>").getMatch(0);
                 final String size = new Regex(result, ">\\s*(\\d+(?:[\\.,]\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*").getMatch(0);
                 if (link == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final DownloadLink dl = createDownloadlink(link);
+                final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
                 if (name != null) {
                     dl.setName(Encoding.htmlOnlyDecode(name));
                     dl.setAvailableStatus(AvailableStatus.TRUE);
