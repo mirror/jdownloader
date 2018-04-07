@@ -88,6 +88,7 @@ plugins_optional_extraction_status_extractok=Rozbalení v pořádku
 plugins_optional_extraction_status_notenoughspace=Nedostatek místa pro rozbalení
 plugins_optional_extraction_status_openingarchive2=Probíhá rozbalování
 plugins_optional_extraction_status_passfound=Heslo nalezeno
+plugins_optional_extraction_status_pausedForOtherCrc=Pozastaveno - čekání na dokončení jiné kontroly crc
 plugins_optional_extraction_status_queued=Zařazeno do fronty k rozbalení
 properties=Vlastnosti podsložky
 set_autoextract_false=Automatické rozbalení je nyní zakázáno
