@@ -1105,6 +1105,9 @@ public class FileJokerNet extends antiDDoSForHost {
                     if (correctedBR.contains("There is not enough traffic available to download this file")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic available", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
+                    if (correctedBR.contains("You don't have permission to download this file")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You don't have permission to download this file", 30 * 60 * 1000l);
+                    }
                     dllink = getDllink();
                 }
             }
