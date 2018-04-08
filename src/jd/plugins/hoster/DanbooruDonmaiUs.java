@@ -72,6 +72,10 @@ public class DanbooruDonmaiUs extends PluginForHost {
             filename = url_filename;
         }
         dllink = br.getRegex("href=\"([^<>\"]+)\">\\s*view original").getMatch(0); // Not always available
+        if (dllink.contains("?original=1")) { // https://board.jdownloader.org/showthread.php?t=77260&post#3
+            br.getPage(dllink);
+            dllink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*Save as").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("Size: <a href=\"([^<>\"]+)\"").getMatch(0); // Picture or video
             if (dllink == null) {
