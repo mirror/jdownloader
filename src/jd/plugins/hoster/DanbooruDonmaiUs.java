@@ -54,6 +54,12 @@ public class DanbooruDonmaiUs extends PluginForHost {
         return "http://danbooru.donmai.us/static/terms_of_service";
     }
 
+    @SuppressWarnings({ "deprecation" })
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -72,7 +78,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
             filename = url_filename;
         }
         dllink = br.getRegex("href=\"([^<>\"]+)\">\\s*view original").getMatch(0); // Not always available
-        if (dllink.contains("?original=1")) { // https://board.jdownloader.org/showthread.php?t=77260&post#3
+        if (dllink != null && dllink.contains("?original=1")) { // https://board.jdownloader.org/showthread.php?t=77260&post#3
             br.getPage(dllink);
             dllink = br.getRegex("<a href=\"([^<>\"]+)\">\\s*Save as").getMatch(0);
         }
