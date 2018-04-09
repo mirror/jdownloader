@@ -4,7 +4,6 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -46,7 +45,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         return id;
     }
 
-    private final AtomicReference<Process> process    = new AtomicReference<Process>(null);
+    private final AtomicReference<Process> process = new AtomicReference<Process>(null);
     private BrowserWindow                  browserWindow;
     private BrowserViewport                viewport;
     private final HashMap<String, URL>     resourceIds;
@@ -54,7 +53,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     private long                           opened;
     private long                           latestRequest;
     protected String                       base;
-    private final static AtomicInteger     LATESTPORT = new AtomicInteger(BrowserSolverService.getInstance().getConfig().getLocalHttpPort());
     {
         resourceIds = new HashMap<String, URL>();
         resourceIds.put("style.css", BrowserReference.class.getResource("html/style.css"));
@@ -89,26 +87,29 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         this.challenge = challenge;
     }
 
-    private String baseHost;
-    private int    basePort;
+    private String              baseHost;
+    private int                 basePort;
+    private final static Object LOCK = new Object();
 
     public void open() throws IOException {
         TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
             @Override
             protected Void run() throws IOException {
                 HttpHandlerInfo lHandlerInfo = null;
-                try {
-                    int port = LATESTPORT.get();
-                    if (port < 1024) {
-                        port = 0;
-                    } else if (port > 65000) {
-                        port = 65000;
+                synchronized (LOCK) {
+                    try {
+                        int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
+                        if (port < 1024) {
+                            port = 0;
+                        } else if (port > 65000) {
+                            port = 65000;
+                        }
+                        lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this);
+                    } catch (final IOException e) {
+                        lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
                     }
-                    lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this);
-                } catch (final IOException e) {
-                    lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
+                    BrowserSolverService.getInstance().getConfig().setLocalHttpPort(lHandlerInfo.getPort());
                 }
-                LATESTPORT.set(lHandlerInfo.getPort());
                 base = "http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath();
                 baseHost = "127.0.0.1";
                 basePort = lHandlerInfo.getPort();
