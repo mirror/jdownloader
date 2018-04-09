@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,9 +36,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+/?" })
 public class SolidFilesCom extends PluginForHost {
-
     public SolidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -56,7 +54,6 @@ public class SolidFilesCom extends PluginForHost {
 
     public static final String   DECRYPTFOLDERS               = "DECRYPTFOLDERS";
     private static final String  NOCHUNKS                     = "NOCHUNKS";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -82,7 +79,8 @@ public class SolidFilesCom extends PluginForHost {
         }
         br.getPage(link.getDownloadURL());
         isOffline(false);
-        String filename = PluginJSonUtils.getJsonValue(br, "name");
+        // String filename = PluginJSonUtils.getJsonValue(br, "name");
+        String filename = br.getRegex("<h1 class=\"node-name\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) (?:-|\\|) Solidfiles</title>").getMatch(0);
         }
@@ -356,5 +354,4 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
