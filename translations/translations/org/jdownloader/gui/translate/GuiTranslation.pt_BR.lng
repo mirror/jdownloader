@@ -1799,6 +1799,7 @@ gui_table_contextmenu_check=Checar Status online
 gui_table_contextmenu_dlc=Criar DLC
 gui_table_contextmenu_downloaddir=Abrir Pasta
 gui_table_contextmenu_editpackagename=Definir nome do pacote
+gui_table_contextmenu_markfinished=Marcar como concluído
 gui_table_contextmenu_openfile=Abrir Arquivo
 gui_table_contextmenu_reset=Reiniciar
 gui_table_contextmenu_resume=Continuar
