@@ -34,6 +34,16 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
+    public String toDetailsString() {
+        final String ret = proxy.toString();
+        if (StringUtils.isNotEmpty(getUser())) {
+            return getUser() + "@" + ret;
+        } else {
+            return ret;
+        }
+    }
+
+    @Override
     public boolean updateProxy(Request request, int retryCounter) {
         return ProxyController.getInstance().updateProxy(this, request, retryCounter);
     }

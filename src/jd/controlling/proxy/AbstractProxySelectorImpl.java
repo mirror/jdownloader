@@ -83,6 +83,8 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         return ret;
     }
 
+    abstract public String toDetailsString();
+
     @Override
     public String toString() {
         try {

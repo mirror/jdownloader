@@ -52,40 +52,30 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.SkipReason;
 
 public class ConnectionColumn extends ExtColumn<AbstractNode> {
-
     /**
      *
      */
     private static final long serialVersionUID   = 1L;
-
     private MigPanel          panel;
     private RenderLabel[]     labels;
     private final Icon        resumeIndicator;
     private final Icon        directConnection;
     private final Icon        proxyConnection;
     private final Icon        connections;
-
     private final int         DEFAULT_ICON_COUNT = 4;
-
     private final Icon        skipped;
-
     private final Icon        forced;
-
     private DownloadWatchDog  dlWatchdog;
-
     private final Icon        url;
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     public ConnectionColumn() {
         super(_GUI.T.ConnectionColumn_ConnectionColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
         labels = new RenderLabel[DEFAULT_ICON_COUNT + 1];
-
         // panel.add(Box.createGlue(), "pushx,growx");
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= DEFAULT_ICON_COUNT; i++) {
@@ -99,7 +89,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             }
             sb.append("[18!]");
             panel.add(labels[i]);
-
         }
         dlWatchdog = DownloadWatchDog.getInstance();
         skipped = NewTheme.I().getIcon(IconKey.ICON_SKIPPED, 16);
@@ -112,7 +101,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
-
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 final long l1 = getDownloads(o1);
@@ -126,22 +114,18 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     return l1 < l2 ? -1 : 1;
                 }
             }
-
         });
-
         resetRenderer();
     }
 
     @Override
     public boolean onSingleClick(MouseEvent e, AbstractNode obj) {
         return super.onSingleClick(e, obj);
-
     }
 
     @Override
     public boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
         if (obj instanceof DownloadLink) {
-
             ConnectionTooltip tt = new ConnectionTooltip((DownloadLink) obj) {
                 public boolean isLastHiddenEnabled() {
                     return false;
@@ -150,7 +134,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             ToolTipController.getInstance().show(tt);
             return true;
         }
-
         return false;
     }
 
@@ -199,7 +182,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public void setValue(Object value, AbstractNode object) {
-
     }
 
     @Override
@@ -223,7 +205,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 labels[index].setVisible(true);
                 index++;
             }
-
             if (dlWatchdog.isLinkForced(dlLink)) {
                 labels[index].setIcon(forced);
                 labels[index].setVisible(true);
@@ -290,7 +271,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     private static final ScheduledExecutorService SCHEDULER = DelayedRunnable.getNewScheduledExecutorService();
 
     private class ConnectionTooltip extends ExtTooltip {
-
         /**
          *
          */
@@ -318,7 +298,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
-
                 /* is the Link resumeable */
                 if (link.isResumeable()) {
                     panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
@@ -337,9 +316,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     final String proxyString;
                     if (selectedProxy != null && selectedProxy.getSelector() != null) {
                         if (selectedProxy.getSelector() instanceof PacProxySelectorImpl) {
-                            proxyString = selectedProxy.getSelector().toString() + "@" + proxy.toString();
+                            proxyString = selectedProxy.getSelector().toDetailsString() + "@" + proxy.toString();
                         } else {
-                            proxyString = selectedProxy.getSelector().toString();
+                            proxyString = selectedProxy.getSelector().toDetailsString();
                         }
                     } else {
                         proxyString = proxy.toString();
@@ -351,14 +330,12 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     final JLabel finalLbl = lbl;
                     final long taskID = TASK.incrementAndGet();
                     SCHEDULER.execute(new Runnable() {
-
                         @Override
                         public void run() {
                             if (taskID == TASK.get()) {
                                 final List<HTTPProxy> proxies = new ArrayList<HTTPProxy>();
                                 proxies.add(finalProxy);
                                 final BalancedWebIPCheck ipCheck = new BalancedWebIPCheck(new ProxySelectorInterface() {
-
                                     @Override
                                     public boolean updateProxy(Request request, int retryCounter) {
                                         return false;
@@ -377,7 +354,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                                 try {
                                     final IP ip = ipCheck.getExternalIP();
                                     new EDTRunner() {
-
                                         @Override
                                         protected void runInEDT() {
                                             finalLbl.setText(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
@@ -406,7 +382,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
-
                 panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
@@ -426,7 +401,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         public String toText() {
             return null;
         }
-
     }
 
     @Override
@@ -442,5 +416,4 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     @Override
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
     }
-
 }

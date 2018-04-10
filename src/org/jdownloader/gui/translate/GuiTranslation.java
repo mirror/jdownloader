@@ -112,7 +112,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+            "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "Prefer HTTPS communication?\r\nOnly available for premium user and will be limited in speed.", "Bevorzuge sichere Kommunikation per HTTPS?\r\nVerringert die Downloadgeschwindigkeit und ist nur für Premium Nutzer verfügbar!" })
@@ -4985,6 +4985,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Whitelist -  Only use this proxy for the domains below" })
     String proxyDetailsDialog_combo_whitelist();
+
+    @Default(lngs = { "en" }, values = { "# this is a comment\r\n// this is also a comment\r\n# comment out for jdownloader.org\r\n#jdownloader.org\r\n# comment out below for all accounts with ID 'test*' @ jdownloader.org\r\n#test@jdownloader.org\r\n# comment out below for account with ID 'test' @ jdownloader.org\r\n#test$@jdownloader.org\r\n# you can use pattern for account ID and host, eg accountPattern@hostPattern" })
+    String proxyDetailsDialog_white_blacklist_example();
 
     @Default(lngs = { "en" }, values = { "Enter a list (Newline seperated) of domains to use this proxy either only for these domains (whitelist), or never for these domains (blacklist)" })
     String proxyDetailsDialog_white_blacklist_explain();

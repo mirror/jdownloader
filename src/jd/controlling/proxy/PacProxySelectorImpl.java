@@ -49,6 +49,16 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         this.password = pass;
     }
 
+    @Override
+    public String toDetailsString() {
+        final String ret = "AutoProxy Script: " + getPACUrl();
+        if (StringUtils.isNotEmpty(getUser())) {
+            return getUser() + "@" + ret;
+        } else {
+            return ret;
+        }
+    }
+
     public PacProxySelectorImpl(ProxyData proxyData) {
         if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
             throw new WTFException("Proxy Vole is Disabled");
