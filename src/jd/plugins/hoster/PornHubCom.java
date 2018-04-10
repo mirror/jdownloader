@@ -79,13 +79,13 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                }
-                                                                            });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -114,19 +114,30 @@ public class PornHubCom extends PluginForHost {
         return "http://www.pornhub.com/terms";
     }
 
-    public static void getPage(Browser br, final String url) throws Exception {
+    public static Object RNKEYLOCK = new Object();
+
+    public static boolean getPage(Browser br, final String url) throws Exception {
         br.getPage(url);
-        int maxLoops = 5;// up to 3 loops in tests
-        while (true) {
-            final String RNKEY = evalRNKEY(br);
-            if (RNKEY != null && --maxLoops > 0) {
-                br.setCookie("pornhub.com", "RNKEY", RNKEY);
-                Thread.sleep(1000);
-                br.setRequest(null);
-                br.getPage(url);
-            } else {
-                break;
+        String RNKEY = evalRNKEY(br);
+        if (RNKEY != null) {
+            int maxLoops = 8;// up to 3 loops in tests
+            synchronized (RNKEYLOCK) {
+                while (true) {
+                    if (RNKEY == null) {
+                        return true;
+                    } else if (--maxLoops > 0) {
+                        br.setCookie("pornhub.com", "RNKEY", RNKEY);
+                        Thread.sleep(1000 + ((8 - maxLoops) * 500));
+                        br.setRequest(null);
+                        br.getPage(url);
+                        RNKEY = evalRNKEY(br);
+                    } else {
+                        return false;
+                    }
+                }
             }
+        } else {
+            return true;
         }
     }
 
