@@ -687,7 +687,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             sb.append(line2);
                             ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
                             ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                            long answer = ((Number) engine.eval(sb.toString())).longValue();
+                            String answer = (engine.eval(sb.toString())).toString();
                             cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                             Thread.sleep(5500);
                             // if it works, there should be a redirect.
