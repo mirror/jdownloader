@@ -23,15 +23,13 @@ import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.FilterList.Type;
 
 public class ProxyDetailsDialog extends AbstractDialog<Object> {
-
     private final AbstractProxySelectorImpl factory;
     private JComboBox<Type>                 combo;
     private ExtTextArea                     input;
 
     public ProxyDetailsDialog(AbstractProxySelectorImpl factory) {
-        super(0, _GUI.T.proxyDetailsDialog_filter_title(factory.toString()), null, _GUI.T.lit_save(), _GUI.T.lit_close());
+        super(0, _GUI.T.proxyDetailsDialog_filter_window_title(), null, _GUI.T.lit_save(), _GUI.T.lit_close());
         this.factory = factory;
-
     }
 
     @Override
@@ -58,15 +56,12 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
 
     @Override
     public JComponent layoutDialogContent() {
-
         JPanel content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[]5[][][grow,fill][][]"));
         content.add(header(_GUI.T.proxyDetailsDialog_white_blacklist()), "gapleft 5,pushx,growx");
         content.add(new JLabel("<html>" + _GUI.T.proxyDetailsDialog_white_blacklist_explain() + "</html>"), "gapleft 24,wmin 10");
-
         combo = new JComboBox<FilterList.Type>(FilterList.Type.values());
         final ListCellRenderer org = combo.getRenderer();
         combo.setRenderer(new ListCellRenderer<FilterList.Type>() {
-
             @Override
             public Component getListCellRendererComponent(JList<? extends Type> list, Type value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value == null) {
@@ -84,7 +79,6 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
         content.add(combo, "gapleft 24");
         input = new ExtTextArea();
         content.add(new JScrollPane(input), "gapleft 24");
-
         if (factory.getFilter() == null || factory.getFilter().getType() == null || factory.getFilter().getType() == FilterList.Type.BLACKLIST) {
             combo.setSelectedItem(FilterList.Type.BLACKLIST);
         } else {
@@ -100,7 +94,6 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
             }
         }
         input.setText(sb.toString());
-
         return content;
     }
 
@@ -109,5 +102,4 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
         ret.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getForeground()));
         return ret;
     }
-
 }

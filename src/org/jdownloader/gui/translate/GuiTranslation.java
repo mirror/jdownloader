@@ -4974,6 +4974,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Domain Filter for %s1" })
     String proxyDetailsDialog_filter_title(String name);
 
+    @Default(lngs = { "en" }, values = { "Domain Filter" })
+    String proxyDetailsDialog_filter_window_title();
+
     @Default(lngs = { "en" }, values = { "Filter list" })
     String proxyDetailsDialog_white_blacklist();
 
