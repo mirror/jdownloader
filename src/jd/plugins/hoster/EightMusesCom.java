@@ -15,10 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +26,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/picture/.+" })
 public class EightMusesCom extends antiDDoSForHost {
@@ -97,6 +97,9 @@ public class EightMusesCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
+                if (con.getHeaderField("cf-bgj") != null && !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
+                    downloadLink.setProperty(BYPASS_CLOUDFLARE_BGJ, Boolean.TRUE);
+                }
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -111,10 +114,18 @@ public class EightMusesCom extends antiDDoSForHost {
         }
     }
 
+    public static final String BYPASS_CLOUDFLARE_BGJ = "bpCfBgj";
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (downloadLink.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
+            logger.info("Apply Cloudflare BGJ bypass");
+            dllink = URLHelper.parseLocation(br.getURL(dllink), "&bpcfbgj=" + System.nanoTime());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -129,30 +140,6 @@ public class EightMusesCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     @Override
