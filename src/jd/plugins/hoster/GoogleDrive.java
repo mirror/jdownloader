@@ -361,10 +361,13 @@ public class GoogleDrive extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
+                if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
+                    /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+                } else if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
                     // dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
                     dllink = br.getRegex("href\\s*=\\s*\"((/a/[^\"<>]*?)?/uc\\?export=download[^\"<>]*?)\"\\s*>\\s*Download anyway\\s*</a>").getMatch(0); // w/
-                                                                                                                                                          // account
+                    // account
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else if (!loopCheck.add(dllink)) {
