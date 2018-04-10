@@ -25,7 +25,6 @@ import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 
 public class HistoryEntry {
-
     private ACCOUNTTYPE accountType;
     private String      resultIconKey;
     private String      resultStatus;
@@ -94,7 +93,6 @@ public class HistoryEntry {
         } else if (resultConditionalSkipReason != null) {
             return resultConditionalSkipReason.getIcon(this, link);
         }
-
         return null;
     }
 
@@ -113,10 +111,8 @@ public class HistoryEntry {
         }
         if ("expired".equals(key)) {
             return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_ERROR, size)).add(new AbstractIcon(IconKey.ICON_WAIT, (int) (size * 0.7)), (int) (size * 0.2), (int) (size * 0.3));
-
         }
         return new AbstractIcon(key, size);
-
     }
 
     public DownloadSession getSession() {
@@ -143,21 +139,17 @@ public class HistoryEntry {
             if (proxy != null) {
                 ret.gatewayStatus = proxy.toString();
                 switch (proxy.getType()) {
-                case DIRECT:
-                case NONE:
-                    break;
                 case HTTP:
-                    ret.gatewayIconKey = IconKey.ICON_PROXY;
-
-                    break;
+                case HTTPS:
                 case SOCKS4:
-                    ret.gatewayIconKey = IconKey.ICON_PROXY;
-                    break;
                 case SOCKS5:
                     ret.gatewayIconKey = IconKey.ICON_PROXY;
                     break;
+                case DIRECT:
+                case NONE:
+                default:
+                    break;
                 }
-
             }
         }
         if (StringUtils.isEmpty(ret.gatewayStatus)) {
@@ -167,9 +159,8 @@ public class HistoryEntry {
                 ret.gatewayStatus = ((SingleDirectGatewaySelector) proxySel).getProxy().toString();
             } else {
                 ret.gatewayIconKey = IconKey.ICON_PROXY;
-                ret.gatewayStatus = proxySel.toString();
+                ret.gatewayStatus = proxySel.toDetailsString();
             }
-
         }
         return ret;
     }
@@ -181,18 +172,15 @@ public class HistoryEntry {
     private static void collectInfo(Account account, HistoryEntry history) {
         history.account = account;
         if (account == null) {
-
             history.accountIconKey = IconKey.ICON_DOWNLOAD;
             history.accountStatus = _GUI.T.CandidateAccountColumn_getStringValue_free_();
             return;
         }
         if (account.isChecking()) {
             history.accountIconKey = IconKey.ICON_REFRESH;
-
         }
         if (account.getError() == null) {
             history.accountIconKey = IconKey.ICON_OK;
-
             AccountInfo ai = account.getAccountInfo();
             String ret = ai == null ? null : ai.getStatus();
             if (StringUtils.isEmpty(ret)) {
@@ -208,7 +196,6 @@ public class HistoryEntry {
             } else {
                 if (account.isTempDisabled()) {
                     if (StringUtils.isNotEmpty(account.getErrorString())) {
-
                         history.accountIconKey = IconKey.ICON_WAIT;
                         history.accountStatus = account.getErrorString();
                         return;
@@ -217,7 +204,6 @@ public class HistoryEntry {
                 } else {
                     ret = _GUI.T.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
                 }
-
             }
             history.accountStatus = ret;
             return;
@@ -260,88 +246,63 @@ public class HistoryEntry {
             history.resultIconKey = null;
             if (result == null || result.getResult() == null) {
                 history.resultIconKey = IconKey.ICON_PLAY;
-
                 history.resultStatus = _GUI.T.CandidateTooltipTableModel_initColumns_running_();
-
             } else {
                 WaitingSkipReason sr;
                 switch (result.getResult()) {
                 case PROXY_UNAVAILABLE:
-
                     break;
                 case CONDITIONAL_SKIPPED:
                     history.resultConditionalSkipReason = result.getConditionalSkip();
-
                     break;
-
                 case IP_BLOCKED:
-
                     history.resultConditionalSkipReason = new WaitingSkipReason(CAUSE.IP_BLOCKED, result.getWaitTime(), result.getMessage());
-
                     break;
                 case HOSTER_UNAVAILABLE:
-
                     history.resultConditionalSkipReason = new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, result.getWaitTime(), result.getMessage());
-
                     break;
                 case FILE_UNAVAILABLE:
-
                     history.resultConditionalSkipReason = new WaitingSkipReason(CAUSE.FILE_TEMP_UNAVAILABLE, result.getWaitTime(), result.getMessage());
-
                     break;
                 case CONNECTION_ISSUES:
-
                     history.resultConditionalSkipReason = new WaitingSkipReason(CAUSE.CONNECTION_TEMP_UNAVAILABLE, result.getWaitTime(), result.getMessage());
-
                     break;
                 case SKIPPED:
                     history.resultSkipReason = result.getSkipReason();
-
                     break;
                 case PLUGIN_DEFECT:
                     history.resultFinalStatus = FinalLinkState.PLUGIN_DEFECT;
-
                     break;
                 case OFFLINE_TRUSTED:
                     history.resultFinalStatus = FinalLinkState.OFFLINE;
                     break;
                 case FINISHED_EXISTS:
-
                     history.resultFinalStatus = FinalLinkState.FINISHED_MIRROR;
-
                     break;
                 case FINISHED:
                     history.resultFinalStatus = FinalLinkState.FINISHED;
                     break;
                 case FAILED_EXISTS:
-
                     history.resultFinalStatus = FinalLinkState.FAILED_EXISTS;
-
                     break;
                 case FAILED:
                     history.resultFinalStatus = FinalLinkState.FAILED;
                     break;
                 case STOPPED:
-
                     history.resultStatus = _GUI.T.CandidateTooltipTableModel_configureRendererComponent_stopped_();
                     history.resultIconKey = IconKey.ICON_CANCEL;
                     break;
                 case ACCOUNT_ERROR:
-
                     /* there was an unknown account issue */
-
                     if (result.getThrowable() != null) {
                         history.resultStatus = result.getThrowable().getMessage();
                     } else {
                         history.resultStatus = null;
                     }
                     history.resultIconKey = IconKey.ICON_FALSE;
-
                     break;
                 case ACCOUNT_INVALID:
-
                     /* account has been recognized as valid and/or premium but now throws invalid messages */
-
                     if (result.getThrowable() != null) {
                         history.resultStatus = result.getThrowable().getMessage();
                     } else {
@@ -359,10 +320,8 @@ public class HistoryEntry {
                     break;
                 case CAPTCHA:
                     history.resultSkipReason = SkipReason.CAPTCHA;
-
                     break;
                 case FATAL_ERROR:
-
                     history.resultFinalStatus = FinalLinkState.FAILED_FATAL;
                     if (StringUtils.isNotEmpty(result.getMessage())) {
                         history.resultStatus = result.getMessage();
@@ -376,15 +335,11 @@ public class HistoryEntry {
                     }
                     break;
                 }
-
                 if (StringUtils.isEmpty(history.resultStatus)) {
                     history.resultStatus = result.getMessage();
-
                 }
-
             }
         } finally {
-
         }
     }
 

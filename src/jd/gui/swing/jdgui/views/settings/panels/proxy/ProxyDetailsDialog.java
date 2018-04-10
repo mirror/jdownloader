@@ -93,6 +93,9 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
                 sb.append(line);
             }
         }
+        if (sb.length() == 0) {
+            sb.append(_GUI.T.proxyDetailsDialog_white_blacklist_example());
+        }
         input.setText(sb.toString());
         return content;
     }
