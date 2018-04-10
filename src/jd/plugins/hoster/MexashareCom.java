@@ -1081,7 +1081,7 @@ public class MexashareCom extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|download this file after :)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have consumed your daily download volume|You have to wait|download this file after :)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             if (wait == null) {
