@@ -31,9 +31,7 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.UrlPacScriptSource;
 
 public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
-
     private static final LogSource                  logger             = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
-
     private volatile String                         pacUrl;
     private final HashMap<String, PacProxySelector> selectors          = new HashMap<String, PacProxySelector>();
     private final AtomicLong                        latestValidation   = new AtomicLong(-1);
@@ -55,7 +53,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
             throw new WTFException("Proxy Vole is Disabled");
         }
-
         this.pacUrl = proxyData.getProxy().getAddress();
         this.user = proxyData.getProxy().getUsername();
         this.password = proxyData.getProxy().getPassword();
@@ -191,7 +188,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                         return false;
                     }
                 }
-
             };
             if (pacSource.isScriptValid()) {
                 return new PacProxySelector(pacSource);
@@ -204,7 +200,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                     cacheMap.clear();
                     selectors.clear();
                     latestValidation.set(-1);
-
                     PacScriptSource pacSource = new UrlPacScriptSource(lPacURL);
                     logger.info("Download PAC Script!");
                     long t = System.currentTimeMillis();
@@ -229,15 +224,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     @Override
     public void setType(Type value) {
         throw new IllegalStateException("This operation is not allowed on this Factory Type");
-    }
-
-    @Override
-    public String toString() {
-        String ret = "AutoProxy Script: " + getPACUrl();
-        if (StringUtils.isNotEmpty(getUser())) {
-            return getUser() + "@" + ret.toString();
-        }
-        return ret;
     }
 
     public ProxyData toProxyData() {

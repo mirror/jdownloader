@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
+import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
 import jd.http.StaticProxySelector;
 
@@ -67,6 +68,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
             final LogSource logger = LogController.getFastPluginLogger("BalancedWebIPCheck");
             logger.setAllowTimeoutFlush(false);
             br.setLogger(logger);
+            NoGateWayException noGateWayException = null;
             for (String service : SERVICES) {
                 try {
                     /* call website and check for ip */
@@ -78,14 +80,19 @@ public class BalancedWebIPCheck implements IPCheckProvider {
                             return IP.getInstance(matcher.group(1));
                         }
                     }
-                } catch (final Throwable e2) {
-                    logger.log(e2);
+                } catch (final NoGateWayException e) {
+                    noGateWayException = e;
+                } catch (final Throwable e) {
+                    logger.log(e);
                 } finally {
                     try {
                         br.disconnect();
                     } catch (final Throwable e) {
                     }
                 }
+            }
+            if (noGateWayException != null) {
+                logger.log(noGateWayException);
             }
             logger.severe("All balanced Services failed");
             logger.close();
