@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
@@ -103,7 +102,7 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
     }
 
     public static class DeviceConnectionHelper {
-        private final AtomicLong    requested = new AtomicLong(0);
+        private final AtomicInteger requested = new AtomicInteger(0);
         private final AtomicBoolean backOff   = new AtomicBoolean(false);
         private final String        host;
 
@@ -180,20 +179,47 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
             if (thread.getApi() != null && backOff.get()) {
                 synchronized (backOff) {
                     if (backOff.get()) {
-                        long currentBackOff = requested.get();
+                        final int currentBackOff = requested.get();
                         try {
                             final long timeout;
-                            if (currentBackOff <= 5) {
-                                // 1,2,4,8,16,32
-                                timeout = ((long) Math.pow(2.0d, currentBackOff)) * 1000;
-                            } else {
-                                timeout = 30 * 1000;
+                            switch (currentBackOff) {
+                            case 0:
+                            case 1:
+                            case 2:
+                                timeout = 1000;
+                                break;
+                            case 3:
+                            case 4:
+                                timeout = 1500;
+                                break;
+                            case 5:
+                            case 6:
+                                timeout = 2000;
+                                break;
+                            case 7:
+                            case 8:
+                                timeout = 3000;
+                                break;
+                            case 9:
+                            case 10:
+                                timeout = 5000;
+                                break;
+                            case 11:
+                            case 12:
+                                timeout = 10000;
+                                break;
+                            case 13:
+                            case 14:
+                                timeout = 15000;
+                                break;
+                            default:
+                                timeout = 20000;
+                                break;
                             }
-                            final long nextTimeout = timeout + new Random().nextInt(5000);
-                            thread.log("Error #:" + currentBackOff + " next retry: " + nextTimeout);
-                            this.retryTimeStamp = System.currentTimeMillis() + nextTimeout;
-                            Thread.sleep(nextTimeout);
-                            if (currentBackOff >= 5) {
+                            thread.log("Error #:" + currentBackOff + " next retry: " + timeout);
+                            this.retryTimeStamp = System.currentTimeMillis() + timeout;
+                            Thread.sleep(timeout);
+                            if (currentBackOff > 10) {
                                 refresh();
                             }
                         } finally {
