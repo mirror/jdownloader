@@ -15,17 +15,17 @@ public interface MediathekProperties extends DownloadLinkDatabindingInterface {
     @Key("itemSrc")
     void setSourceHost(String host);
 
-    @Key("itemSrc")
+    @Key("itemChannel")
     String getChannel();
 
-    @Key("itemSrc")
+    @Key("itemChannel")
     void setChannel(String channel);
 
     @Key("itemShow")
     String getShow();
 
     @Key("itemShow")
-    void setShow(String channel);
+    void setShow(String show);
 
     @Key("itemRes")
     String getResolution();
@@ -45,11 +45,29 @@ public interface MediathekProperties extends DownloadLinkDatabindingInterface {
     @Key("itemStreamingType")
     void setStreamingType(String streamingType);
 
+    @Key("fileExtension")
+    String getFileExtension();
+
+    @Key("fileExtension")
+    void setFileExtension(String fileExtension);
+
     @Key("HEIGHT")
     int getHeight();
 
     @Key("HEIGHT")
     void setHeight(int height);
+
+    @Key("SEASONNUMBER")
+    int getSeasonNumber();
+
+    @Key("SEASONNUMBER")
+    void setSeasonNumber(int seasonNumber);
+
+    @Key("EPISODENUMBER")
+    int getEpisodeNumber();
+
+    @Key("EPISODENUMBER")
+    void setEpisodeNumber(int episodeNumber);
 
     @Key("WIDTH")
     int getWidth();
@@ -73,5 +91,11 @@ public interface MediathekProperties extends DownloadLinkDatabindingInterface {
     long getBitrateVideo();
 
     @Key("BITRATE_VIDEO")
-    void getBitrateVideo(long bitrateVideo);
+    void setBitrateVideo(long bitrateVideo);
+
+    @Key("BANDWIDTH")
+    long getBandwidth();
+
+    @Key("BANDWIDTH")
+    void setBandwidth(long bandwidth);
 }

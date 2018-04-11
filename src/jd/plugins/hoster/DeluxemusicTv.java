@@ -44,7 +44,7 @@ public class DeluxemusicTv extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    public static final String   default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -68,7 +68,7 @@ public class DeluxemusicTv extends PluginForHost {
         final Regex urlregex = new Regex(link.getDownloadURL(), "/video/([^/]+).*([a-f0-9]{32})(/(\\d+))?");
         final String fid = urlregex.getMatch(1);
         final String category_id = urlregex.getMatch(3);
-        final String url_filename = urlregex.getMatch(0);
+        final String url_title = urlregex.getMatch(0);
         /* Set unique videoid. */
         link.setLinkID(fid);
         br.getPage(link.getDownloadURL());
@@ -95,8 +95,15 @@ public class DeluxemusicTv extends PluginForHost {
                 link.setComment(description);
             }
         }
+        if (filename == null && !"discodeluxe_set".equalsIgnoreCase(url_title)) {
+            filename = url_title;
+        } else if (filename == null) {
+            /* Last chance */
+            filename = fid;
+        }
         if (filename == null) {
-            filename = url_filename;
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (category_id != null) {
             /*
@@ -108,15 +115,6 @@ public class DeluxemusicTv extends PluginForHost {
             dllink = "https://deluxetv-vimp.mivitec.net/getMedium/" + fid + ".mp4";
         }
         filename = nicerDicerFilename(filename);
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
         if (dllink != null && !fastlinkcheck) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
@@ -145,6 +143,7 @@ public class DeluxemusicTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    /* Improve filenames */
     public static String nicerDicerFilename(String name) {
         if (name == null) {
             return null;
@@ -154,11 +153,14 @@ public class DeluxemusicTv extends PluginForHost {
             final int discodeluxe_setnumber = Integer.parseInt(discodeluxe_setnumber_str);
             final String discodeluxe_setnumber_str_formatted = new DecimalFormat("000").format(discodeluxe_setnumber);
             name = "deluxemusictv_disco_deluxe_set_" + discodeluxe_setnumber_str_formatted;
-        } else {
+        } else if (!name.contains(default_extension)) {
             name = "deluxemusictv_" + name;
+        } else {
+            /* Nothing - filename is already correct */
         }
         name = Encoding.htmlDecode(name);
         name = name.trim();
+        name += default_extension;
         return name;
     }
 

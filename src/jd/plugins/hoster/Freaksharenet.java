@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -22,6 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -44,13 +47,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net", "freakshare.com" }, urls = { "REGEXNOTUSED_BLAHASDAHAHDAHAHSDHAHDASDHAHD1223", "http://(www\\.)?freakshare\\.(net|com)/files?/[\\w]+/.+(\\.html)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net", "freakshare.com" }, urls = { "REGEXNOTUSED_BLAHASDAHAHDAHAHSDHAHDASDHAHD1223", "http://(www\\.)?freakshare\\.(net|com)/files?/[\\w]+/.+(\\.html)?" })
 public class Freaksharenet extends PluginForHost {
-
     private static final String  WAIT1              = "WAIT1";
     private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);
     private static final String  MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
@@ -84,6 +82,13 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        if (true) {
+            /*
+             * 2018-04-11: Website has been 'temporarily' not working for over a year now + now they use Cloudflare. Let's rather set this
+             * to permanently offline for not instead of wasting time for another 'fix'.
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         setBrowserExclusive();
         correctDownloadLink(downloadLink);
         br.setFollowRedirects(false);
@@ -113,7 +118,6 @@ public class Freaksharenet extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.freaksharecom.limitreached", "Limit reached: No full availablecheck possible at the moment!"));
             return AvailableStatus.TRUE;
         }
-
         final String filename = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">(.*?)\\- .*?</h1>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -162,7 +166,6 @@ public class Freaksharenet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         form.remove(null);
-
         String ttt = null;
         if (ajax != null) {
             final Browser br2 = br.cloneBrowser();
@@ -181,7 +184,6 @@ public class Freaksharenet extends PluginForHost {
         }
         sleep((tt + new Random().nextInt(10)) * 1001l, downloadLink);
         br.submitForm(form);
-
         boolean captchaFailed = false;
         for (int i = 1; i <= 5; i++) {
             handleFreeErrors();
@@ -506,7 +508,6 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-
     }
 
     @Override
