@@ -402,7 +402,7 @@ public class Keep2ShareCc extends K2SApi {
                         }
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
                         }.getToken();
-                        recap.put(Encoding.urlEncode("ReCaptchaForm[verifyCode]"), Encoding.urlEncode(recaptchaV2Response));
+                        recap.put("UniversalCaptchaForm%5BverifyCode%5D", Encoding.urlEncode(recaptchaV2Response));
                         sendForm(recap);
                     } else if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
@@ -425,7 +425,7 @@ public class Keep2ShareCc extends K2SApi {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         final String code = getCaptchaCode(captchaLink, downloadLink);
-                        postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
+                        postPage(br.getURL(), "CaptchaForm%5BverifyCode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
                         if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
