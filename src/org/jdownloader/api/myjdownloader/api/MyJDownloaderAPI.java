@@ -133,7 +133,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 if (Exceptions.containsInstanceOf(e, SocketTimeoutException.class) && request.getHttpConnection() instanceof URLConnectionAdapterDirectImpl && retryDirectSocketTimeoutException-- > 0) {
                     logger.info("retryDirectSocketTimeoutException:" + retryDirectSocketTimeoutException);
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e1) {
                         throw e;
                     }
