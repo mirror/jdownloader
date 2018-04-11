@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -51,7 +50,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" })
 public class TezFilesCom extends K2SApi {
-
     private final String MAINPAGE = "http://tezfiles.com";
 
     public TezFilesCom(PluginWrapper wrapper) {
@@ -72,7 +70,6 @@ public class TezFilesCom extends K2SApi {
     }
 
     /* K2SApi setters */
-
     /**
      * sets domain the API will use!
      */
@@ -118,7 +115,6 @@ public class TezFilesCom extends K2SApi {
     }
 
     /* end of K2SApi stuff */
-
     private void setConfigElements() {
         final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled());
         getConfig().addEntry(cfgapi);
@@ -258,7 +254,7 @@ public class TezFilesCom extends K2SApi {
                                 }
                             }
                             String code = getCaptchaCode(captcha, downloadLink);
-                            postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                            postPage(br.getURL(), "CaptchaForm%5BverifyCode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                             if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
                                 getPage(cbr, "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
                                 captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
@@ -509,5 +505,4 @@ public class TezFilesCom extends K2SApi {
         }
         return false;
     }
-
 }

@@ -259,7 +259,7 @@ public class FileBoomMe extends K2SApi {
                                 }
                             }
                             String code = getCaptchaCode(captcha, downloadLink);
-                            postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                            postPage(br.getURL(), "CaptchaForm%5BverifyCode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                             if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
                                 getPage(cbr, "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
                                 captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
