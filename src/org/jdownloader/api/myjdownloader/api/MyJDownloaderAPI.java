@@ -34,8 +34,7 @@ import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
-    private final Browser br;
-    private LogSource     logger;
+    private LogSource logger;
 
     @Override
     protected byte[] base64decode(String base64encodedString) {
@@ -146,7 +145,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
     }
 
     protected Browser getBrowser() {
-        return br.cloneBrowser();
+        return new MyJDownloaderAPIBrowser();
     }
 
     protected volatile String connectToken = null;
@@ -167,18 +166,35 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         return "api_" + revision;
     }
 
+    private class MyJDownloaderAPIBrowser extends Browser {
+        {
+            setDebug(true);
+            setVerbose(true);
+            setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
+        }
+
+        @Override
+        protected void onBeforeRequestConnect(Request request) throws IOException {
+            if (request.getProxy() == null || request.getProxy().isNone() || request.getProxy().isDirect()) {
+                request.setConnectTimeout(10 * 1000);
+            }
+        }
+
+        @Override
+        public Browser cloneBrowser() {
+            final Browser br = new MyJDownloaderAPIBrowser();
+            return cloneBrowser(br);
+        }
+
+        @Override
+        public LogInterface getLogger() {
+            return MyJDownloaderAPI.this.getLogger();
+        };
+    }
+
     public MyJDownloaderAPI() {
         super("JD_" + getRevision());
         setServerRoot("https://" + CFG_MYJD.SERVER_HOST.getValue());
-        br = new Browser() {
-            @Override
-            public LogInterface getLogger() {
-                return MyJDownloaderAPI.this.getLogger();
-            };
-        };
-        br.setDebug(true);
-        br.setVerbose(true);
-        br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
     }
 
     public LogSource getLogger() {
