@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * Eventually variant of OuoIo, see also fas.li
@@ -42,7 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?igram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "koylinks.win", "cuon.io", "pnd.tl" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?igram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?vivads\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?koylinks\\.win/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?(?:cuon|curs)\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?pnd\\.tl/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
     public CatlyUs(PluginWrapper wrapper) {
         super(wrapper);
@@ -123,7 +123,7 @@ public class CatlyUs extends antiDDoSForDecrypt {
         }
         form = this.br.getForm(0);
         if (form != null) {
-            /* Usually POST to "[...]/links/go" */
+            /* Usually POST to "[...]/links/go" with small waittime (< 10 seconds) which is skippable */
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.submitForm(form);

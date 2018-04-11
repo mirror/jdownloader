@@ -54,7 +54,7 @@ public class ImageVenueCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         /* Error handling */
-        if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<") || this.br.getHttpConnection().getResponseCode() == 500) {
+        if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
             logger.warning("File offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

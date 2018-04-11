@@ -13,13 +13,16 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -32,16 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "welt.de" }, urls = { "https?://(?:www\\.)?welt\\.de/mediathek/.*?/video\\d+/[A-Za-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "welt.de" }, urls = { "https?://(?:www\\.)?welt\\.de/mediathek/.*?/(?:video|sendung)\\d+/[A-Za-z0-9\\-]+\\.html" })
 public class WeltDeMediathek extends PluginForHost {
-
     public WeltDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: https
@@ -53,7 +51,6 @@ public class WeltDeMediathek extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -75,16 +72,15 @@ public class WeltDeMediathek extends PluginForHost {
         }
         final String url_title = new Regex(link.getDownloadURL(), "/mediathek/(.+)\\.html").getMatch(0);
         final String json_source_videourl = this.br.getRegex("\"page\"\\s*?:\\s*?(\\{.*?\\}),\\s+").getMatch(0);
-        final String json_source_videoinfo = this.br.getRegex("<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
-
+        /* Tags: schema.org */
+        final String json_source_videoinfo = this.br.getRegex("<script[^>]*?type=\"application/ld\\+json[^>]*?\">(.*?)</script>").getMatch(0);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videoinfo);
-
         String filename = "";
         String title = (String) entries.get("headline");
         final String description = (String) entries.get("description");
         final String date_formatted = formatDate((String) entries.get("datePublished"));
         String organization = (String) JavaScriptEngineFactory.walkJson(entries, "publisher/name");
-        if (organization == null || organization.equals("")) {
+        if (StringUtils.isEmpty(organization)) {
             organization = "DIE WELT";
         }
         if (title == null) {
@@ -97,7 +93,6 @@ public class WeltDeMediathek extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-
         /* Find downloadlink */
         try {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
@@ -117,7 +112,6 @@ public class WeltDeMediathek extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-
         final String ext;
         if (dllink != null && !dllink.equals("")) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -158,8 +152,12 @@ public class WeltDeMediathek extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        final String html_error = this.br.getRegex("<p[^>]*?class=\"o-text c-catch-up-error__text\">([^<>\"]+)</p>").getMatch(0);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (html_error != null) {
+            /* 2018-04-11: E.g. 'Diese Sendung ist zur Zeit aus lizenzrechtlichen Gründen nicht verfügbar.' */
+            throw new PluginException(LinkStatus.ERROR_FATAL, html_error);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

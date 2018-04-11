@@ -13,10 +13,8 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,7 +28,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -58,22 +56,18 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/[A-Za-z0-9]{15,16}" })
 public class CatShareNet extends antiDDoSForHost {
-
     private String          brbefore               = "";
     private String          HOSTER                 = "http://catshare.net";
     private static Object   lock                   = new Object();
-    protected final String  USE_API                = "USE_API_33952";
+    protected final String  USE_API                = "USE_API_35559";
     private final boolean   defaultUSE_API         = true;
     private final boolean   use_api_availablecheck = true;
-
     public static final int api_status_all_ok      = -1;
-
     // private final boolean useAPI = true;
     private String          apiSession             = null;
 
     // DEV NOTES
     // captchatype: reCaptchaV1
-
     @Override
     public String getAGBLink() {
         return HOSTER + "/regulamin";
@@ -130,7 +124,6 @@ public class CatShareNet extends antiDDoSForHost {
                 }
                 /* Reset tempcounter */
                 tempcounter = 0;
-
                 postPage(getAPIProtocol() + this.getHost() + "/download/json_check", sb.toString());
                 LinkedHashMap<String, Object> entries = null;
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -159,7 +152,6 @@ public class CatShareNet extends antiDDoSForHost {
                         dl.setFinalFileName(filename);
                     }
                     dl.setDownloadSize(filesize);
-
                     tempcounter++;
                 }
                 if (index == urls.length) {
@@ -200,12 +192,10 @@ public class CatShareNet extends antiDDoSForHost {
         }
         String fileName = new Regex(brbefore, "<h3 class=\"pull-left\" style=\"margin-left: 10px;\">(.*)</h3>[ \t\n\r\f]+<h3 class=\"pull-right\"").getMatch(0);
         String fileSize = new Regex(brbefore, "<h3 class=\"pull-right\" style=\"margin-right: 10px;\">(.+?)</h3>").getMatch(0);
-
         if (fileName == null || fileSize == null) {
             logger.warning("For link: " + downloadURL + ", final filename or filesize is null!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getPhrase("NO_LINK_DATA"));
         }
-
         link.setName(fileName.trim());
         link.setDownloadSize(SizeFormatter.getSize(fileSize));
         // setting this prevents from setting incorrect (shortened) filename from the request header
@@ -227,7 +217,6 @@ public class CatShareNet extends antiDDoSForHost {
                 }
             }
         }
-
     }
 
     // never got one, but left this for future usage
@@ -245,7 +234,6 @@ public class CatShareNet extends antiDDoSForHost {
         } else if (br.containsHTML("<input type=\"submit\" class=\"btn btn-large btn-inverse\" style=\"font-size:30px; font-weight: bold; padding:30px\" value=\"Pobierz szybko\" />")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("LINK_BROKEN"));
         }
-
     }
 
     // Removed fake messages which can kill the plugin
@@ -315,40 +303,27 @@ public class CatShareNet extends antiDDoSForHost {
              */
             postPageAPI(getAPIProtocol() + this.getHost() + "/download/json_wait", "");
             /* E.g. response for premium users: {"wait_time":0,"key":null} */
-
             long wait = 0;
             String wait_str = PluginJSonUtils.getJsonValue(br, "wait_time");
             if (wait_str != null) {
                 wait = Long.parseLong(wait_str) * 1000;
-
                 if (wait > System.currentTimeMillis()) {
                     /* Change from timestamp of current time + wait TO Remaining wait */
                     wait -= System.currentTimeMillis();
                 }
-                if (wait > 240000l) {
-                    /* Reconnect wait */
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
-                }
+                checkForLongWait(wait);
             }
             /* 2016-05-19: json_challenge-call is not needed anymore as json_wait will return waittime AND reCaptcha key */
             // postPageAPI("/download/json_challenge", "");
+            final long timeBefore = System.currentTimeMillis();
             final String rcID = PluginJSonUtils.getJsonValue(br, "key");
             if (rcID != null && rcID.length() > 6) {
                 /* Usually free users do have to enter captchas */
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.setId(rcID);
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                download_post_data += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcID).getToken();
+                download_post_data += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
             }
-            if (wait > 0) {
-                /* Usually free users do have to wait before they can start the download */
-                logger.info("We have the captcha answer of the user, waiting " + wait + " milliseconds until json_download request");
-                this.sleep(wait, downloadLink);
-            }
+            waitTime(downloadLink, timeBefore, wait);
             postPageAPI("/download/json_download", download_post_data);
-
             dllink = PluginJSonUtils.getJsonValue(br, "downloadUrl");
             if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API issue");
@@ -370,63 +345,52 @@ public class CatShareNet extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    private void checkForLongWait(final long wait) throws PluginException {
+        if (wait > 240000l) {
+            /* Reconnect wait */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+        }
+    }
+
     public static String getAPIProtocol() {
         return "https://";
     }
 
+    /** 2018-04-11: Outdated! */
     public void doFreeWebsite(final DownloadLink downloadLink, final boolean resumable, final int maxChunks) throws Exception, PluginException {
         checkErrorsWebsite(downloadLink, true);
-
         String dllink = null;
-        long timeBefore = System.currentTimeMillis();
         boolean password = false;
-        boolean skipWaittime = false;
-
         // only ReCaptcha
         Form dlForm = new Form();
         if (new Regex(brbefore, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
             dlForm = br.getForm(0);
-            if (dlForm == null) {
+            final String id = br.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
+            String waittime_seconds = br.getRegex("var count = (\\d+);").getMatch(0);
+            if (waittime_seconds == null) {
+                /* Fallback */
+                waittime_seconds = "60";
+            }
+            if (dlForm == null || id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("NO_RECAPTCHA_FORM"));
             }
-
-            logger.info("Detected captcha method \"Re Captcha\" for this host");
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.setForm(dlForm);
-            String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            rc.setId(id);
-            for (int i = 0; i < 5; i++) {
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                Form rcform = rc.getForm();
-                rcform.put("recaptcha_challenge_field", rc.getChallenge());
-                rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
-                logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                dlForm = rc.getForm();
-                // waittime is often skippable for reCaptcha handling
-                // skipWaittime = true;
-                submitForm(dlForm);
-                logger.info("Submitted DLForm");
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    rc.reload();
-                    continue;
-                }
-                break;
-            }
-
+            long wait = Long.parseLong(waittime_seconds) * 1000l;
+            checkForLongWait(wait);
+            final long timeBefore = System.currentTimeMillis();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, id).getToken();
+            dlForm.put("g-recaptcha-response", recaptchaV2Response);
+            waitTime(downloadLink, timeBefore, 60000);
+            submitForm(dlForm);
         } else {
             logger.warning("Unknown ReCaptcha method for: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("UNKNOWN_RECAPTCHA"));
         }
-
         /* Captcha END */
         // if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("5 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RECAPTCHA_ERROR"), 1 * 60 * 1000l);
         }
-
         doSomething();
         checkErrorsWebsite(downloadLink, false);
         dllink = getDllinkWebsite();
@@ -447,6 +411,17 @@ public class CatShareNet extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    private void waitTime(final DownloadLink downloadLink, final long timeBefore, long waittime) throws PluginException {
+        long passedTime = (System.currentTimeMillis() - timeBefore) - 1000;
+        waittime -= passedTime;
+        if (waittime > 0) {
+            logger.info("Waiting waittime: " + waittime);
+            this.sleep(waittime, downloadLink);
+        } else {
+            logger.info("Waited long enough due to captcha solving --> No wait required anymore");
+        }
+    }
+
     public boolean hasAutoCaptcha() {
         return false;
     }
@@ -459,7 +434,6 @@ public class CatShareNet extends antiDDoSForHost {
         } catch (final PluginException e) {
             throw e;
         }
-
         if (getUseAPI()) {
             ai = this.fetchAccountInfoAPI(account);
         } else {
@@ -497,7 +471,6 @@ public class CatShareNet extends antiDDoSForHost {
     private AccountInfo fetchAccountInfoWebsite(final Account account) {
         final AccountInfo ai = new AccountInfo();
         boolean hours = false;
-
         if (account.getType() == AccountType.PREMIUM) {
             final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
             if (dailyLimitLeft != null) {
@@ -506,7 +479,6 @@ public class CatShareNet extends antiDDoSForHost {
             } else {
                 ai.setUnlimitedTraffic();
             }
-
             String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
             if (expire == null) {
                 expire = br.getRegex("(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
@@ -538,22 +510,18 @@ public class CatShareNet extends antiDDoSForHost {
                     cal.setTime(new Date());
                     cal.add(Calendar.HOUR_OF_DAY, Integer.parseInt(expire));
                     String dateExpire = formatter.format(cal.getTime());
-
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(dateExpire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-
                 } else {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
                 }
             }
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
-
             ai.setStatus(getPhrase("PREMIUM"));
         } else {
             account.setMaxSimultanDownloads(1);
             ai.setStatus(getPhrase("FREE"));
         }
-
         return ai;
     }
 
@@ -665,13 +633,11 @@ public class CatShareNet extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void handlePremiumWebsite(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         loginWebsite(account, true);
-
         getPage(downloadLink.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
             doFreeWebsite(downloadLink, true, 1);
             return;
         }
-
         getPage(downloadLink.getDownloadURL());
         doSomething();
         String dllink = getDllinkWebsite();
@@ -697,10 +663,8 @@ public class CatShareNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("REGEX_ERROR"));
             }
         }
-
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
-
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -946,5 +910,4 @@ public class CatShareNet extends antiDDoSForHost {
     public void postPage(final String url, final String arg) throws Exception {
         super.postPage(url, arg);
     }
-
 }

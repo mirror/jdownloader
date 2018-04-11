@@ -17,12 +17,15 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -39,7 +42,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
 
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
@@ -49,17 +52,45 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final String playlist_embed_id = this.br.getRegex("https?://[^/]+/playlist_embed_3/playlist\\.php\\?playlist_id=(\\d+)").getMatch(0);
+            final String playlist_embed_id = this.br.getRegex("playlist_id=\"(\\d+)\"").getMatch(0);
             if (playlist_embed_id == null) {
                 logger.info("Seems like this page does not contain any playlist");
                 return decryptedLinks;
             }
-            this.br.postPage("https://deluxetv-vimp.mivitec.net/playlist_embed_3/search_playlist_videos.php", "playlist_id=" + playlist_embed_id);
-            final String[] mediakeys = this.br.getRegex("\"mediakey\"\\s*?:\\s*?\"([a-f0-9]{32})\"").getColumn(0);
-            for (final String mediakey : mediakeys) {
-                final String url = String.format("https://deluxetv-vimp.mivitec.net/video/discodeluxe_set/%s", mediakey);
-                final DownloadLink dl = this.createDownloadlink(url);
+            /*
+             * 2018-04-11: Old url + same parameters still working:
+             * https://deluxetv-vimp.mivitec.net/playlist_embed_3/search_playlist_videos.php ... but we'll use the new one for now.
+             */
+            /* Important header! */
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            this.br.postPage("https://deluxetv-vimp.mivitec.net/playlist_tag//search_playlist_videos.php", "playlist_id=" + playlist_embed_id);
+            LinkedHashMap<String, Object> entries = null;
+            final ArrayList<Object> mediaObjects = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            for (final Object mediaObj : mediaObjects) {
+                entries = (LinkedHashMap<String, Object>) mediaObj;
+                String title = (String) entries.get("title");
+                final String description = (String) entries.get("description");
+                final String mediakey = (String) entries.get("mediakey");
+                if (StringUtils.isEmpty(mediakey)) {
+                    /* Skip empty items - this should never happen! */
+                    continue;
+                }
+                final String url = generateVideoURL(title, mediakey);
+                final DownloadLink dl = this.createDownloadlink(generateVideoURL(title, mediakey));
+                final String filename;
+                if (StringUtils.isEmpty(title)) {
+                    /* Fallback */
+                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(mediakey);
+                } else {
+                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(title);
+                }
+                dl.setContentUrl(url);
                 dl.setLinkID(mediakey);
+                dl.setName(filename);
+                dl.setAvailable(true);
+                if (description != null && !description.equalsIgnoreCase(title)) {
+                    dl.setComment(description);
+                }
                 decryptedLinks.add(dl);
             }
         } else {
@@ -69,7 +100,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
     }
 
     /**
-     * Does exactly what the name says. Experimental! <br />
+     * Experimental! <br />
      * E.g. 'https://deluxetv-vimp.mivitec.net/category/dlx-ama/18'
      */
     private void crawlCategory(final String parameter) throws IOException {
@@ -108,7 +139,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
             }
             for (final String article : articles) {
                 String url = new Regex(article, "\"(/video/[^/]+/[a-f0-9]{32})\"").getMatch(0);
-                String name = new Regex(article, "h3 title=\"(.*?)\">").getMatch(0);
+                final String title = new Regex(article, "h3 title=\"(.*?)\">").getMatch(0);
                 final String mediakey = url != null ? new Regex(url, "([a-f0-9]{32})$").getMatch(0) : null;
                 if (url == null) {
                     continue;
@@ -119,13 +150,17 @@ public class DeluxemusicTv extends PluginForDecrypt {
                     continue;
                 }
                 url = "https://deluxetv-vimp.mivitec.net" + url;
-                if (StringUtils.isEmpty(name)) {
-                    name = mediakey;
+                final DownloadLink dl = this.createDownloadlink(generateVideoURL(title, mediakey));
+                final String filename;
+                if (StringUtils.isEmpty(title)) {
+                    /* Last chance fallback */
+                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(mediakey);
+                } else {
+                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(title);
                 }
-                name = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(name);
-                final DownloadLink dl = this.createDownloadlink(url);
+                dl.setContentUrl(url);
                 dl._setFilePackage(fp);
-                dl.setName(name + ".mp4");
+                dl.setName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 distribute(dl);
@@ -133,5 +168,14 @@ public class DeluxemusicTv extends PluginForDecrypt {
             }
             counter++;
         } while (dupe_counter <= 49);
+    }
+
+    private String generateVideoURL(String url_title, final String mediakey) {
+        if (!StringUtils.isEmpty(url_title)) {
+            url_title = Encoding.urlEncode(url_title);
+        } else {
+            url_title = "discodeluxe_set";
+        }
+        return String.format("https://deluxetv-vimp.mivitec.net/video/%s/%s", url_title, mediakey);
     }
 }

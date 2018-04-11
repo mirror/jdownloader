@@ -16,10 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.net.MalformedURLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -66,6 +64,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
@@ -94,7 +93,9 @@ public class Ardmediathek extends PluginForDecrypt {
     private String  subtitleLink   = null;
     private String  parameter      = null;
     private String  title          = null;
-    private String  date_formatted = null;
+    private String  show           = null;
+    private String  provider       = null;
+    private long    date_timestamp = -1;
     private boolean grabHLS        = false;
     private String  contentID      = null;
 
@@ -265,7 +266,7 @@ public class Ardmediathek extends PluginForDecrypt {
     /* Returns title for all XML based websites (XML has to be accessed before!) */
     private String getDasersteTitle(final Browser br) {
         final String host = getHost();
-        final String provider = host.substring(0, host.lastIndexOf(".")).replace(".", "_");
+        provider = host.substring(0, host.lastIndexOf(".")).replace(".", "_");
         String date = getXML(br.toString(), "broadcastDate");
         if (StringUtils.isEmpty(date)) {
             /* E.g. kika.de */
@@ -276,7 +277,7 @@ public class Ardmediathek extends PluginForDecrypt {
             date = getXML(br.toString(), "broadcastStartDate");
         }
         /* E.g. kika.de */
-        final String show = getXML(br.toString(), "channelName");
+        show = getXML(br.toString(), "channelName");
         String video_title = getXML(br.toString(), "shareTitle");
         if (StringUtils.isEmpty(video_title)) {
             video_title = getXML(br.toString(), "broadcastName");
@@ -288,35 +289,20 @@ public class Ardmediathek extends PluginForDecrypt {
         if (StringUtils.isEmpty(video_title)) {
             video_title = "UnknownTitle_" + System.currentTimeMillis();
         }
-        if (!StringUtils.isEmpty(date)) {
-            this.date_formatted = formatDateDasErste(date);
-        }
-        String title_final = "";
-        if (this.date_formatted != null) {
-            title_final = this.date_formatted + "_";
-        }
-        title_final += provider + "_";
-        if (!StringUtils.isEmpty(show)) {
-            title_final += show + " - ";
-        }
-        title_final += video_title;
-        title_final = Encoding.htmlDecode(title_final).trim();
-        title_final = encodeUnicode(title_final);
-        return title_final;
+        this.date_timestamp = getDateMilliseconds(date);
+        return video_title;
     }
 
     /* Returns title, with fallback if nothing found in html */
     private String getMediathekTitle(final Browser brHTML, final Browser brJSON) {
-        final String jsonSchemaOrg = brHTML.getRegex("<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
+        /* E.g. wdr.de, Tags: schema.org */
+        final String jsonSchemaOrg = brHTML.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*?>(.*?)</script>").getMatch(0);
         String title = null;
-        String provider = null;
-        String show = null;
         /* These RegExes should be compatible with all websites */
         /* Date is already provided in the format we need. */
-        String date = null;
-        this.date_formatted = brHTML.getRegex("<meta property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
-        if (this.date_formatted == null) {
-            this.date_formatted = brHTML.getRegex("<span itemprop=\"datePublished\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
+        String date = brHTML.getRegex("<meta property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
+        if (date == null) {
+            date = brHTML.getRegex("<span itemprop=\"datePublished\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2})[^\"]*?\"[^>]*?/?>").getMatch(0);
         }
         String description = brHTML.getRegex("<meta property=\"og:description\" content=\"([^\"]+)\"").getMatch(0);
         final String host = getHost();
@@ -338,9 +324,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 if (description == null) {
                     description = (String) entries.get("description");
                 }
-                if (StringUtils.isEmpty(this.date_formatted) && !StringUtils.isEmpty(uploadDate)) {
+                if (StringUtils.isEmpty(date) && !StringUtils.isEmpty(uploadDate)) {
                     /* Fallback */
-                    this.date_formatted = new Regex(uploadDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+                    date = new Regex(uploadDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
                 }
                 /* Find more data */
                 entries = (LinkedHashMap<String, Object>) entries.get("productionCompany");
@@ -348,6 +334,10 @@ public class Ardmediathek extends PluginForDecrypt {
                     provider = (String) entries.get("name");
                 }
             } catch (final Throwable e) {
+            }
+            if (StringUtils.isEmpty(title) && headline != null) {
+                /* 2018-04-11: ardmediathek.de */
+                title = headline;
             }
         } else if (host.equalsIgnoreCase("wdrmaus.de")) {
             final String content_ids_str = brHTML.getRegex("var _contentId = \\[([^<>\\[\\]]+)\\];").getMatch(0);
@@ -370,7 +360,9 @@ public class Ardmediathek extends PluginForDecrypt {
              * http://www.wdrmaus.de/extras/mausthemen/eisenbahn/index.php5 --> This is so far not a real usage case and we do not have any
              * complaints about the current plugin behavior!
              */
-            date = brHTML.getRegex("Sendetermin: (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+            if (StringUtils.isEmpty(date)) {
+                date = brHTML.getRegex("Sendetermin: (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+            }
             if (StringUtils.isEmpty(date)) {
                 /* Last chance */
                 date = PluginJSonUtils.getJson(brJSON, "trackerClipAirTime");
@@ -378,10 +370,12 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (host.contains("sr-online.de")) {
             /* sr-mediathek.sr-online.de */
             title = brHTML.getRegex("<div class=\"ardplayer\\-title\">([^<>\"]+)</div>").getMatch(0);
-            date = brHTML.getRegex("<p>Video \\| (\\d{2}\\.\\d{2}\\.\\d{4}) \\| Dauer:").getMatch(0);
+            if (StringUtils.isEmpty(date)) {
+                date = brHTML.getRegex("<p>Video \\| (\\d{2}\\.\\d{2}\\.\\d{4}) \\| Dauer:").getMatch(0);
+            }
         } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             /* ndr.de */
-            if (brHTML.getURL().contains("daserste.ndr.de")) {
+            if (brHTML.getURL().contains("daserste.ndr.de") && StringUtils.isEmpty(date)) {
                 date = brHTML.getRegex("<p>Dieses Thema im Programm:</p>\\s*?<h2>[^<>]*?(\\d{2}\\.\\d{2}\\.\\d{4})[^<>]*?</h2>").getMatch(0);
             }
             title = brHTML.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
@@ -397,10 +391,7 @@ public class Ardmediathek extends PluginForDecrypt {
             show = brHTML.getRegex("name=\"dcterms\\.isPartOf\" content=\"([^<>\"]*?)\"").getMatch(0);
             title = brHTML.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
         }
-        if (StringUtils.isEmpty(this.date_formatted) && !StringUtils.isEmpty(date)) {
-            /* Rare case: Date available but we need to change it to our target-format. */
-            this.date_formatted = formatDate(date);
-        }
+        this.date_timestamp = getDateMilliseconds(date);
         if (StringUtils.isEmpty(title)) {
             /* This should never happen */
             title = "UnknownTitle_" + System.currentTimeMillis();
@@ -410,14 +401,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Fallback */
             provider = host.substring(0, host.lastIndexOf(".")).replace(".", "_");
         }
-        if (!StringUtils.isEmpty(show)) {
-            title = show.trim() + " - " + title;
-        }
         title = Encoding.htmlDecode(title);
-        title = provider + "_" + title;
-        if (this.date_formatted != null) {
-            title = this.date_formatted + "_" + title;
-        }
         title = encodeUnicode(title);
         return title;
     }
@@ -571,7 +555,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         brJSON.getPage(url_json);
         /* No json --> No media to crawl (rare case!)! */
-        if (!brJSON.getHttpConnection().getContentType().contains("application/json") && !brJSON.getHttpConnection().getContentType().contains("application/javascript") && !brJSON.containsHTML("\\{") || brJSON.getHttpConnection().getResponseCode() == 404) {
+        if (!brJSON.getHttpConnection().getContentType().contains("application/json") && !brJSON.getHttpConnection().getContentType().contains("application/javascript") && !brJSON.containsHTML("\\{") || brJSON.getHttpConnection().getResponseCode() == 404 || brJSON.toString().length() <= 10) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         title = getMediathekTitle(this.br, brJSON);
@@ -900,6 +884,10 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
         for (final HlsContainer hlscontainer : allHlsContainers) {
+            if (!hlscontainer.isVideo()) {
+                /* Skip audio containers here as we (sometimes) have separate mp3 URLs for this host. */
+                continue;
+            }
             final String final_download_url = hlscontainer.getDownloadurl();
             addQuality(final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight());
         }
@@ -954,9 +942,9 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Skip items with bad data. */
             return null;
         } else if (directurl.contains(".mp3")) {
-            ext = ".mp3";
+            ext = "mp3";
         } else {
-            ext = ".mp4";
+            ext = "mp4";
         }
         long filesize = 0;
         if (filesize_str != null && filesize_str.matches("\\d+")) {
@@ -972,18 +960,23 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         final String qualityStringForQualitySelection = getQualityIdentifier(directurl, bitrate, width, height);
-        /* TODO: Maybe it makes sense not to include bitrate in the title if it is 0 - or use bitrate_corrected instead then. */
-        final String plain_name = title + "_" + protocol + "_" + bitrate + "_" + resolution;
-        final String file_name = plain_name + ext;
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         final MediathekProperties data = link.bindData(MediathekProperties.class);
+        data.setTitle(title);
         data.setSourceHost(getHost());
-        data.setResolution(width + "x" + height);
+        data.setChannel(this.provider);
+        data.setResolution(resolution);
+        data.setBitrateTotal(bitrate);
         data.setProtocol(protocol);
-        link.setFinalFileName(file_name);
+        data.setFileExtension(ext);
+        if (this.date_timestamp > 0) {
+            data.setReleaseDate(this.date_timestamp);
+        }
+        if (!StringUtils.isEmpty(show)) {
+            data.setShow(show);
+        }
+        link.setFinalFileName(MediathekHelper.getMediathekFilename(link, data, true, true));
         link.setContentUrl(this.parameter);
-        link.setProperty("plain_name", plain_name);
-        link.setProperty("directName", file_name);
         final String itemID = contentID;
         if (itemID == null) {
             logger.log(new Exception("FixMe!"));
@@ -1052,19 +1045,25 @@ public class Ardmediathek extends PluginForDecrypt {
             final Entry<String, DownloadLink> entry = it.next();
             final DownloadLink dl = entry.getValue();
             if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(subtitleLink)) {
-                final String plain_name = dl.getStringProperty("plain_name", null);
-                final String subtitle_filename = plain_name + ".xml";
                 final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", getHost() + "decrypted://"));
                 final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
                 final MediathekProperties data_subtitle = dl_subtitle.bindData(MediathekProperties.class);
                 data_subtitle.setStreamingType("subtitle");
                 data_subtitle.setSourceHost(data_src.getSourceHost());
+                data_subtitle.setChannel(data_src.getChannel());
                 data_subtitle.setProtocol(data_src.getProtocol() + "sub");
                 data_subtitle.setResolution(data_src.getResolution());
+                data_subtitle.setBitrateTotal(data_src.getBitrateTotal());
                 data_subtitle.setTitle(data_src.getTitle());
+                data_subtitle.setFileExtension("xml");
+                if (data_src.getShow() != null) {
+                    data_subtitle.setShow(data_src.getShow());
+                }
+                if (data_src.getReleaseDate() > 0) {
+                    data_subtitle.setReleaseDate(data_src.getReleaseDate());
+                }
                 dl_subtitle.setAvailable(true);
-                dl_subtitle.setFinalFileName(subtitle_filename);
-                dl_subtitle.setProperty("mainlink", parameter);
+                dl_subtitle.setFinalFileName(MediathekHelper.getMediathekFilename(dl_subtitle, data_subtitle, true, true));
                 dl_subtitle.setProperty("itemId", dl.getProperty("itemId", null));
                 dl_subtitle.setContentUrl(parameter);
                 decryptedLinks.add(dl_subtitle);
@@ -1264,10 +1263,9 @@ public class Ardmediathek extends PluginForDecrypt {
         return bandwidthselect;
     }
 
-    private String getXML(final String parameter) {
-        return getXML(this.br.toString(), parameter);
-    }
-
+    // private String getXML(final String parameter) {
+    // return getXML(this.br.toString(), parameter);
+    // }
     private String getXML(final String source, final String parameter) {
         return new Regex(source, "<" + parameter + "[^<]*?>([^<>]*?)</" + parameter + ">").getMatch(0);
     }
@@ -1282,48 +1280,21 @@ public class Ardmediathek extends PluginForDecrypt {
         return output;
     }
 
-    private String formatDateDasErste(String input) {
-        final long date;
-        if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}")) {
-            date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+    private long getDateMilliseconds(String input) {
+        if (input == null) {
+            return -1;
+        }
+        final long date_milliseconds;
+        if (input.matches("\\d{4}\\-\\d{2}\\-\\d{2}")) {
+            date_milliseconds = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.GERMAN);
+        } else if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}")) {
+            date_milliseconds = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
         } else {
             /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
             input = new Regex(input, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.GERMAN);
+            date_milliseconds = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.GERMAN);
         }
-        String formattedDate = null;
-        final String targetFormat = "yyyy-MM-dd";
-        Date theDate = new Date(date);
-        try {
-            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            formattedDate = formatter.format(theDate);
-        } catch (Exception e) {
-            /* prevent input error killing plugin */
-            formattedDate = input;
-        }
-        return formattedDate;
-    }
-
-    private String formatDate(final String input) {
-        /* 13.01.2016 or 20160113 --> 2016-01-13 */
-        final long date;
-        if (input.matches("\\d{8}")) {
-            /* e.g. eurovision.de */
-            date = TimeFormatter.getMilliSeconds(input, "yyyyMMdd", Locale.GERMAN);
-        } else {
-            date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
-        }
-        String formattedDate = null;
-        final String targetFormat = "yyyy-MM-dd";
-        Date theDate = new Date(date);
-        try {
-            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            formattedDate = formatter.format(theDate);
-        } catch (Exception e) {
-            /* prevent input error killing plugin */
-            formattedDate = input;
-        }
-        return formattedDate;
+        return date_milliseconds;
     }
 
     /* NO OVERRIDE!! */
