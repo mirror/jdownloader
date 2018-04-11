@@ -213,7 +213,8 @@ public class DiskYandexNet extends PluginForHost {
                 if (br.containsHTML(ACCOUNTONLYTEXT)) {
                     link.setProperty("premiumonly", true);
                 } else {
-                    link.setProperty("premiumonly", false);
+                    // link.setProperty("premiumonly", false);
+                    logger.info("Debug info: premiumonly: " + link.getBooleanProperty("premiumonly", false));
                 }
             }
             if (final_filename == null && filename != null) {
@@ -610,6 +611,11 @@ public class DiskYandexNet extends PluginForHost {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 getPage(getMainLink(link));
                 br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
+                if (br.containsHTML("\"code\":(28|88)")) {
+                    // setProperty: "premiumonly" then retry with move to account
+                    link.setProperty("premiumonly", true);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 28|88, retry with move to account", 1 * 1000l);
+                }
                 handleErrorsFree();
                 dllink = siteGetDllink(link);
                 if (dllink == null) {
