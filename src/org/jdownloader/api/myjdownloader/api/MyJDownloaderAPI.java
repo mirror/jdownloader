@@ -1,13 +1,18 @@
 package org.jdownloader.api.myjdownloader.api;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.URLConnectionAdapterDirectImpl;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 
@@ -15,6 +20,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.Regex;
@@ -28,7 +34,6 @@ import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
-
     private final Browser br;
     private LogSource     logger;
 
@@ -63,13 +68,14 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         URLConnectionAdapter con = null;
         byte[] ret = null;
         try {
+            final Browser br = getBrowser();
             final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
-            PostRequest request = br.createPostRequest(this.getServerRoot() + query, new ArrayList<KeyValueStringEntry>(), null);
+            final PostRequest request = br.createPostRequest(this.getServerRoot() + query, new ArrayList<KeyValueStringEntry>(), null);
             request.setPostBytes(sendBytes);
             request.setContentType("application/json; charset=utf-8");
             if (keyAndIV != null) {
                 request.getHeaders().put("Accept-Encoding", "gazeisp");
-                con = br.openRequestConnection(request);
+                con = openRequestConnection(br, request);
                 String contentEncoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
                 String xContentEncoding = con.getHeaderField("X-" + HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
                 if (xContentEncoding != null && (StringUtils.containsIgnoreCase(xContentEncoding, "gazeisp") || StringUtils.containsIgnoreCase(xContentEncoding, "gzip_aes"))) {
@@ -91,27 +97,56 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 }
             } else {
                 request.getHeaders().put("Accept-Encoding", null);
-                con = br.openRequestConnection(request);
+                con = openRequestConnection(br, request);
                 ret = IO.readStream(-1, con.getInputStream());
             }
             // System.out.println(con);
             if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
                 throw new ExceptionResponse(toString(ret), con.getResponseCode(), con.getResponseMessage());
+            } else {
+                return ret;
             }
-            return ret;
         } catch (final ExceptionResponse e) {
             throw e;
         } catch (final Exception e) {
             if (con != null) {
                 throw new ExceptionResponse(e, con.getResponseCode(), con.getResponseMessage());
+            } else {
+                throw new ExceptionResponse(e);
             }
-            throw new ExceptionResponse(e);
         } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+            if (con != null) {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+    }
+
+    protected URLConnectionAdapter openRequestConnection(Browser br, Request request) throws IOException {
+        int retryDirectSocketTimeoutException = 3;
+        while (true) {
+            try {
+                return br.openRequestConnection(request);
+            } catch (BrowserException e) {
+                logger.log(e);
+                if (Exceptions.containsInstanceOf(e, SocketTimeoutException.class) && request.getHttpConnection() instanceof URLConnectionAdapterDirectImpl && retryDirectSocketTimeoutException-- > 0) {
+                    logger.info("retryDirectSocketTimeoutException:" + retryDirectSocketTimeoutException);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e1) {
+                        throw e;
+                    }
+                    continue;
+                }
+                throw e;
+            }
+        }
+    }
+
+    protected Browser getBrowser() {
+        return br.cloneBrowser();
     }
 
     protected volatile String connectToken = null;
@@ -153,5 +188,4 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
     public void setLogger(LogSource logger) {
         this.logger = logger;
     }
-
 }
