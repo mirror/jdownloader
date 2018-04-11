@@ -131,6 +131,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
             } catch (BrowserException e) {
                 logger.log(e);
                 if (Exceptions.containsInstanceOf(e, SocketTimeoutException.class) && request.getHttpConnection() instanceof URLConnectionAdapterDirectImpl && retryDirectSocketTimeoutException-- > 0) {
+                    request.getHeaders().put("X-RDSTE", Integer.toString(retryDirectSocketTimeoutException));
                     logger.info("retryDirectSocketTimeoutException:" + retryDirectSocketTimeoutException);
                     try {
                         Thread.sleep(1000);
@@ -150,20 +151,21 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     protected volatile String connectToken = null;
 
-    public static String getRevision() {
+    private static String getRevision() {
         try {
-            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
-            Object ret = map.get("JDownloaderRevision");
+            final HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
+            final Object ret = map.get("JDownloaderRevision");
             if (ret != null) {
                 return "core_" + ret.toString();
             }
         } catch (final Throwable e) {
         }
-        String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
+        final String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
         if (revision == null) {
             return "api_0";
+        } else {
+            return "api_" + revision;
         }
-        return "api_" + revision;
     }
 
     private class MyJDownloaderAPIBrowser extends Browser {
