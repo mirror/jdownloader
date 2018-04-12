@@ -16,12 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -29,13 +31,14 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -46,10 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" })
 public class DiskYandexNet extends PluginForHost {
@@ -454,34 +453,52 @@ public class DiskYandexNet extends PluginForHost {
         return dl.getBooleanProperty("is_zipped_folder", false);
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepbrWebsite(this.br);
-                final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final String domain : domains) {
-                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                                final String key = cookieEntry.getKey();
-                                final String value = cookieEntry.getValue();
-                                br.setCookie(domain, key, value);
-                            }
-                        }
+                /*
+                 * Login procedure can redirect multiple times! It should lead us to disk.yandex.com via the referer parameter in our login
+                 * URL.
+                 */
+                br.setFollowRedirects(true);
+                /* Always try to re-use cookies to avoid login captchas! */
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    for (final String domain : domains) {
+                        br.setCookies(domain, cookies);
+                    }
+                    br.setCookies("passport.yandex.com", cookies);
+                    if (!force) {
+                        /* Trust cookies */
                         return;
                     }
+                    br.getPage("https://passport.yandex.com/profile");
+                    if (br.containsHTML("mode=logout")) {
+                        /* Set new cookie timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    /* Failed - we have to perform a full login! */
+                    br.clearCookies(br.getHost());
                 }
-                br.setFollowRedirects(true);
-                getPage("https://disk.yandex.com/?auth=1");
-                br.postPage("https://passport.yandex.com/passport?mode=auth&from=cloud&origin=facelogin.en", "twoweeks=yes&retpath=&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("https://passport.yandex.com/auth?from=cloud&origin=disk_landing_web_signin_ru&retpath=https%3A%2F%2Fdisk.yandex.com%2F%3Fsource%3Dlanding_web_signin&backpath=https%3A%2F%2Fdisk.yandex.com");
+                final Form[] forms = br.getForms();
+                if (forms.length == 0) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Form loginform = forms[0];
+                loginform.remove("twoweeks");
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("passwd", Encoding.urlEncode(account.getPass()));
+                /** TODO: Add support for login captcha */
+                br.submitForm(loginform);
                 if (br.getCookie(MAIN_DOMAIN, "yandex_login") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -489,17 +506,9 @@ public class DiskYandexNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAIN_DOMAIN);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -515,7 +524,9 @@ public class DiskYandexNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        getPage("https://disk.yandex.com/client/disk/");
+        if (!br.getURL().contains("client/disk")) {
+            getPage("https://disk.yandex.com/client/disk/");
+        }
         ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
         if (ACCOUNT_SK == null) {
             final String lang = System.getProperty("user.language");
@@ -528,6 +539,7 @@ public class DiskYandexNet extends PluginForHost {
         account.setProperty("saved_sk", ACCOUNT_SK);
         ai.setUnlimitedTraffic();
         account.setValid(true);
+        account.setType(AccountType.FREE);
         ai.setStatus("Free Account");
         return ai;
     }

@@ -4,8 +4,11 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.Type;
 import org.jdownloader.translate._JDT;
 
+@PluginHost(host = "watchbox.de", type = Type.CRAWLER)
 public interface WatchboxDeConfigInterface extends PluginConfigInterface {
     public static class TRANSLATION {
         public String getFastLinkcheckEnabled_label() {
