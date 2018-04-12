@@ -191,6 +191,36 @@ public class FileBitPl extends PluginForHost {
         this.loginAPI(account, false);
         br.getPage(API_BASE + "?a=addNewFile&sessident=" + SESSIONID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         handleAPIErrors(br, account, link);
+        final String fileId = PluginJSonUtils.getJson(br, "fileId");
+        if (StringUtils.isEmpty(fileId)) {
+            /* This should never happen */
+            mhm.handleErrorGeneric(account, link, "fileidnull", 20);
+        }
+        int loop = 0;
+        boolean serverDownloadFinished = false;
+        String infoMessage = null;
+        String progress = null;
+        do {
+            br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + SESSIONID + "&fileId=" + fileId);
+            serverDownloadFinished = "3".equals(PluginJSonUtils.getJson(br, "status"));
+            infoMessage = PluginJSonUtils.getJson(br, "info");
+            /* Progress is only available when status == 2 */
+            progress = PluginJSonUtils.getJson(br, "progress");
+            if (StringUtils.isEmpty(infoMessage)) {
+                infoMessage = "File is in queue to be prepared";
+            }
+            infoMessage += ": %s%%";
+            if (StringUtils.isEmpty(progress)) {
+                progress = "0";
+            }
+            infoMessage = String.format(infoMessage, progress);
+            sleep(5000l, link, infoMessage);
+            loop++;
+        } while (!serverDownloadFinished && loop <= 200);
+        if (!serverDownloadFinished) {
+            /* Rare case */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted");
+        }
         // final String expires = getJson("expires");
         return PluginJSonUtils.getJson(this.br, "downloadurl");
     }
