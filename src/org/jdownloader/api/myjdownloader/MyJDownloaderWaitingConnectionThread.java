@@ -151,7 +151,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 socket.setReuseAddress(true);
                                 socket.setSoTimeout(180000);
                                 socket.setTcpNoDelay(true);
-                                socket.connect(addr, 30000);
+                                if (proxy == null || proxy.isDirect() || proxy.isNone()) {
+                                    socket.connect(addr, 10000);
+                                } else {
+                                    socket.connect(addr, 30000);
+                                }
                                 final long timeStamp = System.currentTimeMillis();
                                 final Socket finalSocket = socket;
                                 socketStream = new SocketStreamInterface() {
