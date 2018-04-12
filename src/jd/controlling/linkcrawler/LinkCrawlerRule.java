@@ -16,8 +16,17 @@ public class LinkCrawlerRule {
         FOLLOWREDIRECT
     }
 
-    protected boolean        enabled = true;
-    protected List<String[]> cookies = null;
+    protected boolean        enabled       = true;
+    protected List<String[]> cookies       = null;
+    protected boolean        updateCookies = true;
+
+    public boolean isUpdateCookies() {
+        return updateCookies;
+    }
+
+    public void setUpdateCookies(boolean updateCookies) {
+        this.updateCookies = updateCookies;
+    }
 
     public List<String[]> getCookies() {
         return cookies;

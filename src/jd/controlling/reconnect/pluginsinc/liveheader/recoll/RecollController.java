@@ -26,7 +26,6 @@ public class RecollController {
     // HTTP_BASE = "https://reconnect.jdownloader.org/test/";
     // }
     // }
-
     /**
      * get the only existing instance of RecollController. This is a singleton
      *
@@ -44,22 +43,16 @@ public class RecollController {
      * {@link #getInstance()}.
      */
     private RecollController() {
-
         logger = LogController.getInstance().getLogger(getClass().getName());
-
         queue = new Queue("RecollQueue") {
-
         };
-
     }
 
     protected <Typo> Typo call(String command, TypeRef<Typo> type, Object... objects) throws IOException {
         StringBuilder sb = new StringBuilder();
-
         if (objects != null) {
             for (int i = 0; i < objects.length; i++) {
                 sb.append(i == 0 ? "" : "&");
-
                 sb.append(Encoding.urlEncode(JSonStorage.serializeToJson(objects[i])));
             }
         }
@@ -80,12 +73,10 @@ public class RecollController {
 
     public void trackWorking(final String scriptID, final long successDuration, final long offlineDuration) {
         queue.addAsynch(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 try {
                     call("setWorking", null, scriptID, successDuration, offlineDuration);
-
                 } catch (Exception e) {
                     logger.log(e);
                 }
@@ -96,12 +87,10 @@ public class RecollController {
 
     public void trackNotWorking(final String scriptID) {
         queue.addAsynch(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 try {
                     call("setNotWorking", null, scriptID);
-
                 } catch (Exception e) {
                     logger.log(e);
                 }
@@ -111,7 +100,6 @@ public class RecollController {
     }
 
     public boolean isAlive() {
-
         try {
             return call("isAlive", TypeRef.BOOLEAN);
         } catch (IOException e) {
@@ -119,23 +107,19 @@ public class RecollController {
             ;
             return false;
         }
-
     }
 
     public List<RouterData> findRouter(RouterData rd) throws InterruptedException {
-
         try {
             return call("findRouter", new TypeRef<ArrayList<RouterData>>() {
             }, rd);
         } catch (RetryIOException e) {
             Thread.sleep(2000);
             return findRouter(rd);
-
         } catch (IOException e) {
             logger.log(e);
             return null;
         }
-
     }
 
     public String getManufactor(String mac) {
@@ -143,22 +127,18 @@ public class RecollController {
             return call("getManufactor", TypeRef.STRING, mac);
         } catch (IOException e) {
             logger.log(e);
-            ;
             return null;
         }
-
     }
 
     public AddRouterResponse addRouter(RouterData rd) {
         try {
-
             return call("addRouter", AddRouterResponse.TYPE_REF, rd);
         } catch (IOException e) {
             logger.log(e);
             ;
             return null;
         }
-
     }
 
     public String getIsp() {
@@ -186,5 +166,4 @@ public class RecollController {
             return null;
         }
     }
-
 }
